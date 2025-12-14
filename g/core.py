@@ -102,8 +102,6 @@ class GitRepo:
             self.repo.git.add(A=True)
         elif files:
             self.repo.index.add(files)
-        else:
-            self.repo.git.add(A=True)
         return True
 
     def commit(self, message: str, all_files: bool = False) -> str:
@@ -204,7 +202,7 @@ class GitRepo:
             True if successful
         """
         if message:
-            self.repo.git.stash("save", message)
+            self.repo.git.stash("push", "-m", message)
         else:
             self.repo.git.stash()
         return True

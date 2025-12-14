@@ -92,7 +92,8 @@ class TestGitRepo(unittest.TestCase):
         commit_hash = self.git_repo.commit("Add new file")
         
         self.assertIsNotNone(commit_hash)
-        self.assertEqual(len(commit_hash), 40)  # SHA-1 hash length
+        # Git supports both SHA-1 (40 chars) and SHA-256 (64 chars)
+        self.assertIn(len(commit_hash), [40, 64])
 
     def test_log(self):
         """Test getting commit history."""
