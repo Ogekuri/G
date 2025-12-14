@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "g-git-tool"
+version = "0.1.0"
+description = "A Python git tool that automates common git processes"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "GPL-3.0"}
+authors = [
+    {name = "Ogekuri"}
+]
+dependencies = [
+    "GitPython>=3.1.0",
+]
+
+[project.scripts]
+g = "g.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Ogekuri/G"
+Repository = "https://github.com/Ogekuri/G"
