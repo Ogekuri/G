@@ -39,6 +39,8 @@ If you keep the `uv`/`uvx` CLI tools in `$HOME/bin`, you can rely on the provide
 - `$HOME/bin/g-upgrade`: re-installs `git-alias` with `--force` to pick up the latest changes.
 - `$HOME/bin/g-remove`: removes the globally installed `git-alias`.
 - `$HOME/bin/g-live`: runs `git-alias` directly via `uvx --from git+https://github.com/Ogekuri/G.git git-alias`, mirroring the live invocation path.
+- `g --upgrade` / `git-alias --upgrade`: triggers `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git` so the installed CLI refreshes itself from the latest GitHub sources.
+- `g --remove` / `git-alias --remove`: uninstalls the tool via `uv tool uninstall git-alias`, matching the helper script workflow.
 
 ## Examples
 

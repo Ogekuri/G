@@ -196,6 +196,27 @@ def run_shell(command, cwd=None):
     return subprocess.run(command, shell=True, check=True, cwd=cwd)
 
 
+# Aggiorna il comando installato sfruttando il tool uv.
+def upgrade_self():
+    subprocess.run(
+        [
+            "uv",
+            "tool",
+            "install",
+            "git-alias",
+            "--force",
+            "--from",
+            "git+https://github.com/Ogekuri/G.git",
+        ],
+        check=True,
+    )
+
+
+# Rimuove il comando installato utilizzando lo strumento uv.
+def remove_self():
+    subprocess.run(["uv", "tool", "uninstall", "git-alias"], check=True)
+
+
 # Aggiunge tutte le modifiche e i nuovi file all'area di staging (alias aa).
 def cmd_aa(extra):
     return run_git_cmd(["add", "--all"], extra)
@@ -809,6 +830,12 @@ def main(argv=None):
         print("Please provide a command or --help", file=sys.stderr)
         print_all_help()
         sys.exit(1)
+    if args[0] == "--upgrade":
+        upgrade_self()
+        return
+    if args[0] == "--remove":
+        remove_self()
+        return
     if args[0] == "--help":
         if len(args) == 1:
             print_all_help()
