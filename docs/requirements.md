@@ -17,7 +17,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git Alias Emulator
-**Versione**: 0.3
+**Versione**: 0.4
 **Autore**: Francesco Rolando  
 **Data**: 2025-12-15
 
@@ -42,6 +42,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2025-12-15 | 0.1 | Prima bozza automatizzata dei requisiti |
 | 2025-12-15 | 0.2 | Configurazione dei branch tramite `.g.conf` e flag `--write-config` |
 | 2025-12-15 | 0.3 | Aggiunta configurazione dell'editor via `.g.conf` e default `edit` |
+| 2025-12-15 | 0.4 | Ordinamento output help con sezioni per funzioni di gestione |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -106,3 +107,4 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-014**: Gli alias di modifica file (`conf`, `ed`, `edcfg`, `edign`, `edpro`, `edbsh`, `edbrc`) devono aprire i rispettivi file di configurazione usando il comando definito dal parametro `editor` nel file `.g.conf` (default `edit`), segnalando errore se non viene passato alcun percorso quando richiesto.
 - **REQ-015**: Il comando `--write-config` deve generare nella root del repository git il file `.g.conf` contenente i nomi di default dei branch `master`, `develop`, `work` e il comando `editor=edit`, in modo che l'utente possa personalizzarli manualmente.
 - **REQ-016**: All'avvio della CLI il valore del parametro `editor` definito in `.g.conf` deve essere caricato e utilizzato per tutte le operazioni di editing, adottando `edit` quando il parametro manca o è vuoto.
+- **REQ-017**: L'invocazione della CLI con `--help` o senza comandi deve mostrare prima le funzioni `--write-config`, `--upgrade`, `--remove` e poi l'elenco completo degli alias disponibili.

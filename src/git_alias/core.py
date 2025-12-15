@@ -17,6 +17,11 @@ DEFAULT_CONFIG = {
 }
 CONFIG = DEFAULT_CONFIG.copy()
 BRANCH_KEYS = ("master", "develop", "work")
+MANAGEMENT_HELP = [
+    ("--write-config", "Genera il file .g.conf nella root del repository con i valori di default."),
+    ("--upgrade", "Reinstalla git-alias tramite uv tool install."),
+    ("--remove", "Disinstalla git-alias utilizzando uv tool uninstall."),
+]
 
 
 def get_config_value(name):
@@ -920,6 +925,8 @@ def print_command_help(name):
 
 # Stampa la descrizione di tutti i comandi disponibili in ordine alfabetico.
 def print_all_help():
+    for flag, description in MANAGEMENT_HELP:
+        print(f"{flag} - {description}")
     for name in sorted(COMMANDS.keys()):
         print_command_help(name)
 
