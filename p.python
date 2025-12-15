@@ -1,8 +1,0 @@
-#!/usr/bin/env python3
-"""Launcher that exposes the `git_alias.core` module as a stand-alone script."""
-
-from git_alias.core import main
-
-
-if __name__ == "__main__":
-    main()

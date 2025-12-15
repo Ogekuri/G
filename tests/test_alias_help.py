@@ -1,62 +1,20 @@
-import re
 import subprocess
 import sys
-from pathlib import Path
 import unittest
 
 from git_alias import core
-
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "p.python"
-GITCONFIG = ROOT / "gitconfig.conf"
-
-
-def load_hlal_help(config_path):
-    """Return the alias/description map that `hlal` prints from the gitconfig."""
-    text_lines = config_path.read_text().splitlines()
-    block = []
-    found = False
-    for line in text_lines:
-        if not found and "hlal =" in line:
-            found = True
-        if not found:
-            continue
-        stripped = line.strip()
-        block.append(stripped)
-        if stripped.startswith('f"'):
-            break
-    if not block:
-        raise RuntimeError("Could not find hlal alias block")
-    mapping = {}
-    for line in block:
-        match = re.search(r'echo -e \\\\\\\"(.*?)\\\\\\\"', line)
-        if not match:
-            continue
-        text = match.group(1)
-        if "=" not in text:
-            continue
-        alias_part, desc = text.split("=", 1)
-        alias = alias_part.strip()
-        desc = desc.strip()
-        mapping[alias] = desc
-    return mapping
 
 
 class AliasHelpTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.module = core
-        cls.hlal_help = load_hlal_help(GITCONFIG)
-        cls.expected_help = {
-            alias: desc
-            for alias, desc in cls.hlal_help.items()
-            if alias in cls.module.COMMANDS
-        }
+        cls.expected_help = cls.module.HELP_TEXTS.copy()
 
     @staticmethod
     def run_script(args):
         result = subprocess.run(
-            [sys.executable, str(SCRIPT), *args],
+            [sys.executable, "-m", "git_alias.core", *args],
             check=True,
             stdout=subprocess.PIPE,
             text=True,
