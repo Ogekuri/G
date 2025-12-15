@@ -3,9 +3,9 @@ requires = ["setuptools>=68.0.0", "wheel", "build"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "git-alias-emulator"
+name = "git-alias"
 version = "0.1.0"
-description = "Emula gli alias git personalizzati attraverso un'interfaccia compatibile con uvx."
+description = "Emulate personalized git aliases via an uvx-compatible interface."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
@@ -28,7 +28,6 @@ Repository = "https://github.com/Ogekuri/G"
 
 [project.scripts]
 git-alias = "git_alias.core:main"
-git-alias-emulator = "git_alias.core:main"
 g = "git_alias.core:main"
 
 [tool.setuptools]

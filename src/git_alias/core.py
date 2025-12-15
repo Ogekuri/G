@@ -450,12 +450,12 @@ def cmd_me(extra):
     return run_git_cmd(["merge", "--ff-only"], extra)
 
 
-# Merge fast-forward del ramo develop (alias medev).
+# Unisce fast-forward il ramo develop (alias medev).
 def cmd_medev(extra):
     return run_git_cmd(["merge", "--ff-only", "develop"], extra)
 
 
-# Merge fast-forward del ramo work (alias mewrk).
+# Unisce fast-forward il ramo work (alias mewrk).
 def cmd_mewrk(extra):
     return run_git_cmd(["merge", "--ff-only", "work"], extra)
 
