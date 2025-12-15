@@ -13,7 +13,7 @@ This project exposes the `p.python` script (installed as `git-alias`) to reprodu
 python -m pip install .
 ```
 
-After installation, the `git-alias`, `g`, and `git-alias-emulator` commands become globally available. Alternatively, you can invoke `p.python` directly from the repository root.
+After installation, the `git-alias` and `g` commands become globally available. Alternatively, you can invoke `p.python` directly from the repository root.
 
 ## Usage with uvx
 
@@ -26,7 +26,7 @@ uvx --from git+https://github.com/Ogekuri/G.git git-alias -- <alias> [args...]
 When you are in the project root, you can also call:
 
 ```bash
-uvx --form git-alias-emulator -- lg
+uvx --form git-alias -- lg
 ```
 
 `uvx` forwards any following parameters (`<alias>` and `[args...]`) to the invoked `git-alias` command.

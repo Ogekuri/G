@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Implementazione portatile degli alias git dell'utente."""
+"""Portable implementation of the user's git aliases."""
 
 import os
 import shlex
@@ -803,7 +803,7 @@ def print_all_help():
 
 
 def main(argv=None):
-    """Analizza gli argomenti da riga di comando e invoca la funzione richiesta o mostra gli help."""
+    """Parse CLI arguments and either show help text or invoke the requested alias."""
     args = list(argv) if argv is not None else sys.argv[1:]
     if not args:
         print("Please provide a command or --help", file=sys.stderr)

@@ -36,6 +36,6 @@ packages = ["git_alias"]
 package-dir = {"" = "src"}
 include-package-data = true
 
-[tool.uv.forms.git-alias-emulator]
-description = "Avvia il comando git-alias attraverso uvx."
+[tool.uv.forms.git-alias]
+description = "Launches the git-alias command through uvx."
 command = "git-alias"
