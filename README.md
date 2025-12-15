@@ -31,6 +31,15 @@ uvx --form git-alias -- lg
 
 `uvx` forwards any following parameters (`<alias>` and `[args...]`) to the invoked `git-alias` command.
 
+## Helper launcher scripts
+
+If you keep the `uv`/`uvx` CLI tools in `$HOME/bin`, you can rely on the provided installer scripts:
+
+- `$HOME/bin/g-install`: installs `git-alias` from `git+https://github.com/Ogekuri/G.git` using `uv tool install`.
+- `$HOME/bin/g-upgrade`: re-installs `git-alias` with `--force` to pick up the latest changes.
+- `$HOME/bin/g-remove`: removes the globally installed `git-alias`.
+- `$HOME/bin/g-live`: runs `git-alias` directly via `uvx --from git+https://github.com/Ogekuri/G.git git-alias`, mirroring the live invocation path.
+
 ## Examples
 
 - `./p.python --help` prints the alphabetized alias list.
