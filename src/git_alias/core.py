@@ -8,20 +8,120 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
+CONFIG_FILENAME = ".g.conf"
+DEFAULT_CONFIG = {
+    "master": "master",
+    "develop": "develop",
+    "work": "work",
+    "editor": "edit",
+}
+CONFIG = DEFAULT_CONFIG.copy()
+BRANCH_KEYS = ("master", "develop", "work")
+
+
+def get_config_value(name):
+    """Retrieve a configuration value with fallback to defaults."""
+    return CONFIG.get(name, DEFAULT_CONFIG[name])
+
+
+def get_branch(name):
+    """Return the configured name for the requested branch key."""
+    if name not in BRANCH_KEYS:
+        raise KeyError(f"Unknown branch key {name}")
+    return get_config_value(name)
+
+
+def get_editor():
+    """Return the configured editor command."""
+    return get_config_value("editor")
+
+
+def get_git_root():
+    """Return the git repository root or the current working directory."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        location = result.stdout.strip()
+        if location:
+            return Path(location)
+    except subprocess.CalledProcessError:
+        pass
+    return Path.cwd()
+
+
+def get_config_path(root=None):
+    """Return the expected path of the configuration file."""
+    base = Path(root) if root is not None else get_git_root()
+    return base / CONFIG_FILENAME
+
+
+def load_cli_config(root=None):
+    """Load branch names and editor command from the repository configuration file."""
+    CONFIG.update(DEFAULT_CONFIG)
+    config_path = get_config_path(root)
+    if not config_path.exists():
+        return config_path
+    try:
+        for raw_line in config_path.read_text().splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = [part.strip() for part in line.split("=", 1)]
+            if key in DEFAULT_CONFIG and value:
+                CONFIG[key] = value
+    except OSError as exc:
+        print(f"Unable to read {config_path}: {exc}", file=sys.stderr)
+    return config_path
+
+
+def write_default_config(root=None):
+    """Write the default configuration file in the repository root."""
+    config_path = get_config_path(root)
+    lines = [f"{key}={DEFAULT_CONFIG[key]}" for key in ("master", "develop", "work", "editor")]
+    config_path.write_text("\n".join(lines) + "\n")
+    print(f"Configuration written to {config_path}")
+    return config_path
+
+
+def _editor_base_command():
+    """Return the configured editor command as a list of arguments."""
+    raw_value = get_editor() or DEFAULT_CONFIG["editor"]
+    try:
+        parts = shlex.split(raw_value)
+    except ValueError as exc:
+        print(
+            f"Ignoring invalid editor command '{raw_value}': {exc}. Falling back to '{DEFAULT_CONFIG['editor']}'",
+            file=sys.stderr,
+        )
+        parts = [DEFAULT_CONFIG["editor"]]
+    if not parts:
+        parts = [DEFAULT_CONFIG["editor"]]
+    return parts
+
+
+def run_editor_command(args):
+    """Execute the configured editor command with additional arguments."""
+    return run_command(_editor_base_command() + list(args))
+
 HELP_TEXTS = {
     "aa": "Add all file changes/added to stage area for commit.",
-    "ar": "Archive master as zip file. Use tag as filename.",
+    "ar": "Archive the configured master branch as zip file. Use tag as filename.",
     "br": "Create a new brach.",
     "brall": "Print all branches.",
     "ck": "Check differences.",
     "cm": "Commit with annotation: git cm '<descritoon>'.",
     "cma": "Add all files and commit with annotation: git cma '<descritoon>'.",
-    "cmarelease": "Make a commit with all files and do a release [ commit all file on work -> develop -> master -> tag ].",
+    "cmarelease": "Make a commit with all files and do a release [ commit all file on configured work -> configured develop -> configured master -> tag ].",
     "co": "Checkout a specific branch: git co '<branch>'.",
-    "codev": "Checkout the develop branch.",
-    "comas": "Checkout the master branch.",
+    "codev": "Checkout the configured develop branch.",
+    "comas": "Checkout the configured master branch.",
     "conf": "Edit this repository configuration file: .git/config.",
-    "cowrk": "Checkout the work branch.",
+    "cowrk": "Checkout the configured work branch.",
     "de": "Describe current version with tag of last commit.",
     "di": "Discard current changes on file: git di '<filename>'",
     "diyou": "Discard merge changes in favour of mine files.",
@@ -34,13 +134,12 @@ HELP_TEXTS = {
     "edpro": "Edit bash ~/.profile file.",
     "fe": "Fetch new data of current branch from origin.",
     "feall": "Fetch new data from origin for all branch.",
-    "fedev": "Fetch new data from origin for develop branch.",
-    "femas": "Fetch new data from origin for master branch.",
+    "fedev": "Fetch new data from origin for the configured develop branch.",
+    "femas": "Fetch new data from origin for the configured master branch.",
     "gp": "Open git commits graph (Git K).",
     "gr": "Open git tags graph (Git K).",
     "hl": "Help of specific topic. Syntax: git hl <alias|command|..>.",
     "hlrs": "Help of reset commands.",
-    "la": "Print all current aliases",
     "lg": "Show commit history.",
     "lg1": "Show decorated oneline history for all refs.",
     "lg2": "Show a formatted log graph for all refs.",
@@ -50,29 +149,29 @@ HELP_TEXTS = {
     "lm": "Show all merges.",
     "lt": "Show all tag",
     "me": "Merge",
-    "medev": "Merge develop branch on current branch.",
-    "mewrk": "Merge work branch on current branch.",
+    "medev": "Merge the configured develop branch on current branch.",
+    "mewrk": "Merge the configured work branch on current branch.",
     "mkcma": "Commit all files with a comment and mkdev. Syntax: git mkcma <description>.",
-    "mkdev": "Merge work on develop, then puth develop. Syntax: git mkdev.",
-    "mkmas": "Merge work on develop, merge develop on master, then push master. Syntax: git mkmas.",
+    "mkdev": "Merge configured work on configured develop, then push the configured develop branch. Syntax: git mkdev.",
+    "mkmas": "Merge configured work on configured develop, merge the configured develop branch on configured master, then push the configured master branch. Syntax: git mkmas.",
     "mkrepo": "Create new fresh repository from remote url with inizial commit. Syntax: git mkrepo <url>.",
     "mktday": "Commit all files with today date as comment and mkdev. Syntax: git mktday.",
-    "mkwrk": "Create local work branch.",
+    "mkwrk": "Create the configured work branch locally.",
     "mkyday": "Commit all files with yesterday date as comment and mkdev. Syntax: git mkyday.",
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
-    "pldev": "Pull (fetch + merge FETCH_HEAD) from origin develop to current branch.",
-    "plmas": "Pull (fetch + merge FETCH_HEAD) from origin master to current branch.",
+    "pldev": "Pull (fetch + merge FETCH_HEAD) from origin configured develop branch to current branch.",
+    "plmas": "Pull (fetch + merge FETCH_HEAD) from origin configured master branch to current branch.",
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
-    "pudev": "Push current branch to origin/develop and set upstream.",
-    "pumas": "Push all changes of current branch on origin/master. (add upstream reference for pull).",
-    "release": "Make release process and create tag on master with current commit [ last commit on work -> develop -> master -> tag ].",
+    "pudev": "Push current branch to origin/<configured develop branch> and set upstream.",
+    "pumas": "Push all changes of current branch on origin/<configured master branch>. (add upstream reference for pull).",
+    "release": "Make release process and create tag on configured master with current commit [ last commit on configured work -> configured develop -> configured master -> tag ].",
     "rf": "Show changes on HEAD reference.",
     "rmloc": "Remove changed files from the working tree.",
     "rmstg": "Remove staged files from index tree.",
     "rmtg": "Remove a tag on current branch and from origin.",
     "rmunt": "Remove untracked files from the working tree.",
-    "rmwrk": "Delete local work branch.",
+    "rmwrk": "Delete the configured work branch locally.",
     "rs": "Reset current branch to HEAD (--hard).",
     "rshrd": "Hard reset alias (--hard).",
     "rskep": "Keep reset alias (--keep).",
@@ -225,9 +324,10 @@ def cmd_aa(extra):
 # Crea un archivio master compresso e lo nomina con il tag corrente (alias ar).
 def cmd_ar(extra):
     args = _to_args(extra)
-    tag = capture_git_output(["describe", "master"])
+    master_branch = get_branch("master")
+    tag = capture_git_output(["describe", master_branch])
     filename = f"{tag}.tar.gz"
-    archive_cmd = ["git", "archive", "master", "--prefix=/"] + args
+    archive_cmd = ["git", "archive", master_branch, "--prefix=/"] + args
     with subprocess.Popen(archive_cmd, stdout=subprocess.PIPE) as archive_proc:
         with open(filename, "wb") as output_io:
             gzip_proc = subprocess.run(["gzip"], stdin=archive_proc.stdout, stdout=output_io, check=True)
@@ -268,32 +368,32 @@ def cmd_co(extra):
 
 # Passa al ramo work (alias cowrk).
 def cmd_cowrk(extra):
-    return cmd_co(["work"] + _to_args(extra))
+    return cmd_co([get_branch("work")] + _to_args(extra))
 
 
 # Passa al ramo develop (alias codev).
 def cmd_codev(extra):
-    return cmd_co(["develop"] + _to_args(extra))
+    return cmd_co([get_branch("develop")] + _to_args(extra))
 
 
 # Passa al ramo master (alias comas).
 def cmd_comas(extra):
-    return cmd_co(["master"] + _to_args(extra))
+    return cmd_co([get_branch("master")] + _to_args(extra))
 
 
 # Crea un ramo work locale (alias mkwrk).
 def cmd_mkwrk(extra):
-    return cmd_co(["-b", "work"] + _to_args(extra))
+    return cmd_co(["-b", get_branch("work")] + _to_args(extra))
 
 
 # Elimina il ramo work locale (alias rmwrk).
 def cmd_rmwrk(extra):
-    return cmd_br(["-d", "work"] + _to_args(extra))
+    return cmd_br(["-d", get_branch("work")] + _to_args(extra))
 
 
-# Apre .git/config con cudatext (alias conf).
+# Apre .git/config con l'editor configurato (alias conf).
 def cmd_conf(extra):
-    return run_command(["/usr/bin/cudatext", ".git/config"] + _to_args(extra))
+    return run_editor_command([".git/config"] + _to_args(extra))
 
 
 # Descrive la revisione HEAD con git describe (alias de).
@@ -316,7 +416,7 @@ def cmd_dime(extra):
     return run_git_cmd(["checkout", "--theirs", "--"], extra)
 
 
-# Apre uno o piu file con cudatext (alias ed).
+# Apre uno o piu file con l'editor configurato (alias ed).
 def cmd_ed(extra):
     paths = _to_args(extra)
     if not paths:
@@ -324,7 +424,7 @@ def cmd_ed(extra):
         sys.exit(1)
     for path in paths:
         expanded = os.path.expanduser(path)
-        run_command(["/usr/bin/cudatext", expanded])
+        run_editor_command([expanded])
 
 
 # Apre ~/.gitconfig (alias edcfg).
@@ -364,12 +464,12 @@ def cmd_feall(extra):
 
 # Effettua fetch --tags --prune origin develop (alias fedev).
 def cmd_fedev(extra):
-    return cmd_fe(["--tags", "--prune", "origin", "develop"] + _to_args(extra))
+    return cmd_fe(["--tags", "--prune", "origin", get_branch("develop")] + _to_args(extra))
 
 
 # Effettua fetch --tags --prune origin master (alias femas).
 def cmd_femas(extra):
-    return cmd_fe(["--tags", "--prune", "origin", "master"] + _to_args(extra))
+    return cmd_fe(["--tags", "--prune", "origin", get_branch("master")] + _to_args(extra))
 
 
 # Apre gitk con tutti i commit (alias gp).
@@ -385,16 +485,6 @@ def cmd_gr(extra):
 # Mostra l'help di git per un argomento specifico (alias hl).
 def cmd_hl(extra):
     return run_git_cmd(["--help"] + _to_args(extra))
-
-
-# Elenca gli alias correnti filtrando con grep (alias la).
-def cmd_la(extra):
-    args = _to_args(extra)
-    pipeline = "git config --list | grep ^alias\\. | grep '=' | grep -v 'echo -e \\\"' | cut -c 7-"
-    if args:
-        pattern = shlex.quote(args[0])
-        pipeline += f" | grep -Ei --color {pattern}"
-    return run_shell(pipeline)
 
 
 # Mostra la cronologia dei commit delegando a lg2 (alias lg).
@@ -473,12 +563,12 @@ def cmd_me(extra):
 
 # Unisce fast-forward il ramo develop (alias medev).
 def cmd_medev(extra):
-    return run_git_cmd(["merge", "--ff-only", "develop"], extra)
+    return run_git_cmd(["merge", "--ff-only", get_branch("develop")], extra)
 
 
 # Unisce fast-forward il ramo work (alias mewrk).
 def cmd_mewrk(extra):
-    return run_git_cmd(["merge", "--ff-only", "work"], extra)
+    return run_git_cmd(["merge", "--ff-only", get_branch("work")], extra)
 
 
 # Esegue la sequenza di merge/push che porta work su master e sincronizza i tag (alias mkmas).
@@ -491,6 +581,9 @@ def cmd_mkmas(extra):
     cmd_pldev([])
     cmd_mewrk([])
     cmd_pudev([])
+    cmd_comas([])
+    cmd_medev([])
+    cmd_pumas([])
     cmd_cowrk([])
     cmd_lg([])
     return cmd_st(extra)
@@ -518,7 +611,9 @@ def cmd_mkcma(extra):
         print("usage: git mkcma \"<comment>\"", file=sys.stderr)
         sys.exit(1)
     comment = " ".join(args)
-    print(f"Commit and merge on develop with comment: \"{comment}\" on develop branch")
+    print(
+        f"Commit and merge on develop with comment: \"{comment}\" on {get_branch('develop')} branch"
+    )
     cmd_cma([comment])
     return cmd_mkdev([])
 
@@ -547,6 +642,8 @@ def cmd_mkrepo(extra):
         sys.exit(1)
     name = args[0]
     print(f"Make new repo for : \"{name}\"")
+    master_branch = get_branch("master")
+    develop_branch = get_branch("develop")
     remote = f"ssh://git@donsrv707.dl.net/git/{name}.git"
     run_command(["git", "clone", remote])
     repo_dir = Path(name)
@@ -563,14 +660,14 @@ def cmd_mkrepo(extra):
     run_git_cmd(["commit", "-m", "Initial empty commit"], cwd=repo_dir)
     run_git_cmd(["remote", "remove", "origin"], cwd=repo_dir)
     run_git_cmd(["remote", "add", "origin", remote], cwd=repo_dir)
-    run_git_cmd(["push", "origin", "master"], cwd=repo_dir)
-    run_git_cmd(["checkout", "-b", "develop"], cwd=repo_dir)
+    run_git_cmd(["push", "origin", master_branch], cwd=repo_dir)
+    run_git_cmd(["checkout", "-b", develop_branch], cwd=repo_dir)
     if example.exists():
         (repo_dir / ".gitignore").unlink(missing_ok=True)
         example.rename(repo_dir / ".gitignore")
     run_git_cmd(["add", "--all"], cwd=repo_dir)
     run_git_cmd(["commit", "-m", "First commit, add .gitignore file"], cwd=repo_dir)
-    return run_git_cmd(["push", "origin", "develop"], cwd=repo_dir)
+    return run_git_cmd(["push", "origin", develop_branch], cwd=repo_dir)
 
 
 # Esegue pull --ff-only sul ramo corrente (alias pl).
@@ -580,12 +677,12 @@ def cmd_pl(extra):
 
 # Esegue pull --ff-only da origin develop (alias pldev).
 def cmd_pldev(extra):
-    return run_git_cmd(["pull", "--ff-only", "origin", "develop"], extra)
+    return run_git_cmd(["pull", "--ff-only", "origin", get_branch("develop")], extra)
 
 
 # Esegue pull --ff-only da origin master (alias plmas).
 def cmd_plmas(extra):
-    return run_git_cmd(["pull", "--ff-only", "origin", "master"], extra)
+    return run_git_cmd(["pull", "--ff-only", "origin", get_branch("master")], extra)
 
 
 # Esegue push di tutti i tag (alias pt).
@@ -600,12 +697,12 @@ def cmd_pu(extra):
 
 # Esegue push -u origin develop (alias pudev).
 def cmd_pudev(extra):
-    return run_git_cmd(["push", "-u", "origin", "develop"], extra)
+    return run_git_cmd(["push", "-u", "origin", get_branch("develop")], extra)
 
 
 # Esegue push -u origin master (alias pumas).
 def cmd_pumas(extra):
-    return run_git_cmd(["push", "-u", "origin", "master"], extra)
+    return run_git_cmd(["push", "-u", "origin", get_branch("master")], extra)
 
 
 # Mostra il reflog (alias rf).
@@ -703,7 +800,10 @@ def cmd_release(extra):
         sys.exit(1)
     tag = args[0]
     comment = " ".join(args[1:])
-    print(f"Make new release with tag: \"{tag}\" - comment: \"{comment}\" on master branch")
+    master_branch = get_branch("master")
+    print(
+        f"Make new release with tag: \"{tag}\" - comment: \"{comment}\" on {master_branch} branch"
+    )
     cmd_codev([])
     cmd_fedev([])
     cmd_mewrk([])
@@ -728,7 +828,9 @@ def cmd_cmarelease(extra):
         sys.exit(1)
     tag = args[0]
     comment = " ".join(args[1:])
-    print(f"Commit all files with tag: \"{tag}\" - comment: \"{comment}\" on work branch")
+    print(
+        f"Commit all files with tag: \"{tag}\" - comment: \"{comment}\" on {get_branch('work')} branch"
+    )
     cmd_cma([f"{tag}: {comment}"])
     return cmd_release([tag, comment])
 
@@ -765,7 +867,6 @@ COMMANDS = {
     "gr": cmd_gr,
     "hl": cmd_hl,
     "hlrs": lambda extra: print(RESET_HELP) if not extra else print(RESET_HELP),
-    "la": cmd_la,
     "lg": cmd_lg,
     "lg1": cmd_lg1,
     "lg2": cmd_lg2,
@@ -826,10 +927,15 @@ def print_all_help():
 def main(argv=None):
     """Parse CLI arguments and either show help text or invoke the requested alias."""
     args = list(argv) if argv is not None else sys.argv[1:]
+    git_root = get_git_root()
+    load_cli_config(git_root)
     if not args:
         print("Please provide a command or --help", file=sys.stderr)
         print_all_help()
         sys.exit(1)
+    if args[0] == "--write-config":
+        write_default_config(git_root)
+        return
     if args[0] == "--upgrade":
         upgrade_self()
         return

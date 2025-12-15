@@ -31,6 +31,26 @@ uvx --form git-alias -- lg
 
 `uvx` forwards any following parameters (`<alias>` and `[args...]`) to the invoked `git-alias` command.
 
+## Configuring branch names
+
+Every invocation of `git-alias` reads a `.g.conf` file from the root of the current Git repository to determine which branches should be considered as `master`, `develop`, and `work`. To generate the default configuration run:
+
+```bash
+git-alias --write-config
+# or
+g --write-config
+```
+
+This creates `.g.conf` (if missing) with the default mapping:
+
+```
+master=master
+develop=develop
+work=work
+```
+
+Edit the values to match your team’s naming scheme. Subsequent executions automatically use the customized names for every alias (checkout, merge, release workflows, etc.). If a key is missing, the CLI silently falls back to the built-in defaults shown above.
+
 ## Helper launcher scripts
 
 If you keep the `uv`/`uvx` CLI tools in `$HOME/bin`, you can rely on the provided installer scripts:
