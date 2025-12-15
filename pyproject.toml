@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel", "build"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "git-alias-emulator"
+version = "0.1.0"
+description = "Emula gli alias git personalizzati attraverso un'interfaccia compatibile con uvx."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Francesco Rolando" }
+]
+keywords = ["git", "alias", "uv", "astral", "uvx"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Configuration Management",
+]
+
+[project.urls]
+Homepage = "https://github.com/Ogekuri/G"
+Repository = "https://github.com/Ogekuri/G"
+
+[project.scripts]
+git-alias = "git_alias.core:main"
+git-alias-emulator = "git_alias.core:main"
+g = "git_alias.core:main"
+
+[tool.setuptools]
+packages = ["git_alias"]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.uv.forms.git-alias-emulator]
+description = "Avvia il comando git-alias attraverso uvx."
+command = "git-alias"

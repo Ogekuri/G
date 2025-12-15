@@ -1,2 +1,44 @@
-# G
-Python GIT tool
+# Git Alias Emulator
+
+This project exposes the `p.python` script (installed as `git-alias`) to reproduce the GIT aliases defined in `gitconfig.conf`, making them runnable both as a Python package and through `uvx`.
+
+## Requirements
+
+- Python 3.11+
+- `uvx` (Astra UV) installed to execute commands in the cloud.
+
+## Installation
+
+```bash
+python -m pip install .
+```
+
+After installation, the `git-alias`, `g`, and `git-alias-emulator` commands become globally available. Alternatively, you can invoke `p.python` directly from the repository root.
+
+## Usage with uvx
+
+The package exposes a dedicated form in `pyproject.toml`, so you can run it from any folder with:
+
+```bash
+uvx --from git+https://github.com/Ogekuri/G.git git-alias -- <alias> [args...]
+```
+
+When you are in the project root, you can also call:
+
+```bash
+uvx --form git-alias-emulator -- lg
+```
+
+`uvx` forwards any following parameters (`<alias>` and `[args...]`) to the invoked `git-alias` command.
+
+## Examples
+
+- `./p.python --help` prints the alphabetized alias list.
+- `./p.python lg --help` shows the help text for the `lg` alias.
+- `./p.python cm "Message"` runs `git commit` with the provided message.
+
+## Testing
+
+```bash
+.venv/bin/python -m unittest tests/test_alias_help.py
+```

@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+"""Launcher che rende disponibile il modulo `git_alias.core` come script stand-alone."""
+
+from git_alias.core import main
+
+
+if __name__ == "__main__":
+    main()
