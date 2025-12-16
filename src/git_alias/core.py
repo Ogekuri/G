@@ -1,19 +1,32 @@
 #!/usr/bin/env python3
 """Portable implementation of the user's git aliases."""
 
+import argparse
+import json
 import os
+import re
 import shlex
 import subprocess
 import sys
-from datetime import datetime, timedelta
+from collections import defaultdict
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 
 CONFIG_FILENAME = ".g.conf"
+DEFAULT_VER_RULES = [
+    ("README.md", r'\s*"(\d+\.\d+\.\d+)"\s*'),
+    ("src/**/*.py", r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'),
+    ("pyproject.toml", r'\bversion\s*=\s*"(\d+\.\d+\.\d+)"'),
+]
 DEFAULT_CONFIG = {
     "master": "master",
     "develop": "develop",
     "work": "work",
     "editor": "edit",
+    "ver_rules": json.dumps(DEFAULT_VER_RULES),
 }
 CONFIG = DEFAULT_CONFIG.copy()
 BRANCH_KEYS = ("master", "develop", "work")
@@ -39,6 +52,45 @@ def get_branch(name):
 def get_editor():
     """Return the configured editor command."""
     return get_config_value("editor")
+
+
+def _load_config_rules(key, fallback):
+    """Load wildcard/regex rule pairs from configuration."""
+    raw_value = CONFIG.get(key, DEFAULT_CONFIG[key])
+    parsed = raw_value if isinstance(raw_value, list) else None
+    if parsed is None:
+        try:
+            parsed = json.loads(raw_value)
+        except (json.JSONDecodeError, TypeError) as exc:
+            print(f"Ignoring invalid JSON for {key}: {exc}", file=sys.stderr)
+            return list(fallback)
+    if not isinstance(parsed, list):
+        print(f"Ignoring non-list value for {key}", file=sys.stderr)
+        return list(fallback)
+    rules = []
+    for entry in parsed:
+        pattern = regex = None
+        if isinstance(entry, dict):
+            pattern = entry.get("pattern") or entry.get("glob")
+            regex = entry.get("regex")
+        elif isinstance(entry, (list, tuple)) and len(entry) >= 2:
+            pattern, regex = entry[0], entry[1]
+        if isinstance(pattern, str):
+            pattern = pattern.strip()
+        else:
+            pattern = None
+        if isinstance(regex, str):
+            regex = regex.strip()
+        else:
+            regex = None
+        if pattern and regex:
+            rules.append((pattern, regex))
+    return rules if rules else list(fallback)
+
+
+def get_version_rules():
+    """Return the configured wildcard/regex pairs for version scanning."""
+    return _load_config_rules("ver_rules", DEFAULT_VER_RULES)
 
 
 def get_git_root():
@@ -87,7 +139,8 @@ def load_cli_config(root=None):
 def write_default_config(root=None):
     """Write the default configuration file in the repository root."""
     config_path = get_config_path(root)
-    lines = [f"{key}={DEFAULT_CONFIG[key]}" for key in ("master", "develop", "work", "editor")]
+    keys = ("master", "develop", "work", "editor", "ver_rules")
+    lines = [f"{key}={DEFAULT_CONFIG[key]}" for key in keys]
     config_path.write_text("\n".join(lines) + "\n")
     print(f"Configuration written to {config_path}")
     return config_path
@@ -122,6 +175,7 @@ HELP_TEXTS = {
     "cm": "Commit with annotation: git cm '<descritoon>'.",
     "cma": "Add all files and commit with annotation: git cma '<descritoon>'.",
     "cmarelease": "Make a commit with all files and do a release [ commit all file on configured work -> configured develop -> configured master -> tag ].",
+    "changelog": "Generate CHANGELOG.md from conventional commits (supports --include-unreleased, --force-write, --print-only).",
     "co": "Checkout a specific branch: git co '<branch>'.",
     "codev": "Checkout the configured develop branch.",
     "comas": "Checkout the configured master branch.",
@@ -187,7 +241,7 @@ HELP_TEXTS = {
     "tg": "Create a new annotate tag. Syntax: git tg <description> <tag>.",
     "tree": "Show commit's tree.",
     "unstg": "Un-stage a file from commit: git unstg '<filename>'. Unstage all files with: git unstg *.",
-    "ver": "Primt all version tags.",
+    "ver": "Verify version consistency across configured files.",
 }
 
 RESET_HELP = """
@@ -295,9 +349,266 @@ def run_command(cmd, cwd=None):
     return subprocess.run(cmd, check=True, cwd=cwd)
 
 
+# Run git commands returning stdout as text.
+def run_git_text(args, cwd=None, check=True):
+    proc = subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if check and proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or f"git {' '.join(args)} failed")
+    return proc.stdout.strip()
+
+
 # Esegue una pipeline nella shell quando serve costruire comandi complessi.
 def run_shell(command, cwd=None):
     return subprocess.run(command, shell=True, check=True, cwd=cwd)
+
+
+# Run git commands returning stdout as text.
+def run_git_text(args, cwd=None, check=True):
+    proc = subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if check and proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or f"git {' '.join(args)} failed")
+    return proc.stdout.strip()
+
+
+def is_inside_git_repo():
+    try:
+        output = run_git_text(["rev-parse", "--is-inside-work-tree"])
+    except RuntimeError:
+        return False
+    return output.strip().lower() == "true"
+
+
+@dataclass
+class TagInfo:
+    name: str
+    iso_date: str
+    object_name: str
+
+
+DELIM = "\x1f"
+RECORD = "\x1e"
+_CONVENTIONAL_RE = re.compile(
+    r"^(?P<type>feat|fix|refactor|docs|style|revert|perf|test|build|ci|chore|misc)"
+    r"(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?:\s+(?P<desc>.+)$",
+    re.IGNORECASE,
+)
+_SEMVER_TAG_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
+SECTION_EMOJI = {
+    "Features": "⛰️",
+    "Bug Fixes": "🐛",
+    "Refactor": "🚜",
+    "Documentation": "📚",
+    "Styling": "🎨",
+    "Miscellaneous Tasks": "⚙️",
+    "Revert": "◀️",
+}
+
+
+def list_tags_sorted_by_date(repo_root: Path) -> List[TagInfo]:
+    fmt = f"%(refname:strip=2){DELIM}%(creatordate:short){DELIM}%(objectname)"
+    output = run_git_text(
+        ["for-each-ref", "--sort=creatordate", f"--format={fmt}", "refs/tags"], cwd=repo_root, check=False
+    )
+    if not output:
+        return []
+    tags: List[TagInfo] = []
+    for line in output.splitlines():
+        parts = line.split(DELIM)
+        if len(parts) != 3:
+            continue
+        name, date_s, obj = parts
+        if not _SEMVER_TAG_RE.match(name):
+            continue
+        tags.append(TagInfo(name=name, iso_date=date_s or "unknown-date", object_name=obj))
+    return tags
+
+
+def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]:
+    fmt = f"%s{RECORD}"
+    out = run_git_text(
+        ["log", "--no-merges", f"--pretty=format:{fmt}", rev_range],
+        cwd=repo_root,
+        check=False,
+    )
+    if not out:
+        return []
+    return [x.strip() for x in out.split(RECORD) if x.strip()]
+
+
+def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
+    match = _CONVENTIONAL_RE.match(subject.strip())
+    if not match:
+        return (None, "")
+    ctype = match.group("type").lower()
+    scope = match.group("scope")
+    desc = match.group("desc").strip()
+    scope_text = f"*({scope})* " if scope else ""
+    line = f"- {scope_text}{desc}"
+    mapping = {
+        "feat": "Features",
+        "fix": "Bug Fixes",
+        "refactor": "Refactor",
+        "docs": "Documentation",
+        "style": "Styling",
+        "revert": "Revert",
+        "perf": "Miscellaneous Tasks",
+        "test": "Miscellaneous Tasks",
+        "build": "Miscellaneous Tasks",
+        "ci": "Miscellaneous Tasks",
+        "chore": "Miscellaneous Tasks",
+        "misc": "Miscellaneous Tasks",
+    }
+    section = mapping.get(ctype)
+    return (section, line) if section else (None, "")
+
+
+def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_range: str) -> Optional[str]:
+    subjects = git_log_subjects(repo_root, rev_range)
+    buckets: Dict[str, List[str]] = defaultdict(list)
+    for subj in subjects:
+        section, line = categorize_commit(subj)
+        if section and line:
+            buckets[section].append(line)
+    if not any(buckets.values()):
+        return None
+    lines: List[str] = []
+    lines.append(f"## {title} - {date_s}")
+    order = [
+        "Features",
+        "Bug Fixes",
+        "Refactor",
+        "Documentation",
+        "Styling",
+        "Miscellaneous Tasks",
+        "Revert",
+    ]
+    for sec in order:
+        entries = buckets.get(sec, [])
+        if entries:
+            emoji = SECTION_EMOJI.get(sec, "")
+            header = f"### {emoji}  {sec}".rstrip()
+            lines.append(header)
+            lines.extend(entries)
+            lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _canonical_origin_base(repo_root: Path) -> Optional[str]:
+    url = run_git_text(["remote", "get-url", "origin"], cwd=repo_root, check=False).strip()
+    if not url:
+        return None
+    if url.startswith("git@"):
+        host_repo = url.split(":", 1)[1]
+        host = url.split("@", 1)[1].split(":", 1)[0]
+        base = f"https://{host}/" + host_repo
+    else:
+        base = url
+    if base.endswith(".git"):
+        base = base[:-4]
+    parsed = urlparse(base)
+    if not parsed.scheme or not parsed.netloc:
+        return None
+    return base
+
+
+def get_origin_compare_url(base_url: Optional[str], prev_tag: Optional[str], tag: str) -> Optional[str]:
+    if not base_url:
+        return None
+    if prev_tag:
+        return f"{base_url}/compare/{prev_tag}..{tag}"
+    return f"{base_url}/releases/tag/{tag}"
+
+
+def build_history_section(repo_root: Path, tags: List[TagInfo], include_unreleased: bool) -> Optional[str]:
+    base = _canonical_origin_base(repo_root)
+    if not base:
+        return None
+    lines = ["# History"]
+    prev: Optional[str] = None
+    for tag in tags:
+        compare = get_origin_compare_url(base, prev, tag.name)
+        if compare:
+            lines.append(f"[{tag.name.lstrip('v')}]: {compare}")
+        prev = tag.name
+    if include_unreleased and tags:
+        compare = get_origin_compare_url(base, tags[-1].name, "HEAD")
+        if compare:
+            lines.append(f"[unreleased]: {compare}")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def generate_changelog_document(repo_root: Path, include_unreleased: bool) -> str:
+    tags = list_tags_sorted_by_date(repo_root)
+    origin_base = _canonical_origin_base(repo_root)
+    lines: List[str] = ["# Changelog", ""]
+    if include_unreleased:
+        rev_range = f"{tags[-1].name}..HEAD" if tags else "HEAD"
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        section = generate_section_for_range(repo_root, "Unreleased", today, rev_range)
+        if section:
+            lines.append(section)
+    if tags:
+        prev: Optional[str] = None
+        for tag in tags:
+            rev_range = tag.name if prev is None else f"{prev}..{tag.name}"
+            display = tag.name.lstrip("v")
+            compare_url = get_origin_compare_url(origin_base, prev, tag.name)
+            title = f"[{display}]({compare_url})" if compare_url else display
+            section = generate_section_for_range(repo_root, title, tag.iso_date, rev_range)
+            if section:
+                lines.append(section)
+            prev = tag.name
+    else:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        section = generate_section_for_range(repo_root, "Unreleased", today, "HEAD")
+        if section:
+            lines.append(section)
+    history = build_history_section(repo_root, tags, include_unreleased)
+    if history:
+        lines.append("")
+        lines.append(history)
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _collect_version_files(root, pattern):
+    """Return an ordered list of files that match the provided glob pattern."""
+    files = []
+    seen = set()
+    trimmed = (pattern or "").strip()
+    if not trimmed:
+        return files
+    for path in root.rglob(trimmed):
+        if path.is_file():
+            resolved = path.resolve()
+            if resolved not in seen:
+                seen.add(resolved)
+                files.append(path)
+    return files
+
+
+def _iter_versions_in_text(text, compiled_regexes):
+    """Yield every version string extracted by the compiled regex list."""
+    for regex in compiled_regexes:
+        for match in regex.finditer(text):
+            if match.groups():
+                for group in match.groups():
+                    if group:
+                        yield group
+                        break
+            else:
+                yield match.group(0)
 
 
 # Aggiorna il comando installato sfruttando il tool uv.
@@ -792,9 +1103,47 @@ def cmd_unstg(extra):
     return run_git_cmd(["reset", "--mixed", "--"], extra)
 
 
-# Elenca i tag di versione (alias ver).
+# Verifica la consistenza delle versioni nei file configurati (alias ver).
 def cmd_ver(extra):
-    return run_git_cmd(["tag", "-l"], extra)
+    del extra  # unused
+    root = get_git_root()
+    rules = get_version_rules()
+    if not rules:
+        print("No version rules configured.", file=sys.stderr)
+        sys.exit(1)
+    canonical = None
+    canonical_file = None
+    for pattern, expression in rules:
+        files = _collect_version_files(root, pattern)
+        if not files:
+            continue
+        try:
+            compiled = re.compile(expression)
+        except re.error as exc:
+            print(f"Ignoring invalid regex '{expression}' for pattern '{pattern}': {exc}", file=sys.stderr)
+            continue
+        for file_path in files:
+            try:
+                text = file_path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                text = file_path.read_text(encoding="utf-8", errors="ignore")
+            except OSError as exc:
+                print(f"Unable to read {file_path}: {exc}", file=sys.stderr)
+                continue
+            for version in _iter_versions_in_text(text, [compiled]):
+                if canonical is None:
+                    canonical = version
+                    canonical_file = file_path
+                elif version != canonical:
+                    print(
+                        f"Version mismatch between {canonical_file} ({canonical}) and {file_path} ({version})",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+    if canonical is None:
+        print("No version string matched the configured rule list.", file=sys.stderr)
+        sys.exit(1)
+    print(canonical)
 
 
 # Esegue la procedura di release da work a master e aggiunge un tag (alias release).
@@ -838,6 +1187,39 @@ def cmd_cmarelease(extra):
     )
     cmd_cma([f"{tag}: {comment}"])
     return cmd_release([tag, comment])
+
+
+def cmd_changelog(extra):
+    parser = argparse.ArgumentParser(prog="g changelog", add_help=False)
+    parser.add_argument("--force-write", dest="force_write", action="store_true")
+    parser.add_argument("--include-unreleased", action="store_true")
+    parser.add_argument("--print-only", action="store_true")
+    parser.add_argument("--help", action="store_true")
+    try:
+        args = parser.parse_args(list(extra))
+    except SystemExit:
+        print("Argomenti non validi per g changelog.", file=sys.stderr)
+        sys.exit(2)
+    if args.help:
+        print_command_help("changelog")
+        return
+    if not is_inside_git_repo():
+        print("Errore: eseguire g changelog all'interno di un repository Git.", file=sys.stderr)
+        sys.exit(2)
+    repo_root = get_git_root()
+    content = generate_changelog_document(repo_root, args.include_unreleased)
+    if args.print_only:
+        print(content, end="")
+        return
+    destination = Path(repo_root) / "CHANGELOG.md"
+    if destination.exists() and not args.force_write:
+        print(
+            "CHANGELOG.md esiste già. Usa --force-write per sovrascrivere il file.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    destination.write_text(content, encoding="utf-8")
+    print(f"\nFile generato: {destination}")
 
 COMMANDS = {
     "aa": cmd_aa,
@@ -914,6 +1296,7 @@ COMMANDS = {
     "ver": cmd_ver,
     "release": cmd_release,
     "cmarelease": cmd_cmarelease,
+    "changelog": cmd_changelog,
 }
 
 

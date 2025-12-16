@@ -1,28 +1,24 @@
 ---
-title: "Requisiti di Git Alias Emulator"
+title: "Requisiti di Git Alias CLI"
 description: "Specifiche dei requisiti software"
 date: "2025-12-15"
 author: "Francesco Rolando"
 scope:
   paths:
     - "**/*.py"
-    - "**/*.ipynb"
-    - "**/*.c"
-    - "**/*.h"
-    - "**/*.cpp"
   excludes:
     - ".*/**"
 visibility: "bozza"
 tags: ["markdown", "requisiti", "git-alias"]
 ---
 
-# Requisiti di Git Alias Emulator
-**Versione**: 0.4
+# Requisiti di Git Alias CLI
+**Versione**: 0.8
 **Autore**: Francesco Rolando  
 **Data**: 2025-12-15
 
 ## Indice
-- [Requisiti di Git Alias Emulator](#requisiti-di-git-alias-emulator)
+- [Requisiti di Git Alias CLI](#requisiti-di-git-alias-cli)
   - [Indice](#indice)
   - [Cronologia Revisioni](#cronologia-revisioni)
   - [1. Introduzione](#1-introduzione)
@@ -43,6 +39,10 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2025-12-15 | 0.2 | Configurazione dei branch tramite `.g.conf` e flag `--write-config` |
 | 2025-12-15 | 0.3 | Aggiunta configurazione dell'editor via `.g.conf` e default `edit` |
 | 2025-12-15 | 0.4 | Ordinamento output help con sezioni per funzioni di gestione |
+| 2025-12-15 | 0.5 | Rimozione dell'alias `ver` e degli obblighi associati |
+| 2025-12-15 | 0.6 | Reintroduzione dell'alias `ver` con ricerca delle versioni configurabile |
+| 2025-12-15 | 0.7 | Configurazione del comando `ver` tramite coppie wildcard/regexp abbinate |
+| 2025-12-15 | 0.8 | Introduzione del comando `changelog` per generare CHANGELOG.md |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -84,7 +84,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 ## 3. Requisiti
 ### 3.1 Progettazione e Implementazione
 - **DES-001**: Il dispatcher CLI deve rifiutare comandi non mappati, mostrare l'elenco degli alias e terminare con errore quando un comando non è riconosciuto.
-- **DES-002**: Ogni alias deve inoltrare eventuali argomenti aggiuntivi al comando git corrispondente, propagando il codice di uscita del processo esterno.
+- **DES-002**: Ogni alias deve inoltrare eventuali argomenti aggiuntivi al comando git corrispondente, propagando il codice di uscita del processo esterno. 
 - **DES-003**: Ogni comando deve avere un testo di help e il comando globale `--help` deve elencarli in ordine alfabetico.
 - **DES-004**: Se l'eseguibile viene chiamato senza argomenti deve stampare un messaggio, mostrare l'help completo e uscire con codice di errore.
 - **DES-005**: Gli alias costituiscono la base per lo sviluppo di alias più complessi, pertanto se nell'implementazione di un alias è necessario svolgere una attività implementata in un alias più semplice verrà utilizzata la funzione che specializza quella più semplice.
@@ -102,9 +102,11 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-009**: Gli alias di merge e promozione devono offrire merge fast-forward (`me`, `medev`, `mewrk`) e i workflow automatizzati `mkdev` e `mkmas` per integrare `work` su `develop` con pull e push coordinati.
 - **REQ-010**: Gli alias di rilascio devono orchestrare la promozione da `work` verso `develop` e `master`, applicando tag annotati e pushando il tag remoto (`release`, `cmarelease`).
 - **REQ-011**: Gli alias di reset e pulizia devono applicare le modalità di reset (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`) e le pulizie dello working tree (`rmloc`, `rmstg`, `rmunt`) con help dedicato (`hlrs`).
-- **REQ-012**: Gli alias di tagging e archiviazione devono gestire la creazione di tag annotati (`tg`), la rimozione locale/remota (`rmtg`), la visualizzazione (`lt`, `ver`) e l'archiviazione del ramo `master` in tar.gz (`ar`).
+- **REQ-012**: Gli alias di tagging e archiviazione devono gestire la creazione di tag annotati (`tg`), la rimozione locale/remota (`rmtg`), la visualizzazione (`lt`) e l'archiviazione del ramo `master` in tar.gz (`ar`).
 - **REQ-013**: L'alias `mkrepo` deve creare un nuovo repository remoto clonandolo, inizializzandolo, configurando `.gitignore` di esempio e pushando i branch `master` e `develop`.
 - **REQ-014**: Gli alias di modifica file (`conf`, `ed`, `edcfg`, `edign`, `edpro`, `edbsh`, `edbrc`) devono aprire i rispettivi file di configurazione usando il comando definito dal parametro `editor` nel file `.g.conf` (default `edit`), segnalando errore se non viene passato alcun percorso quando richiesto.
-- **REQ-015**: Il comando `--write-config` deve generare nella root del repository git il file `.g.conf` contenente i nomi di default dei branch `master`, `develop`, `work` e il comando `editor=edit`, in modo che l'utente possa personalizzarli manualmente.
+- **REQ-015**: Il comando `--write-config` deve generare nella root del repository git il file `.g.conf` contenente i nomi di default dei branch `master`, `develop`, `work`, il comando `editor=edit` e la lista di coppie abbinate `(<wildcard>, <regexp>)` usate dal comando `ver`, così che l'utente possa personalizzarle manualmente.
 - **REQ-016**: All'avvio della CLI il valore del parametro `editor` definito in `.g.conf` deve essere caricato e utilizzato per tutte le operazioni di editing, adottando `edit` quando il parametro manca o è vuoto.
 - **REQ-017**: L'invocazione della CLI con `--help` o senza comandi deve mostrare prima le funzioni `--write-config`, `--upgrade`, `--remove` e poi l'elenco completo degli alias disponibili.
+- **REQ-018**: Il comando `ver` deve leggere la lista di coppie `(<wildcard>, <regexp>)` dal file `.g.conf` (o usare i valori di default), applicare ogni regexp solo ai file che corrispondono alla wildcard associata, raccogliere tutte le versioni trovate e: (a) stampare la versione quando tutte le occorrenze coincidono, oppure (b) terminare con errore indicando i primi due file che presentano versioni differenti.
+- **REQ-019**: Il comando `changelog` deve replicare la logica dello script `mkchangelog.py`, generare sempre il file `CHANGELOG.md` dal repository corrente usando le descrizioni dei commit, supportare l'opzione `--include-unreleased`, stampare il contenuto quando si usa `--print-only` e scrivere su disco solo se il file non esiste o quando viene specificato `--force-write`.

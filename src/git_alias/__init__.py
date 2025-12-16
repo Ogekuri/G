@@ -1,4 +1,4 @@
-"""Pacchetto principale dell'emulatore di alias git per uvx."""
+"""Pacchetto principale della CLI git-alias per uvx."""
 
 __version__ = "0.1.0"
 
