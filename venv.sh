@@ -22,8 +22,8 @@ if ! [ -d "${VENVDIR}/" ]; then
 fi
 
 # Install requirements
-#source ${VENVDIR}/bin/activate
+source ${VENVDIR}/bin/activate
 
-#echo -n "Install python requirements ..."
-#${VENVDIR}/bin/pip install -r requirements.txt >/dev/null
-#echo "done."
+echo -n "Install python requirements ..."
+${VENVDIR}/bin/pip install -r requirements.txt >/dev/null
+echo "done."

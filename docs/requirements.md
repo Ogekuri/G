@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git Alias CLI
-**Versione**: 0.8
+**Versione**: 0.13
 **Autore**: Francesco Rolando  
 **Data**: 2025-12-15
 
@@ -43,6 +43,11 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2025-12-15 | 0.6 | Reintroduzione dell'alias `ver` con ricerca delle versioni configurabile |
 | 2025-12-15 | 0.7 | Configurazione del comando `ver` tramite coppie wildcard/regexp abbinate |
 | 2025-12-15 | 0.8 | Introduzione del comando `changelog` per generare CHANGELOG.md |
+| 2025-12-15 | 0.9 | Rimozione degli alias `mkrepo`, `mkyday`, `mktday`, `mkcma`, `mkmas`, `mkdev` |
+| 2025-12-15 | 0.10 | Rimozione degli alias `cmarelease`, `release`, `cowrk`, `codev`, `comas`, `mkwrk` |
+| 2025-12-15 | 0.11 | Ridenominazione dell'alias `brall` in `lsbr` |
+| 2025-12-15 | 0.12 | Rimozione degli alias specifici per i branch `develop`/`master` (`fedev`, `femas`, `medev`, `mewrk`, `pldev`, `plmas`, `pudev`, `pumas`) |
+| 2025-12-15 | 0.13 | Aggiornamento delle categorie del comando `changelog` (tipi `new`/`change`, rimozione `perf`/`test`/`build`/`ci`/`chore`, sezione \"Miscellaneous Tasks\" limitata a `misc`) |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -95,18 +100,17 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-002**: Il comando `--remove` deve disinstallare l'utility globale tramite `uv tool uninstall git-alias`.
 - **REQ-003**: Il comando `--help` deve elencare tutti gli alias disponibili o mostrare la descrizione del comando richiesto quando viene specificato un alias.
 - **REQ-004**: L'alias `aa` deve aggiungere tutte le modifiche e i file nuovi all'area di staging con `git add --all`.
-- **REQ-005**: Gli alias di commit devono permettere commit standard (`cm`, `cma`) e commit automatizzati con messaggi precompilati (`mkcma`, `mkyday`, `mktday`) che eseguono anche il workflow di integrazione `mkdev`.
-- **REQ-006**: Gli alias di navigazione branch devono consentire checkout mirati (`co`) e scorciatoie dedicate a rami predefiniti (`cowrk`, `codev`, `comas`) oltre alla creazione e rimozione del ramo `work` (`mkwrk`, `rmwrk`), utilizzando i nomi di branch configurati nel file `.g.conf` (default `work`, `develop`, `master`).
-- **REQ-007**: Gli alias di fetch/pull/push devono eseguire le varianti per il ramo corrente e per i rami `develop` e `master` (`fe`, `feall`, `fedev`, `femas`, `pl`, `pldev`, `plmas`, `pt`, `pu`, `pudev`, `pumas`).
-- **REQ-008**: Gli alias di ispezione devono fornire viste su branch, log e stato (`br`, `brall`, `ck`, `lg`, `lg1`, `lg2`, `lg3`, `ll`, `lm`, `lh`, `lt`, `ver`, `tree`, `gp`, `gr`, `de`, `rf`, `st`).
-- **REQ-009**: Gli alias di merge e promozione devono offrire merge fast-forward (`me`, `medev`, `mewrk`) e i workflow automatizzati `mkdev` e `mkmas` per integrare `work` su `develop` con pull e push coordinati.
-- **REQ-010**: Gli alias di rilascio devono orchestrare la promozione da `work` verso `develop` e `master`, applicando tag annotati e pushando il tag remoto (`release`, `cmarelease`).
+- **REQ-005**: Gli alias di commit devono permettere commit standard (`cm`, `cma`) senza automatismi aggiuntivi né messaggi precompilati.
+- **REQ-006**: Gli alias di navigazione branch devono consentire checkout mirati (`co`) e la rimozione del ramo `work` (`rmwrk`), utilizzando i nomi di branch configurati nel file `.g.conf` (default `work`, `develop`, `master`).
+- **REQ-007**: Gli alias di fetch/pull/push devono eseguire le varianti generiche per il ramo corrente (`fe`, `feall`, `pl`, `pt`, `pu`), senza scorciatoie dedicate ai rami configurati.
+- **REQ-008**: Gli alias di ispezione devono fornire viste su branch, log e stato (`br`, `lsbr`, `ck`, `lg`, `lg1`, `lg2`, `lg3`, `ll`, `lm`, `lh`, `lt`, `ver`, `tree`, `gp`, `gr`, `de`, `rf`, `st`).
+- **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
+- **REQ-010**: Il sistema non deve fornire alias di rilascio automatico; le operazioni di promozione tra branch e tagging vanno eseguite manualmente con i comandi git standard.
 - **REQ-011**: Gli alias di reset e pulizia devono applicare le modalità di reset (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`) e le pulizie dello working tree (`rmloc`, `rmstg`, `rmunt`) con help dedicato (`hlrs`).
 - **REQ-012**: Gli alias di tagging e archiviazione devono gestire la creazione di tag annotati (`tg`), la rimozione locale/remota (`rmtg`), la visualizzazione (`lt`) e l'archiviazione del ramo `master` in tar.gz (`ar`).
-- **REQ-013**: L'alias `mkrepo` deve creare un nuovo repository remoto clonandolo, inizializzandolo, configurando `.gitignore` di esempio e pushando i branch `master` e `develop`.
-- **REQ-014**: Gli alias di modifica file (`conf`, `ed`, `edcfg`, `edign`, `edpro`, `edbsh`, `edbrc`) devono aprire i rispettivi file di configurazione usando il comando definito dal parametro `editor` nel file `.g.conf` (default `edit`), segnalando errore se non viene passato alcun percorso quando richiesto.
-- **REQ-015**: Il comando `--write-config` deve generare nella root del repository git il file `.g.conf` contenente i nomi di default dei branch `master`, `develop`, `work`, il comando `editor=edit` e la lista di coppie abbinate `(<wildcard>, <regexp>)` usate dal comando `ver`, così che l'utente possa personalizzarle manualmente.
-- **REQ-016**: All'avvio della CLI il valore del parametro `editor` definito in `.g.conf` deve essere caricato e utilizzato per tutte le operazioni di editing, adottando `edit` quando il parametro manca o è vuoto.
-- **REQ-017**: L'invocazione della CLI con `--help` o senza comandi deve mostrare prima le funzioni `--write-config`, `--upgrade`, `--remove` e poi l'elenco completo degli alias disponibili.
-- **REQ-018**: Il comando `ver` deve leggere la lista di coppie `(<wildcard>, <regexp>)` dal file `.g.conf` (o usare i valori di default), applicare ogni regexp solo ai file che corrispondono alla wildcard associata, raccogliere tutte le versioni trovate e: (a) stampare la versione quando tutte le occorrenze coincidono, oppure (b) terminare con errore indicando i primi due file che presentano versioni differenti.
-- **REQ-019**: Il comando `changelog` deve replicare la logica dello script `mkchangelog.py`, generare sempre il file `CHANGELOG.md` dal repository corrente usando le descrizioni dei commit, supportare l'opzione `--include-unreleased`, stampare il contenuto quando si usa `--print-only` e scrivere su disco solo se il file non esiste o quando viene specificato `--force-write`.
+- **REQ-013**: Gli alias di modifica file (`ed`, `edcfg`, `edign`, `edpro`, `edbsh`, `edbrc`,`edgit`) devono aprire i rispettivi file di configurazione usando il comando definito dal parametro `editor` nel file `.g.conf` (default `edit`), segnalando errore se non viene passato alcun percorso quando richiesto.
+- **REQ-014**: Il comando `--write-config` deve generare nella root del repository git il file `.g.conf` contenente i nomi di default dei branch `master`, `develop`, `work`, il comando `editor=edit` e la lista di coppie abbinate `(<wildcard>, <regexp>)` usate dal comando `ver`, così che l'utente possa personalizzarle manualmente.
+- **REQ-015**: All'avvio della CLI il valore del parametro `editor` definito in `.g.conf` deve essere caricato e utilizzato per tutte le operazioni di editing, adottando `edit` quando il parametro manca o è vuoto.
+- **REQ-016**: L'invocazione della CLI con `--help` o senza comandi deve mostrare prima le funzioni `--write-config`, `--upgrade`, `--remove` e poi l'elenco completo degli alias disponibili.
+- **REQ-017**: Il comando `ver` deve leggere la lista di coppie `(<wildcard>, <regexp>)` dal file `.g.conf` (o usare i valori di default), applicare ogni regexp solo ai file che corrispondono alla wildcard associata, raccogliere tutte le versioni trovate e: (a) stampare la versione quando tutte le occorrenze coincidono, oppure (b) terminare con errore indicando i primi due file che presentano versioni differenti.
+- **REQ-018**: Il comando `changelog` deve replicare la logica dello script `mkchangelog.py`, generare sempre il file `CHANGELOG.md` dal repository corrente usando le descrizioni dei commit, supportare l'opzione `--include-unreleased`, stampare il contenuto quando si usa `--print-only` e scrivere su disco solo se il file non esiste o quando viene specificato `--force-write`. Il parser deve riconoscere i nuovi tipi `new` (Features) e `change` (Refactor/Changes), ignorare i vecchi tipi `perf`, `test`, `build`, `ci`, `chore`, e includere la sezione \"Miscellaneous Tasks\" esclusivamente per il tipo `misc`, senza generare la sezione \"Other\".

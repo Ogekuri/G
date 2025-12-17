@@ -32,6 +32,5 @@ Create and execute a TODO list following these steps strictly:
 
 <h2 id="users-request">User's Request</h2>
 
-```text
 $ARGUMENTS
-```
+

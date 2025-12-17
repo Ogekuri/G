@@ -170,31 +170,24 @@ HELP_TEXTS = {
     "aa": "Add all file changes/added to stage area for commit.",
     "ar": "Archive the configured master branch as zip file. Use tag as filename.",
     "br": "Create a new brach.",
-    "brall": "Print all branches.",
+    "changelog": "Generate CHANGELOG.md from conventional commits (supports --include-unreleased, --force-write, --print-only).",
     "ck": "Check differences.",
     "cm": "Commit with annotation: git cm '<descritoon>'.",
     "cma": "Add all files and commit with annotation: git cma '<descritoon>'.",
-    "cmarelease": "Make a commit with all files and do a release [ commit all file on configured work -> configured develop -> configured master -> tag ].",
-    "changelog": "Generate CHANGELOG.md from conventional commits (supports --include-unreleased, --force-write, --print-only).",
     "co": "Checkout a specific branch: git co '<branch>'.",
-    "codev": "Checkout the configured develop branch.",
-    "comas": "Checkout the configured master branch.",
-    "conf": "Edit this repository configuration file: .git/config.",
-    "cowrk": "Checkout the configured work branch.",
     "de": "Describe current version with tag of last commit.",
     "di": "Discard current changes on file: git di '<filename>'",
-    "diyou": "Discard merge changes in favour of mine files.",
     "dime": "Discard merge chanhes in favour of yours files.",
+    "diyou": "Discard merge changes in favour of mine files.",
     "ed": "Edit a file. Syntax: git ed <filename>.",
     "edbrc": "Edit bash ~/.bashrc file.",
     "edbsh": "Edit bash ~/.bash_profile file.",
     "edcfg": "Edit git .gitconfig file. This file.",
+    "edgit": "Edit this repository configuration file: .git/config.",
     "edign": "Edit git .gitignore configuration file.",
     "edpro": "Edit bash ~/.profile file.",
     "fe": "Fetch new data of current branch from origin.",
     "feall": "Fetch new data from origin for all branch.",
-    "fedev": "Fetch new data from origin for the configured develop branch.",
-    "femas": "Fetch new data from origin for the configured master branch.",
     "gp": "Open git commits graph (Git K).",
     "gr": "Open git tags graph (Git K).",
     "hl": "Help of specific topic. Syntax: git hl <alias|command|..>.",
@@ -206,25 +199,12 @@ HELP_TEXTS = {
     "lh": "Show last commit details",
     "ll": "Show lastest full commit hash.",
     "lm": "Show all merges.",
+    "lsbr": "Print all branches.",
     "lt": "Show all tag",
     "me": "Merge",
-    "medev": "Merge the configured develop branch on current branch.",
-    "mewrk": "Merge the configured work branch on current branch.",
-    "mkcma": "Commit all files with a comment and mkdev. Syntax: git mkcma <description>.",
-    "mkdev": "Merge configured work on configured develop, then push the configured develop branch. Syntax: git mkdev.",
-    "mkmas": "Merge configured work on configured develop, merge the configured develop branch on configured master, then push the configured master branch. Syntax: git mkmas.",
-    "mkrepo": "Create new fresh repository from remote url with inizial commit. Syntax: git mkrepo <url>.",
-    "mktday": "Commit all files with today date as comment and mkdev. Syntax: git mktday.",
-    "mkwrk": "Create the configured work branch locally.",
-    "mkyday": "Commit all files with yesterday date as comment and mkdev. Syntax: git mkyday.",
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
-    "pldev": "Pull (fetch + merge FETCH_HEAD) from origin configured develop branch to current branch.",
-    "plmas": "Pull (fetch + merge FETCH_HEAD) from origin configured master branch to current branch.",
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
-    "pudev": "Push current branch to origin/<configured develop branch> and set upstream.",
-    "pumas": "Push all changes of current branch on origin/<configured master branch>. (add upstream reference for pull).",
-    "release": "Make release process and create tag on configured master with current commit [ last commit on configured work -> configured develop -> configured master -> tag ].",
     "rf": "Show changes on HEAD reference.",
     "rmloc": "Remove changed files from the working tree.",
     "rmstg": "Remove staged files from index tree.",
@@ -400,7 +380,7 @@ class TagInfo:
 DELIM = "\x1f"
 RECORD = "\x1e"
 _CONVENTIONAL_RE = re.compile(
-    r"^(?P<type>feat|fix|refactor|docs|style|revert|perf|test|build|ci|chore|misc)"
+    r"^(?P<type>new|fix|change|docs|style|revert|misc)"
     r"(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?:\s+(?P<desc>.+)$",
     re.IGNORECASE,
 )
@@ -408,7 +388,7 @@ _SEMVER_TAG_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
 SECTION_EMOJI = {
     "Features": "⛰️",
     "Bug Fixes": "🐛",
-    "Refactor": "🚜",
+    "Changes": "🚜",
     "Documentation": "📚",
     "Styling": "🎨",
     "Miscellaneous Tasks": "⚙️",
@@ -457,17 +437,12 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
     scope_text = f"*({scope})* " if scope else ""
     line = f"- {scope_text}{desc}"
     mapping = {
-        "feat": "Features",
+        "new": "Features",
         "fix": "Bug Fixes",
-        "refactor": "Refactor",
+        "change": "Changes",
         "docs": "Documentation",
         "style": "Styling",
         "revert": "Revert",
-        "perf": "Miscellaneous Tasks",
-        "test": "Miscellaneous Tasks",
-        "build": "Miscellaneous Tasks",
-        "ci": "Miscellaneous Tasks",
-        "chore": "Miscellaneous Tasks",
         "misc": "Miscellaneous Tasks",
     }
     section = mapping.get(ctype)
@@ -488,7 +463,7 @@ def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_ran
     order = [
         "Features",
         "Bug Fixes",
-        "Refactor",
+        "Changes",
         "Documentation",
         "Styling",
         "Miscellaneous Tasks",
@@ -657,8 +632,8 @@ def cmd_br(extra):
     return run_git_cmd(["branch"], extra)
 
 
-# Elenca tutti i rami locali e remoti con informazioni aggiuntive (alias brall).
-def cmd_brall(extra):
+# Elenca tutti i rami locali e remoti con informazioni aggiuntive (alias lsbr).
+def cmd_lsbr(extra):
     return run_git_cmd(["branch", "-v", "-a"], extra)
 
 
@@ -682,34 +657,9 @@ def cmd_co(extra):
     return run_git_cmd(["checkout"], extra)
 
 
-# Passa al ramo work (alias cowrk).
-def cmd_cowrk(extra):
-    return cmd_co([get_branch("work")] + _to_args(extra))
-
-
-# Passa al ramo develop (alias codev).
-def cmd_codev(extra):
-    return cmd_co([get_branch("develop")] + _to_args(extra))
-
-
-# Passa al ramo master (alias comas).
-def cmd_comas(extra):
-    return cmd_co([get_branch("master")] + _to_args(extra))
-
-
-# Crea un ramo work locale (alias mkwrk).
-def cmd_mkwrk(extra):
-    return cmd_co(["-b", get_branch("work")] + _to_args(extra))
-
-
 # Elimina il ramo work locale (alias rmwrk).
 def cmd_rmwrk(extra):
     return cmd_br(["-d", get_branch("work")] + _to_args(extra))
-
-
-# Apre .git/config con l'editor configurato (alias conf).
-def cmd_conf(extra):
-    return run_editor_command([".git/config"] + _to_args(extra))
 
 
 # Descrive la revisione HEAD con git describe (alias de).
@@ -767,6 +717,10 @@ def cmd_edbsh(extra):
 def cmd_edbrc(extra):
     return cmd_ed(["~/.bashrc"] + _to_args(extra))
 
+# Apre .git/config con l'editor configurato (alias conf).
+def cmd_edgit(extra):
+    return cmd_ed([".git/config"] + _to_args(extra))
+
 
 # Scarica aggiornamenti dal remote per il ramo corrente (alias fe).
 def cmd_fe(extra):
@@ -776,16 +730,6 @@ def cmd_fe(extra):
 # Effettua fetch di tutti i rami, tag e pulisce quelli orfani (alias feall).
 def cmd_feall(extra):
     return cmd_fe(["--all", "--tags", "--prune"] + _to_args(extra))
-
-
-# Effettua fetch --tags --prune origin develop (alias fedev).
-def cmd_fedev(extra):
-    return cmd_fe(["--tags", "--prune", "origin", get_branch("develop")] + _to_args(extra))
-
-
-# Effettua fetch --tags --prune origin master (alias femas).
-def cmd_femas(extra):
-    return cmd_fe(["--tags", "--prune", "origin", get_branch("master")] + _to_args(extra))
 
 
 # Apre gitk con tutti i commit (alias gp).
@@ -877,128 +821,9 @@ def cmd_me(extra):
     return run_git_cmd(["merge", "--ff-only"], extra)
 
 
-# Unisce fast-forward il ramo develop (alias medev).
-def cmd_medev(extra):
-    return run_git_cmd(["merge", "--ff-only", get_branch("develop")], extra)
-
-
-# Unisce fast-forward il ramo work (alias mewrk).
-def cmd_mewrk(extra):
-    return run_git_cmd(["merge", "--ff-only", get_branch("work")], extra)
-
-
-# Esegue la sequenza di merge/push che porta work su master e sincronizza i tag (alias mkmas).
-def cmd_mkmas(extra):
-    cmd_codev([])
-    cmd_pldev([])
-    cmd_cowrk([])
-    cmd_medev([])
-    cmd_codev([])
-    cmd_pldev([])
-    cmd_mewrk([])
-    cmd_pudev([])
-    cmd_comas([])
-    cmd_medev([])
-    cmd_pumas([])
-    cmd_cowrk([])
-    cmd_lg([])
-    return cmd_st(extra)
-
-
-# Esegue la sequenza di merge/push per portare work su develop (alias mkdev).
-def cmd_mkdev(extra):
-    cmd_codev([])
-    cmd_pldev([])
-    cmd_cowrk([])
-    cmd_medev([])
-    cmd_codev([])
-    cmd_pldev([])
-    cmd_mewrk([])
-    cmd_pudev([])
-    cmd_cowrk([])
-    cmd_lg([])
-    return cmd_st(extra)
-
-
-# Commit di tutti i file con commento e poi mkdev (alias mkcma).
-def cmd_mkcma(extra):
-    args = _to_args(extra)
-    if not args:
-        print("usage: git mkcma \"<comment>\"", file=sys.stderr)
-        sys.exit(1)
-    comment = " ".join(args)
-    print(
-        f"Commit and merge on develop with comment: \"{comment}\" on {get_branch('develop')} branch"
-    )
-    cmd_cma([comment])
-    return cmd_mkdev([])
-
-
-# Commit con commento datato ieri e poi mkdev (alias mkyday).
-def cmd_mkyday(extra):
-    target = datetime.now() - timedelta(days=1)
-    message = f"In progress {target.strftime('%Y-%m-%d %H:%M')}"
-    cmd_cma([message])
-    return cmd_mkdev([])
-
-
-# Commit con commento datato oggi e poi mkdev (alias mktday).
-def cmd_mktday(extra):
-    target = datetime.now()
-    message = f"In progress {target.strftime('%Y-%m-%d %H:%M')}"
-    cmd_cma([message])
-    return cmd_mkdev([])
-
-
-# Clona, inizializza e popola un nuovo repository remoto (alias mkrepo).
-def cmd_mkrepo(extra):
-    args = _to_args(extra)
-    if not args:
-        print("usage: git mkrepo \"<name>\"", file=sys.stderr)
-        sys.exit(1)
-    name = args[0]
-    print(f"Make new repo for : \"{name}\"")
-    master_branch = get_branch("master")
-    develop_branch = get_branch("develop")
-    remote = f"ssh://git@donsrv707.dl.net/git/{name}.git"
-    run_command(["git", "clone", remote])
-    repo_dir = Path(name)
-    if not repo_dir.exists():
-        raise FileNotFoundError(f"Cloned directory {repo_dir} does not exist")
-    run_git_cmd(["init"], cwd=repo_dir)
-    home_ignore = Path.home() / ".gitignore"
-    example = repo_dir / ".gitignore.example"
-    if home_ignore.exists():
-        run_command(["cp", str(home_ignore), str(example)])
-    else:
-        example.write_text("")
-    run_git_cmd(["add", ".gitignore.example"], cwd=repo_dir)
-    run_git_cmd(["commit", "-m", "Initial empty commit"], cwd=repo_dir)
-    run_git_cmd(["remote", "remove", "origin"], cwd=repo_dir)
-    run_git_cmd(["remote", "add", "origin", remote], cwd=repo_dir)
-    run_git_cmd(["push", "origin", master_branch], cwd=repo_dir)
-    run_git_cmd(["checkout", "-b", develop_branch], cwd=repo_dir)
-    if example.exists():
-        (repo_dir / ".gitignore").unlink(missing_ok=True)
-        example.rename(repo_dir / ".gitignore")
-    run_git_cmd(["add", "--all"], cwd=repo_dir)
-    run_git_cmd(["commit", "-m", "First commit, add .gitignore file"], cwd=repo_dir)
-    return run_git_cmd(["push", "origin", develop_branch], cwd=repo_dir)
-
-
 # Esegue pull --ff-only sul ramo corrente (alias pl).
 def cmd_pl(extra):
     return run_git_cmd(["pull", "--ff-only"], extra)
-
-
-# Esegue pull --ff-only da origin develop (alias pldev).
-def cmd_pldev(extra):
-    return run_git_cmd(["pull", "--ff-only", "origin", get_branch("develop")], extra)
-
-
-# Esegue pull --ff-only da origin master (alias plmas).
-def cmd_plmas(extra):
-    return run_git_cmd(["pull", "--ff-only", "origin", get_branch("master")], extra)
 
 
 # Esegue push di tutti i tag (alias pt).
@@ -1009,16 +834,6 @@ def cmd_pt(extra):
 # Esegue push e imposta upstream nel remote (alias pu).
 def cmd_pu(extra):
     return run_git_cmd(["push", "-u"], extra)
-
-
-# Esegue push -u origin develop (alias pudev).
-def cmd_pudev(extra):
-    return run_git_cmd(["push", "-u", "origin", get_branch("develop")], extra)
-
-
-# Esegue push -u origin master (alias pumas).
-def cmd_pumas(extra):
-    return run_git_cmd(["push", "-u", "origin", get_branch("master")], extra)
 
 
 # Mostra il reflog (alias rf).
@@ -1146,49 +961,6 @@ def cmd_ver(extra):
     print(canonical)
 
 
-# Esegue la procedura di release da work a master e aggiunge un tag (alias release).
-def cmd_release(extra):
-    args = _to_args(extra)
-    if len(args) < 2:
-        print("usage: git release \"<tag>\" \"<comment>\"", file=sys.stderr)
-        sys.exit(1)
-    tag = args[0]
-    comment = " ".join(args[1:])
-    master_branch = get_branch("master")
-    print(
-        f"Make new release with tag: \"{tag}\" - comment: \"{comment}\" on {master_branch} branch"
-    )
-    cmd_codev([])
-    cmd_fedev([])
-    cmd_mewrk([])
-    cmd_pudev([])
-    cmd_comas([])
-    cmd_femas([])
-    cmd_medev([])
-    cmd_pumas([])
-    cmd_cowrk([])
-    run_git_cmd(["tag", "-a", "-m", f"{tag}: {comment}", tag])
-    run_git_cmd(["push", "origin", tag])
-    cmd_cowrk([])
-    cmd_lg([])
-    return cmd_st([])
-
-
-# Commit con tag e poi release automatizzata (alias cmarelease).
-def cmd_cmarelease(extra):
-    args = _to_args(extra)
-    if len(args) < 2:
-        print("usage: git cmarelease \"<tag>\" \"<comment>\"", file=sys.stderr)
-        sys.exit(1)
-    tag = args[0]
-    comment = " ".join(args[1:])
-    print(
-        f"Commit all files with tag: \"{tag}\" - comment: \"{comment}\" on {get_branch('work')} branch"
-    )
-    cmd_cma([f"{tag}: {comment}"])
-    return cmd_release([tag, comment])
-
-
 def cmd_changelog(extra):
     parser = argparse.ArgumentParser(prog="g changelog", add_help=False)
     parser.add_argument("--force-write", dest="force_write", action="store_true")
@@ -1225,31 +997,24 @@ COMMANDS = {
     "aa": cmd_aa,
     "ar": cmd_ar,
     "br": cmd_br,
-    "brall": cmd_brall,
+    "changelog": cmd_changelog,
     "ck": cmd_ck,
     "cm": cmd_cm,
     "cma": cmd_cma,
     "co": cmd_co,
-    "cowrk": cmd_cowrk,
-    "codev": cmd_codev,
-    "comas": cmd_comas,
-    "mkwrk": cmd_mkwrk,
-    "rmwrk": cmd_rmwrk,
-    "conf": cmd_conf,
     "de": cmd_de,
     "di": cmd_di,
-    "diyou": cmd_diyou,
     "dime": cmd_dime,
+    "diyou": cmd_diyou,
     "ed": cmd_ed,
+    "edbrc": cmd_edbrc,
+    "edbsh": cmd_edbsh,
     "edcfg": cmd_edcfg,
+    "edgit": cmd_edgit,
     "edign": cmd_edign,
     "edpro": cmd_edpro,
-    "edbsh": cmd_edbsh,
-    "edbrc": cmd_edbrc,
     "fe": cmd_fe,
     "feall": cmd_feall,
-    "fedev": cmd_fedev,
-    "femas": cmd_femas,
     "gp": cmd_gp,
     "gr": cmd_gr,
     "hl": cmd_hl,
@@ -1258,53 +1023,38 @@ COMMANDS = {
     "lg1": cmd_lg1,
     "lg2": cmd_lg2,
     "lg3": cmd_lg3,
+    "lh": cmd_lh,
     "ll": cmd_ll,
     "lm": cmd_lm,
-    "lh": cmd_lh,
+    "lsbr": cmd_lsbr,
     "lt": cmd_lt,
     "me": cmd_me,
-    "medev": cmd_medev,
-    "mewrk": cmd_mewrk,
-    "mkmas": cmd_mkmas,
-    "mkdev": cmd_mkdev,
-    "mkcma": cmd_mkcma,
-    "mkyday": cmd_mkyday,
-    "mktday": cmd_mktday,
-    "mkrepo": cmd_mkrepo,
     "pl": cmd_pl,
-    "pldev": cmd_pldev,
-    "plmas": cmd_plmas,
     "pt": cmd_pt,
     "pu": cmd_pu,
-    "pudev": cmd_pudev,
-    "pumas": cmd_pumas,
     "rf": cmd_rf,
-    "rmtg": cmd_rmtg,
     "rmloc": cmd_rmloc,
     "rmstg": cmd_rmstg,
+    "rmtg": cmd_rmtg,
     "rmunt": cmd_rmunt,
+    "rmwrk": cmd_rmwrk,
     "rs": cmd_rs,
-    "rssft": cmd_rssft,
-    "rsmix": cmd_rsmix,
     "rshrd": cmd_rshrd,
-    "rsmrg": cmd_rsmrg,
     "rskep": cmd_rskep,
+    "rsmix": cmd_rsmix,
+    "rsmrg": cmd_rsmrg,
+    "rssft": cmd_rssft,
     "st": cmd_st,
     "tg": cmd_tg,
     "tree": cmd_tree,
-    "unstg": cmd_unstg,
-    "ver": cmd_ver,
-    "release": cmd_release,
-    "cmarelease": cmd_cmarelease,
-    "changelog": cmd_changelog,
+"unstg": cmd_unstg,
+"ver": cmd_ver,
 }
-
 
 # Stampa la descrizione di un singolo comando.
 def print_command_help(name):
     description = HELP_TEXTS.get(name, "No help text is available for this command.")
     print(f"{name} - {description}")
-
 
 # Stampa la descrizione di tutti i comandi disponibili in ordine alfabetico.
 def print_all_help():

@@ -73,7 +73,7 @@ def list_tags_sorted_by_date(repo_root: str) -> List[TagInfo]:
 
 
 _CONVENTIONAL_RE = re.compile(
-    r"^(?P<type>feat|fix|refactor|docs|style|revert|perf|test|build|ci|chore|misc)"
+    r"^(?P<type>new|fix|change|docs|style|revert|misc)"
     r"(?:\((?P<scope>[^)]+)\))?"
     r"(?P<breaking>!)?:\s+(?P<desc>.+)$",
     re.IGNORECASE,
@@ -86,7 +86,7 @@ _SEMVER_TAG_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
 def categorize_commit(subject: str) -> Tuple[Optional[str], str, bool]:
     """
     Returns (section, rendered_line, is_breaking).
-    Sections: Added, Fixed, Changed, Documentation, Tests, Maintenance, Reverted, Other.
+    Sections: Features, Bug Fixes, Changes, Documentation, Styling, Miscellaneous Tasks, Revert.
     """
     s = subject.strip()
     m = _CONVENTIONAL_RE.match(s)
@@ -103,21 +103,19 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str, bool]:
     scope_render = f"*({scope})* " if scope else ""
     line = f"- {scope_render}{desc}"
 
-    if ctype == "feat":
+    if ctype == "new":
         section = "Features"
     elif ctype == "fix":
         section = "Bug Fixes"
-    elif ctype == "refactor":
-        section = "Refactor"
+    elif ctype == "change":
+        section = "Changes"
     elif ctype == "docs":
         section = "Documentation"
     elif ctype == "style":
         section = "Styling"
     elif ctype == "revert":
         section = "Revert"
-    elif ctype in ("perf", "test"):
-        section = "Other"
-    elif ctype in ("build", "ci", "chore", "misc"):
+    elif ctype == "misc":
         section = "Miscellaneous Tasks"
     else:
         return (None, "", False)
@@ -137,7 +135,7 @@ def git_log_subjects(repo_root: str, rev_range: str) -> List[str]:
 SECTION_EMOJI = {
     "Features": "⛰️",
     "Bug Fixes": "🐛",
-    "Refactor": "🚜",
+    "Changes": "🚜",
     "Documentation": "📚",
     "Styling": "🎨",
     "Miscellaneous Tasks": "⚙️",
@@ -149,7 +147,7 @@ def generate_section_for_range(repo_root: str, title: str, date_s: str, rev_rang
     buckets: Dict[str, List[str]] = {
         "Features": [],
         "Bug Fixes": [],
-        "Refactor": [],
+        "Changes": [],
         "Documentation": [],
         "Styling": [],
         "Miscellaneous Tasks": [],
@@ -169,7 +167,7 @@ def generate_section_for_range(repo_root: str, title: str, date_s: str, rev_rang
 
     md: List[str] = []
     md.append(f"## {title} - {date_s}")
-    for sec in ["Features", "Bug Fixes", "Refactor", "Documentation", "Styling", "Miscellaneous Tasks", "Revert"]:
+    for sec in ["Features", "Bug Fixes", "Changes", "Documentation", "Styling", "Miscellaneous Tasks", "Revert"]:
         if buckets.get(sec) and buckets[sec]:
             emoji = SECTION_EMOJI.get(sec, "")
             md.append(f"### {emoji}  {sec}".rstrip())
