@@ -709,15 +709,15 @@ def _run_reset_with_help(base_args, extra):
 
 
 # Prepares commit operations shared by cm/wip aliases.
-def _prepare_commit_message(extra):
+def _prepare_commit_message(extra, alias):
     args = _to_args(extra)
     if not args:
-        print("git cm richiede un messaggio da specificare dopo il comando.", file=sys.stderr)
+        print(f"git {alias} richiede un messaggio da specificare dopo il comando.", file=sys.stderr)
         sys.exit(1)
     return " ".join(args)
 
 
-def _execute_commit(message, allow_amend=True):
+def _execute_commit(message, alias, allow_amend=True):
     amend = _should_amend_existing_commit() if allow_amend else False
     action = (
         "Aggiorno la commit WIP esistente (--amend)."
@@ -729,7 +729,20 @@ def _execute_commit(message, allow_amend=True):
     if amend:
         base.append("--amend")
     base.extend(["-m", message])
-    return run_git_cmd(base)
+    try:
+        return run_git_cmd(base)
+    except subprocess.CalledProcessError as exc:
+        status_lines = _git_status_lines()
+        if has_unstaged_changes(status_lines):
+            print(
+                f"Impossibile eseguire git {alias}: sono presenti modifiche non ancora aggiunte all'area di staging.",
+                file=sys.stderr,
+            )
+            sys.exit(exc.returncode or 1)
+        if not has_staged_changes(status_lines):
+            print(f"Impossibile eseguire git {alias}: l'area di staging è vuota.", file=sys.stderr)
+            sys.exit(exc.returncode or 1)
+        raise
 
 
 # Aggiorna il comando installato sfruttando il tool uv.
@@ -793,31 +806,31 @@ def cmd_ck(extra):
 
 
 # Esegue commit con messaggio (alias cm).
-def _ensure_commit_ready():
+def _ensure_commit_ready(alias):
     status_lines = _git_status_lines()
     if has_unstaged_changes(status_lines):
         print(
-            "Impossibile eseguire git cm: sono presenti modifiche non ancora aggiunte all'area di staging.",
+            f"Impossibile eseguire git {alias}: sono presenti modifiche non ancora aggiunte all'area di staging.",
             file=sys.stderr,
         )
         sys.exit(1)
     if not has_staged_changes(status_lines):
-        print("Impossibile eseguire git cm: l'area di staging è vuota.", file=sys.stderr)
+        print(f"Impossibile eseguire git {alias}: l'area di staging è vuota.", file=sys.stderr)
         sys.exit(1)
     return True
 
 
 def cmd_cm(extra):
-    _ensure_commit_ready()
-    message = _prepare_commit_message(extra)
-    return _execute_commit(message)
+    _ensure_commit_ready("cm")
+    message = _prepare_commit_message(extra, "cm")
+    return _execute_commit(message, "cm")
 
 
 def cmd_wip(extra):
     del extra  # unused
-    _ensure_commit_ready()
+    _ensure_commit_ready("wip")
     message = "wip: work in progress."
-    return _execute_commit(message)
+    return _execute_commit(message, "wip")
 
 
 # Aggiunge tutto e committa con messaggio (alias cma).
