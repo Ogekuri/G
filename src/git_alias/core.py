@@ -381,8 +381,25 @@ def has_staged_changes(status_lines=None):
     return False
 
 
+_REMOTE_REFS_UPDATED = False
+
+
+def _refresh_remote_refs():
+    """Update remote references once per process to inform pull diagnostics."""
+    global _REMOTE_REFS_UPDATED
+    if _REMOTE_REFS_UPDATED:
+        return
+    try:
+        run_git_cmd(["remote", "-v", "update"])
+    except subprocess.CalledProcessError as exc:
+        print(f"Impossibile aggiornare i riferimenti remoti: {exc}", file=sys.stderr)
+        return
+    _REMOTE_REFS_UPDATED = True
+
+
 def _branch_remote_divergence(branch_key, remote="origin"):
     """Return a tuple (local_ahead, remote_ahead) for the requested branch key."""
+    _refresh_remote_refs()
     branch = get_branch(branch_key)
     upstream = f"{remote}/{branch}"
     try:

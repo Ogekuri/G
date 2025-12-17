@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git Alias CLI
-**Versione**: 0.19
+**Versione**: 0.20
 **Autore**: Francesco Rolando  
 **Data**: 2025-12-17
 
@@ -54,6 +54,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2025-12-15 | 0.17 | Ridenominazione dell'alias `lsbr` in `lb` e riordino alfabetico dei comandi `l*` |
 | 2025-12-15 | 0.18 | Aggiunta delle funzioni diagnostiche sullo stato del repository e nuova validazione per l'alias `aa` |
 | 2025-12-17 | 0.19 | Validazione preventiva del comando `cm` sugli stati work/index |
+| 2025-12-17 | 0.20 | Aggiornamento remoto prima delle verifiche di pull e conferma controlli per `aa` |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -105,7 +106,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-001**: Il comando `--upgrade` deve reinstallare l'utility usando `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git`.
 - **REQ-002**: Il comando `--remove` deve disinstallare l'utility globale tramite `uv tool uninstall git-alias`.
 - **REQ-003**: Il comando `--help` deve elencare tutti gli alias disponibili o mostrare la descrizione del comando richiesto quando viene specificato un alias.
-- **REQ-004**: L'alias `aa` deve aggiungere tutte le modifiche e i file nuovi all'area di staging con `git add --all`, ma prima deve verificare che esistano file/modifiche non ancora aggiunti allo staging e terminare con errore quando non c'è nulla da aggiungere.
+- **REQ-004**: L'alias `aa` deve aggiungere tutte le modifiche e i file nuovi all'area di staging con `git add --all`, ma prima deve verificare (riutilizzando le funzioni diagnostiche sullo working tree) che esistano file o modifiche non ancora aggiunti allo staging e, quando non c'è nulla da aggiungere, deve terminare con errore descrivendo il problema.
 - **REQ-005**: L'alias di commit `cm` deve permettere commit standard senza automatismi aggiuntivi né messaggi precompilati, ma prima di eseguire `git commit` deve verificare (riutilizzando le funzioni diagnostiche interne) che (a) non esistano file o modifiche nello working tree ancora da aggiungere all'index/stage e (b) l'index contenga effettivamente modifiche pronte al commit; in caso contrario deve terminare con errore descrivendo il problema.
 - **REQ-006**: Gli alias di navigazione branch devono consentire checkout mirati (`co`) utilizzando i nomi di branch configurati nel file `.g.conf` (default `work`, `develop`, `master`).
 - **REQ-007**: Gli alias di fetch/pull/push devono eseguire le varianti generiche per il ramo corrente (`fe`, `feall`, `pl`, `pt`, `pu`), senza scorciatoie dedicate ai rami configurati.
@@ -121,4 +122,4 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-017**: Il comando `ver` deve leggere la lista di coppie `(<wildcard>, <regexp>)` dal file `.g.conf` (o usare i valori di default), applicare ogni regexp solo ai file che corrispondono alla wildcard associata, raccogliere tutte le versioni trovate e: (a) stampare la versione quando tutte le occorrenze coincidono, oppure (b) terminare con errore indicando i primi due file che presentano versioni differenti.
 - **REQ-018**: Il comando `changelog` genera il file `CHANGELOG.md` dal repository corrente usando le descrizioni dei commit, supportare l'opzione `--include-unreleased`, stampare il contenuto quando si usa `--print-only` e scrivere su disco solo se il file non esiste o quando viene specificato `--force-write`. Il parser deve riconoscere i nuovi tipi `new` (Features) e `change` (Refactor/Changes), ignorare i vecchi tipi `perf`, `test`, `build`, `ci`, `chore`, e includere la sezione \"Miscellaneous Tasks\" esclusivamente per il tipo `misc`, senza generare la sezione \"Other\".
 - **REQ-019**: L'alias `bd` deve eliminare un branch locale specificato dall'utente utilizzando `git branch -d <branch>`.
-- **REQ-020**: Il sistema deve fornire funzioni di supporto riutilizzabili dagli alias che consentano di verificare (a) la presenza di file o modifiche non ancora aggiunti allo staging, (b) la presenza di file già in staging ma non ancora committati, (c) la disponibilità di aggiornamenti remoti per il branch `develop`, e (d) la disponibilità di aggiornamenti remoti per il branch `master`.
+- **REQ-020**: Il sistema deve fornire funzioni di supporto riutilizzabili dagli alias che consentano di verificare (a) la presenza di file o modifiche non ancora aggiunti allo staging, (b) la presenza di file già in staging ma non ancora committati, (c) la disponibilità di aggiornamenti remoti per il branch `develop`, e (d) la disponibilità di aggiornamenti remoti per il branch `master`. Le funzioni per i punti (c) e (d) devono prima sincronizzare i riferimenti remoti (ad esempio con `git remote -v update`) e poi determinare se il branch remoto è in avanti rispetto a quello locale.
