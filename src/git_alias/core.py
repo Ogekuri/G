@@ -353,9 +353,16 @@ def run_git_text(args, cwd=None, check=True):
 
 
 def _git_status_lines():
-    """Return the porcelain status lines for the current repository."""
-    output = run_git_text(["status", "--porcelain"], check=False)
-    return output.splitlines() if output else []
+    """Return the porcelain status lines without trimming leading spaces."""
+    proc = subprocess.run(
+        ["git", "status", "--porcelain"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if proc.returncode != 0:
+        return []
+    return proc.stdout.splitlines()
 
 
 def has_unstaged_changes(status_lines=None):
