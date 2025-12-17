@@ -173,27 +173,17 @@ HELP_TEXTS = {
     "changelog": "Generate CHANGELOG.md from conventional commits (supports --include-unreleased, --force-write, --print-only).",
     "ck": "Check differences.",
     "cm": "Commit with annotation: git cm '<descritoon>'.",
-    "cma": "Add all files and commit with annotation: git cma '<descritoon>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
     "de": "Describe current version with tag of last commit.",
     "di": "Discard current changes on file: git di '<filename>'",
     "dime": "Discard merge chanhes in favour of yours files.",
     "diyou": "Discard merge changes in favour of mine files.",
     "ed": "Edit a file. Syntax: git ed <filename>.",
-    "edbrc": "Edit bash ~/.bashrc file.",
-    "edbsh": "Edit bash ~/.bash_profile file.",
-    "edcfg": "Edit git .gitconfig file. This file.",
-    "edgit": "Edit this repository configuration file: .git/config.",
-    "edign": "Edit git .gitignore configuration file.",
-    "edpro": "Edit bash ~/.profile file.",
     "fe": "Fetch new data of current branch from origin.",
     "feall": "Fetch new data from origin for all branch.",
     "gp": "Open git commits graph (Git K).",
     "gr": "Open git tags graph (Git K).",
     "lg": "Show commit history.",
-    "lg1": "Show decorated oneline history for all refs.",
-    "lg2": "Show a formatted log graph for all refs.",
-    "lg3": "Show the commit tree in a more verbose format.",
     "lh": "Show last commit details",
     "ll": "Show lastest full commit hash.",
     "lm": "Show all merges.",
@@ -208,7 +198,6 @@ HELP_TEXTS = {
     "rmstg": "Remove staged files from index tree.",
     "rmtg": "Remove a tag on current branch and from origin.",
     "rmunt": "Remove untracked files from the working tree.",
-    "rmwrk": "Delete the configured work branch locally.",
     "rs": "Reset current branch to HEAD (--hard).",
     "rshrd": "Hard reset alias (--hard).",
     "rskep": "Keep reset alias (--keep).",
@@ -217,7 +206,6 @@ HELP_TEXTS = {
     "rssft": "Soft reset alias (--soft).",
     "st": "Show current GIT status.",
     "tg": "Create a new annotate tag. Syntax: git tg <description> <tag>.",
-    "tree": "Show commit's tree.",
     "unstg": "Un-stage a file from commit: git unstg '<filename>'. Unstage all files with: git unstg *.",
     "ver": "Verify version consistency across configured files.",
 }
@@ -657,18 +645,8 @@ def cmd_cm(extra):
 
 
 # Aggiunge tutto e committa con messaggio (alias cma).
-def cmd_cma(extra):
-    return run_git_cmd(["commit", "-a", "-m"], extra)
-
-
-# Esegue checkout del ramo indicato (alias co).
 def cmd_co(extra):
     return run_git_cmd(["checkout"], extra)
-
-
-# Elimina il ramo work locale (alias rmwrk).
-def cmd_rmwrk(extra):
-    return cmd_br(["-d", get_branch("work")] + _to_args(extra))
 
 
 # Descrive la revisione HEAD con git describe (alias de).
@@ -702,35 +680,6 @@ def cmd_ed(extra):
         run_editor_command([expanded])
 
 
-# Apre ~/.gitconfig (alias edcfg).
-def cmd_edcfg(extra):
-    return cmd_ed(["~/.gitconfig"] + _to_args(extra))
-
-
-# Apre ~/.gitignore (alias edign).
-def cmd_edign(extra):
-    return cmd_ed(["~/.gitignore"] + _to_args(extra))
-
-
-# Apre ~/.profile (alias edpro).
-def cmd_edpro(extra):
-    return cmd_ed(["~/.profile"] + _to_args(extra))
-
-
-# Apre ~/.bash_profile (alias edbsh).
-def cmd_edbsh(extra):
-    return cmd_ed(["~/.bash_profile"] + _to_args(extra))
-
-
-# Apre ~/.bashrc (alias edbrc).
-def cmd_edbrc(extra):
-    return cmd_ed(["~/.bashrc"] + _to_args(extra))
-
-# Apre .git/config con l'editor configurato (alias conf).
-def cmd_edgit(extra):
-    return cmd_ed([".git/config"] + _to_args(extra))
-
-
 # Scarica aggiornamenti dal remote per il ramo corrente (alias fe).
 def cmd_fe(extra):
     return run_git_cmd(["fetch"], extra)
@@ -751,7 +700,6 @@ def cmd_gr(extra):
     return run_command(["gitk", "--simplify-by-decoration", "--all"] + _to_args(extra))
 
 
-# Mostra la cronologia dei commit delegando a lg2 (alias lg).
 def cmd_lg(extra):
     return run_git_cmd(
         [
@@ -766,53 +714,9 @@ def cmd_lg(extra):
     )
 
 
-# Mostra il log decorato in una vista compatta con grafico (alias lg1).
-def cmd_lg1(extra):
-    return run_git_cmd(
-        [
-            "log",
-            "--all",
-            "--decorate",
-            "--oneline",
-            "--graph",
-        ],
-        extra,
-    )
-
-
-# Mostra il log formattato con grafico e abbreviazioni per ogni ref (alias lg2).
-def cmd_lg2(extra):
-    return run_git_cmd(
-        [
-            "log",
-            "--graph",
-            "--abbrev-commit",
-            "--decorate",
-            "--format=format:%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)",
-            "--all",
-        ],
-        extra,
-    )
-
-
-# Mostra l'albero dei commit con informazioni dettagliate (alias lg3).
-def cmd_lg3(extra):
-    return run_git_cmd(
-        [
-            "log",
-            "--graph",
-            "--abbrev-commit",
-            "--decorate",
-            "--format=format:%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset) %C(dim white)- %an%C(reset)",
-            "--all",
-        ],
-        extra,
-    )
-
-
 # Mostra i commit nel formato oneline completo (alias ll).
 def cmd_ll(extra):
-        return run_git_cmd(
+    return run_git_cmd(
         [
             "log",
             "--graph",
@@ -931,11 +835,6 @@ def cmd_tg(extra):
     return run_git_cmd(["tag", "-a", "-m"], extra)
 
 
-# Mostra l'albero dei commit delegando a lg3 (alias tree).
-def cmd_tree(extra):
-    return cmd_lg3(extra)
-
-
 # Cancella lo stage dei file con reset --mixed (alias unstg).
 def cmd_unstg(extra):
     return run_git_cmd(["reset", "--mixed", "--"], extra)
@@ -1023,27 +922,17 @@ COMMANDS = {
     "changelog": cmd_changelog,
     "ck": cmd_ck,
     "cm": cmd_cm,
-    "cma": cmd_cma,
     "co": cmd_co,
     "de": cmd_de,
     "di": cmd_di,
     "dime": cmd_dime,
     "diyou": cmd_diyou,
     "ed": cmd_ed,
-    "edbrc": cmd_edbrc,
-    "edbsh": cmd_edbsh,
-    "edcfg": cmd_edcfg,
-    "edgit": cmd_edgit,
-    "edign": cmd_edign,
-    "edpro": cmd_edpro,
     "fe": cmd_fe,
     "feall": cmd_feall,
     "gp": cmd_gp,
     "gr": cmd_gr,
     "lg": cmd_lg,
-    "lg1": cmd_lg1,
-    "lg2": cmd_lg2,
-    "lg3": cmd_lg3,
     "lh": cmd_lh,
     "ll": cmd_ll,
     "lm": cmd_lm,
@@ -1058,7 +947,6 @@ COMMANDS = {
     "rmstg": cmd_rmstg,
     "rmtg": cmd_rmtg,
     "rmunt": cmd_rmunt,
-    "rmwrk": cmd_rmwrk,
     "rs": cmd_rs,
     "rshrd": cmd_rshrd,
     "rskep": cmd_rskep,
@@ -1067,7 +955,6 @@ COMMANDS = {
     "rssft": cmd_rssft,
     "st": cmd_st,
     "tg": cmd_tg,
-    "tree": cmd_tree,
     "unstg": cmd_unstg,
     "ver": cmd_ver,
 }
