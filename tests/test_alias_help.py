@@ -55,10 +55,28 @@ class AliasHelpTest(unittest.TestCase):
             )
 
     def test_individual_help_matches_hlal(self):
+        reset_aliases = getattr(self.module, "RESET_HELP_COMMANDS", set())
         for alias, desc in self.expected_help.items():
+            output = self.run_script([alias, "--help"])
+            if alias in reset_aliases:
+                self.assertEqual(
+                    output,
+                    self.module.RESET_HELP.strip(),
+                    msg=f"{alias} should print RESET_HELP when invoked with --help",
+                )
+            else:
+                self.assertEqual(
+                    output,
+                    f"{alias} - {desc}",
+                    msg=f"{alias} help output unexpected",
+                )
+
+    def test_reset_commands_show_reset_help(self):
+        expected = self.module.RESET_HELP.strip()
+        for alias in sorted(self.module.RESET_HELP_COMMANDS):
             output = self.run_script([alias, "--help"])
             self.assertEqual(
                 output,
-                f"{alias} - {desc}",
-                msg=f"{alias} help output unexpected",
+                expected,
+                msg=f"{alias} did not emit RESET_HELP on --help",
             )

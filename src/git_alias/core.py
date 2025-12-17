@@ -190,8 +190,6 @@ HELP_TEXTS = {
     "feall": "Fetch new data from origin for all branch.",
     "gp": "Open git commits graph (Git K).",
     "gr": "Open git tags graph (Git K).",
-    "hl": "Help of specific topic. Syntax: git hl <alias|command|..>.",
-    "hlrs": "Help of reset commands.",
     "lg": "Show commit history.",
     "lg1": "Show decorated oneline history for all refs.",
     "lg2": "Show a formatted log graph for all refs.",
@@ -226,7 +224,7 @@ HELP_TEXTS = {
 
 RESET_HELP = """
 
- git hlrs - print reset mode help screen
+ Reset commands help screen
 
  default mode = '--mixed'
 
@@ -303,6 +301,8 @@ RESET_HELP = """
                            --keep   (disallowed)
 
 """
+
+RESET_HELP_COMMANDS = {"rshrd", "rskep", "rsmix", "rsmrg", "rssft"}
 
 
 # Converte la sequenza di argomenti extra in una lista espandibile.
@@ -586,6 +586,15 @@ def _iter_versions_in_text(text, compiled_regexes):
                 yield match.group(0)
 
 
+def _run_reset_with_help(base_args, extra):
+    """Execute a reset command or show the reset help when --help is provided."""
+    args = _to_args(extra)
+    if "--help" in args:
+        print(RESET_HELP.strip("\n"))
+        return
+    return run_git_cmd(base_args, args)
+
+
 # Aggiorna il comando installato sfruttando il tool uv.
 def upgrade_self():
     subprocess.run(
@@ -742,14 +751,19 @@ def cmd_gr(extra):
     return run_command(["gitk", "--simplify-by-decoration", "--all"] + _to_args(extra))
 
 
-# Mostra l'help di git per un argomento specifico (alias hl).
-def cmd_hl(extra):
-    return run_git_cmd(["--help"] + _to_args(extra))
-
-
 # Mostra la cronologia dei commit delegando a lg2 (alias lg).
 def cmd_lg(extra):
-    return cmd_lg2(_to_args(extra))
+    return run_git_cmd(
+        [
+            "log",
+            "--graph",
+            "--abbrev-commit",
+            "--decorate",
+            "--format=format:%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)",
+            "--all",
+        ],
+        extra,
+    )
 
 
 # Mostra il log decorato in una vista compatta con grafico (alias lg1).
@@ -798,7 +812,16 @@ def cmd_lg3(extra):
 
 # Mostra i commit nel formato oneline completo (alias ll).
 def cmd_ll(extra):
-    return run_git_cmd(["log", "--pretty=oneline"], extra)
+        return run_git_cmd(
+        [
+            "log",
+            "--graph",
+            "--decorate",
+            "--format=format:%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset) %C(dim white)- %an%C(reset)",
+            "--all",
+        ],
+        extra,
+    )
 
 
 # Mostra soltanto i merge (alias lm).
@@ -875,27 +898,27 @@ def cmd_rs(extra):
 
 # Resetta con --soft per mantenere i contenuti (alias rssft).
 def cmd_rssft(extra):
-    return run_git_cmd(["reset", "--soft", "--"], extra)
+    return _run_reset_with_help(["reset", "--soft", "--"], extra)
 
 
 # Resetta con --mixed per deselezionare gli staged (alias rsmix).
 def cmd_rsmix(extra):
-    return run_git_cmd(["reset", "--mixed", "--"], extra)
+    return _run_reset_with_help(["reset", "--mixed", "--"], extra)
 
 
 # Resetta con --hard (alias rshrd).
 def cmd_rshrd(extra):
-    return run_git_cmd(["reset", "--hard", "--"], extra)
+    return _run_reset_with_help(["reset", "--hard", "--"], extra)
 
 
 # Resetta con --merge per gestire conflitti parziali (alias rsmrg).
 def cmd_rsmrg(extra):
-    return run_git_cmd(["reset", "--merge", "--"], extra)
+    return _run_reset_with_help(["reset", "--merge", "--"], extra)
 
 
 # Resetta con --keep mantenendo i file locali (alias rskep).
 def cmd_rskep(extra):
-    return run_git_cmd(["reset", "--keep", "--"], extra)
+    return _run_reset_with_help(["reset", "--keep", "--"], extra)
 
 
 # Mostra lo stato corrente del repository (alias st).
@@ -1017,8 +1040,6 @@ COMMANDS = {
     "feall": cmd_feall,
     "gp": cmd_gp,
     "gr": cmd_gr,
-    "hl": cmd_hl,
-    "hlrs": lambda extra: print(RESET_HELP) if not extra else print(RESET_HELP),
     "lg": cmd_lg,
     "lg1": cmd_lg1,
     "lg2": cmd_lg2,
@@ -1047,8 +1068,8 @@ COMMANDS = {
     "st": cmd_st,
     "tg": cmd_tg,
     "tree": cmd_tree,
-"unstg": cmd_unstg,
-"ver": cmd_ver,
+    "unstg": cmd_unstg,
+    "ver": cmd_ver,
 }
 
 # Stampa la descrizione di un singolo comando.
@@ -1100,7 +1121,10 @@ def main(argv=None):
         print_all_help()
         sys.exit(1)
     if "--help" in extras:
-        print_command_help(name)
+        if name in RESET_HELP_COMMANDS:
+            COMMANDS[name](extras)
+        else:
+            print_command_help(name)
         return
     COMMANDS[name](extras)
 
