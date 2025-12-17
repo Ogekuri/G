@@ -26,6 +26,7 @@ DEFAULT_CONFIG = {
     "develop": "develop",
     "work": "work",
     "editor": "edit",
+    "default_module": "core",
     "ver_rules": json.dumps(DEFAULT_VER_RULES),
 }
 CONFIG = DEFAULT_CONFIG.copy()
@@ -139,7 +140,7 @@ def load_cli_config(root=None):
 def write_default_config(root=None):
     """Write the default configuration file in the repository root."""
     config_path = get_config_path(root)
-    keys = ("master", "develop", "work", "editor", "ver_rules")
+    keys = ("master", "develop", "work", "editor", "default_module", "ver_rules")
     lines = [f"{key}={DEFAULT_CONFIG[key]}" for key in keys]
     config_path.write_text("\n".join(lines) + "\n")
     print(f"Configuration written to {config_path}")
@@ -190,6 +191,13 @@ HELP_TEXTS = {
     "ll": "Print lastest full commit hash.",
     "lm": "Print all merges.",
     "lt": "Print all tag",
+    "new": "Commit convenzionale new(modulo): descrizione.",
+    "fix": "Commit convenzionale fix(modulo): descrizione.",
+    "change": "Commit convenzionale change(modulo): descrizione.",
+    "docs": "Commit convenzionale docs(modulo): descrizione.",
+    "style": "Commit convenzionale style(modulo): descrizione.",
+    "revert": "Commit convenzionale revert(modulo): descrizione.",
+    "misc": "Commit convenzionale misc(modulo): descrizione.",
     "me": "Merge",
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
@@ -504,6 +512,7 @@ _CONVENTIONAL_RE = re.compile(
     r"(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?:\s+(?P<desc>.+)$",
     re.IGNORECASE,
 )
+_MODULE_PREFIX_RE = re.compile(r"^(?P<module>[A-Za-z0-9_]+):\s*(?P<body>.*)$")
 _SEMVER_TAG_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
 SECTION_EMOJI = {
     "Features": "⛰️",
@@ -727,6 +736,27 @@ def _prepare_commit_message(extra, alias):
     return " ".join(args)
 
 
+def _build_conventional_message(kind: str, extra, alias: str) -> str:
+    text = _prepare_commit_message(extra, alias).strip()
+    match = _MODULE_PREFIX_RE.match(text)
+    if match:
+        scope = match.group("module")
+        body = match.group("body").strip()
+    else:
+        scope = get_config_value("default_module")
+        body = text
+    if not body:
+        print(f"git {alias} richiede un testo dopo il prefisso '<modulo>:' per completare il messaggio.", file=sys.stderr)
+        sys.exit(1)
+    return f"{kind}({scope}): {body}"
+
+
+def _run_conventional_commit(kind: str, alias: str, extra):
+    _ensure_commit_ready(alias)
+    message = _build_conventional_message(kind, extra, alias)
+    return _execute_commit(message, alias, allow_amend=False)
+
+
 def _execute_commit(message, alias, allow_amend=True):
     amend = _should_amend_existing_commit() if allow_amend else False
     action = (
@@ -841,6 +871,34 @@ def cmd_wip(extra):
     _ensure_commit_ready("wip")
     message = "wip: work in progress."
     return _execute_commit(message, "wip")
+
+
+def cmd_new(extra):
+    return _run_conventional_commit("new", "new", extra)
+
+
+def cmd_fix(extra):
+    return _run_conventional_commit("fix", "fix", extra)
+
+
+def cmd_change(extra):
+    return _run_conventional_commit("change", "change", extra)
+
+
+def cmd_docs(extra):
+    return _run_conventional_commit("docs", "docs", extra)
+
+
+def cmd_style(extra):
+    return _run_conventional_commit("style", "style", extra)
+
+
+def cmd_revert(extra):
+    return _run_conventional_commit("revert", "revert", extra)
+
+
+def cmd_misc(extra):
+    return _run_conventional_commit("misc", "misc", extra)
 
 
 # Aggiunge tutto e committa con messaggio (alias cma).
@@ -1125,6 +1183,7 @@ COMMANDS = {
     "bd": cmd_bd,
     "br": cmd_br,
     "changelog": cmd_changelog,
+    "change": cmd_change,
     "ck": cmd_ck,
     "cm": cmd_cm,
     "co": cmd_co,
@@ -1132,7 +1191,9 @@ COMMANDS = {
     "di": cmd_di,
     "dime": cmd_dime,
     "diyou": cmd_diyou,
+    "docs": cmd_docs,
     "ed": cmd_ed,
+    "fix": cmd_fix,
     "fe": cmd_fe,
     "feall": cmd_feall,
     "gp": cmd_gp,
@@ -1143,10 +1204,13 @@ COMMANDS = {
     "ll": cmd_ll,
     "lm": cmd_lm,
     "lt": cmd_lt,
+    "misc": cmd_misc,
     "me": cmd_me,
+    "new": cmd_new,
     "pl": cmd_pl,
     "pt": cmd_pt,
     "pu": cmd_pu,
+    "revert": cmd_revert,
     "rf": cmd_rf,
     "rmloc": cmd_rmloc,
     "rmstg": cmd_rmstg,
@@ -1163,6 +1227,7 @@ COMMANDS = {
     "unstg": cmd_unstg,
     "wip": cmd_wip,
     "ver": cmd_ver,
+    "style": cmd_style,
 }
 
 # Stampa la descrizione di un singolo comando.
