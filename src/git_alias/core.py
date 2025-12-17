@@ -735,9 +735,9 @@ def _execute_commit(message, alias, allow_amend=True):
     base = ["commit"]
     if amend:
         base.append("--amend")
-    base.extend(["-m", message])
+    base.extend(["-F", "-"])
     try:
-        return run_git_cmd(base)
+        return run_git_cmd(base, input=message, text=True)
     except subprocess.CalledProcessError as exc:
         status_lines = _git_status_lines()
         if has_unstaged_changes(status_lines):

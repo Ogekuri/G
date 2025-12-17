@@ -43,7 +43,7 @@ class CmdCmTest(unittest.TestCase):
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
                 core.cmd_cm(["message"])
-            run_git.assert_called_once_with(["commit", "-m", "message"])
+            run_git.assert_called_once_with(["commit", "-F", "-"], input="message", text=True)
             self.assertIn("nuova commit", buffer.getvalue())
 
     def test_cmd_cm_uses_amend_when_wip_not_on_develop(self):
@@ -54,7 +54,7 @@ class CmdCmTest(unittest.TestCase):
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
                 core.cmd_cm(["message"])
-            run_git.assert_called_once_with(["commit", "--amend", "-m", "message"])
+            run_git.assert_called_once_with(["commit", "--amend", "-F", "-"], input="message", text=True)
             self.assertIn("--amend", buffer.getvalue())
 
     def test_cmd_cm_reports_error_when_git_commit_fails_due_to_unstaged(self):
@@ -65,7 +65,9 @@ class CmdCmTest(unittest.TestCase):
         with mock.patch.object(core, "_git_status_lines", side_effect=status_side_effect), mock.patch.object(
             core, "_should_amend_existing_commit", return_value=False
         ), mock.patch.object(
-            core, "run_git_cmd", side_effect=subprocess.CalledProcessError(1, ["git", "commit"])
+            core,
+            "run_git_cmd",
+            side_effect=subprocess.CalledProcessError(1, ["git", "commit"]),
         ):
             stdout = io.StringIO()
             stderr = io.StringIO()
