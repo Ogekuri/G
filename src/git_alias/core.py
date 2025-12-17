@@ -986,7 +986,7 @@ def cmd_changelog(extra):
     destination = Path(repo_root) / "CHANGELOG.md"
     if destination.exists() and not args.force_write:
         print(
-            "CHANGELOG.md esiste già. Usa --force-write per sovrascrivere il file.",
+            "CHANGELOG.md esiste già. Usa --force-write per sovrascrivere il file o --print-only per stampare il nuovo contenuto.",
             file=sys.stderr,
         )
         sys.exit(1)
