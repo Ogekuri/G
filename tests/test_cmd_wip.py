@@ -18,7 +18,11 @@ class CmdWipTest(unittest.TestCase):
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
                 core.cmd_wip([])
-            run_git.assert_called_once_with(["commit", "-m", "wip: work in progress."])
+            run_git.assert_called_once_with(
+                ["commit", "-F", "-"],
+                input="wip: work in progress.",
+                text=True,
+            )
             self.assertIn("nuova commit", buffer.getvalue())
 
     def test_cmd_wip_uses_amend_when_requested(self):
@@ -28,7 +32,11 @@ class CmdWipTest(unittest.TestCase):
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
                 core.cmd_wip([])
-            run_git.assert_called_once_with(["commit", "--amend", "-m", "wip: work in progress."])
+            run_git.assert_called_once_with(
+                ["commit", "--amend", "-F", "-"],
+                input="wip: work in progress.",
+                text=True,
+            )
             self.assertIn("--amend", buffer.getvalue())
 
     def test_cmd_wip_reports_error_when_git_commit_fails(self):
@@ -39,7 +47,9 @@ class CmdWipTest(unittest.TestCase):
         with mock.patch.object(core, "_git_status_lines", side_effect=status_side_effect), mock.patch.object(
             core, "_should_amend_existing_commit", return_value=False
         ), mock.patch.object(
-            core, "run_git_cmd", side_effect=subprocess.CalledProcessError(1, ["git", "commit"])
+            core,
+            "run_git_cmd",
+            side_effect=subprocess.CalledProcessError(1, ["git", "commit"]),
         ):
             stdout = io.StringIO()
             stderr = io.StringIO()
