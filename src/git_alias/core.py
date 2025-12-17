@@ -648,6 +648,7 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool) -> st
     tags = list_tags_sorted_by_date(repo_root)
     origin_base = _canonical_origin_base(repo_root)
     lines: List[str] = ["# Changelog", ""]
+    release_sections: List[str] = []
     if include_unreleased:
         rev_range = f"{tags[-1].name}..HEAD" if tags else "HEAD"
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -663,13 +664,15 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool) -> st
             title = f"[{display}]({compare_url})" if compare_url else display
             section = generate_section_for_range(repo_root, title, tag.iso_date, rev_range)
             if section:
-                lines.append(section)
+                release_sections.append(section)
             prev = tag.name
     else:
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         section = generate_section_for_range(repo_root, "Unreleased", today, "HEAD")
         if section:
-            lines.append(section)
+            release_sections.append(section)
+    if release_sections:
+        lines.extend(reversed(release_sections))
     history = build_history_section(repo_root, tags, include_unreleased)
     if history:
         lines.append("")

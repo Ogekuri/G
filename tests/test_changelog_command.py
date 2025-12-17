@@ -54,3 +54,21 @@ class ChangelogCommandTest(unittest.TestCase):
                 with contextlib.redirect_stdout(buffer):
                     core.cmd_changelog(["--include-unreleased", "--print-only"])
                 gen.assert_called_once_with(repo_root, True)
+
+    def test_generate_document_orders_releases_descending(self):
+        tags = [
+            core.TagInfo(name="v1.0.0", iso_date="2024-01-01", object_name="a"),
+            core.TagInfo(name="v1.1.0", iso_date="2024-02-01", object_name="b"),
+            core.TagInfo(name="v1.2.0", iso_date="2024-03-01", object_name="c"),
+        ]
+        with mock.patch.object(core, "list_tags_sorted_by_date", return_value=tags), mock.patch.object(
+            core, "_canonical_origin_base", return_value=None
+        ), mock.patch.object(
+            core,
+            "generate_section_for_range",
+            side_effect=["sec-old", "sec-mid", "sec-new"],
+        ), mock.patch.object(core, "build_history_section", return_value="# History\nchrono"):
+            document = core.generate_changelog_document(Path("/tmp"), include_unreleased=False)
+        sections = [line for line in document.splitlines() if line.startswith("sec-")]
+        self.assertEqual(sections, ["sec-new", "sec-mid", "sec-old"])
+        self.assertIn("# History\nchrono", document)
