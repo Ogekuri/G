@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git Alias CLI
-**Versione**: 0.20
+**Versione**: 0.23
 **Autore**: Francesco Rolando  
 **Data**: 2025-12-17
 
@@ -55,6 +55,9 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2025-12-15 | 0.18 | Aggiunta delle funzioni diagnostiche sullo stato del repository e nuova validazione per l'alias `aa` |
 | 2025-12-17 | 0.19 | Validazione preventiva del comando `cm` sugli stati work/index |
 | 2025-12-17 | 0.20 | Aggiornamento remoto prima delle verifiche di pull e conferma controlli per `aa` |
+| 2025-12-17 | 0.21 | Introduzione dell'alias `wip` con messaggio predefinito e verifiche condivise con `cm` |
+| 2025-12-17 | 0.22 | Nuove verifiche WIP/amend condivise tra `cm` e `wip` |
+| 2025-12-17 | 0.23 | Aggiornamento messaggio WIP fisso senza timestamp e controlli correlati |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -100,6 +103,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **DES-003**: Ogni comando deve avere un testo di help e il comando globale `--help` deve elencarli in ordine alfabetico.
 - **DES-004**: Se l'eseguibile viene chiamato senza argomenti deve stampare un messaggio, mostrare l'help completo e uscire con codice di errore.
 - **DES-005**: Gli alias costituiscono la base per lo sviluppo di alias più complessi, pertanto se nell'implementazione di un alias è necessario svolgere una attività implementata in un alias più semplice verrà utilizzata la funzione che specializza quella più semplice.
+- **DES-007**: Le verifiche sul readiness del commit (worktree, staging, commit precedente) devono essere centralizzate in funzioni riutilizzabili da tutti gli alias che eseguono commit (`cm`, `wip`, e futuri).
 - **DES-006**: L'eseguibile deve leggere ad ogni invocazione il file `.g.conf` presente alla root del repository git e usare le configurazioni dei branch `master`, `develop`, `work` e del comando `editor` lì definite, ripiegando sui valori di default (`master`, `develop`, `work`, `edit`) se il file è assente o incompleto.
 
 ### 3.2 Funzioni
@@ -107,7 +111,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-002**: Il comando `--remove` deve disinstallare l'utility globale tramite `uv tool uninstall git-alias`.
 - **REQ-003**: Il comando `--help` deve elencare tutti gli alias disponibili o mostrare la descrizione del comando richiesto quando viene specificato un alias.
 - **REQ-004**: L'alias `aa` deve aggiungere tutte le modifiche e i file nuovi all'area di staging con `git add --all`, ma prima deve verificare (riutilizzando le funzioni diagnostiche sullo working tree) che esistano file o modifiche non ancora aggiunti allo staging e, quando non c'è nulla da aggiungere, deve terminare con errore descrivendo il problema.
-- **REQ-005**: L'alias di commit `cm` deve permettere commit standard senza automatismi aggiuntivi né messaggi precompilati, ma prima di eseguire `git commit` deve verificare (riutilizzando le funzioni diagnostiche interne) che (a) non esistano file o modifiche nello working tree ancora da aggiungere all'index/stage e (b) l'index contenga effettivamente modifiche pronte al commit; in caso contrario deve terminare con errore descrivendo il problema.
+- **REQ-005**: L'alias di commit `cm` deve permettere commit standard senza automatismi aggiuntivi né messaggi precompilati, ma prima di eseguire `git commit` deve verificare (riutilizzando funzioni diagnostiche centralizzate) che (a) non esistano file o modifiche nello working tree ancora da aggiungere all'index/stage, (b) l'index contenga effettivamente modifiche pronte al commit, e (c) l'ultimo commit del branch corrente non sia una WIP irrisolta. Se l'ultimo commit ha il messaggio `wip: work in progress.` e non è stato ancora portato sul ramo `develop` configurato, `cm` deve aggiornare quel commit tramite `git commit --amend` e stampare un messaggio esplicito; in tutti gli altri casi deve creare un nuovo commit e segnalare l'azione eseguita.
 - **REQ-006**: Gli alias di navigazione branch devono consentire checkout mirati (`co`) utilizzando i nomi di branch configurati nel file `.g.conf` (default `work`, `develop`, `master`).
 - **REQ-007**: Gli alias di fetch/pull/push devono eseguire le varianti generiche per il ramo corrente (`fe`, `feall`, `pl`, `pt`, `pu`), senza scorciatoie dedicate ai rami configurati.
 - **REQ-008**: Gli alias di ispezione devono fornire viste su branch, log e stato (`br`, `lb`, `ck`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`).
@@ -123,3 +127,4 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-018**: Il comando `changelog` genera il file `CHANGELOG.md` dal repository corrente usando le descrizioni dei commit, supportare l'opzione `--include-unreleased`, stampare il contenuto quando si usa `--print-only` e scrivere su disco solo se il file non esiste o quando viene specificato `--force-write`. Il parser deve riconoscere i nuovi tipi `new` (Features) e `change` (Refactor/Changes), ignorare i vecchi tipi `perf`, `test`, `build`, `ci`, `chore`, e includere la sezione \"Miscellaneous Tasks\" esclusivamente per il tipo `misc`, senza generare la sezione \"Other\".
 - **REQ-019**: L'alias `bd` deve eliminare un branch locale specificato dall'utente utilizzando `git branch -d <branch>`.
 - **REQ-020**: Il sistema deve fornire funzioni di supporto riutilizzabili dagli alias che consentano di verificare (a) la presenza di file o modifiche non ancora aggiunti allo staging, (b) la presenza di file già in staging ma non ancora committati, (c) la disponibilità di aggiornamenti remoti per il branch `develop`, e (d) la disponibilità di aggiornamenti remoti per il branch `master`. Le funzioni per i punti (c) e (d) devono prima sincronizzare i riferimenti remoti (ad esempio con `git remote -v update`) e poi determinare se il branch remoto è in avanti rispetto a quello locale.
+- **REQ-021**: L'alias `wip` deve eseguire un commit "work in progress" riutilizzando le stesse funzioni di verifica dell'alias `cm`, generando automaticamente un messaggio fisso `wip: work in progress.` e, come `cm`, deve rilevare se l'ultimo commit è una WIP non ancora presente su `develop`: in tal caso deve aggiornare il commit esistente con `git commit --amend` e stampare l'azione; altrimenti deve creare un nuovo commit e segnalarlo.

@@ -208,6 +208,7 @@ HELP_TEXTS = {
     "st": "Print current GIT status.",
     "tg": "Create a new annotate tag. Syntax: git tg <description> <tag>.",
     "unstg": "Un-stage a file from commit: git unstg '<filename>'. Unstage all files with: git unstg *.",
+    "wip": "Commit work in progress con messaggio automatico e regole condivise con cm.",
     "ver": "Verify version consistency across configured files.",
 }
 
@@ -382,6 +383,7 @@ def has_staged_changes(status_lines=None):
 
 
 _REMOTE_REFS_UPDATED = False
+WIP_MESSAGE_RE = re.compile(r"^wip: work in progress\.$")
 
 
 def _refresh_remote_refs():
@@ -431,6 +433,46 @@ def has_remote_develop_updates():
 def has_remote_master_updates():
     """Shortcut that reports pending updates for the configured master branch."""
     return has_remote_branch_updates("master")
+
+
+def _head_commit_message():
+    """Return the latest commit subject or an empty string on failure."""
+    try:
+        return run_git_text(["log", "-1", "--pretty=%s"]).strip()
+    except RuntimeError:
+        return ""
+
+
+def _head_commit_hash():
+    """Return the hash of HEAD or an empty string when unavailable."""
+    try:
+        return run_git_text(["rev-parse", "HEAD"]).strip()
+    except RuntimeError:
+        return ""
+
+
+def _commit_exists_in_branch(commit_hash, branch_name):
+    """Return True if commit_hash is contained in branch_name."""
+    if not commit_hash or not branch_name:
+        return False
+    proc = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", commit_hash, branch_name],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    return proc.returncode == 0
+
+
+def _should_amend_existing_commit():
+    """Determine if the current HEAD WIP commit should be amended."""
+    message = _head_commit_message()
+    if not (message and WIP_MESSAGE_RE.match(message)):
+        return False
+    commit_hash = _head_commit_hash()
+    develop_branch = get_branch("develop")
+    return not _commit_exists_in_branch(commit_hash, develop_branch)
 
 
 def is_inside_git_repo():
@@ -666,6 +708,30 @@ def _run_reset_with_help(base_args, extra):
     return run_git_cmd(base_args, args)
 
 
+# Prepares commit operations shared by cm/wip aliases.
+def _prepare_commit_message(extra):
+    args = _to_args(extra)
+    if not args:
+        print("git cm richiede un messaggio da specificare dopo il comando.", file=sys.stderr)
+        sys.exit(1)
+    return " ".join(args)
+
+
+def _execute_commit(message, allow_amend=True):
+    amend = _should_amend_existing_commit() if allow_amend else False
+    action = (
+        "Aggiorno la commit WIP esistente (--amend)."
+        if amend
+        else "Creo una nuova commit."
+    )
+    print(action)
+    base = ["commit"]
+    if amend:
+        base.append("--amend")
+    base.extend(["-m", message])
+    return run_git_cmd(base)
+
+
 # Aggiorna il comando installato sfruttando il tool uv.
 def upgrade_self():
     subprocess.run(
@@ -727,7 +793,7 @@ def cmd_ck(extra):
 
 
 # Esegue commit con messaggio (alias cm).
-def cmd_cm(extra):
+def _ensure_commit_ready():
     status_lines = _git_status_lines()
     if has_unstaged_changes(status_lines):
         print(
@@ -738,7 +804,20 @@ def cmd_cm(extra):
     if not has_staged_changes(status_lines):
         print("Impossibile eseguire git cm: l'area di staging è vuota.", file=sys.stderr)
         sys.exit(1)
-    return run_git_cmd(["commit", "-m"], extra)
+    return True
+
+
+def cmd_cm(extra):
+    _ensure_commit_ready()
+    message = _prepare_commit_message(extra)
+    return _execute_commit(message)
+
+
+def cmd_wip(extra):
+    del extra  # unused
+    _ensure_commit_ready()
+    message = "wip: work in progress."
+    return _execute_commit(message)
 
 
 # Aggiunge tutto e committa con messaggio (alias cma).
@@ -1059,6 +1138,7 @@ COMMANDS = {
     "st": cmd_st,
     "tg": cmd_tg,
     "unstg": cmd_unstg,
+    "wip": cmd_wip,
     "ver": cmd_ver,
 }
 

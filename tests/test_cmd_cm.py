@@ -37,7 +37,21 @@ class CmdCmTest(unittest.TestCase):
     def test_cmd_cm_invokes_git_commit_when_checks_pass(self):
         lines = ["A  file.txt"]
         with mock.patch.object(core, "_git_status_lines", return_value=lines), mock.patch.object(
-            core, "run_git_cmd", return_value=None
-        ) as run_git:
-            core.cmd_cm(["message"])
-            run_git.assert_called_once_with(["commit", "-m"], ["message"])
+            core, "_should_amend_existing_commit", return_value=False
+        ), mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer):
+                core.cmd_cm(["message"])
+            run_git.assert_called_once_with(["commit", "-m", "message"])
+            self.assertIn("nuova commit", buffer.getvalue())
+
+    def test_cmd_cm_uses_amend_when_wip_not_on_develop(self):
+        lines = ["A  file.txt"]
+        with mock.patch.object(core, "_git_status_lines", return_value=lines), mock.patch.object(
+            core, "_should_amend_existing_commit", return_value=True
+        ), mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer):
+                core.cmd_cm(["message"])
+            run_git.assert_called_once_with(["commit", "--amend", "-m", "message"])
+            self.assertIn("--amend", buffer.getvalue())
