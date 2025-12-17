@@ -19,7 +19,7 @@ class CmdAaTest(unittest.TestCase):
                 with self.assertRaises(SystemExit) as ctx:
                     core.cmd_aa([])
             self.assertNotEqual(ctx.exception.code, 0)
-            self.assertIn("Nessuna modifica", err.getvalue())
+            self.assertIn("No changes are available to add to the staging area", err.getvalue())
             run_git.assert_not_called()
 
     def test_cmd_aa_runs_git_add_when_needed(self):

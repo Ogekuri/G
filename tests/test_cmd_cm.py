@@ -20,7 +20,7 @@ class CmdCmTest(unittest.TestCase):
                 with self.assertRaises(SystemExit) as ctx:
                     core.cmd_cm(["message"])
             self.assertNotEqual(ctx.exception.code, 0)
-            self.assertIn("modifiche non ancora aggiunte", err.getvalue())
+            self.assertIn("unstaged changes are still present", err.getvalue())
             run_git.assert_not_called()
 
     def test_cmd_cm_fails_when_stage_is_empty(self):
@@ -32,7 +32,7 @@ class CmdCmTest(unittest.TestCase):
                 with self.assertRaises(SystemExit) as ctx:
                     core.cmd_cm(["message"])
             self.assertNotEqual(ctx.exception.code, 0)
-            self.assertIn("staging è vuota", err.getvalue())
+            self.assertIn("staging area is empty", err.getvalue())
             run_git.assert_not_called()
 
     def test_cmd_cm_invokes_git_commit_when_checks_pass(self):
@@ -74,4 +74,17 @@ class CmdCmTest(unittest.TestCase):
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 with self.assertRaises(SystemExit):
                     core.cmd_cm(["message"])
-            self.assertIn("Impossibile eseguire git cm", stderr.getvalue())
+            self.assertIn("Unable to run git cm", stderr.getvalue())
+
+    def test_cmd_cm_help_shortcircuits(self):
+        with mock.patch.object(core, "_git_status_lines") as status, mock.patch.object(
+            core, "run_git_cmd"
+        ) as run_git:
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                with self.assertRaises(SystemExit) as ctx:
+                    core.cmd_cm(["--help"])
+            self.assertEqual(ctx.exception.code, 0)
+            self.assertIn("cm -", stdout.getvalue())
+            status.assert_not_called()
+            run_git.assert_not_called()

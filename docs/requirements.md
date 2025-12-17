@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git Alias CLI
-**Versione**: 0.25
+**Versione**: 0.27
 **Autore**: Francesco Rolando  
 **Data**: 2025-12-17
 
@@ -60,6 +60,8 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2025-12-17 | 0.23 | Aggiornamento messaggio WIP fisso senza timestamp e controlli correlati |
 | 2025-12-17 | 0.24 | Ordinamento cronologico rivisto per le sezioni del comando `changelog` |
 | 2025-12-17 | 0.25 | Nuovi alias convenzionali per commit compatibili con il changelog |
+| 2025-12-17 | 0.26 | Testi di output della CLI tradotti in inglese |
+| 2025-12-17 | 0.27 | Commenti descrittivi per tutte le funzioni di core.py |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -131,3 +133,5 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-020**: Il sistema deve fornire funzioni di supporto riutilizzabili dagli alias che consentano di verificare (a) la presenza di file o modifiche non ancora aggiunti allo staging, (b) la presenza di file già in staging ma non ancora committati, (c) la disponibilità di aggiornamenti remoti per il branch `develop`, e (d) la disponibilità di aggiornamenti remoti per il branch `master`. Le funzioni per i punti (c) e (d) devono prima sincronizzare i riferimenti remoti (ad esempio con `git remote -v update`) e poi determinare se il branch remoto è in avanti rispetto a quello locale.
 - **REQ-021**: L'alias `wip` deve eseguire un commit "work in progress" riutilizzando le stesse funzioni di verifica dell'alias `cm`, generando automaticamente un messaggio fisso `wip: work in progress.` e, come `cm`, deve rilevare se l'ultimo commit è una WIP non ancora presente su `develop`: in tal caso deve aggiornare il commit esistente con `git commit --amend` e stampare l'azione; altrimenti deve creare un nuovo commit e segnalarlo.
 - **REQ-022**: Gli alias `new`, `fix`, `change`, `docs`, `style`, `revert` e `misc` devono eseguire commit convenzionali compatibili con il comando `changelog`, utilizzando messaggi nel formato `<tipo>(<modulo>): <descrizione>`. Ogni comando deve riutilizzare gli stessi controlli di readiness di `cm`/`wip`, accettare il testo del commit come argomento obbligatorio e consentire di specificare il modulo anticipando il testo con `nome_modulo: descrizione`. Quando il modulo non viene indicato, deve essere applicato un valore di default configurabile tramite `.g.conf` (default `core`).
+- **REQ-023**: Tutti i messaggi stampati da `core.py` (su stdout, stderr, in modalità normale, verbose o debug) devono essere in lingua inglese, inclusi gli help dei comandi e le diagnostiche degli alias.
+- **REQ-024**: Ogni funzione definita in `core.py` deve essere preceduta da un breve commento descrittivo in italiano che inizi con il carattere `#`, e tutti i commenti presenti nel file devono seguire lo stesso formato e lingua.

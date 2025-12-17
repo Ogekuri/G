@@ -38,11 +38,13 @@ MANAGEMENT_HELP = [
 ]
 
 
+# Restituisce un valore di configurazione con fallback ai default.
 def get_config_value(name):
     """Retrieve a configuration value with fallback to defaults."""
     return CONFIG.get(name, DEFAULT_CONFIG[name])
 
 
+# Restituisce il nome di branch configurato per la chiave richiesta.
 def get_branch(name):
     """Return the configured name for the requested branch key."""
     if name not in BRANCH_KEYS:
@@ -50,11 +52,13 @@ def get_branch(name):
     return get_config_value(name)
 
 
+# Recupera il comando di editor definito nella configurazione.
 def get_editor():
     """Return the configured editor command."""
     return get_config_value("editor")
 
 
+# Carica le coppie wildcard/regexp definite nel file di configurazione.
 def _load_config_rules(key, fallback):
     """Load wildcard/regex rule pairs from configuration."""
     raw_value = CONFIG.get(key, DEFAULT_CONFIG[key])
@@ -89,11 +93,13 @@ def _load_config_rules(key, fallback):
     return rules if rules else list(fallback)
 
 
+# Restituisce le regole usate per rilevare le versioni nei file.
 def get_version_rules():
     """Return the configured wildcard/regex pairs for version scanning."""
     return _load_config_rules("ver_rules", DEFAULT_VER_RULES)
 
 
+# Individua la radice del repository git corrente.
 def get_git_root():
     """Return the git repository root or the current working directory."""
     try:
@@ -112,12 +118,14 @@ def get_git_root():
     return Path.cwd()
 
 
+# Calcola il percorso del file di configurazione .g.conf.
 def get_config_path(root=None):
     """Return the expected path of the configuration file."""
     base = Path(root) if root is not None else get_git_root()
     return base / CONFIG_FILENAME
 
 
+# Carica nella memoria le impostazioni definite in .g.conf.
 def load_cli_config(root=None):
     """Load branch names and editor command from the repository configuration file."""
     CONFIG.update(DEFAULT_CONFIG)
@@ -137,6 +145,7 @@ def load_cli_config(root=None):
     return config_path
 
 
+# Scrive il file di configurazione con i valori di default.
 def write_default_config(root=None):
     """Write the default configuration file in the repository root."""
     config_path = get_config_path(root)
@@ -147,6 +156,7 @@ def write_default_config(root=None):
     return config_path
 
 
+# Parsa la stringa dell'editor e restituisce il comando base.
 def _editor_base_command():
     """Return the configured editor command as a list of arguments."""
     raw_value = get_editor() or DEFAULT_CONFIG["editor"]
@@ -163,6 +173,7 @@ def _editor_base_command():
     return parts
 
 
+# Esegue l'editor configurato con gli argomenti specificati.
 def run_editor_command(args):
     """Execute the configured editor command with additional arguments."""
     return run_command(_editor_base_command() + list(args))
@@ -174,7 +185,7 @@ HELP_TEXTS = {
     "br": "Create a new brach.",
     "changelog": "Generate CHANGELOG.md from conventional commits (supports --include-unreleased, --force-write, --print-only).",
     "ck": "Check differences.",
-    "cm": "Commit standard con verifica staging/worktree: git cm '<descrizione>'.",
+    "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
     "de": "Describe current version with tag of last commit.",
     "di": "Discard current changes on file: git di '<filename>'",
@@ -191,13 +202,13 @@ HELP_TEXTS = {
     "ll": "Print lastest full commit hash.",
     "lm": "Print all merges.",
     "lt": "Print all tag",
-    "new": "Commit convenzionale new(modulo): descrizione.",
-    "fix": "Commit convenzionale fix(modulo): descrizione.",
-    "change": "Commit convenzionale change(modulo): descrizione.",
-    "docs": "Commit convenzionale docs(modulo): descrizione.",
-    "style": "Commit convenzionale style(modulo): descrizione.",
-    "revert": "Commit convenzionale revert(modulo): descrizione.",
-    "misc": "Commit convenzionale misc(modulo): descrizione.",
+    "new": "Conventional commit new(module): description.",
+    "fix": "Conventional commit fix(module): description.",
+    "change": "Conventional commit change(module): description.",
+    "docs": "Conventional commit docs(module): description.",
+    "style": "Conventional commit style(module): description.",
+    "revert": "Conventional commit revert(module): description.",
+    "misc": "Conventional commit misc(module): description.",
     "me": "Merge",
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
@@ -327,7 +338,7 @@ def run_command(cmd, cwd=None):
     return subprocess.run(cmd, check=True, cwd=cwd)
 
 
-# Run git commands returning stdout as text.
+# Esegue comandi git e restituisce l'output testuale.
 def run_git_text(args, cwd=None, check=True):
     proc = subprocess.run(
         ["git", *args],
@@ -346,7 +357,7 @@ def run_shell(command, cwd=None):
     return subprocess.run(command, shell=True, check=True, cwd=cwd)
 
 
-# Run git commands returning stdout as text.
+# Esegue comandi git e restituisce l'output testuale.
 def run_git_text(args, cwd=None, check=True):
     proc = subprocess.run(
         ["git", *args],
@@ -360,6 +371,7 @@ def run_git_text(args, cwd=None, check=True):
     return proc.stdout.strip()
 
 
+# Recupera le linee di stato porcelain del repository.
 def _git_status_lines():
     """Return the porcelain status lines without trimming leading spaces."""
     proc = subprocess.run(
@@ -373,6 +385,7 @@ def _git_status_lines():
     return proc.stdout.splitlines()
 
 
+# Determina se esistono modifiche non ancora nello staging.
 def has_unstaged_changes(status_lines=None):
     """Return True when there are worktree changes waiting to be staged."""
     lines = status_lines if status_lines is not None else _git_status_lines()
@@ -386,6 +399,7 @@ def has_unstaged_changes(status_lines=None):
     return False
 
 
+# Verifica la presenza di elementi già pronti nello staging.
 def has_staged_changes(status_lines=None):
     """Return True when there are staged entries ready to be committed."""
     lines = status_lines if status_lines is not None else _git_status_lines()
@@ -401,6 +415,7 @@ _REMOTE_REFS_UPDATED = False
 WIP_MESSAGE_RE = re.compile(r"^wip: work in progress\.$")
 
 
+# Aggiorna una sola volta i riferimenti remoti usando git.
 def _refresh_remote_refs():
     """Update remote references once per process to inform pull diagnostics."""
     global _REMOTE_REFS_UPDATED
@@ -409,11 +424,12 @@ def _refresh_remote_refs():
     try:
         run_git_cmd(["remote", "-v", "update"])
     except subprocess.CalledProcessError as exc:
-        print(f"Impossibile aggiornare i riferimenti remoti: {exc}", file=sys.stderr)
+        print(f"Unable to update remote references: {exc}", file=sys.stderr)
         return
     _REMOTE_REFS_UPDATED = True
 
 
+# Calcola la divergenza tra il branch locale e quello remoto.
 def _branch_remote_divergence(branch_key, remote="origin"):
     """Return a tuple (local_ahead, remote_ahead) for the requested branch key."""
     _refresh_remote_refs()
@@ -434,22 +450,26 @@ def _branch_remote_divergence(branch_key, remote="origin"):
     return (local_ahead, remote_ahead)
 
 
+# Indica se il branch remoto ha commit non ancora recuperati.
 def has_remote_branch_updates(branch_key, remote="origin"):
     """Return True if the remote tracking branch contains commits not yet fetched locally."""
     _, remote_ahead = _branch_remote_divergence(branch_key, remote=remote)
     return remote_ahead > 0
 
 
+# Verifica la presenza di aggiornamenti remoti per develop.
 def has_remote_develop_updates():
     """Shortcut that reports pending updates for the configured develop branch."""
     return has_remote_branch_updates("develop")
 
 
+# Verifica la presenza di aggiornamenti remoti per master.
 def has_remote_master_updates():
     """Shortcut that reports pending updates for the configured master branch."""
     return has_remote_branch_updates("master")
 
 
+# Restituisce il messaggio dell'ultima commit locale.
 def _head_commit_message():
     """Return the latest commit subject or an empty string on failure."""
     try:
@@ -458,6 +478,7 @@ def _head_commit_message():
         return ""
 
 
+# Ritorna l'hash della commit HEAD del repository.
 def _head_commit_hash():
     """Return the hash of HEAD or an empty string when unavailable."""
     try:
@@ -466,6 +487,7 @@ def _head_commit_hash():
         return ""
 
 
+# Controlla se una commit è presente nel branch indicato.
 def _commit_exists_in_branch(commit_hash, branch_name):
     """Return True if commit_hash is contained in branch_name."""
     if not commit_hash or not branch_name:
@@ -480,6 +502,7 @@ def _commit_exists_in_branch(commit_hash, branch_name):
     return proc.returncode == 0
 
 
+# Stabilisce se bisogna ammendare la commit WIP corrente.
 def _should_amend_existing_commit():
     """Determine if the current HEAD WIP commit should be amended."""
     message = _head_commit_message()
@@ -490,6 +513,7 @@ def _should_amend_existing_commit():
     return not _commit_exists_in_branch(commit_hash, develop_branch)
 
 
+# Verifica se il processo si trova all'interno di un repository git.
 def is_inside_git_repo():
     try:
         output = run_git_text(["rev-parse", "--is-inside-work-tree"])
@@ -525,6 +549,7 @@ SECTION_EMOJI = {
 }
 
 
+# Ottiene i tag semantici ordinati per data di creazione.
 def list_tags_sorted_by_date(repo_root: Path) -> List[TagInfo]:
     fmt = f"%(refname:strip=2){DELIM}%(creatordate:short){DELIM}%(objectname)"
     output = run_git_text(
@@ -544,6 +569,7 @@ def list_tags_sorted_by_date(repo_root: Path) -> List[TagInfo]:
     return tags
 
 
+# Estrae i soggetti dei commit in un intervallo di log.
 def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]:
     fmt = f"%s{RECORD}"
     out = run_git_text(
@@ -556,6 +582,7 @@ def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]:
     return [x.strip() for x in out.split(RECORD) if x.strip()]
 
 
+# Classifica un soggetto di commit secondo le categorie supportate.
 def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
     match = _CONVENTIONAL_RE.match(subject.strip())
     if not match:
@@ -578,6 +605,7 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
     return (section, line) if section else (None, "")
 
 
+# Genera la sezione di changelog relativa a un intervallo di commit.
 def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_range: str) -> Optional[str]:
     subjects = git_log_subjects(repo_root, rev_range)
     buckets: Dict[str, List[str]] = defaultdict(list)
@@ -609,6 +637,7 @@ def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_ran
     return "\n".join(lines).rstrip() + "\n"
 
 
+# Deriva l'URL base del remote origin per i link di confronto.
 def _canonical_origin_base(repo_root: Path) -> Optional[str]:
     url = run_git_text(["remote", "get-url", "origin"], cwd=repo_root, check=False).strip()
     if not url:
@@ -627,6 +656,7 @@ def _canonical_origin_base(repo_root: Path) -> Optional[str]:
     return base
 
 
+# Costruisce l'URL di confronto o di release per un tag.
 def get_origin_compare_url(base_url: Optional[str], prev_tag: Optional[str], tag: str) -> Optional[str]:
     if not base_url:
         return None
@@ -635,6 +665,7 @@ def get_origin_compare_url(base_url: Optional[str], prev_tag: Optional[str], tag
     return f"{base_url}/releases/tag/{tag}"
 
 
+# Compone la sezione History con i riferimenti di confronto.
 def build_history_section(repo_root: Path, tags: List[TagInfo], include_unreleased: bool) -> Optional[str]:
     base = _canonical_origin_base(repo_root)
     if not base:
@@ -653,6 +684,7 @@ def build_history_section(repo_root: Path, tags: List[TagInfo], include_unreleas
     return "\n".join(lines).rstrip() + "\n"
 
 
+# Assembla il documento completo del changelog.
 def generate_changelog_document(repo_root: Path, include_unreleased: bool) -> str:
     tags = list_tags_sorted_by_date(repo_root)
     origin_base = _canonical_origin_base(repo_root)
@@ -689,6 +721,7 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool) -> st
     return "\n".join(lines).rstrip() + "\n"
 
 
+# Trova i file che corrispondono alla wildcard di versione.
 def _collect_version_files(root, pattern):
     """Return an ordered list of files that match the provided glob pattern."""
     files = []
@@ -705,6 +738,7 @@ def _collect_version_files(root, pattern):
     return files
 
 
+# Itera tutte le versioni estratte tramite le regex fornite.
 def _iter_versions_in_text(text, compiled_regexes):
     """Yield every version string extracted by the compiled regex list."""
     for regex in compiled_regexes:
@@ -718,6 +752,7 @@ def _iter_versions_in_text(text, compiled_regexes):
                 yield match.group(0)
 
 
+# Gestisce i comandi di reset mostrando l'help quando richiesto.
 def _run_reset_with_help(base_args, extra):
     """Execute a reset command or show the reset help when --help is provided."""
     args = _to_args(extra)
@@ -727,15 +762,19 @@ def _run_reset_with_help(base_args, extra):
     return run_git_cmd(base_args, args)
 
 
-# Prepares commit operations shared by cm/wip aliases.
+# Prepara le operazioni di commit condivise tra gli alias cm e wip.
 def _prepare_commit_message(extra, alias):
     args = _to_args(extra)
     if not args:
-        print(f"git {alias} richiede un messaggio da specificare dopo il comando.", file=sys.stderr)
+        print(f"git {alias} requires a message after the command.", file=sys.stderr)
         sys.exit(1)
+    if args[0] == "--help":
+        print_command_help(alias)
+        sys.exit(0)
     return " ".join(args)
 
 
+# Costruisce il messaggio convenzionale partendo dagli argomenti.
 def _build_conventional_message(kind: str, extra, alias: str) -> str:
     text = _prepare_commit_message(extra, alias).strip()
     match = _MODULE_PREFIX_RE.match(text)
@@ -746,17 +785,19 @@ def _build_conventional_message(kind: str, extra, alias: str) -> str:
         scope = get_config_value("default_module")
         body = text
     if not body:
-        print(f"git {alias} richiede un testo dopo il prefisso '<modulo>:' per completare il messaggio.", file=sys.stderr)
+        print(f"git {alias} requires text after the '<module>:' prefix to complete the message.", file=sys.stderr)
         sys.exit(1)
     return f"{kind}({scope}): {body}"
 
 
+# Coordina l'esecuzione dei commit convenzionali condivisi.
 def _run_conventional_commit(kind: str, alias: str, extra):
-    _ensure_commit_ready(alias)
     message = _build_conventional_message(kind, extra, alias)
+    _ensure_commit_ready(alias)
     return _execute_commit(message, alias, allow_amend=False)
 
 
+# Esegue git commit applicando i controlli e l'eventuale amend.
 def _execute_commit(message, alias, allow_amend=True):
     amend = _should_amend_existing_commit() if allow_amend else False
     action = (
@@ -775,12 +816,12 @@ def _execute_commit(message, alias, allow_amend=True):
         status_lines = _git_status_lines()
         if has_unstaged_changes(status_lines):
             print(
-                f"Impossibile eseguire git {alias}: sono presenti modifiche non ancora aggiunte all'area di staging.",
+                f"Unable to run git {alias}: unstaged changes are still present.",
                 file=sys.stderr,
             )
             sys.exit(exc.returncode or 1)
         if not has_staged_changes(status_lines):
-            print(f"Impossibile eseguire git {alias}: l'area di staging è vuota.", file=sys.stderr)
+            print(f"Unable to run git {alias}: the staging area is empty.", file=sys.stderr)
             sys.exit(exc.returncode or 1)
         raise
 
@@ -810,7 +851,7 @@ def remove_self():
 def cmd_aa(extra):
     status_lines = _git_status_lines()
     if not has_unstaged_changes(status_lines):
-        print("Nessuna modifica da aggiungere all'area di staging.", file=sys.stderr)
+        print("No changes are available to add to the staging area.", file=sys.stderr)
         sys.exit(1)
     return run_git_cmd(["add", "--all"], extra)
 
@@ -850,53 +891,68 @@ def _ensure_commit_ready(alias):
     status_lines = _git_status_lines()
     if has_unstaged_changes(status_lines):
         print(
-            f"Impossibile eseguire git {alias}: sono presenti modifiche non ancora aggiunte all'area di staging.",
+            f"Unable to run git {alias}: unstaged changes are still present.",
             file=sys.stderr,
         )
         sys.exit(1)
     if not has_staged_changes(status_lines):
-        print(f"Impossibile eseguire git {alias}: l'area di staging è vuota.", file=sys.stderr)
+        print(f"Unable to run git {alias}: the staging area is empty.", file=sys.stderr)
         sys.exit(1)
     return True
 
 
+# Esegue l'alias 'cm' con i controlli condivisi di commit.
 def cmd_cm(extra):
-    _ensure_commit_ready("cm")
     message = _prepare_commit_message(extra, "cm")
+    _ensure_commit_ready("cm")
     return _execute_commit(message, "cm")
 
 
+# Esegue l'alias 'wip' con messaggio fisso e verifiche condivise.
 def cmd_wip(extra):
-    del extra  # unused
+    if extra:
+        args = _to_args(extra)
+        if args == ["--help"]:
+            print_command_help("wip")
+            return
+        print("git wip does not accept positional arguments.", file=sys.stderr)
+        sys.exit(1)
     _ensure_commit_ready("wip")
     message = "wip: work in progress."
     return _execute_commit(message, "wip")
 
 
+# Esegue l'alias 'new' creando un commit convenzionale.
 def cmd_new(extra):
     return _run_conventional_commit("new", "new", extra)
 
 
+# Esegue l'alias 'fix' creando un commit convenzionale.
 def cmd_fix(extra):
     return _run_conventional_commit("fix", "fix", extra)
 
 
+# Esegue l'alias 'change' creando un commit convenzionale.
 def cmd_change(extra):
     return _run_conventional_commit("change", "change", extra)
 
 
+# Esegue l'alias 'docs' creando un commit convenzionale.
 def cmd_docs(extra):
     return _run_conventional_commit("docs", "docs", extra)
 
 
+# Esegue l'alias 'style' creando un commit convenzionale.
 def cmd_style(extra):
     return _run_conventional_commit("style", "style", extra)
 
 
+# Esegue l'alias 'revert' creando un commit convenzionale.
 def cmd_revert(extra):
     return _run_conventional_commit("revert", "revert", extra)
 
 
+# Esegue l'alias 'misc' creando un commit convenzionale.
 def cmd_misc(extra):
     return _run_conventional_commit("misc", "misc", extra)
 
@@ -962,6 +1018,7 @@ def cmd_lb(extra):
     return run_git_cmd(["branch", "-v", "-a"], extra)
 
 
+# Esegue l'alias 'lg' per mostrare la cronologia dei commit.
 def cmd_lg(extra):
     return run_git_cmd(
         [
@@ -1104,7 +1161,7 @@ def cmd_unstg(extra):
 
 # Verifica la consistenza delle versioni nei file configurati (alias ver).
 def cmd_ver(extra):
-    del extra  # unused
+    del extra  # non usato
     root = get_git_root()
     rules = get_version_rules()
     if not rules:
@@ -1145,6 +1202,7 @@ def cmd_ver(extra):
     print(canonical)
 
 
+# Genera il file CHANGELOG.md tramite l'alias 'changelog'.
 def cmd_changelog(extra):
     parser = argparse.ArgumentParser(prog="g changelog", add_help=False)
     parser.add_argument("--force-write", dest="force_write", action="store_true")
@@ -1154,13 +1212,13 @@ def cmd_changelog(extra):
     try:
         args = parser.parse_args(list(extra))
     except SystemExit:
-        print("Argomenti non validi per g changelog.", file=sys.stderr)
+        print("Invalid arguments for g changelog.", file=sys.stderr)
         sys.exit(2)
     if args.help:
         print_command_help("changelog")
         return
     if not is_inside_git_repo():
-        print("Errore: eseguire g changelog all'interno di un repository Git.", file=sys.stderr)
+        print("Error: run g changelog inside a Git repository.", file=sys.stderr)
         sys.exit(2)
     repo_root = get_git_root()
     content = generate_changelog_document(repo_root, args.include_unreleased)
@@ -1170,12 +1228,12 @@ def cmd_changelog(extra):
     destination = Path(repo_root) / "CHANGELOG.md"
     if destination.exists() and not args.force_write:
         print(
-            "CHANGELOG.md esiste già. Usa --force-write per sovrascrivere il file o --print-only per stampare il nuovo contenuto.",
+            "CHANGELOG.md already exists. Use --force-write to overwrite it or --print-only to show the new content.",
             file=sys.stderr,
         )
         sys.exit(1)
     destination.write_text(content, encoding="utf-8")
-    print(f"\nFile generato: {destination}")
+    print(f"\nGenerated file: {destination}")
 
 COMMANDS = {
     "aa": cmd_aa,
@@ -1243,6 +1301,7 @@ def print_all_help():
         print_command_help(name)
 
 
+# Gestisce il parsing degli argomenti ed esegue l'alias richiesto.
 def main(argv=None):
     """Parse CLI arguments and either show help text or invoke the requested alias."""
     args = list(argv) if argv is not None else sys.argv[1:]

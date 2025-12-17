@@ -56,4 +56,23 @@ class CmdWipTest(unittest.TestCase):
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 with self.assertRaises(SystemExit):
                     core.cmd_wip([])
-            self.assertIn("Impossibile eseguire git wip", stderr.getvalue())
+            self.assertIn("Unable to run git wip", stderr.getvalue())
+
+    def test_cmd_wip_help_does_not_run_checks(self):
+        with mock.patch.object(core, "_ensure_commit_ready") as ensure, mock.patch.object(
+            core, "run_git_cmd"
+        ) as run_git:
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                core.cmd_wip(["--help"])
+            ensure.assert_not_called()
+            run_git.assert_not_called()
+            self.assertIn("wip -", stdout.getvalue())
+
+    def test_cmd_wip_rejects_extra_arguments(self):
+        with mock.patch.object(core, "_ensure_commit_ready"):
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                with self.assertRaises(SystemExit):
+                    core.cmd_wip(["unexpected"])
+            self.assertIn("does not accept positional arguments", err.getvalue())

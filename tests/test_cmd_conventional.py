@@ -40,7 +40,7 @@ class ConventionalCommitAliasesTest(unittest.TestCase):
             with contextlib.redirect_stderr(err):
                 with self.assertRaises(SystemExit):
                     core.cmd_new([])
-            self.assertIn("git new richiede un messaggio", err.getvalue())
+            self.assertIn("git new requires a message", err.getvalue())
 
     def test_prefix_without_body_is_rejected(self):
         with mock.patch.object(core, "_ensure_commit_ready"):
@@ -48,7 +48,20 @@ class ConventionalCommitAliasesTest(unittest.TestCase):
             with contextlib.redirect_stderr(err):
                 with self.assertRaises(SystemExit):
                     core.cmd_misc(["core:"])
-            self.assertIn("prefisso", err.getvalue())
+            self.assertIn("'<module>:' prefix", err.getvalue())
+
+    def test_help_argument_prints_help(self):
+        with mock.patch.object(core, "_ensure_commit_ready") as ensure, mock.patch.object(
+            core, "_execute_commit"
+        ) as execute:
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                with self.assertRaises(SystemExit) as ctx:
+                    core.cmd_fix(["--help"])
+        self.assertEqual(ctx.exception.code, 0)
+        self.assertIn("fix -", stdout.getvalue())
+        ensure.assert_not_called()
+        execute.assert_not_called()
 
 
 if __name__ == "__main__":
