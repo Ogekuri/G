@@ -169,10 +169,11 @@ def run_editor_command(args):
 HELP_TEXTS = {
     "aa": "Add all file changes/added to stage area for commit.",
     "ar": "Archive the configured master branch as zip file. Use tag as filename.",
+    "bd": "Delete a local branch: git bd '<branch>'.",
     "br": "Create a new brach.",
     "changelog": "Generate CHANGELOG.md from conventional commits (supports --include-unreleased, --force-write, --print-only).",
     "ck": "Check differences.",
-    "cm": "Commit with annotation: git cm '<descritoon>'.",
+    "cm": "Commit standard con verifica staging/worktree: git cm '<descrizione>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
     "de": "Describe current version with tag of last commit.",
     "di": "Discard current changes on file: git di '<filename>'",
@@ -183,17 +184,17 @@ HELP_TEXTS = {
     "feall": "Fetch new data from origin for all branch.",
     "gp": "Open git commits graph (Git K).",
     "gr": "Open git tags graph (Git K).",
-    "lg": "Show commit history.",
-    "lh": "Show last commit details",
-    "ll": "Show lastest full commit hash.",
-    "lm": "Show all merges.",
-    "lsbr": "Print all branches.",
-    "lt": "Show all tag",
+    "lb": "Print all branches.",
+    "lg": "Print commit history.",
+    "lh": "Print last commit details",
+    "ll": "Print lastest full commit hash.",
+    "lm": "Print all merges.",
+    "lt": "Print all tag",
     "me": "Merge",
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
-    "rf": "Show changes on HEAD reference.",
+    "rf": "Print changes on HEAD reference.",
     "rmloc": "Remove changed files from the working tree.",
     "rmstg": "Remove staged files from index tree.",
     "rmtg": "Remove a tag on current branch and from origin.",
@@ -204,7 +205,7 @@ HELP_TEXTS = {
     "rsmix": "Mixed reset alias (--mixed).",
     "rsmrg": "Merge reset alias (--merge).",
     "rssft": "Soft reset alias (--soft).",
-    "st": "Show current GIT status.",
+    "st": "Print current GIT status.",
     "tg": "Create a new annotate tag. Syntax: git tg <description> <tag>.",
     "unstg": "Un-stage a file from commit: git unstg '<filename>'. Unstage all files with: git unstg *.",
     "ver": "Verify version consistency across configured files.",
@@ -348,6 +349,71 @@ def run_git_text(args, cwd=None, check=True):
     if check and proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip() or f"git {' '.join(args)} failed")
     return proc.stdout.strip()
+
+
+def _git_status_lines():
+    """Return the porcelain status lines for the current repository."""
+    output = run_git_text(["status", "--porcelain"], check=False)
+    return output.splitlines() if output else []
+
+
+def has_unstaged_changes(status_lines=None):
+    """Return True when there are worktree changes waiting to be staged."""
+    lines = status_lines if status_lines is not None else _git_status_lines()
+    for line in lines:
+        if not line:
+            continue
+        if line.startswith("??"):
+            return True
+        if len(line) > 1 and line[1] != " ":
+            return True
+    return False
+
+
+def has_staged_changes(status_lines=None):
+    """Return True when there are staged entries ready to be committed."""
+    lines = status_lines if status_lines is not None else _git_status_lines()
+    for line in lines:
+        if not line or line.startswith("??"):
+            continue
+        if line[0] != " ":
+            return True
+    return False
+
+
+def _branch_remote_divergence(branch_key, remote="origin"):
+    """Return a tuple (local_ahead, remote_ahead) for the requested branch key."""
+    branch = get_branch(branch_key)
+    upstream = f"{remote}/{branch}"
+    try:
+        counts = run_git_text(["rev-list", "--left-right", "--count", f"{branch}...{upstream}"])
+    except RuntimeError:
+        return (0, 0)
+    parts = counts.strip().split()
+    if len(parts) < 2:
+        return (0, 0)
+    try:
+        local_ahead = int(parts[0])
+        remote_ahead = int(parts[1])
+    except ValueError:
+        return (0, 0)
+    return (local_ahead, remote_ahead)
+
+
+def has_remote_branch_updates(branch_key, remote="origin"):
+    """Return True if the remote tracking branch contains commits not yet fetched locally."""
+    _, remote_ahead = _branch_remote_divergence(branch_key, remote=remote)
+    return remote_ahead > 0
+
+
+def has_remote_develop_updates():
+    """Shortcut that reports pending updates for the configured develop branch."""
+    return has_remote_branch_updates("develop")
+
+
+def has_remote_master_updates():
+    """Shortcut that reports pending updates for the configured master branch."""
+    return has_remote_branch_updates("master")
 
 
 def is_inside_git_repo():
@@ -606,6 +672,10 @@ def remove_self():
 
 # Aggiunge tutte le modifiche e i nuovi file all'area di staging (alias aa).
 def cmd_aa(extra):
+    status_lines = _git_status_lines()
+    if not has_unstaged_changes(status_lines):
+        print("Nessuna modifica da aggiungere all'area di staging.", file=sys.stderr)
+        sys.exit(1)
     return run_git_cmd(["add", "--all"], extra)
 
 
@@ -629,9 +699,9 @@ def cmd_br(extra):
     return run_git_cmd(["branch"], extra)
 
 
-# Elenca tutti i rami locali e remoti con informazioni aggiuntive (alias lsbr).
-def cmd_lsbr(extra):
-    return run_git_cmd(["branch", "-v", "-a"], extra)
+# Elimina un branch locale (alias bd).
+def cmd_bd(extra):
+    return run_git_cmd(["branch", "-d"], extra)
 
 
 # Controlla le differenze e i possibili conflitti (alias ck).
@@ -641,6 +711,16 @@ def cmd_ck(extra):
 
 # Esegue commit con messaggio (alias cm).
 def cmd_cm(extra):
+    status_lines = _git_status_lines()
+    if has_unstaged_changes(status_lines):
+        print(
+            "Impossibile eseguire git cm: sono presenti modifiche non ancora aggiunte all'area di staging.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if not has_staged_changes(status_lines):
+        print("Impossibile eseguire git cm: l'area di staging è vuota.", file=sys.stderr)
+        sys.exit(1)
     return run_git_cmd(["commit", "-m"], extra)
 
 
@@ -700,6 +780,11 @@ def cmd_gr(extra):
     return run_command(["gitk", "--simplify-by-decoration", "--all"] + _to_args(extra))
 
 
+# Elenca tutti i rami locali e remoti con informazioni aggiuntive (alias lb).
+def cmd_lb(extra):
+    return run_git_cmd(["branch", "-v", "-a"], extra)
+
+
 def cmd_lg(extra):
     return run_git_cmd(
         [
@@ -712,6 +797,11 @@ def cmd_lg(extra):
         ],
         extra,
     )
+
+
+# Mostra i dettagli dell'ultimo commit (alias lh).
+def cmd_lh(extra):
+    return run_git_cmd(["log", "-1", "HEAD"], extra)
 
 
 # Mostra i commit nel formato oneline completo (alias ll).
@@ -731,11 +821,6 @@ def cmd_ll(extra):
 # Mostra soltanto i merge (alias lm).
 def cmd_lm(extra):
     return run_git_cmd(["log", "--merges"], extra)
-
-
-# Mostra i dettagli dell'ultimo commit (alias lh).
-def cmd_lh(extra):
-    return run_git_cmd(["log", "-1", "HEAD"], extra)
 
 
 # Elenca i tag presenti (alias lt).
@@ -918,6 +1003,7 @@ def cmd_changelog(extra):
 COMMANDS = {
     "aa": cmd_aa,
     "ar": cmd_ar,
+    "bd": cmd_bd,
     "br": cmd_br,
     "changelog": cmd_changelog,
     "ck": cmd_ck,
@@ -932,11 +1018,11 @@ COMMANDS = {
     "feall": cmd_feall,
     "gp": cmd_gp,
     "gr": cmd_gr,
+    "lb": cmd_lb,
     "lg": cmd_lg,
     "lh": cmd_lh,
     "ll": cmd_ll,
     "lm": cmd_lm,
-    "lsbr": cmd_lsbr,
     "lt": cmd_lt,
     "me": cmd_me,
     "pl": cmd_pl,
