@@ -559,8 +559,15 @@ def _should_amend_existing_commit():
     if not (message and WIP_MESSAGE_RE.match(message)):
         return False
     commit_hash = _head_commit_hash()
+    if not commit_hash:
+        return False
     develop_branch = get_branch("develop")
-    return not _commit_exists_in_branch(commit_hash, develop_branch)
+    master_branch = get_branch("master")
+    if _commit_exists_in_branch(commit_hash, develop_branch):
+        return False
+    if _commit_exists_in_branch(commit_hash, master_branch):
+        return False
+    return True
 
 
 # Verifica se il processo si trova all'interno di un repository git.
