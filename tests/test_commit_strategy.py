@@ -10,7 +10,10 @@ class CommitStrategyTest(unittest.TestCase):
 
     def test_should_amend_returns_false_when_message_is_not_wip(self):
         with mock.patch.object(core, "_head_commit_message", return_value="fix bug"):
-            self.assertFalse(core._should_amend_existing_commit())
+            result = core._should_amend_existing_commit()
+            self.assertIsInstance(result, tuple)
+            self.assertFalse(result[0])
+            self.assertIn("not a WIP commit", result[1])
 
     def test_should_amend_returns_false_when_commit_already_in_develop(self):
         with mock.patch.object(core, "_head_commit_message", return_value="wip: work in progress."), mock.patch.object(
@@ -18,7 +21,10 @@ class CommitStrategyTest(unittest.TestCase):
         ), mock.patch.object(core, "get_branch", return_value="develop"), mock.patch.object(
             core, "_commit_exists_in_branch", return_value=True
         ):
-            self.assertFalse(core._should_amend_existing_commit())
+            result = core._should_amend_existing_commit()
+            self.assertIsInstance(result, tuple)
+            self.assertFalse(result[0])
+            self.assertIn("already contained", result[1])
 
     def test_should_amend_returns_true_for_pending_wip(self):
         with mock.patch.object(core, "_head_commit_message", return_value="wip: work in progress."), mock.patch.object(
@@ -26,4 +32,7 @@ class CommitStrategyTest(unittest.TestCase):
         ), mock.patch.object(core, "get_branch", return_value="develop"), mock.patch.object(
             core, "_commit_exists_in_branch", return_value=False
         ):
-            self.assertTrue(core._should_amend_existing_commit())
+            result = core._should_amend_existing_commit()
+            self.assertIsInstance(result, tuple)
+            self.assertTrue(result[0])
+            self.assertIn("pending locally", result[1])

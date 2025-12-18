@@ -1,3 +1,4 @@
+import re
 import subprocess
 import sys
 import unittest
@@ -48,9 +49,13 @@ class AliasHelpTest(unittest.TestCase):
     def test_global_help_contains_hlal_entries(self):
         output = self.run_script(["--help"])
         for alias, desc in self.expected_help.items():
-            self.assertIn(
-                f"{alias} - {desc}",
+            pattern = re.compile(
+                rf"^\s*{re.escape(alias)}\s+-\s+{re.escape(desc)}\s*$",
+                re.MULTILINE,
+            )
+            self.assertRegex(
                 output,
+                pattern,
                 msg=f"{alias} help missing from global --help",
             )
 

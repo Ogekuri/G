@@ -571,29 +571,21 @@ def _commit_exists_in_branch(commit_hash, branch_name):
 
 
 # Stabilisce se bisogna ammendare la commit WIP corrente.
-def _should_amend_existing_commit(return_reason=False):
+def _should_amend_existing_commit():
     """Determine if the current HEAD WIP commit should be amended."""
     message = _head_commit_message()
     if not (message and WIP_MESSAGE_RE.match(message)):
-        return (False, "HEAD is not a WIP commit.") if return_reason else False
+        return (False, "HEAD is not a WIP commit.")
     commit_hash = _head_commit_hash()
     if not commit_hash:
-        return (False, "Unable to determine the HEAD commit hash.") if return_reason else False
+        return (False, "Unable to determine the HEAD commit hash.")
     develop_branch = get_branch("develop")
     master_branch = get_branch("master")
     if _commit_exists_in_branch(commit_hash, develop_branch):
-        return (
-            (False, f"The last WIP commit is already contained in {develop_branch}.")
-            if return_reason
-            else False
-        )
+        return (False, f"The last WIP commit is already contained in {develop_branch}.")
     if _commit_exists_in_branch(commit_hash, master_branch):
-        return (
-            (False, f"The last WIP commit is already contained in {master_branch}.")
-            if return_reason
-            else False
-        )
-    return (True, "HEAD WIP commit is still pending locally.") if return_reason else True
+        return (False, f"The last WIP commit is already contained in {master_branch}.")
+    return (True, "HEAD WIP commit is still pending locally.")
 
 
 # Verifica se il processo si trova all'interno di un repository git.
@@ -1118,26 +1110,21 @@ def _run_conventional_commit(kind: str, alias: str, extra):
 # Esegue git commit applicando i controlli e l'eventuale amend.
 def _execute_commit(message, alias, allow_amend=True):
     if allow_amend:
-        decision = _should_amend_existing_commit(return_reason=True)
-        if isinstance(decision, tuple):
-            amend, reason = decision
-        else:
-            amend = bool(decision)
-            reason = "Amend decision not provided."
+        amend, reason = _should_amend_existing_commit()
     else:
         amend = False
         reason = "Amend is disabled for this alias."
     if amend:
         print(f"Updating the existing WIP commit (--amend). Reason: {reason}")
     else:
-        print(f"Creating a new commit. Reason: {reason} (nuova commit)")
+        print(f"Creating a new commit. Reason: {reason}")
     base = ["commit"]
     if amend:
         base.append("--amend")
     base.extend(["-F", "-"])
     try:
         return run_git_cmd(base, input=message, text=True)
-    except (CommandExecutionError, subprocess.CalledProcessError) as exc:
+    except CommandExecutionError as exc:
         status_lines = _git_status_lines()
         if has_unstaged_changes(status_lines):
             print(
@@ -1682,7 +1669,10 @@ COMMANDS = {
 # Stampa la descrizione di un singolo comando.
 def print_command_help(name, width=None):
     description = HELP_TEXTS.get(name, "No help text is available for this command.")
-    print(f"{name} - {description}")
+    if width is None:
+        print(f"{name} - {description}")
+    else:
+        print(f"{name.ljust(width)} - {description}")
 
 # Stampa la descrizione di tutti i comandi disponibili in ordine alfabetico.
 def print_all_help():
@@ -1720,6 +1710,7 @@ def print_all_help():
     print("Commands:")
     help_width = max(len(name) for name in HELP_TEXTS)
     for name in sorted(COMMANDS.keys()):
+        print("  ", end="")
         print_command_help(name, width=help_width)
 
 

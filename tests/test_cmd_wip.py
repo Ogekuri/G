@@ -13,7 +13,7 @@ class CmdWipTest(unittest.TestCase):
 
     def test_cmd_wip_creates_new_commit_when_not_amending(self):
         with mock.patch.object(core, "_git_status_lines", return_value=["A  file"]), mock.patch.object(
-            core, "_should_amend_existing_commit", return_value=False
+            core, "_should_amend_existing_commit", return_value=(False, "Unit test: new commit")
         ), mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
@@ -23,11 +23,11 @@ class CmdWipTest(unittest.TestCase):
                 input="wip: work in progress.",
                 text=True,
             )
-            self.assertIn("nuova commit", buffer.getvalue())
+            self.assertIn("Creating a new commit", buffer.getvalue())
 
     def test_cmd_wip_uses_amend_when_requested(self):
         with mock.patch.object(core, "_git_status_lines", return_value=["A  file"]), mock.patch.object(
-            core, "_should_amend_existing_commit", return_value=True
+            core, "_should_amend_existing_commit", return_value=(True, "Unit test: amend")
         ), mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
@@ -44,13 +44,12 @@ class CmdWipTest(unittest.TestCase):
             ["A  file"],
             [" M file"],
         ]
+        command_error = core.CommandExecutionError(
+            subprocess.CalledProcessError(1, ["git", "commit"])
+        )
         with mock.patch.object(core, "_git_status_lines", side_effect=status_side_effect), mock.patch.object(
-            core, "_should_amend_existing_commit", return_value=False
-        ), mock.patch.object(
-            core,
-            "run_git_cmd",
-            side_effect=subprocess.CalledProcessError(1, ["git", "commit"]),
-        ):
+            core, "_should_amend_existing_commit", return_value=(False, "Unit test: new commit")
+        ), mock.patch.object(core, "run_git_cmd", side_effect=command_error):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):

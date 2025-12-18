@@ -38,18 +38,18 @@ class CmdCmTest(unittest.TestCase):
     def test_cmd_cm_invokes_git_commit_when_checks_pass(self):
         lines = ["A  file.txt"]
         with mock.patch.object(core, "_git_status_lines", return_value=lines), mock.patch.object(
-            core, "_should_amend_existing_commit", return_value=False
+            core, "_should_amend_existing_commit", return_value=(False, "Unit test: new commit")
         ), mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
                 core.cmd_cm(["message"])
             run_git.assert_called_once_with(["commit", "-F", "-"], input="message", text=True)
-            self.assertIn("nuova commit", buffer.getvalue())
+            self.assertIn("Creating a new commit", buffer.getvalue())
 
     def test_cmd_cm_uses_amend_when_wip_not_on_develop(self):
         lines = ["A  file.txt"]
         with mock.patch.object(core, "_git_status_lines", return_value=lines), mock.patch.object(
-            core, "_should_amend_existing_commit", return_value=True
+            core, "_should_amend_existing_commit", return_value=(True, "Unit test: amend")
         ), mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
@@ -62,13 +62,12 @@ class CmdCmTest(unittest.TestCase):
             ["A  file.txt"],  # initial readiness check passes
             [" M file.txt"],  # re-check after git failure shows unstaged data
         ]
+        command_error = core.CommandExecutionError(
+            subprocess.CalledProcessError(1, ["git", "commit"])
+        )
         with mock.patch.object(core, "_git_status_lines", side_effect=status_side_effect), mock.patch.object(
-            core, "_should_amend_existing_commit", return_value=False
-        ), mock.patch.object(
-            core,
-            "run_git_cmd",
-            side_effect=subprocess.CalledProcessError(1, ["git", "commit"]),
-        ):
+            core, "_should_amend_existing_commit", return_value=(False, "Unit test: new commit")
+        ), mock.patch.object(core, "run_git_cmd", side_effect=command_error):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
