@@ -220,6 +220,7 @@ HELP_TEXTS = {
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
     "patch": "Release a new patch version from the work branch.",
+    "release": "Create a release commit using the detected project version.",
     "rf": "Print changes on HEAD reference.",
     "rmloc": "Remove changed files from the working tree.",
     "rmstg": "Remove staged files from index tree.",
@@ -1003,6 +1004,9 @@ def _run_release_step(step_name, action):
         err_text = CommandExecutionError._decode_stream(exc.stderr).strip()
         message = err_text if err_text else str(exc)
         raise ReleaseError(f"[release] Step '{step_name}' failed: {message}") from None
+    except SystemExit as exc:
+        code = exc.code if isinstance(exc.code, int) else 1
+        raise ReleaseError(f"[release] Step '{step_name}' failed: command exited with status {code}") from None
     except Exception as exc:
         raise ReleaseError(f"[release] Step '{step_name}' failed: {exc}") from None
 
@@ -1021,7 +1025,7 @@ def _execute_release_flow(level):
 
     _run_release_step("update versions", lambda: cmd_chver([target_version]))
     _run_release_step("stage files", lambda: run_git_cmd(["add", "--all"]))
-    _run_release_step("create release commit", lambda: cmd_new([release_message]))
+    _run_release_step("create release commit", lambda: cmd_release([]))
     _run_release_step("tag release", lambda: cmd_tg([release_message, f"v{target_version}"]))
     _run_release_step("regenerate changelog", lambda: cmd_changelog(["--force-write"]))
     _run_release_step("stage changelog", lambda: run_git_cmd(["add", "CHANGELOG.md"]))
@@ -1242,6 +1246,30 @@ def cmd_wip(extra):
     _ensure_commit_ready("wip")
     message = "wip: work in progress."
     return _execute_commit(message, "wip")
+
+
+# Esegue l'alias 'release' determinando prima la versione corrente.
+def cmd_release(extra):
+    args = _to_args(extra)
+    if args:
+        if args == ["--help"]:
+            print_command_help("release")
+            return
+        print("git release does not accept positional arguments.", file=sys.stderr)
+        sys.exit(1)
+    _ensure_commit_ready("release")
+    rules = get_version_rules()
+    if not rules:
+        print("No version rules configured.", file=sys.stderr)
+        sys.exit(1)
+    root = get_git_root()
+    try:
+        version = _determine_canonical_version(root, rules)
+    except VersionDetectionError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+    message = f"release version: {version}"
+    return _execute_commit(message, "release")
 
 
 # Esegue l'alias 'new' creando un commit convenzionale.
@@ -1654,6 +1682,7 @@ COMMANDS = {
     "minor": cmd_minor,
     "new": cmd_new,
     "patch": cmd_patch,
+    "release": cmd_release,
     "pl": cmd_pl,
     "pt": cmd_pt,
     "pu": cmd_pu,
