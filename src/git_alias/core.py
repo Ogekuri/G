@@ -1334,7 +1334,10 @@ def main(argv=None):
     name = args[0]
     extras = args[1:]
     if name not in COMMANDS:
-        run_git_cmd([name], extras)
+        try:
+            run_git_cmd([name], extras)
+        except subprocess.CalledProcessError as exc:
+            sys.exit(exc.returncode or 1)
         return
     if "--help" in extras:
         if name in RESET_HELP_COMMANDS:
