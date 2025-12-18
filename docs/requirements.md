@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git Alias CLI
-**Versione**: 0.31
+**Versione**: 0.32
 **Autore**: Francesco Rolando  
 **Data**: 2025-12-17
 
@@ -66,6 +66,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2025-12-17 | 0.29 | Gestione centralizzata delle eccezioni dei processi esterni e propagazione controllata degli errori |
 | 2025-12-17 | 0.30 | Messaggi CLI obbligatoriamente in inglese con spiegazione delle operazioni di commit relative ad amend |
 | 2025-12-17 | 0.31 | Struttura completa dell'help globale con usage, comandi di gestione, configurazione attiva e alias |
+| 2025-12-17 | 0.32 | Introduzione del comando `chver` per aggiornare o ripristinare la versione del progetto |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -141,3 +142,4 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-022**: Gli alias `new`, `fix`, `change`, `docs`, `style`, `revert` e `misc` devono eseguire commit convenzionali compatibili con il comando `changelog`, utilizzando messaggi nel formato `<tipo>(<modulo>): <descrizione>`. Ogni comando deve riutilizzare gli stessi controlli di readiness di `cm`/`wip`, accettare il testo del commit come argomento obbligatorio e consentire di specificare il modulo anticipando il testo con `nome_modulo: descrizione`. Quando il modulo non viene indicato, deve essere applicato un valore di default configurabile tramite `.g.conf` (default `core`).
 - **REQ-023**: Tutti i messaggi stampati da `core.py` (su stdout, stderr, in modalità normale, verbose o debug) devono essere in lingua inglese, inclusi gli help dei comandi e le diagnostiche degli alias.
 - **REQ-024**: Ogni funzione definita in `core.py` deve essere preceduta da un breve commento descrittivo in italiano che inizi con il carattere `#`, e tutti i commenti presenti nel file devono seguire lo stesso formato e lingua.
+- **REQ-025**: Il comando `chver` deve accettare esattamente un argomento nel formato `major.minor.patch` (tre interi separati da punti), verificare la versione corrente tramite `ver`, terminare con errore se `ver` non restituisce una versione univoca o se l'argomento non è valido, evitare modifiche quando la versione richiesta coincide con quella corrente, determinare se l'operazione è un upgrade o un downgrade confrontando `major`, `minor` e `patch`, riscrivere tutte le occorrenze che corrispondono alle regole `ver_rules` attive (quelle lette da `.g.conf` o, in mancanza, `DEFAULT_CONFIG`), e al termine rieseguire `ver` per confermare la nuova versione stampando un messaggio di successo esplicito (upgrade o downgrade). Se la riesecuzione di `ver` non conferma la versione impostata, `chver` deve segnalare un errore critico.

@@ -186,11 +186,12 @@ HELP_TEXTS = {
     "ar": "Archive the configured master branch as zip file. Use tag as filename.",
     "bd": "Delete a local branch: git bd '<branch>'.",
     "br": "Create a new branch.",
+    "chver": "Change the project version to the provided semantic version.",
     "changelog": "Generate CHANGELOG.md from conventional commits (supports --include-unreleased, --force-write, --print-only).",
     "ck": "Check differences.",
     "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
-    "de": "Describe current version with tag of last commit.",
+    "de": "Print last tagged commit details.",
     "di": "Discard current changes on file: git di '<filename>'",
     "dime": "Discard merge changes in favor of their files.",
     "diyou": "Discard merge changes in favor of your files.",
@@ -362,6 +363,11 @@ def _run_checked(*popenargs, **kwargs):
         return subprocess.run(*popenargs, **kwargs)
     except subprocess.CalledProcessError as exc:
         raise CommandExecutionError(exc) from None
+
+
+# Eccezione dedicata alla rilevazione della versione corrente.
+class VersionDetectionError(RuntimeError):
+    pass
 
 
 # Invia un comando git con argomenti principali e supplementari nella directory indicata.
@@ -599,6 +605,7 @@ _CONVENTIONAL_RE = re.compile(
 )
 _MODULE_PREFIX_RE = re.compile(r"^(?P<module>[A-Za-z0-9_]+):\s*(?P<body>.*)$")
 _SEMVER_TAG_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
+SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 SECTION_EMOJI = {
     "Features": "⛰️",
     "Bug Fixes": "🐛",
@@ -811,6 +818,65 @@ def _iter_versions_in_text(text, compiled_regexes):
                         break
             else:
                 yield match.group(0)
+
+
+# Determina la versione canonica analizzando i file configurati.
+def _determine_canonical_version(root: Path, rules):
+    canonical = None
+    canonical_file = None
+    for pattern, expression in rules:
+        files = _collect_version_files(root, pattern)
+        if not files:
+            continue
+        try:
+            compiled = re.compile(expression)
+        except re.error as exc:
+            print(f"Ignoring invalid regex '{expression}' for pattern '{pattern}': {exc}", file=sys.stderr)
+            continue
+        for file_path in files:
+            try:
+                text = file_path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                text = file_path.read_text(encoding="utf-8", errors="ignore")
+            except OSError as exc:
+                print(f"Unable to read {file_path}: {exc}", file=sys.stderr)
+                continue
+            for version in _iter_versions_in_text(text, [compiled]):
+                if canonical is None:
+                    canonical = version
+                    canonical_file = file_path
+                elif version != canonical:
+                    raise VersionDetectionError(
+                        f"Version mismatch between {canonical_file} ({canonical}) and {file_path} ({version})"
+                    )
+    if canonical is None:
+        raise VersionDetectionError("No version string matched the configured rule list.")
+    return canonical
+
+
+# Analizza una stringa di versione semantica e restituisce la tupla numerica.
+def _parse_semver_tuple(text):
+    match = SEMVER_RE.match((text or "").strip())
+    if not match:
+        return None
+    return tuple(int(match.group(i)) for i in range(1, 4))
+
+
+# Sostituisce le occorrenze di versione nel testo in base alle regex fornite.
+def _replace_versions_in_text(text, compiled_regex, replacement):
+    last_index = 0
+    pieces = []
+    count = 0
+    for match in compiled_regex.finditer(text):
+        span = match.span(1) if match.groups() else match.span(0)
+        pieces.append(text[last_index:span[0]])
+        pieces.append(replacement)
+        last_index = span[1]
+        count += 1
+    if count == 0:
+        return text, 0
+    pieces.append(text[last_index:])
+    return "".join(pieces), count
 
 
 # Gestisce i comandi di reset mostrando l'help quando richiesto.
@@ -1229,8 +1295,44 @@ def cmd_ver(extra):
     if not rules:
         print("No version rules configured.", file=sys.stderr)
         sys.exit(1)
-    canonical = None
-    canonical_file = None
+    try:
+        canonical = _determine_canonical_version(root, rules)
+    except VersionDetectionError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+    print(canonical)
+
+
+# Aggiorna tutte le versioni nei file configurati applicando la semantica nuova.
+def cmd_chver(extra):
+    args = _to_args(extra)
+    if len(args) != 1:
+        print("usage: git chver <major.minor.patch>", file=sys.stderr)
+        sys.exit(1)
+    requested = args[0].strip()
+    target_tuple = _parse_semver_tuple(requested)
+    if not target_tuple:
+        print("Please provide the version in the format <major>.<minor>.<patch> (e.g. 1.2.3).", file=sys.stderr)
+        sys.exit(1)
+    root = get_git_root()
+    rules = get_version_rules()
+    if not rules:
+        print("No version rules configured.", file=sys.stderr)
+        sys.exit(1)
+    try:
+        current = _determine_canonical_version(root, rules)
+    except VersionDetectionError as exc:
+        print(f"Unable to determine the current version: {exc}", file=sys.stderr)
+        sys.exit(1)
+    current_tuple = _parse_semver_tuple(current)
+    if current_tuple is None:
+        print(f"The current version '{current}' is not a valid semantic version.", file=sys.stderr)
+        sys.exit(1)
+    if requested == current:
+        print(f"The project version is already {current}.")
+        return
+    action = "Upgrade" if target_tuple > current_tuple else "Downgrade"
+    replacements = 0
     for pattern, expression in rules:
         files = _collect_version_files(root, pattern)
         if not files:
@@ -1248,20 +1350,29 @@ def cmd_ver(extra):
             except OSError as exc:
                 print(f"Unable to read {file_path}: {exc}", file=sys.stderr)
                 continue
-            for version in _iter_versions_in_text(text, [compiled]):
-                if canonical is None:
-                    canonical = version
-                    canonical_file = file_path
-                elif version != canonical:
-                    print(
-                        f"Version mismatch between {canonical_file} ({canonical}) and {file_path} ({version})",
-                        file=sys.stderr,
-                    )
+            new_text, count = _replace_versions_in_text(text, compiled, requested)
+            if count:
+                try:
+                    file_path.write_text(new_text, encoding="utf-8")
+                except OSError as exc:
+                    print(f"Unable to write {file_path}: {exc}", file=sys.stderr)
                     sys.exit(1)
-    if canonical is None:
-        print("No version string matched the configured rule list.", file=sys.stderr)
+                replacements += count
+    if replacements == 0:
+        print("No version entries were updated. Ensure ver_rules match the desired files.", file=sys.stderr)
         sys.exit(1)
-    print(canonical)
+    try:
+        confirmed = _determine_canonical_version(root, rules)
+    except VersionDetectionError as exc:
+        print(f"Fatal error after updating versions: {exc}", file=sys.stderr)
+        sys.exit(1)
+    if confirmed != requested:
+        print(
+            f"Fatal error: the updated files report version {confirmed} instead of {requested}.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    print(f"{action} completed: version is now {confirmed}.")
 
 
 # Genera il file CHANGELOG.md tramite l'alias 'changelog'.
@@ -1302,6 +1413,7 @@ COMMANDS = {
     "ar": cmd_ar,
     "bd": cmd_bd,
     "br": cmd_br,
+    "chver": cmd_chver,
     "changelog": cmd_changelog,
     "change": cmd_change,
     "ck": cmd_ck,
