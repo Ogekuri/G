@@ -681,11 +681,22 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
     return (section, line) if section else (None, "")
 
 
+# Estrae la versione di rilascio da un commit new(core): release version: X.Y.Z.
+def _extract_release_version(subject: str) -> Optional[str]:
+    match = re.search(r"release version:\s+(\d+\.\d+\.\d+)", subject, re.IGNORECASE)
+    if not match:
+        return None
+    return match.group(1)
+
+
 # Genera la sezione di changelog relativa a un intervallo di commit.
-def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_range: str) -> Optional[str]:
+def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_range: str, expected_version: Optional[str] = None) -> Optional[str]:
     subjects = git_log_subjects(repo_root, rev_range)
     buckets: Dict[str, List[str]] = defaultdict(list)
     for subj in subjects:
+        release_version = _extract_release_version(subj)
+        if expected_version and release_version and release_version != expected_version:
+            continue
         section, line = categorize_commit(subj)
         if section and line:
             buckets[section].append(line)
@@ -779,7 +790,7 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool) -> st
             display = tag.name.lstrip("v")
             compare_url = get_origin_compare_url(origin_base, prev, tag.name)
             title = f"[{display}]({compare_url})" if compare_url else display
-            section = generate_section_for_range(repo_root, title, tag.iso_date, rev_range)
+            section = generate_section_for_range(repo_root, title, tag.iso_date, rev_range, expected_version=display)
             if section:
                 release_sections.append(section)
             prev = tag.name
