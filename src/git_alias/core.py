@@ -16,11 +16,13 @@ from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 CONFIG_FILENAME = ".g.conf"
+
 DEFAULT_VER_RULES = [
     ("README.md", r'\s*"(\d+\.\d+\.\d+)"\s*'),
     ("src/**/*.py", r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'),
     ("pyproject.toml", r'\bversion\s*=\s*"(\d+\.\d+\.\d+)"'),
 ]
+
 DEFAULT_CONFIG = {
     "master": "master",
     "develop": "develop",
@@ -29,6 +31,7 @@ DEFAULT_CONFIG = {
     "default_module": "core",
     "ver_rules": json.dumps(DEFAULT_VER_RULES),
 }
+
 CONFIG = DEFAULT_CONFIG.copy()
 BRANCH_KEYS = ("master", "develop", "work")
 MANAGEMENT_HELP = [
