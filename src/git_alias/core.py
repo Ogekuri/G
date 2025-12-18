@@ -206,6 +206,8 @@ HELP_TEXTS = {
     "ll": "Print latest full commit hash.",
     "lm": "Print all merges.",
     "lt": "Print all tags.",
+    "major": "Release a new major version from the work branch.",
+    "minor": "Release a new minor version from the work branch.",
     "new": "Conventional commit new(module): description.",
     "fix": "Conventional commit fix(module): description.",
     "change": "Conventional commit change(module): description.",
@@ -217,6 +219,7 @@ HELP_TEXTS = {
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
+    "patch": "Release a new patch version from the work branch.",
     "rf": "Print changes on HEAD reference.",
     "rmloc": "Remove changed files from the working tree.",
     "rmstg": "Remove staged files from index tree.",
@@ -367,6 +370,11 @@ def _run_checked(*popenargs, **kwargs):
 
 # Eccezione dedicata alla rilevazione della versione corrente.
 class VersionDetectionError(RuntimeError):
+    pass
+
+
+# Eccezione dedicata al flusso dei rilasci automatici.
+class ReleaseError(RuntimeError):
     pass
 
 
@@ -879,6 +887,145 @@ def _replace_versions_in_text(text, compiled_regex, replacement):
     return "".join(pieces), count
 
 
+# Determina il nome del branch corrente del repository.
+def _current_branch_name():
+    """Return the current branch name or raise an error when detached."""
+    proc = _run_checked(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    branch = proc.stdout.strip()
+    if not branch or branch == "HEAD":
+        raise ReleaseError("Release commands require an active branch head.")
+    return branch
+
+
+# Verifica l'esistenza di un riferimento git locale.
+def _ref_exists(ref_name):
+    """Return True if the provided ref exists locally."""
+    proc = subprocess.run(
+        ["git", "show-ref", "--verify", "--quiet", ref_name],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return proc.returncode == 0
+
+
+# Verifica che un branch locale esista.
+def _local_branch_exists(branch_name):
+    """Return True when the requested local branch exists."""
+    return _ref_exists(f"refs/heads/{branch_name}")
+
+
+# Verifica che il branch remoto esista tra i riferimenti locali.
+def _remote_branch_exists(branch_name):
+    """Return True when the remote branch exists locally under origin."""
+    return _ref_exists(f"refs/remotes/origin/{branch_name}")
+
+
+# Assicura che i prerequisiti per i rilasci siano soddisfatti.
+def _ensure_release_prerequisites():
+    """Validate branch layout, remotes and working tree cleanliness."""
+    master_branch = get_branch("master")
+    develop_branch = get_branch("develop")
+    work_branch = get_branch("work")
+    missing_local = [name for name in (master_branch, develop_branch, work_branch) if not _local_branch_exists(name)]
+    if missing_local:
+        joined = ", ".join(missing_local)
+        raise ReleaseError(f"Unable to run release command: missing local branches {joined}.")
+    _refresh_remote_refs()
+    missing_remote = [name for name in (master_branch, develop_branch) if not _remote_branch_exists(name)]
+    if missing_remote:
+        joined = ", ".join(missing_remote)
+        raise ReleaseError(f"Unable to run release command: missing remote branches {joined}.")
+    if has_remote_branch_updates("master"):
+        raise ReleaseError(f"Remote branch {master_branch} has pending updates. Please pull them first.")
+    if has_remote_branch_updates("develop"):
+        raise ReleaseError(f"Remote branch {develop_branch} has pending updates. Please pull them first.")
+    current_branch = _current_branch_name()
+    if current_branch != work_branch:
+        raise ReleaseError(f"Release commands must be executed from the {work_branch} branch (current: {current_branch}).")
+    status = _git_status_lines()
+    if has_unstaged_changes(status):
+        raise ReleaseError("Working tree changes detected. Clean or stage them before running a release.")
+    if has_staged_changes(status):
+        raise ReleaseError("Staging area is not empty. Complete or reset pending commits before running a release.")
+    return {"master": master_branch, "develop": develop_branch, "work": work_branch}
+
+
+# Calcola la prossima versione semantica in base al tipo di rilascio.
+def _bump_semver_version(current_version, level):
+    """Return the bumped semantic version string according to level."""
+    parts = _parse_semver_tuple(current_version)
+    if parts is None:
+        raise ReleaseError(f"The current version '{current_version}' is not a valid semantic version.")
+    major, minor, patch = parts
+    if level == "major":
+        major += 1
+        minor = 0
+        patch = 0
+    elif level == "minor":
+        minor += 1
+        patch = 0
+    elif level == "patch":
+        patch += 1
+    else:
+        raise ReleaseError(f"Unsupported release level '{level}'.")
+    return f"{major}.{minor}.{patch}"
+
+
+# Esegue il flusso completo del rilascio.
+def _execute_release_flow(level):
+    """Perform the release workflow for the requested level."""
+    branches = _ensure_release_prerequisites()
+    rules = get_version_rules()
+    if not rules:
+        raise ReleaseError("No version rules configured. Cannot compute the next version.")
+    root = get_git_root()
+    current_version = _determine_canonical_version(root, rules)
+    target_version = _bump_semver_version(current_version, level)
+    cmd_chver([target_version])
+    run_git_cmd(["add", "--all"])
+    release_message = f"release version: {target_version}"
+    cmd_new([release_message])
+    cmd_tg([release_message, f"v{target_version}"])
+    cmd_changelog(["--force-write"])
+    run_git_cmd(["add", "CHANGELOG.md"])
+    run_git_cmd(["commit", "--amend", "--no-edit"])
+    work_branch = branches["work"]
+    develop_branch = branches["develop"]
+    master_branch = branches["master"]
+    cmd_co([develop_branch])
+    cmd_me([work_branch])
+    cmd_co([master_branch])
+    cmd_me([develop_branch])
+    cmd_co([work_branch])
+    print(f"Release {target_version} completed successfully.")
+    print("Latest release details:")
+    cmd_de([])
+
+
+# Gestisce le eccezioni del flusso di rilascio.
+def _run_release_command(level):
+    """Wrapper that executes the release flow and reports failures."""
+    try:
+        _execute_release_flow(level)
+    except ReleaseError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+    except VersionDetectionError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+    except CommandExecutionError as exc:
+        err_text = CommandExecutionError._decode_stream(exc.stderr).strip()
+        if err_text:
+            print(err_text, file=sys.stderr)
+        sys.exit(exc.returncode or 1)
+
+
 # Gestisce i comandi di reset mostrando l'help quando richiesto.
 def _run_reset_with_help(base_args, extra):
     """Execute a reset command or show the reset help when --help is provided."""
@@ -887,6 +1034,15 @@ def _run_reset_with_help(base_args, extra):
         print(RESET_HELP.strip("\n"))
         return
     return run_git_cmd(base_args, args)
+
+
+# Verifica che un alias non riceva argomenti posizionali.
+def _reject_extra_arguments(extra, alias):
+    """Ensure that no positional arguments are provided to the alias."""
+    args = _to_args(extra)
+    if args:
+        print(f"git {alias} does not accept positional arguments.", file=sys.stderr)
+        sys.exit(1)
 
 
 # Prepara le operazioni di commit condivise tra gli alias cm e wip.
@@ -1375,6 +1531,24 @@ def cmd_chver(extra):
     print(f"{action} completed: version is now {confirmed}.")
 
 
+# Esegue il rilascio incrementando il numero major.
+def cmd_major(extra):
+    _reject_extra_arguments(extra, "major")
+    _run_release_command("major")
+
+
+# Esegue il rilascio incrementando il numero minor.
+def cmd_minor(extra):
+    _reject_extra_arguments(extra, "minor")
+    _run_release_command("minor")
+
+
+# Esegue il rilascio incrementando il numero patch.
+def cmd_patch(extra):
+    _reject_extra_arguments(extra, "patch")
+    _run_release_command("patch")
+
+
 # Genera il file CHANGELOG.md tramite l'alias 'changelog'.
 def cmd_changelog(extra):
     parser = argparse.ArgumentParser(prog="g changelog", add_help=False)
@@ -1436,9 +1610,12 @@ COMMANDS = {
     "ll": cmd_ll,
     "lm": cmd_lm,
     "lt": cmd_lt,
+    "major": cmd_major,
     "misc": cmd_misc,
     "me": cmd_me,
+    "minor": cmd_minor,
     "new": cmd_new,
+    "patch": cmd_patch,
     "pl": cmd_pl,
     "pt": cmd_pt,
     "pu": cmd_pu,
