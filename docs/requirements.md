@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git Alias CLI
-**Versione**: 0.32
+**Versione**: 0.33
 **Autore**: Francesco Rolando  
 **Data**: 2025-12-17
 
@@ -67,6 +67,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2025-12-17 | 0.30 | Messaggi CLI obbligatoriamente in inglese con spiegazione delle operazioni di commit relative ad amend |
 | 2025-12-17 | 0.31 | Struttura completa dell'help globale con usage, comandi di gestione, configurazione attiva e alias |
 | 2025-12-17 | 0.32 | Introduzione del comando `chver` per aggiornare o ripristinare la versione del progetto |
+| 2025-12-17 | 0.33 | Nuovi comandi `major`/`minor`/`patch` per automatizzare il rilascio incrementale delle versioni |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -127,7 +128,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-007**: Gli alias di fetch/pull/push devono eseguire le varianti generiche per il ramo corrente (`fe`, `feall`, `pl`, `pt`, `pu`), senza scorciatoie dedicate ai rami configurati.
 - **REQ-008**: Gli alias di ispezione devono fornire viste su branch, log e stato (`br`, `lb`, `ck`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`).
 - **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
-- **REQ-010**: Il sistema non deve fornire alias di rilascio automatico; le operazioni di promozione tra branch e tagging vanno eseguite manualmente con i comandi git standard.
+- **REQ-010**: Il sistema deve limitare i workflow di rilascio agli alias dedicati documentati (attualmente `major`, `minor`, `patch`) e non deve introdurre ulteriori scorciatoie automatiche oltre a quelli descritti.
 - **REQ-011**: Gli alias di reset e pulizia devono applicare le modalità di reset (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`) e le pulizie dello working tree (`rmloc`, `rmstg`, `rmunt`). I comandi di reset (`rs*`) devono stampare il testo di help dedicato quando invocati con `--help`, senza dipendere da alias separati.
 - **REQ-012**: Gli alias di tagging e archiviazione devono gestire la creazione di tag annotati (`tg`), la rimozione locale/remota (`rmtg`), la visualizzazione (`lt`) e l'archiviazione del ramo `master` in tar.gz (`ar`).
 - **REQ-013**: L'alias `ed` deve consentire l'apertura di file arbitrari usando il comando definito dal parametro `editor` nel file `.g.conf` (default `edit`), segnalando errore se non viene passato alcun percorso.
@@ -143,3 +144,4 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-023**: Tutti i messaggi stampati da `core.py` (su stdout, stderr, in modalità normale, verbose o debug) devono essere in lingua inglese, inclusi gli help dei comandi e le diagnostiche degli alias.
 - **REQ-024**: Ogni funzione definita in `core.py` deve essere preceduta da un breve commento descrittivo in italiano che inizi con il carattere `#`, e tutti i commenti presenti nel file devono seguire lo stesso formato e lingua.
 - **REQ-025**: Il comando `chver` deve accettare esattamente un argomento nel formato `major.minor.patch` (tre interi separati da punti), verificare la versione corrente tramite `ver`, terminare con errore se `ver` non restituisce una versione univoca o se l'argomento non è valido, evitare modifiche quando la versione richiesta coincide con quella corrente, determinare se l'operazione è un upgrade o un downgrade confrontando `major`, `minor` e `patch`, riscrivere tutte le occorrenze che corrispondono alle regole `ver_rules` attive (quelle lette da `.g.conf` o, in mancanza, `DEFAULT_CONFIG`), e al termine rieseguire `ver` per confermare la nuova versione stampando un messaggio di successo esplicito (upgrade o downgrade). Se la riesecuzione di `ver` non conferma la versione impostata, `chver` deve segnalare un errore critico.
+- **REQ-026**: I comandi `major`, `minor` e `patch` devono automatizzare il rilascio di una nuova versione incrementando rispettivamente il numero `major`, `minor` o `patch` (azzerando gli indici meno significativi) e condividere la stessa implementazione di supporto. Prima dell'esecuzione devono verificare che (a) i branch configurati `master`, `develop`, `work` esistano localmente; (b) i remote `origin/master` e `origin/develop` esistano; (c) non ci siano aggiornamenti remoti pendenti per `master` e `develop`; (d) il branch corrente sia `work`; (e) la working area sia pulita; (f) l'index sia vuoto. Superati i controlli devono: determinare la versione corrente tramite `ver`; calcolare la nuova versione applicando la regola del comando richiesto; aggiornare i file tramite `chver`; aggiungere tutte le modifiche allo stage; creare un commit convenzionale con `new` usando il messaggio `release version: <ver>`; creare un tag annotato `v<ver>` con descrizione `release version: <ver>`; rigenerare `CHANGELOG.md` con `changelog --force-write`; aggiungere il changelog allo stage; aggiornare l'ultima commit con `git commit --amend`; eseguire merge fast-forward da `work` verso `develop` e da `develop` verso `master` con `me`; tornare sul branch `work`; mostrare un messaggio di successo e l'output di `de` relativo all'ultima commit.
