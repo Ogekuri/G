@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.5](https://github.com/Ogekuri/G/compare/v0.0.4..v0.0.5) - 2025-12-18
+### 📚  Documentation
+- *(core)* update requirements file.
+
 ## [0.0.4](https://github.com/Ogekuri/G/compare/v0.0.3..v0.0.4) - 2025-12-18
 ### ⛰️  Features
 - *(core)* release version: 0.0.4
@@ -31,3 +35,4 @@
 [0.0.2]: https://github.com/Ogekuri/G/compare/v0.0.1..v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
 [0.0.4]: https://github.com/Ogekuri/G/compare/v0.0.3..v0.0.4
+[0.0.5]: https://github.com/Ogekuri/G/compare/v0.0.4..v0.0.5
