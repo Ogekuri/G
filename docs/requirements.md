@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git Alias CLI
-**Versione**: 0.30
+**Versione**: 0.31
 **Autore**: Francesco Rolando  
 **Data**: 2025-12-17
 
@@ -65,6 +65,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2025-12-17 | 0.28 | Fallback ai comandi git nativi quando un alias sconosciuto viene richiesto |
 | 2025-12-17 | 0.29 | Gestione centralizzata delle eccezioni dei processi esterni e propagazione controllata degli errori |
 | 2025-12-17 | 0.30 | Messaggi CLI obbligatoriamente in inglese con spiegazione delle operazioni di commit relative ad amend |
+| 2025-12-17 | 0.31 | Struttura completa dell'help globale con usage, comandi di gestione, configurazione attiva e alias |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -108,6 +109,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **DES-001**: Il dispatcher CLI deve accettare un comando come primo argomento, invocare l'alias corrispondente quando il nome è mappato e, quando il comando richiesto non è riconosciuto, eseguire `git` inoltrando tutti gli argomenti originali senza interrompere il flusso, mantenendo invariato il comportamento di help/errore quando non vengono forniti argomenti o viene richiesto `--help`.
 - **DES-002**: Ogni alias deve inoltrare eventuali argomenti aggiuntivi al comando git corrispondente, propagando il codice di uscita del processo esterno e gestendo ogni errore dei processi esterni catturando le eccezioni (ad esempio `subprocess.CalledProcessError`) tramite un wrapper condiviso che converte l'errore in una segnalazione esplicita stampata dall'alias chiamante senza mostrare trace Python grezzi. 
 - **DES-008**: Tutti i messaggi stampati dalla CLI (stdout/stderr) devono essere in inglese e le operazioni di commit devono spiegare esplicitamente quando viene eseguito un `--amend` o quando viene creata una nuova commit, indicando il motivo della scelta.
+- **DES-009**: L'output del comando globale `--help` deve essere strutturato nel seguente ordine: (a) una riga di usage che mostra la sintassi generale del comando; (b) una sezione \"Management Commands\" con l'elenco delle opzioni di gestione ricavate da `MANAGEMENT_HELP`; (c) una sezione \"Configuration Parameters\" che stampa i valori correnti dei parametri letti da `.g.conf` (o, se non presenti, i default di `DEFAULT_CONFIG`); (d) una sezione \"Commands\" che elenca gli help di tutti gli alias disponibili in ordine alfabetico.
 - **DES-003**: Ogni comando deve avere un testo di help e il comando globale `--help` deve elencarli in ordine alfabetico.
 - **DES-004**: Se l'eseguibile viene chiamato senza argomenti deve stampare un messaggio, mostrare l'help completo e uscire con codice di errore.
 - **DES-005**: Gli alias costituiscono la base per lo sviluppo di alias più complessi, pertanto se nell'implementazione di un alias è necessario svolgere una attività implementata in un alias più semplice verrà utilizzata la funzione che specializza quella più semplice.

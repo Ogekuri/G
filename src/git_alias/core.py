@@ -1356,8 +1356,18 @@ def print_command_help(name):
 
 # Stampa la descrizione di tutti i comandi disponibili in ordine alfabetico.
 def print_all_help():
+    print("Usage: g <command> [options]")
+    print()
+    print("Management Commands:")
     for flag, description in MANAGEMENT_HELP:
-        print(f"{flag} - {description}")
+        print(f"  {flag} - {description}")
+    print()
+    print("Configuration Parameters:")
+    for key in DEFAULT_CONFIG:
+        value = CONFIG.get(key, DEFAULT_CONFIG[key])
+        print(f"  {key} = {value}")
+    print()
+    print("Commands:")
     for name in sorted(COMMANDS.keys()):
         print_command_help(name)
 
