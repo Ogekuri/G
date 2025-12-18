@@ -32,9 +32,9 @@ DEFAULT_CONFIG = {
 CONFIG = DEFAULT_CONFIG.copy()
 BRANCH_KEYS = ("master", "develop", "work")
 MANAGEMENT_HELP = [
-    ("--write-config", "Genera il file .g.conf nella root del repository con i valori di default."),
-    ("--upgrade", "Reinstalla git-alias tramite uv tool install."),
-    ("--remove", "Disinstalla git-alias utilizzando uv tool uninstall."),
+    ("--write-config", "Generate the .g.conf file in the repository root with default values."),
+    ("--upgrade", "Reinstall git-alias via uv tool install."),
+    ("--remove", "Uninstall git-alias using uv tool uninstall."),
 ]
 
 
@@ -181,15 +181,15 @@ HELP_TEXTS = {
     "aa": "Add all file changes/added to stage area for commit.",
     "ar": "Archive the configured master branch as zip file. Use tag as filename.",
     "bd": "Delete a local branch: git bd '<branch>'.",
-    "br": "Create a new brach.",
+    "br": "Create a new branch.",
     "changelog": "Generate CHANGELOG.md from conventional commits (supports --include-unreleased, --force-write, --print-only).",
     "ck": "Check differences.",
     "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
     "de": "Describe current version with tag of last commit.",
     "di": "Discard current changes on file: git di '<filename>'",
-    "dime": "Discard merge chanhes in favour of yours files.",
-    "diyou": "Discard merge changes in favour of mine files.",
+    "dime": "Discard merge changes in favor of their files.",
+    "diyou": "Discard merge changes in favor of your files.",
     "ed": "Edit a file. Syntax: git ed <filename>.",
     "fe": "Fetch new data of current branch from origin.",
     "feall": "Fetch new data from origin for all branch.",
@@ -197,10 +197,10 @@ HELP_TEXTS = {
     "gr": "Open git tags graph (Git K).",
     "lb": "Print all branches.",
     "lg": "Print commit history.",
-    "lh": "Print last commit details",
-    "ll": "Print lastest full commit hash.",
+    "lh": "Print last commit details.",
+    "ll": "Print latest full commit hash.",
     "lm": "Print all merges.",
-    "lt": "Print all tag",
+    "lt": "Print all tags.",
     "new": "Conventional commit new(module): description.",
     "fix": "Conventional commit fix(module): description.",
     "change": "Conventional commit change(module): description.",
@@ -226,7 +226,7 @@ HELP_TEXTS = {
     "st": "Print current GIT status.",
     "tg": "Create a new annotate tag. Syntax: git tg <description> <tag>.",
     "unstg": "Un-stage a file from commit: git unstg '<filename>'. Unstage all files with: git unstg *.",
-    "wip": "Commit work in progress con messaggio automatico e regole condivise con cm.",
+    "wip": "Commit work in progress with an automatic message and the same checks as cm.",
     "ver": "Verify version consistency across configured files.",
 }
 
@@ -236,9 +236,9 @@ RESET_HELP = """
 
  default mode = '--mixed'
 
- working - area di lavoro
- index   - staging + ready to commit
- HEAD    - ultimo commit
+ working - working tree
+ index   - staging area ready to commit
+ HEAD    - latest commit
  target  - example: origin/master
 
  working index HEAD target         working index HEAD
@@ -557,17 +557,17 @@ def _should_amend_existing_commit():
     """Determine if the current HEAD WIP commit should be amended."""
     message = _head_commit_message()
     if not (message and WIP_MESSAGE_RE.match(message)):
-        return False
+        return (False, "HEAD is not a WIP commit.")
     commit_hash = _head_commit_hash()
     if not commit_hash:
-        return False
+        return (False, "Unable to determine the HEAD commit hash.")
     develop_branch = get_branch("develop")
     master_branch = get_branch("master")
     if _commit_exists_in_branch(commit_hash, develop_branch):
-        return False
+        return (False, f"The last WIP commit is already contained in {develop_branch}.")
     if _commit_exists_in_branch(commit_hash, master_branch):
-        return False
-    return True
+        return (False, f"The last WIP commit is already contained in {master_branch}.")
+    return (True, "HEAD WIP commit is still pending locally.")
 
 
 # Verifica se il processo si trova all'interno di un repository git.
@@ -856,13 +856,15 @@ def _run_conventional_commit(kind: str, alias: str, extra):
 
 # Esegue git commit applicando i controlli e l'eventuale amend.
 def _execute_commit(message, alias, allow_amend=True):
-    amend = _should_amend_existing_commit() if allow_amend else False
-    action = (
-        "Aggiorno la commit WIP esistente (--amend)."
-        if amend
-        else "Creo una nuova commit."
-    )
-    print(action)
+    if allow_amend:
+        amend, reason = _should_amend_existing_commit()
+    else:
+        amend = False
+        reason = "Amend is disabled for this alias."
+    if amend:
+        print(f"Updating the existing WIP commit (--amend). Reason: {reason}")
+    else:
+        print(f"Creating a new commit. Reason: {reason}")
     base = ["commit"]
     if amend:
         base.append("--amend")
