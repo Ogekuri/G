@@ -35,6 +35,7 @@ DEFAULT_CONFIG = {
 CONFIG = DEFAULT_CONFIG.copy()
 BRANCH_KEYS = ("master", "develop", "work")
 MANAGEMENT_HELP = [
+    ("--help", "Print the full help screen or the help text of a specific alias."),
     ("--write-config", "Generate the .g.conf file in the repository root with default values."),
     ("--upgrade", "Reinstall git-alias via uv tool install."),
     ("--remove", "Uninstall git-alias using uv tool uninstall."),
@@ -1350,9 +1351,12 @@ COMMANDS = {
 }
 
 # Stampa la descrizione di un singolo comando.
-def print_command_help(name):
+def print_command_help(name, width=None):
     description = HELP_TEXTS.get(name, "No help text is available for this command.")
-    print(f"{name} - {description}")
+    if width is None:
+        print(f"{name} - {description}")
+    else:
+        print(f"{name.ljust(width)} - {description}")
 
 # Stampa la descrizione di tutti i comandi disponibili in ordine alfabetico.
 def print_all_help():
@@ -1365,11 +1369,33 @@ def print_all_help():
     print("Configuration Parameters:")
     for key in DEFAULT_CONFIG:
         value = CONFIG.get(key, DEFAULT_CONFIG[key])
-        print(f"  {key} = {value}")
+        if key == "ver_rules":
+            print("  ver_rules:")
+            rules = []
+            if isinstance(value, list):
+                rules = value
+            else:
+                try:
+                    rules = json.loads(value)
+                except (json.JSONDecodeError, TypeError):
+                    rules = []
+            for entry in rules:
+                pattern = ""
+                regex = ""
+                if isinstance(entry, dict):
+                    pattern = entry.get("pattern") or entry.get("glob") or ""
+                    regex = entry.get("regex") or ""
+                elif isinstance(entry, (list, tuple)) and len(entry) >= 2:
+                    pattern, regex = entry[0], entry[1]
+                print(f"    - pattern={pattern} regex={regex}")
+        else:
+            print(f"  {key} = {value}")
     print()
     print("Commands:")
+    help_width = max(len(name) for name in HELP_TEXTS)
     for name in sorted(COMMANDS.keys()):
-        print_command_help(name)
+        print("  ", end="")
+        print_command_help(name, width=help_width)
 
 
 # Gestisce il parsing degli argomenti ed esegue l'alias richiesto.
