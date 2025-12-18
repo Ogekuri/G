@@ -103,9 +103,8 @@ def get_version_rules():
 def get_git_root():
     """Return the git repository root or the current working directory."""
     try:
-        result = subprocess.run(
+        result = _run_checked(
             ["git", "rev-parse", "--show-toplevel"],
-            check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -113,7 +112,7 @@ def get_git_root():
         location = result.stdout.strip()
         if location:
             return Path(location)
-    except subprocess.CalledProcessError:
+    except CommandExecutionError:
         pass
     return Path.cwd()
 
@@ -319,66 +318,117 @@ def _to_args(extra):
     return list(extra) if extra else []
 
 
+# Rappresenta un errore emesso da un processo esterno.
+class CommandExecutionError(RuntimeError):
+    def __init__(self, exc: subprocess.CalledProcessError):
+        self.cmd = exc.cmd
+        self.returncode = exc.returncode
+        self.stdout = exc.stdout
+        self.stderr = exc.stderr
+        message = self._format_message()
+        super().__init__(message)
+
+    def _format_message(self) -> str:
+        text = self._decode_stream(self.stderr).strip()
+        if text:
+            return text
+        cmd_display = ""
+        if isinstance(self.cmd, (list, tuple)):
+            cmd_display = " ".join(str(part) for part in self.cmd)
+        elif self.cmd:
+            cmd_display = str(self.cmd)
+        return f"Command '{cmd_display}' failed with exit code {self.returncode}"
+
+    @staticmethod
+    def _decode_stream(data) -> str:
+        if data is None:
+            return ""
+        if isinstance(data, bytes):
+            try:
+                return data.decode("utf-8")
+            except UnicodeDecodeError:
+                return data.decode("utf-8", errors="replace")
+        return str(data)
+
+
+# Esegue un comando esterno e converte gli errori in CommandExecutionError.
+def _run_checked(*popenargs, **kwargs):
+    kwargs.setdefault("check", True)
+    try:
+        return subprocess.run(*popenargs, **kwargs)
+    except subprocess.CalledProcessError as exc:
+        raise CommandExecutionError(exc) from None
+
+
 # Invia un comando git con argomenti principali e supplementari nella directory indicata.
 def run_git_cmd(base_args, extra=None, cwd=None, **kwargs):
     full = ["git"] + list(base_args) + _to_args(extra)
-    return subprocess.run(full, check=True, cwd=cwd, **kwargs)
+    return _run_checked(full, cwd=cwd, **kwargs)
 
 
 # Esegue git e restituisce l'output come stringa per usi interni.
 def capture_git_output(base_args, cwd=None):
-    result = subprocess.run(
-        ["git"] + list(base_args), check=True, cwd=cwd, stdout=subprocess.PIPE, text=True
-    )
+    result = _run_checked(["git"] + list(base_args), cwd=cwd, stdout=subprocess.PIPE, text=True)
     return result.stdout.strip()
 
 
 # Invoca un comando esterno con la sintassi fornita.
 def run_command(cmd, cwd=None):
-    return subprocess.run(cmd, check=True, cwd=cwd)
+    return _run_checked(cmd, cwd=cwd)
 
 
 # Esegue comandi git e restituisce l'output testuale.
 def run_git_text(args, cwd=None, check=True):
-    proc = subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    if check and proc.returncode != 0:
-        raise RuntimeError(proc.stderr.strip() or f"git {' '.join(args)} failed")
+    try:
+        proc = _run_checked(
+            ["git", *args],
+            cwd=cwd,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=check,
+        )
+    except CommandExecutionError as exc:
+        message = CommandExecutionError._decode_stream(exc.stderr).strip()
+        if not message:
+            message = f"git {' '.join(args)} failed"
+        raise RuntimeError(message) from None
     return proc.stdout.strip()
 
 
 # Esegue una pipeline nella shell quando serve costruire comandi complessi.
 def run_shell(command, cwd=None):
-    return subprocess.run(command, shell=True, check=True, cwd=cwd)
+    return _run_checked(command, shell=True, cwd=cwd)
 
 
 # Esegue comandi git e restituisce l'output testuale.
 def run_git_text(args, cwd=None, check=True):
-    proc = subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    if check and proc.returncode != 0:
-        raise RuntimeError(proc.stderr.strip() or f"git {' '.join(args)} failed")
+    try:
+        proc = _run_checked(
+            ["git", *args],
+            cwd=cwd,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=check,
+        )
+    except CommandExecutionError as exc:
+        message = CommandExecutionError._decode_stream(exc.stderr).strip()
+        if not message:
+            message = f"git {' '.join(args)} failed"
+        raise RuntimeError(message) from None
     return proc.stdout.strip()
 
 
 # Recupera le linee di stato porcelain del repository.
 def _git_status_lines():
     """Return the porcelain status lines without trimming leading spaces."""
-    proc = subprocess.run(
+    proc = _run_checked(
         ["git", "status", "--porcelain"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        check=False,
     )
     if proc.returncode != 0:
         return []
@@ -423,7 +473,7 @@ def _refresh_remote_refs():
         return
     try:
         run_git_cmd(["remote", "-v", "update"])
-    except subprocess.CalledProcessError as exc:
+    except CommandExecutionError as exc:
         print(f"Unable to update remote references: {exc}", file=sys.stderr)
         return
     _REMOTE_REFS_UPDATED = True
@@ -492,7 +542,7 @@ def _commit_exists_in_branch(commit_hash, branch_name):
     """Return True if commit_hash is contained in branch_name."""
     if not commit_hash or not branch_name:
         return False
-    proc = subprocess.run(
+    proc = _run_checked(
         ["git", "merge-base", "--is-ancestor", commit_hash, branch_name],
         check=False,
         stdout=subprocess.PIPE,
@@ -812,7 +862,7 @@ def _execute_commit(message, alias, allow_amend=True):
     base.extend(["-F", "-"])
     try:
         return run_git_cmd(base, input=message, text=True)
-    except subprocess.CalledProcessError as exc:
+    except CommandExecutionError as exc:
         status_lines = _git_status_lines()
         if has_unstaged_changes(status_lines):
             print(
@@ -828,7 +878,7 @@ def _execute_commit(message, alias, allow_amend=True):
 
 # Aggiorna il comando installato sfruttando il tool uv.
 def upgrade_self():
-    subprocess.run(
+    _run_checked(
         [
             "uv",
             "tool",
@@ -837,14 +887,13 @@ def upgrade_self():
             "--force",
             "--from",
             "git+https://github.com/Ogekuri/G.git",
-        ],
-        check=True,
+        ]
     )
 
 
 # Rimuove il comando installato utilizzando lo strumento uv.
 def remove_self():
-    subprocess.run(["uv", "tool", "uninstall", "git-alias"], check=True)
+    _run_checked(["uv", "tool", "uninstall", "git-alias"])
 
 
 # Aggiunge tutte le modifiche e i nuovi file all'area di staging (alias aa).
@@ -865,7 +914,7 @@ def cmd_ar(extra):
     archive_cmd = ["git", "archive", master_branch, "--prefix=/"] + args
     with subprocess.Popen(archive_cmd, stdout=subprocess.PIPE) as archive_proc:
         with open(filename, "wb") as output_io:
-            gzip_proc = subprocess.run(["gzip"], stdin=archive_proc.stdout, stdout=output_io, check=True)
+            gzip_proc = _run_checked(["gzip"], stdin=archive_proc.stdout, stdout=output_io)
         archive_proc.stdout.close()
         archive_proc.wait()
     return gzip_proc
@@ -1333,16 +1382,22 @@ def main(argv=None):
         return
     name = args[0]
     extras = args[1:]
-    if name not in COMMANDS:
-        run_git_cmd([name], extras)
-        return
-    if "--help" in extras:
-        if name in RESET_HELP_COMMANDS:
-            COMMANDS[name](extras)
-        else:
-            print_command_help(name)
-        return
-    COMMANDS[name](extras)
+    try:
+        if name not in COMMANDS:
+            run_git_cmd([name], extras)
+            return
+        if "--help" in extras:
+            if name in RESET_HELP_COMMANDS:
+                COMMANDS[name](extras)
+            else:
+                print_command_help(name)
+            return
+        COMMANDS[name](extras)
+    except CommandExecutionError as exc:
+        err_text = CommandExecutionError._decode_stream(exc.stderr).strip()
+        if err_text:
+            print(err_text, file=sys.stderr)
+        sys.exit(exc.returncode or 1)
 
 
 if __name__ == "__main__":
