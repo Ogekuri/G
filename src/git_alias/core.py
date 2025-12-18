@@ -1334,9 +1334,8 @@ def main(argv=None):
     name = args[0]
     extras = args[1:]
     if name not in COMMANDS:
-        print(f"Unknown command: {name}", file=sys.stderr)
-        print_all_help()
-        sys.exit(1)
+        run_git_cmd([name], extras)
+        return
     if "--help" in extras:
         if name in RESET_HELP_COMMANDS:
             COMMANDS[name](extras)
