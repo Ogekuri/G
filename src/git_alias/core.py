@@ -220,6 +220,7 @@ HELP_TEXTS = {
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
     "patch": "Release a new patch version from the work branch.",
+    "ra": "Remove all staged files and return them to the working tree (inverse of aa).",
     "release": "Create a release commit using the detected project version.",
     "rf": "Print changes on HEAD reference.",
     "rmloc": "Remove changed files from the working tree.",
@@ -1182,6 +1183,31 @@ def cmd_aa(extra):
     return run_git_cmd(["add", "--all"], extra)
 
 
+# Rimuove tutti i file dallo staging riportandoli nel working tree (alias ra).
+def cmd_ra(extra):
+    if extra:
+        args = _to_args(extra)
+        if args == ["--help"]:
+            print_command_help("ra")
+            return
+        print("git ra does not accept positional arguments.", file=sys.stderr)
+        sys.exit(1)
+    work_branch = get_branch("work")
+    try:
+        current_branch = _current_branch_name()
+    except ReleaseError:
+        print("git ra requires an active branch head.", file=sys.stderr)
+        sys.exit(1)
+    if current_branch != work_branch:
+        print(
+            f"git ra must be executed from the {work_branch} branch (current: {current_branch}).",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    _ensure_commit_ready("ra")
+    return run_git_cmd(["reset", "--mixed"], [])
+
+
 # Crea un archivio master compresso e lo nomina con il tag corrente (alias ar).
 def cmd_ar(extra):
     args = _to_args(extra)
@@ -1682,6 +1708,7 @@ COMMANDS = {
     "minor": cmd_minor,
     "new": cmd_new,
     "patch": cmd_patch,
+    "ra": cmd_ra,
     "release": cmd_release,
     "pl": cmd_pl,
     "pt": cmd_pt,

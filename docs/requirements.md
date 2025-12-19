@@ -1,7 +1,7 @@
 ---
 title: "Requisiti di Git Alias CLI"
 description: "Specifiche dei requisiti software"
-date: "2025-12-17"
+date: "2025-12-19"
 author: "Francesco Rolando"
 scope:
   paths:
@@ -13,9 +13,9 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git Alias CLI
-**Versione**: 0.35
+**Versione**: 0.36
 **Autore**: Francesco Rolando  
-**Data**: 2025-12-17
+**Data**: 2025-12-19
 
 ## Indice
 - [Requisiti di Git Alias CLI](#requisiti-di-git-alias-cli)
@@ -71,6 +71,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2025-12-17 | 0.34 | Miglioramenti ai comandi `major`/`minor`/`patch` con logging degli step e push automatici dei branch `develop` e `master` |
 | 2025-12-17 | 0.35 | Introduzione del comando `release` come commit regolamentato usato dai workflow `major`/`minor`/`patch` |
 | 2025-12-17 | 0.35 | Introduzione del comando `release` come commit regolamentato usato dai workflow `major`/`minor`/`patch` |
+| 2025-12-19 | 0.36 | Introduzione del comando `ra` per rimuovere lo staging sul branch `work` |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -149,3 +150,4 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-025**: Il comando `chver` deve accettare esattamente un argomento nel formato `major.minor.patch` (tre interi separati da punti), verificare la versione corrente tramite `ver`, terminare con errore se `ver` non restituisce una versione univoca o se l'argomento non è valido, evitare modifiche quando la versione richiesta coincide con quella corrente, determinare se l'operazione è un upgrade o un downgrade confrontando `major`, `minor` e `patch`, riscrivere tutte le occorrenze che corrispondono alle regole `ver_rules` attive (quelle lette da `.g.conf` o, in mancanza, `DEFAULT_CONFIG`), e al termine rieseguire `ver` per confermare la nuova versione stampando un messaggio di successo esplicito (upgrade o downgrade). Se la riesecuzione di `ver` non conferma la versione impostata, `chver` deve segnalare un errore critico.
 - **REQ-026**: I comandi `major`, `minor` e `patch` devono automatizzare il rilascio di una nuova versione incrementando rispettivamente il numero `major`, `minor` o `patch` (azzerando gli indici meno significativi) e condividere la stessa implementazione di supporto. Prima dell'esecuzione devono verificare che (a) i branch configurati `master`, `develop`, `work` esistano localmente; (b) i remote `origin/master` e `origin/develop` esistano; (c) non ci siano aggiornamenti remoti pendenti per `master` e `develop`; (d) il branch corrente sia `work`; (e) la working area sia pulita; (f) l'index sia vuoto. Ogni step deve stampare un messaggio di progresso quando va a buon fine e segnalare con un messaggio esplicito l'eventuale fallimento dello step corrente. Superati i controlli devono: determinare la versione corrente tramite `ver`; calcolare la nuova versione applicando la regola del comando richiesto; aggiornare i file tramite `chver`; aggiungere tutte le modifiche allo stage; creare il commit di rilascio con l'alias `release`; creare un tag annotato `v<ver>` con descrizione `release version: <ver>`; rigenerare `CHANGELOG.md` con `changelog --force-write`; aggiungere il changelog allo stage; aggiornare l'ultima commit con `git commit --amend`; eseguire merge fast-forward da `work` verso `develop`, effettuare il push del branch `develop` su `origin`, eseguire merge fast-forward da `develop` verso `master`, effettuare il push del branch `master` su `origin`; tornare sul branch `work`; mostrare un messaggio di successo e l'output di `de` relativo all'ultima commit.
 - **REQ-027**: Il comando `release` deve condividere la stessa logica e gli stessi controlli dell'alias `wip` per quanto riguarda lo stato dello staging/worktree e gli eventuali amend, ma prima di eseguire la commit deve determinare la versione corrente tramite `ver`; se la versione non può essere determinata il comando deve fallire riportando il messaggio di errore restituito dal processo di rilevazione. Quando la versione è disponibile deve generare un commit standard con il messaggio `release version: <ver>` (dove `<ver>` è `major.minor.patch`), così da essere usato dagli alias `major`/`minor`/`patch`.
+- **REQ-028**: L'alias `ra` deve comportarsi come inverso di `aa`: deve verificare di trovarsi sul branch `work` configurato, assicurarsi che non esistano modifiche nel working tree da aggiungere allo staging, verificare che lo staging contenga file pronti per la commit e, solo allora, rimuovere tutte le voci dallo staging riportandole nella working area.
