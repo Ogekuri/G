@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.8](https://github.com/Ogekuri/G/compare/v0.0.7..v0.0.8) - 2025-12-19
+### 🐛  Bug Fixes
+- *(core)* fix history on chanchelog command.
+
+### ⚙️  Miscellaneous Tasks
+- *(core)* update prompts.
+
 ## [0.0.7](https://github.com/Ogekuri/G/compare/v0.0.6..v0.0.7) - 2025-12-19
 ### ⛰️  Features
 - *(core)* add ra command.
@@ -46,3 +53,4 @@
 [0.0.5]: https://github.com/Ogekuri/G/compare/v0.0.4..v0.0.5
 [0.0.6]: https://github.com/Ogekuri/G/compare/v0.0.5..v0.0.6
 [0.0.7]: https://github.com/Ogekuri/G/compare/v0.0.6..v0.0.7
+[0.0.8]: https://github.com/Ogekuri/G/compare/v0.0.7..v0.0.8
