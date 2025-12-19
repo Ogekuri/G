@@ -756,12 +756,26 @@ def get_origin_compare_url(base_url: Optional[str], prev_tag: Optional[str], tag
     return f"{base_url}/releases/tag/{tag}"
 
 
+# Costruisce l'URL della pagina release per un tag.
+def get_release_page_url(base_url: Optional[str], tag: str) -> Optional[str]:
+    if not base_url:
+        return None
+    return f"{base_url}/releases/tag/{tag}"
+
+
 # Compone la sezione History con i riferimenti di confronto.
 def build_history_section(repo_root: Path, tags: List[TagInfo], include_unreleased: bool) -> Optional[str]:
     base = _canonical_origin_base(repo_root)
     if not base:
         return None
     lines = ["# History"]
+    if tags:
+        lines.append("")
+        for tag in tags:
+            release_url = get_release_page_url(base, tag.name)
+            if release_url:
+                lines.append(f"- [{tag.name.lstrip('v')}]: {release_url}")
+        lines.append("")
     prev: Optional[str] = None
     for tag in tags:
         compare = get_origin_compare_url(base, prev, tag.name)

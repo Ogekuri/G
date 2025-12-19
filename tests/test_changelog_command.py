@@ -91,3 +91,17 @@ class ChangelogCommandTest(unittest.TestCase):
         ), mock.patch.object(core, "build_history_section", return_value="# History\n") as build_history:
             core.generate_changelog_document(repo_root, include_unreleased=False)
         build_history.assert_called_once_with(repo_root, history_tags, False)
+
+    def test_history_includes_release_list(self):
+        repo_root = Path("/tmp")
+        tags = [
+            core.TagInfo(name="v0.0.1", iso_date="2024-01-01", object_name="a"),
+            core.TagInfo(name="v0.0.2", iso_date="2024-02-01", object_name="b"),
+        ]
+        with mock.patch.object(core, "_canonical_origin_base", return_value="https://github.com/Ogekuri/G"):
+            history = core.build_history_section(repo_root, tags, include_unreleased=False)
+        self.assertIsNotNone(history)
+        lines = history.splitlines()
+        self.assertEqual(lines[0], "# History")
+        self.assertIn("- [0.0.1]: https://github.com/Ogekuri/G/releases/tag/v0.0.1", lines)
+        self.assertIn("- [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2", lines)
