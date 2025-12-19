@@ -628,11 +628,13 @@ SECTION_EMOJI = {
 
 
 # Ottiene i tag semantici ordinati per data di creazione.
-def list_tags_sorted_by_date(repo_root: Path) -> List[TagInfo]:
+def list_tags_sorted_by_date(repo_root: Path, merged_ref: Optional[str] = None) -> List[TagInfo]:
     fmt = f"%(refname:strip=2){DELIM}%(creatordate:short){DELIM}%(objectname)"
-    output = run_git_text(
-        ["for-each-ref", "--sort=creatordate", f"--format={fmt}", "refs/tags"], cwd=repo_root, check=False
-    )
+    args = ["for-each-ref", "--sort=creatordate", f"--format={fmt}"]
+    if merged_ref:
+        args.extend(["--merged", merged_ref])
+    args.append("refs/tags")
+    output = run_git_text(args, cwd=repo_root, check=False)
     if not output:
         return []
     tags: List[TagInfo] = []
@@ -776,6 +778,7 @@ def build_history_section(repo_root: Path, tags: List[TagInfo], include_unreleas
 # Assembla il documento completo del changelog.
 def generate_changelog_document(repo_root: Path, include_unreleased: bool) -> str:
     tags = list_tags_sorted_by_date(repo_root)
+    history_tags = list_tags_sorted_by_date(repo_root, merged_ref="HEAD")
     origin_base = _canonical_origin_base(repo_root)
     lines: List[str] = ["# Changelog", ""]
     release_sections: List[str] = []
@@ -803,7 +806,7 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool) -> st
             release_sections.append(section)
     if release_sections:
         lines.extend(reversed(release_sections))
-    history = build_history_section(repo_root, tags, include_unreleased)
+    history = build_history_section(repo_root, history_tags, include_unreleased)
     if history:
         lines.append("")
         lines.append(history)
@@ -1048,6 +1051,7 @@ def _execute_release_flow(level):
     _run_release_step("push master", lambda: run_git_cmd(["push", "origin", master_branch]))
     _run_release_step("return to work", lambda: cmd_co([work_branch]))
     _run_release_step("show release details", lambda: cmd_de([]))
+    _run_release_step("push tags", lambda: cmd_pt([]))
     print(f"Release {target_version} completed successfully.")
 
 
