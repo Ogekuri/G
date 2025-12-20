@@ -1082,7 +1082,7 @@ def _run_release_step(level, step_name, action):
     label = f"[release:{level}]"
     try:
         result = action()
-        print(f"--- {label} Step '{step_name}' completed successfully. ---")
+        print(f"\n--- {label} Step '{step_name}' completed successfully. ---")
         return result
     except ReleaseError:
         raise
@@ -1091,12 +1091,12 @@ def _run_release_step(level, step_name, action):
     except CommandExecutionError as exc:
         err_text = CommandExecutionError._decode_stream(exc.stderr).strip()
         message = err_text if err_text else str(exc)
-        raise ReleaseError(f"--- {label} Step '{step_name}' failed: {message} ---") from None
+        raise ReleaseError(f"\n--- {label} Step '{step_name}' failed: {message} ---") from None
     except SystemExit as exc:
         code = exc.code if isinstance(exc.code, int) else 1
-        raise ReleaseError(f"--- {label} Step '{step_name}' failed: command exited with status {code} ---") from None
+        raise ReleaseError(f"\n--- {label} Step '{step_name}' failed: command exited with status {code} ---") from None
     except Exception as exc:
-        raise ReleaseError(f"--- {label} Step '{step_name}' failed: {exc} ---") from None
+        raise ReleaseError(f"\n--- {label} Step '{step_name}' failed: {exc} ---") from None
 
 
 # Esegue il flusso completo del rilascio.
