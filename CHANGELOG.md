@@ -55,15 +55,15 @@
 
 # History
 
-- [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
-- [0.0.3]: https://github.com/Ogekuri/G/releases/tag/v0.0.3
-- [0.0.4]: https://github.com/Ogekuri/G/releases/tag/v0.0.4
-- [0.0.5]: https://github.com/Ogekuri/G/releases/tag/v0.0.5
-- [0.0.6]: https://github.com/Ogekuri/G/releases/tag/v0.0.6
-- [0.0.7]: https://github.com/Ogekuri/G/releases/tag/v0.0.7
-- [0.0.8]: https://github.com/Ogekuri/G/releases/tag/v0.0.8
-- [0.0.9]: https://github.com/Ogekuri/G/releases/tag/v0.0.9
-- [0.0.10]: https://github.com/Ogekuri/G/releases/tag/v0.0.10
+- \[0.0.2\]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
+- \[0.0.3\]: https://github.com/Ogekuri/G/releases/tag/v0.0.3
+- \[0.0.4\]: https://github.com/Ogekuri/G/releases/tag/v0.0.4
+- \[0.0.5\]: https://github.com/Ogekuri/G/releases/tag/v0.0.5
+- \[0.0.6\]: https://github.com/Ogekuri/G/releases/tag/v0.0.6
+- \[0.0.7\]: https://github.com/Ogekuri/G/releases/tag/v0.0.7
+- \[0.0.8\]: https://github.com/Ogekuri/G/releases/tag/v0.0.8
+- \[0.0.9\]: https://github.com/Ogekuri/G/releases/tag/v0.0.9
+- \[0.0.10\]: https://github.com/Ogekuri/G/releases/tag/v0.0.10
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3

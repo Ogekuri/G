@@ -1,6 +1,5 @@
 import contextlib
 import io
-import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,7 +15,7 @@ class VerCommandTest(unittest.TestCase):
 
     @staticmethod
     def _set_rules(rules):
-        core.CONFIG["ver_rules"] = json.dumps(rules)
+        core.CONFIG["ver_rules"] = rules
 
     def test_cmd_ver_prints_shared_version(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -25,8 +24,8 @@ class VerCommandTest(unittest.TestCase):
             (root / "README.md").write_text('Current version "1.2.3"\n', encoding="utf-8")
             self._set_rules(
                 [
-                    ["module.py", r'__version__\s*=\s*"(\d+\.\d+\.\d+)"'],
-                    ["README.md", r'"(\d+\.\d+\.\d+)"'],
+                    {"pattern": "module.py", "regex": r'__version__\s*=\s*"(\d+\.\d+\.\d+)"'},
+                    {"pattern": "README.md", "regex": r'"(\d+\.\d+\.\d+)"'},
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
@@ -42,7 +41,7 @@ class VerCommandTest(unittest.TestCase):
             (root / "second.py").write_text('__version__ = "2.0.0"\n', encoding="utf-8")
             self._set_rules(
                 [
-                    ["*.py", r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'],
+                    {"pattern": "*.py", "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'},
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
@@ -55,3 +54,24 @@ class VerCommandTest(unittest.TestCase):
                 self.assertIn("Version mismatch", message)
                 self.assertIn("module.py", message)
                 self.assertIn("second.py", message)
+
+    def test_cmd_ver_errors_on_rule_without_matches(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "module.py").write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+            regex = r'version\s*=\s*"(\d+\.\d+\.\d+)"'
+            self._set_rules(
+                [
+                    {"pattern": "module.py", "regex": regex},
+                ]
+            )
+            with mock.patch.object(core, "get_git_root", return_value=root):
+                err = io.StringIO()
+                with contextlib.redirect_stderr(err):
+                    with self.assertRaises(SystemExit) as ctx:
+                        core.cmd_ver([])
+                self.assertNotEqual(ctx.exception.code, 0)
+                message = err.getvalue()
+                self.assertIn("No version matches found", message)
+                self.assertIn("module.py", message)
+                self.assertIn(regex, message)

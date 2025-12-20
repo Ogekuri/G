@@ -29,7 +29,11 @@ DEFAULT_CONFIG = {
     "work": "work",
     "editor": "edit",
     "default_module": "core",
-    "ver_rules": json.dumps(DEFAULT_VER_RULES),
+    "ver_rules": [
+        {"pattern": "README.md", "regex": r'\s*\((\d+\.\d+\.\d+)\)\n'},
+        {"pattern": "src/**/*.py", "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'},
+        {"pattern": "pyproject.toml", "regex": r'\bversion\s*=\s*"(\d+\.\d+\.\d+)"'},
+    ],
 }
 
 CONFIG = DEFAULT_CONFIG.copy()
@@ -66,18 +70,11 @@ def get_editor():
 def _load_config_rules(key, fallback):
     """Load wildcard/regex rule pairs from configuration."""
     raw_value = CONFIG.get(key, DEFAULT_CONFIG[key])
-    parsed = raw_value if isinstance(raw_value, list) else None
-    if parsed is None:
-        try:
-            parsed = json.loads(raw_value)
-        except (json.JSONDecodeError, TypeError) as exc:
-            print(f"Ignoring invalid JSON for {key}: {exc}", file=sys.stderr)
-            return list(fallback)
-    if not isinstance(parsed, list):
+    if not isinstance(raw_value, list):
         print(f"Ignoring non-list value for {key}", file=sys.stderr)
         return list(fallback)
     rules = []
-    for entry in parsed:
+    for entry in raw_value:
         pattern = regex = None
         if isinstance(entry, dict):
             pattern = entry.get("pattern") or entry.get("glob")
@@ -136,15 +133,32 @@ def load_cli_config(root=None):
     if not config_path.exists():
         return config_path
     try:
-        for raw_line in config_path.read_text().splitlines():
-            line = raw_line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, value = [part.strip() for part in line.split("=", 1)]
-            if key in DEFAULT_CONFIG and value:
-                CONFIG[key] = value
+        raw_text = config_path.read_text(encoding="utf-8")
     except OSError as exc:
         print(f"Unable to read {config_path}: {exc}", file=sys.stderr)
+        return config_path
+    try:
+        data = json.loads(raw_text)
+    except json.JSONDecodeError as exc:
+        print(f"Unable to parse {config_path} as JSON: {exc}", file=sys.stderr)
+        return config_path
+    if not isinstance(data, dict):
+        print(f"Ignoring {config_path}: expected a JSON object.", file=sys.stderr)
+        return config_path
+    for key in DEFAULT_CONFIG:
+        if key not in data:
+            continue
+        value = data[key]
+        if key == "ver_rules":
+            if isinstance(value, list):
+                CONFIG[key] = value
+            else:
+                print(f"Ignoring {key}: expected a JSON array.", file=sys.stderr)
+            continue
+        if isinstance(value, str) and value.strip():
+            CONFIG[key] = value
+        else:
+            print(f"Ignoring {key}: expected a non-empty string.", file=sys.stderr)
     return config_path
 
 
@@ -152,9 +166,8 @@ def load_cli_config(root=None):
 def write_default_config(root=None):
     """Write the default configuration file in the repository root."""
     config_path = get_config_path(root)
-    keys = ("master", "develop", "work", "editor", "default_module", "ver_rules")
-    lines = [f"{key}={DEFAULT_CONFIG[key]}" for key in keys]
-    config_path.write_text("\n".join(lines) + "\n")
+    payload = json.dumps(DEFAULT_CONFIG, indent=2)
+    config_path.write_text(payload + "\n", encoding="utf-8")
     print(f"Configuration written to {config_path}")
     return config_path
 
@@ -187,7 +200,7 @@ HELP_TEXTS = {
     "bd": "Delete a local branch: git bd '<branch>'.",
     "br": "Create a new branch.",
     "chver": "Change the project version to the provided semantic version.",
-    "changelog": "Generate CHANGELOG.md from conventional commits (supports --include-unreleased, --force-write, --print-only).",
+    "changelog": "Generate CHANGELOG.md from conventional commits (supports --include-unreleased, --include-draft, --force-write, --print-only).",
     "ck": "Check differences.",
     "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
@@ -626,6 +639,33 @@ SECTION_EMOJI = {
     "Revert": "◀️",
 }
 
+MIN_SUPPORTED_HISTORY_VERSION = (0, 1, 0)
+
+
+# Determina se il tag semantico deve essere incluso nel changelog di default.
+def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[int, int, int]]:
+    return _parse_semver_tuple(tag_name.lstrip("v"))
+
+
+def _is_supported_release_tag(tag_name: str) -> bool:
+    semver = _tag_semver_tuple(tag_name)
+    if semver is None:
+        return True
+    return semver >= MIN_SUPPORTED_HISTORY_VERSION
+
+
+def _should_include_tag(tag_name: str, include_draft: bool) -> bool:
+    return include_draft or _is_supported_release_tag(tag_name)
+
+
+def _latest_supported_tag_name(tags: List[TagInfo], include_draft: bool) -> Optional[str]:
+    if include_draft:
+        return tags[-1].name if tags else None
+    for tag in reversed(tags):
+        if _is_supported_release_tag(tag.name):
+            return tag.name
+    return None
+
 
 # Ottiene i tag semantici ordinati per data di creazione.
 def list_tags_sorted_by_date(repo_root: Path, merged_ref: Optional[str] = None) -> List[TagInfo]:
@@ -764,63 +804,83 @@ def get_release_page_url(base_url: Optional[str], tag: str) -> Optional[str]:
 
 
 # Compone la sezione History con i riferimenti di confronto.
-def build_history_section(repo_root: Path, tags: List[TagInfo], include_unreleased: bool) -> Optional[str]:
+def build_history_section(
+    repo_root: Path,
+    tags: List[TagInfo],
+    include_unreleased: bool,
+    include_draft: bool = False,
+    include_unreleased_link: bool = True,
+) -> Optional[str]:
     base = _canonical_origin_base(repo_root)
     if not base:
         return None
     lines = ["# History"]
-    if tags:
+    visible_tags = [tag for tag in tags if _should_include_tag(tag.name, include_draft)]
+    if visible_tags:
         lines.append("")
-        for tag in tags:
+        for tag in visible_tags:
             release_url = get_release_page_url(base, tag.name)
             if release_url:
-                lines.append(f"- [{tag.name.lstrip('v')}]: {release_url}")
+                lines.append(f"- \\[{tag.name.lstrip('v')}\\]: {release_url}")
         lines.append("")
     prev: Optional[str] = None
-    for tag in tags:
+    for tag in visible_tags:
         compare = get_origin_compare_url(base, prev, tag.name)
         if compare:
             lines.append(f"[{tag.name.lstrip('v')}]: {compare}")
         prev = tag.name
-    if include_unreleased and tags:
-        compare = get_origin_compare_url(base, tags[-1].name, "HEAD")
-        if compare:
-            lines.append(f"[unreleased]: {compare}")
+    if include_unreleased and include_unreleased_link:
+        baseline = _latest_supported_tag_name(tags, include_draft)
+        if baseline:
+            compare = get_origin_compare_url(base, baseline, "HEAD")
+            if compare:
+                lines.append(f"[unreleased]: {compare}")
     return "\n".join(lines).rstrip() + "\n"
 
 
 # Assembla il documento completo del changelog.
-def generate_changelog_document(repo_root: Path, include_unreleased: bool) -> str:
+def generate_changelog_document(repo_root: Path, include_unreleased: bool, include_draft: bool = False) -> str:
     tags = list_tags_sorted_by_date(repo_root)
     history_tags = list_tags_sorted_by_date(repo_root, merged_ref="HEAD")
     origin_base = _canonical_origin_base(repo_root)
     lines: List[str] = ["# Changelog", ""]
     release_sections: List[str] = []
+    baseline_tag = _latest_supported_tag_name(tags, include_draft)
+    has_unreleased = False
     if include_unreleased:
-        rev_range = f"{tags[-1].name}..HEAD" if tags else "HEAD"
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        section = generate_section_for_range(repo_root, "Unreleased", today, rev_range)
-        if section:
-            lines.append(section)
-    if tags:
-        prev: Optional[str] = None
-        for tag in tags:
-            rev_range = tag.name if prev is None else f"{prev}..{tag.name}"
+        if baseline_tag or include_draft:
+            rev_range = f"{baseline_tag}..HEAD" if baseline_tag else "HEAD"
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            section = generate_section_for_range(repo_root, "Unreleased", today, rev_range)
+            if section:
+                lines.append(section)
+                has_unreleased = True
+    prev_included: Optional[str] = None
+    for tag in tags:
+        if _should_include_tag(tag.name, include_draft):
+            rev_range = tag.name if prev_included is None else f"{prev_included}..{tag.name}"
             display = tag.name.lstrip("v")
-            compare_url = get_origin_compare_url(origin_base, prev, tag.name)
+            compare_url = get_origin_compare_url(origin_base, prev_included, tag.name)
             title = f"[{display}]({compare_url})" if compare_url else display
-            section = generate_section_for_range(repo_root, title, tag.iso_date, rev_range, expected_version=display)
+            section = generate_section_for_range(
+                repo_root,
+                title,
+                tag.iso_date,
+                rev_range,
+                expected_version=display,
+            )
             if section:
                 release_sections.append(section)
-            prev = tag.name
-    else:
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        section = generate_section_for_range(repo_root, "Unreleased", today, "HEAD")
-        if section:
-            release_sections.append(section)
+            prev_included = tag.name
     if release_sections:
         lines.extend(reversed(release_sections))
-    history = build_history_section(repo_root, history_tags, include_unreleased)
+    history = build_history_section(
+        repo_root,
+        history_tags,
+        include_unreleased,
+        include_draft,
+        include_unreleased_link=has_unreleased,
+    )
     if history:
         lines.append("")
         lines.append(history)
@@ -865,12 +925,16 @@ def _determine_canonical_version(root: Path, rules):
     for pattern, expression in rules:
         files = _collect_version_files(root, pattern)
         if not files:
-            continue
+            raise VersionDetectionError(
+                f"No files matched the version rule pattern '{pattern}'."
+            )
         try:
             compiled = re.compile(expression)
         except re.error as exc:
-            print(f"Ignoring invalid regex '{expression}' for pattern '{pattern}': {exc}", file=sys.stderr)
-            continue
+            raise VersionDetectionError(
+                f"Invalid regex '{expression}' for pattern '{pattern}': {exc}"
+            )
+        matched_in_rule = False
         for file_path in files:
             try:
                 text = file_path.read_text(encoding="utf-8")
@@ -880,6 +944,7 @@ def _determine_canonical_version(root: Path, rules):
                 print(f"Unable to read {file_path}: {exc}", file=sys.stderr)
                 continue
             for version in _iter_versions_in_text(text, [compiled]):
+                matched_in_rule = True
                 if canonical is None:
                     canonical = version
                     canonical_file = file_path
@@ -887,6 +952,10 @@ def _determine_canonical_version(root: Path, rules):
                     raise VersionDetectionError(
                         f"Version mismatch between {canonical_file} ({canonical}) and {file_path} ({version})"
                     )
+        if not matched_in_rule:
+            raise VersionDetectionError(
+                f"No version matches found for rule pattern '{pattern}' with regex '{expression}'."
+            )
     if canonical is None:
         raise VersionDetectionError("No version string matched the configured rule list.")
     return canonical
@@ -1664,6 +1733,7 @@ def cmd_changelog(extra):
     parser = argparse.ArgumentParser(prog="g changelog", add_help=False)
     parser.add_argument("--force-write", dest="force_write", action="store_true")
     parser.add_argument("--include-unreleased", action="store_true")
+    parser.add_argument("--include-draft", action="store_true")
     parser.add_argument("--print-only", action="store_true")
     parser.add_argument("--help", action="store_true")
     try:
@@ -1678,7 +1748,7 @@ def cmd_changelog(extra):
         print("Error: run g changelog inside a Git repository.", file=sys.stderr)
         sys.exit(2)
     repo_root = get_git_root()
-    content = generate_changelog_document(repo_root, args.include_unreleased)
+    content = generate_changelog_document(repo_root, args.include_unreleased, args.include_draft)
     if args.print_only:
         print(content, end="")
         return
@@ -1772,15 +1842,11 @@ def print_all_help():
         value = CONFIG.get(key, DEFAULT_CONFIG[key])
         if key == "ver_rules":
             print("  ver_rules:")
-            rules = []
             if isinstance(value, list):
-                rules = value
+                entries = value
             else:
-                try:
-                    rules = json.loads(value)
-                except (json.JSONDecodeError, TypeError):
-                    rules = []
-            for entry in rules:
+                entries = []
+            for entry in entries:
                 pattern = ""
                 regex = ""
                 if isinstance(entry, dict):
