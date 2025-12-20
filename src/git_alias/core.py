@@ -1077,11 +1077,12 @@ def _bump_semver_version(current_version, level):
 
 
 # Esegue un singolo step del rilascio con logging.
-def _run_release_step(step_name, action):
+def _run_release_step(level, step_name, action):
     """Execute a release step and report its outcome."""
+    label = f"[release:{level}]"
     try:
         result = action()
-        print(f"[release] Step '{step_name}' completed successfully.")
+        print(f"--- {label} Step '{step_name}' completed successfully. ---")
         return result
     except ReleaseError:
         raise
@@ -1090,12 +1091,12 @@ def _run_release_step(step_name, action):
     except CommandExecutionError as exc:
         err_text = CommandExecutionError._decode_stream(exc.stderr).strip()
         message = err_text if err_text else str(exc)
-        raise ReleaseError(f"[release] Step '{step_name}' failed: {message}") from None
+        raise ReleaseError(f"--- {label} Step '{step_name}' failed: {message} ---") from None
     except SystemExit as exc:
         code = exc.code if isinstance(exc.code, int) else 1
-        raise ReleaseError(f"[release] Step '{step_name}' failed: command exited with status {code}") from None
+        raise ReleaseError(f"--- {label} Step '{step_name}' failed: command exited with status {code} ---") from None
     except Exception as exc:
-        raise ReleaseError(f"[release] Step '{step_name}' failed: {exc}") from None
+        raise ReleaseError(f"--- {label} Step '{step_name}' failed: {exc} ---") from None
 
 
 # Esegue il flusso completo del rilascio.
@@ -1110,14 +1111,16 @@ def _execute_release_flow(level):
     target_version = _bump_semver_version(current_version, level)
     release_message = f"release version: {target_version}"
 
-    _run_release_step("update versions", lambda: cmd_chver([target_version]))
-    _run_release_step("stage files", lambda: run_git_cmd(["add", "--all"]))
-    _run_release_step("create release commit", lambda: cmd_release([]))
-    _run_release_step("tag release", lambda: cmd_tg([release_message, f"v{target_version}"]))
-    _run_release_step("regenerate changelog", lambda: cmd_changelog(["--force-write"]))
-    _run_release_step("stage changelog", lambda: run_git_cmd(["add", "CHANGELOG.md"]))
-    _run_release_step("amend release commit", lambda: run_git_cmd(["commit", "--amend", "--no-edit"]))
+    print()
+    _run_release_step(level, "update versions", lambda: cmd_chver([target_version]))
+    _run_release_step(level, "stage files", lambda: run_git_cmd(["add", "--all"]))
+    _run_release_step(level, "create release commit", lambda: cmd_release([]))
+    _run_release_step(level, "tag release", lambda: cmd_tg([release_message, f"v{target_version}"]))
+    _run_release_step(level, "regenerate changelog", lambda: cmd_changelog(["--force-write"]))
+    _run_release_step(level, "stage changelog", lambda: run_git_cmd(["add", "CHANGELOG.md"]))
+    _run_release_step(level, "amend release commit", lambda: run_git_cmd(["commit", "--amend", "--no-edit"]))
     _run_release_step(
+        level,
         "retag release",
         lambda: run_git_cmd(["tag", "--force", "-a", f"v{target_version}", "-m", release_message]),
     )
@@ -1126,15 +1129,15 @@ def _execute_release_flow(level):
     develop_branch = branches["develop"]
     master_branch = branches["master"]
 
-    _run_release_step("checkout develop", lambda: cmd_co([develop_branch]))
-    _run_release_step("merge work into develop", lambda: cmd_me([work_branch]))
-    _run_release_step("push develop", lambda: run_git_cmd(["push", "origin", develop_branch]))
-    _run_release_step("checkout master", lambda: cmd_co([master_branch]))
-    _run_release_step("merge develop into master", lambda: cmd_me([develop_branch]))
-    _run_release_step("push master", lambda: run_git_cmd(["push", "origin", master_branch]))
-    _run_release_step("return to work", lambda: cmd_co([work_branch]))
-    _run_release_step("show release details", lambda: cmd_de([]))
-    _run_release_step("push tags", lambda: cmd_pt([]))
+    _run_release_step(level, "checkout develop", lambda: cmd_co([develop_branch]))
+    _run_release_step(level, "merge work into develop", lambda: cmd_me([work_branch]))
+    _run_release_step(level, "push develop", lambda: run_git_cmd(["push", "origin", develop_branch]))
+    _run_release_step(level, "checkout master", lambda: cmd_co([master_branch]))
+    _run_release_step(level, "merge develop into master", lambda: cmd_me([develop_branch]))
+    _run_release_step(level, "push master", lambda: run_git_cmd(["push", "origin", master_branch]))
+    _run_release_step(level, "return to work", lambda: cmd_co([work_branch]))
+    _run_release_step(level, "show release details", lambda: cmd_de([]))
+    _run_release_step(level, "push tags", lambda: cmd_pt([]))
     print(f"Release {target_version} completed successfully.")
 
 
