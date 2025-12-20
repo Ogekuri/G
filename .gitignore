@@ -209,3 +209,9 @@ __marimo__/
 # OpenIA codex sessions
 .codex/sessions
 .codex/auth.json
+
+# Local tooling directories
+.gemini/
+.github/
+.codex/
+.req/
