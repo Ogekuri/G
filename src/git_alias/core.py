@@ -219,8 +219,8 @@ HELP_TEXTS = {
     "ll": "Print latest full commit hash.",
     "lm": "Print all merges.",
     "lt": "Print all tags.",
-    "major": "Release a new major version from the work branch.",
-    "minor": "Release a new minor version from the work branch.",
+    "major": "Release a new major version from the work branch (supports --include-unreleased, --include-draft).",
+    "minor": "Release a new minor version from the work branch (supports --include-unreleased, --include-draft).",
     "new": "Conventional commit new(module): description.",
     "fix": "Conventional commit fix(module): description.",
     "change": "Conventional commit change(module): description.",
@@ -232,7 +232,7 @@ HELP_TEXTS = {
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
-    "patch": "Release a new patch version from the work branch.",
+    "patch": "Release a new patch version from the work branch (supports --include-unreleased, --include-draft).",
     "ra": "Remove all staged files and return them to the working tree (inverse of aa).",
     "release": "Create a release commit using the detected project version.",
     "rf": "Print changes on HEAD reference.",
@@ -1100,7 +1100,7 @@ def _run_release_step(level, step_name, action):
 
 
 # Esegue il flusso completo del rilascio.
-def _execute_release_flow(level):
+def _execute_release_flow(level, changelog_args=None):
     """Perform the release workflow for the requested level."""
     branches = _ensure_release_prerequisites()
     rules = get_version_rules()
@@ -1110,13 +1110,16 @@ def _execute_release_flow(level):
     current_version = _determine_canonical_version(root, rules)
     target_version = _bump_semver_version(current_version, level)
     release_message = f"release version: {target_version}"
+    changelog_flags = ["--force-write"]
+    if changelog_args:
+        changelog_flags.extend(changelog_args)
 
     print()
     _run_release_step(level, "update versions", lambda: cmd_chver([target_version]))
     _run_release_step(level, "stage files", lambda: run_git_cmd(["add", "--all"]))
     _run_release_step(level, "create release commit", lambda: cmd_release([]))
     _run_release_step(level, "tag release", lambda: cmd_tg([release_message, f"v{target_version}"]))
-    _run_release_step(level, "regenerate changelog", lambda: cmd_changelog(["--force-write"]))
+    _run_release_step(level, "regenerate changelog", lambda: cmd_changelog(changelog_flags))
     _run_release_step(level, "stage changelog", lambda: run_git_cmd(["add", "CHANGELOG.md"]))
     _run_release_step(level, "amend release commit", lambda: run_git_cmd(["commit", "--amend", "--no-edit"]))
     _run_release_step(
@@ -1142,10 +1145,10 @@ def _execute_release_flow(level):
 
 
 # Gestisce le eccezioni del flusso di rilascio.
-def _run_release_command(level):
+def _run_release_command(level, changelog_args=None):
     """Wrapper that executes the release flow and reports failures."""
     try:
-        _execute_release_flow(level)
+        _execute_release_flow(level, changelog_args=changelog_args)
     except ReleaseError as exc:
         print(str(exc), file=sys.stderr)
         sys.exit(1)
@@ -1176,6 +1179,27 @@ def _reject_extra_arguments(extra, alias):
     if args:
         print(f"git {alias} does not accept positional arguments.", file=sys.stderr)
         sys.exit(1)
+
+
+# Valida i flag permessi per i comandi di release e li restituisce.
+def _parse_release_flags(extra, alias):
+    """Return the allowed changelog flags for release commands."""
+    args = _to_args(extra)
+    if not args:
+        return []
+    allowed = {"--include-unreleased", "--include-draft"}
+    unknown = [arg for arg in args if arg not in allowed]
+    if unknown:
+        joined = ", ".join(unknown)
+        print(f"git {alias} accepts only --include-unreleased and --include-draft (got {joined}).", file=sys.stderr)
+        sys.exit(1)
+    deduped = []
+    seen = set()
+    for arg in args:
+        if arg not in seen:
+            deduped.append(arg)
+            seen.add(arg)
+    return deduped
 
 
 # Prepara le operazioni di commit condivise tra gli alias cm e wip.
@@ -1715,20 +1739,20 @@ def cmd_chver(extra):
 
 # Esegue il rilascio incrementando il numero major.
 def cmd_major(extra):
-    _reject_extra_arguments(extra, "major")
-    _run_release_command("major")
+    changelog_args = _parse_release_flags(extra, "major")
+    _run_release_command("major", changelog_args=changelog_args)
 
 
 # Esegue il rilascio incrementando il numero minor.
 def cmd_minor(extra):
-    _reject_extra_arguments(extra, "minor")
-    _run_release_command("minor")
+    changelog_args = _parse_release_flags(extra, "minor")
+    _run_release_command("minor", changelog_args=changelog_args)
 
 
 # Esegue il rilascio incrementando il numero patch.
 def cmd_patch(extra):
-    _reject_extra_arguments(extra, "patch")
-    _run_release_command("patch")
+    changelog_args = _parse_release_flags(extra, "patch")
+    _run_release_command("patch", changelog_args=changelog_args)
 
 
 # Genera il file CHANGELOG.md tramite l'alias 'changelog'.

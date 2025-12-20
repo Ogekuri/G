@@ -53,3 +53,33 @@ class ReleaseFlowTest(unittest.TestCase):
             with contextlib.redirect_stdout(buffer):
                 core._execute_release_flow("minor")
         self.assertTrue(buffer.getvalue().startswith("\n"))
+
+    def test_release_flow_passes_changelog_flags(self):
+        def run_step(_level, step_name, action):
+            if step_name == "regenerate changelog":
+                action()
+            return None
+
+        with mock.patch.object(
+            core,
+            "_ensure_release_prerequisites",
+            return_value={"master": "master", "develop": "develop", "work": "work"},
+        ), mock.patch.object(core, "get_version_rules", return_value=[("README.md", "x")]), mock.patch.object(
+            core, "_determine_canonical_version", return_value="1.2.3"
+        ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
+            core, "_run_release_step", side_effect=run_step
+        ), mock.patch.object(core, "cmd_changelog") as changelog:
+            core._execute_release_flow("patch", changelog_args=["--include-unreleased", "--include-draft"])
+        changelog.assert_called_once_with(["--force-write", "--include-unreleased", "--include-draft"])
+
+    def test_release_commands_accept_changelog_flags(self):
+        with mock.patch.object(core, "_run_release_command") as run_release:
+            core.cmd_major(["--include-unreleased", "--include-draft"])
+        run_release.assert_called_once_with("major", changelog_args=["--include-unreleased", "--include-draft"])
+
+    def test_release_commands_reject_unknown_flags(self):
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            with self.assertRaises(SystemExit):
+                core.cmd_patch(["--unexpected"])
+        self.assertIn("accepts only --include-unreleased and --include-draft", err.getvalue())
