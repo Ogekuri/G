@@ -1,4 +1,4 @@
-# Git Alias CLI (0.0.11)
+# Git Alias CLI (0.0.12)
 
 This project exposes the `git-alias` CLI command (installed as `g`) to reproduce the GIT aliases defined in this package, making them runnable both as a Python package and through `uvx`.
 

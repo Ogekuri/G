@@ -1,5 +1,5 @@
 #!/bin/bash
-# VERSION: # VERSION: 0.0.11
+# VERSION: # VERSION: 0.0.12
 # AUTHORS: Ogekuri
 
 cd -- "$(dirname "$0")/"
