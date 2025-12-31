@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git Alias CLI
-**Versione**: 0.42
+**Versione**: 0.43
 **Autore**: Francesco Rolando  
 **Data**: 2025-12-20
 
@@ -78,6 +78,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2025-12-20 | 0.40 | Limitazione predefinita del changelog ai tag >=0.1.0 e introduzione del flag `--include-draft` |
 | 2025-12-20 | 0.41 | Formato dei messaggi di step per `major`/`minor`/`patch` con prefisso e separazione |
 | 2025-12-20 | 0.42 | Flag `--include-unreleased` e `--include-draft` per i comandi `major`/`minor`/`patch` |
+| 2025-12-20 | 0.43 | Help dei comandi con opzioni esplicite nella stringa di help |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -114,7 +115,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **CPT-002**:Script di lancio `core.py` e entrypoint console `git-alias`/`g`.
 - **CPT-003**:Suite di test `tests/test_alias_help.py` che verifica coerenza degli help.
 - **CPT-004**:Librerie standard Python: `os`, `shlex`, `subprocess`, `sys`, `datetime`, `pathlib`.
-- **CPT-005**:Dipendenze esterne: eseguibili `git`, `gitk`, `uv`/`uvx`, editor `cudatext`.
+- **CPT-005**:Dipendenze esterne: eseguibili `git`, `gitk`, `uv`/`uvx`.
 
 ## 3. Requisiti
 ### 3.1 Progettazione e Implementazione
@@ -131,9 +132,9 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 ### 3.2 Funzioni
 - **REQ-001**: Il comando `--upgrade` deve reinstallare l'utility usando `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git`.
 - **REQ-002**: Il comando `--remove` deve disinstallare l'utility globale tramite `uv tool uninstall git-alias`.
-- **REQ-003**: Il comando `--help` deve elencare tutti gli alias disponibili o mostrare la descrizione del comando richiesto quando viene specificato un alias.
+- **REQ-003**: Il comando `--help` deve elencare tutti gli alias disponibili o mostrare la descrizione del comando richiesto quando viene specificato un alias; quando il comando dispone di opzioni/flag, la stringa di help del comando deve includere esplicitamente tali opzioni.
 - **REQ-004**: L'alias `aa` deve aggiungere tutte le modifiche e i file nuovi all'area di staging con `git add --all`, ma prima deve verificare (riutilizzando le funzioni diagnostiche sullo working tree) che esistano file o modifiche non ancora aggiunti allo staging e, quando non c'è nulla da aggiungere, deve terminare con errore descrivendo il problema.
-- **REQ-005**: L'alias di commit `cm` deve permettere commit standard senza automatismi aggiuntivi né messaggi precompilati, ma prima di eseguire `git commit` deve verificare (riutilizzando funzioni diagnostiche centralizzate) che (a) non esistano file o modifiche nello working tree ancora da aggiungere all'index/stage, (b) l'index contenga effettivamente modifiche pronte al commit, e (c) l'ultimo commit del branch corrente non sia una WIP irrisolta. Se l'ultimo commit ha il messaggio `wip: work in progress.` e non è stato ancora portato sul ramo `develop` configurato, `cm` deve aggiornare quel commit tramite `git commit --amend` e stampare un messaggio esplicito; in tutti gli altri casi deve creare un nuovo commit e segnalare l'azione eseguita.
+- **REQ-005**: L'alias di commit `cm` deve permettere commit standard senza automatismi aggiuntivi né messaggi precompilati, ma prima di eseguire `git commit` deve verificare (riutilizzando funzioni diagnostiche centralizzate) che (a) non esistano file o modifiche nello working tree ancora da aggiungere all'index/stage, (b) l'index contenga effettivamente modifiche pronte al commit, e (c) l'ultimo commit del branch corrente non sia una `wip: work in progress.` non mergiata. Se l'ultimo commit ha il messaggio `wip: work in progress.` e non è stato ancora portato ne sui rami `develop`/`master` configurati, `cm` deve aggiornare quel commit tramite `git commit --amend` e stampare un messaggio esplicito; in tutti gli altri casi deve creare un nuovo commit e segnalare l'azione eseguita.
 - **REQ-006**: Gli alias di navigazione branch devono consentire checkout mirati (`co`) utilizzando i nomi di branch configurati nel file `.g.conf` (default `work`, `develop`, `master`).
 - **REQ-007**: Gli alias di fetch/pull/push devono eseguire le varianti generiche per il ramo corrente (`fe`, `feall`, `pl`, `pt`, `pu`), senza scorciatoie dedicate ai rami configurati.
 - **REQ-008**: Gli alias di ispezione devono fornire viste su branch, log e stato (`br`, `lb`, `ck`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`).

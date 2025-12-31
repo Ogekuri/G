@@ -59,6 +59,21 @@ class AliasHelpTest(unittest.TestCase):
                 msg=f"{alias} help missing from global --help",
             )
 
+    def test_management_help_order(self):
+        output = self.run_script(["--help"])
+        lines = output.splitlines()
+        self.assertIn("Management Commands:", lines)
+        start = lines.index("Management Commands:")
+        entries = []
+        for line in lines[start + 1 :]:
+            if not line.strip():
+                break
+            entries.append(line.strip())
+        flags = [line.split()[0] for line in entries if line.strip()]
+        self.assertGreaterEqual(len(flags), 3)
+        self.assertEqual(flags[:3], ["--write-config", "--upgrade", "--remove"])
+        self.assertIn("--help", flags)
+
     def test_individual_help_matches_hlal(self):
         reset_aliases = getattr(self.module, "RESET_HELP_COMMANDS", set())
         for alias, desc in self.expected_help.items():
@@ -85,3 +100,19 @@ class AliasHelpTest(unittest.TestCase):
                 expected,
                 msg=f"{alias} did not emit RESET_HELP on --help",
             )
+
+    def test_help_lists_command_options_when_present(self):
+        expected_flags = {
+            "changelog": ["--include-unreleased", "--include-draft", "--force-write", "--print-only"],
+            "major": ["--include-unreleased", "--include-draft"],
+            "minor": ["--include-unreleased", "--include-draft"],
+            "patch": ["--include-unreleased", "--include-draft"],
+        }
+        for alias, flags in expected_flags.items():
+            output = self.run_script([alias, "--help"])
+            for flag in flags:
+                self.assertIn(
+                    flag,
+                    output,
+                    msg=f"{alias} help missing option {flag}",
+                )

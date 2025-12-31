@@ -36,7 +36,7 @@ class ReleaseFlowTest(unittest.TestCase):
             core._run_release_step("major", "stage files", lambda: None)
         self.assertEqual(
             buffer.getvalue().strip(),
-            "\n--- [release:major] Step 'stage files' completed successfully. ---",
+            "--- [release:major] Step 'stage files' completed successfully. ---",
         )
 
     def test_release_flow_emits_blank_line_before_steps(self):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Portable implementation of the user's git aliases."""
+# Implementazione portabile degli alias git dell'utente.
 
 import argparse
 import json
@@ -39,22 +39,20 @@ DEFAULT_CONFIG = {
 CONFIG = DEFAULT_CONFIG.copy()
 BRANCH_KEYS = ("master", "develop", "work")
 MANAGEMENT_HELP = [
-    ("--help", "Print the full help screen or the help text of a specific alias."),
     ("--write-config", "Generate the .g.conf file in the repository root with default values."),
     ("--upgrade", "Reinstall git-alias via uv tool install."),
     ("--remove", "Uninstall git-alias using uv tool uninstall."),
+    ("--help", "Print the full help screen or the help text of a specific alias."),
 ]
 
 
 # Restituisce un valore di configurazione con fallback ai default.
 def get_config_value(name):
-    """Retrieve a configuration value with fallback to defaults."""
     return CONFIG.get(name, DEFAULT_CONFIG[name])
 
 
 # Restituisce il nome di branch configurato per la chiave richiesta.
 def get_branch(name):
-    """Return the configured name for the requested branch key."""
     if name not in BRANCH_KEYS:
         raise KeyError(f"Unknown branch key {name}")
     return get_config_value(name)
@@ -62,13 +60,11 @@ def get_branch(name):
 
 # Recupera il comando di editor definito nella configurazione.
 def get_editor():
-    """Return the configured editor command."""
     return get_config_value("editor")
 
 
 # Carica le coppie wildcard/regexp definite nel file di configurazione.
 def _load_config_rules(key, fallback):
-    """Load wildcard/regex rule pairs from configuration."""
     raw_value = CONFIG.get(key, DEFAULT_CONFIG[key])
     if not isinstance(raw_value, list):
         print(f"Ignoring non-list value for {key}", file=sys.stderr)
@@ -96,13 +92,11 @@ def _load_config_rules(key, fallback):
 
 # Restituisce le regole usate per rilevare le versioni nei file.
 def get_version_rules():
-    """Return the configured wildcard/regex pairs for version scanning."""
     return _load_config_rules("ver_rules", DEFAULT_VER_RULES)
 
 
 # Individua la radice del repository git corrente.
 def get_git_root():
-    """Return the git repository root or the current working directory."""
     try:
         result = _run_checked(
             ["git", "rev-parse", "--show-toplevel"],
@@ -120,14 +114,12 @@ def get_git_root():
 
 # Calcola il percorso del file di configurazione .g.conf.
 def get_config_path(root=None):
-    """Return the expected path of the configuration file."""
     base = Path(root) if root is not None else get_git_root()
     return base / CONFIG_FILENAME
 
 
 # Carica nella memoria le impostazioni definite in .g.conf.
 def load_cli_config(root=None):
-    """Load branch names and editor command from the repository configuration file."""
     CONFIG.update(DEFAULT_CONFIG)
     config_path = get_config_path(root)
     if not config_path.exists():
@@ -164,7 +156,6 @@ def load_cli_config(root=None):
 
 # Scrive il file di configurazione con i valori di default.
 def write_default_config(root=None):
-    """Write the default configuration file in the repository root."""
     config_path = get_config_path(root)
     payload = json.dumps(DEFAULT_CONFIG, indent=2)
     config_path.write_text(payload + "\n", encoding="utf-8")
@@ -174,7 +165,6 @@ def write_default_config(root=None):
 
 # Parsa la stringa dell'editor e restituisce il comando base.
 def _editor_base_command():
-    """Return the configured editor command as a list of arguments."""
     raw_value = get_editor() or DEFAULT_CONFIG["editor"]
     try:
         parts = shlex.split(raw_value)
@@ -191,7 +181,6 @@ def _editor_base_command():
 
 # Esegue l'editor configurato con gli argomenti specificati.
 def run_editor_command(args):
-    """Execute the configured editor command with additional arguments."""
     return run_command(_editor_base_command() + list(args))
 
 HELP_TEXTS = {
@@ -200,7 +189,7 @@ HELP_TEXTS = {
     "bd": "Delete a local branch: git bd '<branch>'.",
     "br": "Create a new branch.",
     "chver": "Change the project version to the provided semantic version.",
-    "changelog": "Generate CHANGELOG.md from conventional commits (supports --include-unreleased, --include-draft, --force-write, --print-only).",
+    "changelog": "Generate CHANGELOG.md from conventional commits. Options: --include-unreleased, --include-draft, --force-write, --print-only.",
     "ck": "Check differences.",
     "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
@@ -219,8 +208,8 @@ HELP_TEXTS = {
     "ll": "Print latest full commit hash.",
     "lm": "Print all merges.",
     "lt": "Print all tags.",
-    "major": "Release a new major version from the work branch (supports --include-unreleased, --include-draft).",
-    "minor": "Release a new minor version from the work branch (supports --include-unreleased, --include-draft).",
+    "major": "Release a new major version from the work branch. Options: --include-unreleased, --include-draft.",
+    "minor": "Release a new minor version from the work branch. Options: --include-unreleased, --include-draft.",
     "new": "Conventional commit new(module): description.",
     "fix": "Conventional commit fix(module): description.",
     "change": "Conventional commit change(module): description.",
@@ -232,7 +221,7 @@ HELP_TEXTS = {
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
-    "patch": "Release a new patch version from the work branch (supports --include-unreleased, --include-draft).",
+    "patch": "Release a new patch version from the work branch. Options: --include-unreleased, --include-draft.",
     "ra": "Remove all staged files and return them to the working tree (inverse of aa).",
     "release": "Create a release commit using the detected project version.",
     "rf": "Print changes on HEAD reference.",
@@ -333,7 +322,7 @@ RESET_HELP = """
 
 """
 
-RESET_HELP_COMMANDS = {"rshrd", "rskep", "rsmix", "rsmrg", "rssft"}
+RESET_HELP_COMMANDS = {"rs", "rshrd", "rskep", "rsmix", "rsmrg", "rssft"}
 
 
 # Converte la sequenza di argomenti extra in una lista espandibile.
@@ -343,6 +332,7 @@ def _to_args(extra):
 
 # Rappresenta un errore emesso da un processo esterno.
 class CommandExecutionError(RuntimeError):
+    # Inizializza l'eccezione con i dettagli del comando fallito.
     def __init__(self, exc: subprocess.CalledProcessError):
         self.cmd = exc.cmd
         self.returncode = exc.returncode
@@ -351,6 +341,7 @@ class CommandExecutionError(RuntimeError):
         message = self._format_message()
         super().__init__(message)
 
+    # Compone il messaggio di errore partendo dall'output disponibile.
     def _format_message(self) -> str:
         text = self._decode_stream(self.stderr).strip()
         if text:
@@ -363,6 +354,7 @@ class CommandExecutionError(RuntimeError):
         return f"Command '{cmd_display}' failed with exit code {self.returncode}"
 
     @staticmethod
+    # Decodifica uno stream di output in testo gestendo gli errori.
     def _decode_stream(data) -> str:
         if data is None:
             return ""
@@ -455,7 +447,6 @@ def run_git_text(args, cwd=None, check=True):
 
 # Recupera le linee di stato porcelain del repository.
 def _git_status_lines():
-    """Return the porcelain status lines without trimming leading spaces."""
     proc = _run_checked(
         ["git", "status", "--porcelain"],
         stdout=subprocess.PIPE,
@@ -470,7 +461,6 @@ def _git_status_lines():
 
 # Determina se esistono modifiche non ancora nello staging.
 def has_unstaged_changes(status_lines=None):
-    """Return True when there are worktree changes waiting to be staged."""
     lines = status_lines if status_lines is not None else _git_status_lines()
     for line in lines:
         if not line:
@@ -484,7 +474,6 @@ def has_unstaged_changes(status_lines=None):
 
 # Verifica la presenza di elementi già pronti nello staging.
 def has_staged_changes(status_lines=None):
-    """Return True when there are staged entries ready to be committed."""
     lines = status_lines if status_lines is not None else _git_status_lines()
     for line in lines:
         if not line or line.startswith("??"):
@@ -500,7 +489,6 @@ WIP_MESSAGE_RE = re.compile(r"^wip: work in progress\.$")
 
 # Aggiorna una sola volta i riferimenti remoti usando git.
 def _refresh_remote_refs():
-    """Update remote references once per process to inform pull diagnostics."""
     global _REMOTE_REFS_UPDATED
     if _REMOTE_REFS_UPDATED:
         return
@@ -514,7 +502,6 @@ def _refresh_remote_refs():
 
 # Calcola la divergenza tra il branch locale e quello remoto.
 def _branch_remote_divergence(branch_key, remote="origin"):
-    """Return a tuple (local_ahead, remote_ahead) for the requested branch key."""
     _refresh_remote_refs()
     branch = get_branch(branch_key)
     upstream = f"{remote}/{branch}"
@@ -535,26 +522,22 @@ def _branch_remote_divergence(branch_key, remote="origin"):
 
 # Indica se il branch remoto ha commit non ancora recuperati.
 def has_remote_branch_updates(branch_key, remote="origin"):
-    """Return True if the remote tracking branch contains commits not yet fetched locally."""
     _, remote_ahead = _branch_remote_divergence(branch_key, remote=remote)
     return remote_ahead > 0
 
 
 # Verifica la presenza di aggiornamenti remoti per develop.
 def has_remote_develop_updates():
-    """Shortcut that reports pending updates for the configured develop branch."""
     return has_remote_branch_updates("develop")
 
 
 # Verifica la presenza di aggiornamenti remoti per master.
 def has_remote_master_updates():
-    """Shortcut that reports pending updates for the configured master branch."""
     return has_remote_branch_updates("master")
 
 
 # Restituisce il messaggio dell'ultima commit locale.
 def _head_commit_message():
-    """Return the latest commit subject or an empty string on failure."""
     try:
         return run_git_text(["log", "-1", "--pretty=%s"]).strip()
     except RuntimeError:
@@ -563,7 +546,6 @@ def _head_commit_message():
 
 # Ritorna l'hash della commit HEAD del repository.
 def _head_commit_hash():
-    """Return the hash of HEAD or an empty string when unavailable."""
     try:
         return run_git_text(["rev-parse", "HEAD"]).strip()
     except RuntimeError:
@@ -572,7 +554,6 @@ def _head_commit_hash():
 
 # Controlla se una commit è presente nel branch indicato.
 def _commit_exists_in_branch(commit_hash, branch_name):
-    """Return True if commit_hash is contained in branch_name."""
     if not commit_hash or not branch_name:
         return False
     proc = _run_checked(
@@ -587,7 +568,6 @@ def _commit_exists_in_branch(commit_hash, branch_name):
 
 # Stabilisce se bisogna ammendare la commit WIP corrente.
 def _should_amend_existing_commit():
-    """Determine if the current HEAD WIP commit should be amended."""
     message = _head_commit_message()
     if not (message and WIP_MESSAGE_RE.match(message)):
         return (False, "HEAD is not a WIP commit.")
@@ -647,6 +627,7 @@ def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[int, int, int]]:
     return _parse_semver_tuple(tag_name.lstrip("v"))
 
 
+# Verifica se un tag semantico rientra nella storia supportata.
 def _is_supported_release_tag(tag_name: str) -> bool:
     semver = _tag_semver_tuple(tag_name)
     if semver is None:
@@ -654,10 +635,12 @@ def _is_supported_release_tag(tag_name: str) -> bool:
     return semver >= MIN_SUPPORTED_HISTORY_VERSION
 
 
+# Determina se includere un tag in base al flag draft.
 def _should_include_tag(tag_name: str, include_draft: bool) -> bool:
     return include_draft or _is_supported_release_tag(tag_name)
 
 
+# Recupera l'ultimo tag supportato in base alle regole draft.
 def _latest_supported_tag_name(tags: List[TagInfo], include_draft: bool) -> Optional[str]:
     if include_draft:
         return tags[-1].name if tags else None
@@ -889,7 +872,6 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool, inclu
 
 # Trova i file che corrispondono alla wildcard di versione.
 def _collect_version_files(root, pattern):
-    """Return an ordered list of files that match the provided glob pattern."""
     files = []
     seen = set()
     trimmed = (pattern or "").strip()
@@ -906,7 +888,6 @@ def _collect_version_files(root, pattern):
 
 # Itera tutte le versioni estratte tramite le regex fornite.
 def _iter_versions_in_text(text, compiled_regexes):
-    """Yield every version string extracted by the compiled regex list."""
     for regex in compiled_regexes:
         for match in regex.finditer(text):
             if match.groups():
@@ -988,7 +969,6 @@ def _replace_versions_in_text(text, compiled_regex, replacement):
 
 # Determina il nome del branch corrente del repository.
 def _current_branch_name():
-    """Return the current branch name or raise an error when detached."""
     proc = _run_checked(
         ["git", "rev-parse", "--abbrev-ref", "HEAD"],
         stdout=subprocess.PIPE,
@@ -1003,7 +983,6 @@ def _current_branch_name():
 
 # Verifica l'esistenza di un riferimento git locale.
 def _ref_exists(ref_name):
-    """Return True if the provided ref exists locally."""
     proc = subprocess.run(
         ["git", "show-ref", "--verify", "--quiet", ref_name],
         check=False,
@@ -1015,19 +994,16 @@ def _ref_exists(ref_name):
 
 # Verifica che un branch locale esista.
 def _local_branch_exists(branch_name):
-    """Return True when the requested local branch exists."""
     return _ref_exists(f"refs/heads/{branch_name}")
 
 
 # Verifica che il branch remoto esista tra i riferimenti locali.
 def _remote_branch_exists(branch_name):
-    """Return True when the remote branch exists locally under origin."""
     return _ref_exists(f"refs/remotes/origin/{branch_name}")
 
 
 # Assicura che i prerequisiti per i rilasci siano soddisfatti.
 def _ensure_release_prerequisites():
-    """Validate branch layout, remotes and working tree cleanliness."""
     master_branch = get_branch("master")
     develop_branch = get_branch("develop")
     work_branch = get_branch("work")
@@ -1057,7 +1033,6 @@ def _ensure_release_prerequisites():
 
 # Calcola la prossima versione semantica in base al tipo di rilascio.
 def _bump_semver_version(current_version, level):
-    """Return the bumped semantic version string according to level."""
     parts = _parse_semver_tuple(current_version)
     if parts is None:
         raise ReleaseError(f"The current version '{current_version}' is not a valid semantic version.")
@@ -1078,7 +1053,6 @@ def _bump_semver_version(current_version, level):
 
 # Esegue un singolo step del rilascio con logging.
 def _run_release_step(level, step_name, action):
-    """Execute a release step and report its outcome."""
     label = f"[release:{level}]"
     try:
         result = action()
@@ -1101,7 +1075,6 @@ def _run_release_step(level, step_name, action):
 
 # Esegue il flusso completo del rilascio.
 def _execute_release_flow(level, changelog_args=None):
-    """Perform the release workflow for the requested level."""
     branches = _ensure_release_prerequisites()
     rules = get_version_rules()
     if not rules:
@@ -1146,7 +1119,6 @@ def _execute_release_flow(level, changelog_args=None):
 
 # Gestisce le eccezioni del flusso di rilascio.
 def _run_release_command(level, changelog_args=None):
-    """Wrapper that executes the release flow and reports failures."""
     try:
         _execute_release_flow(level, changelog_args=changelog_args)
     except ReleaseError as exc:
@@ -1164,7 +1136,6 @@ def _run_release_command(level, changelog_args=None):
 
 # Gestisce i comandi di reset mostrando l'help quando richiesto.
 def _run_reset_with_help(base_args, extra):
-    """Execute a reset command or show the reset help when --help is provided."""
     args = _to_args(extra)
     if "--help" in args:
         print(RESET_HELP.strip("\n"))
@@ -1174,7 +1145,6 @@ def _run_reset_with_help(base_args, extra):
 
 # Verifica che un alias non riceva argomenti posizionali.
 def _reject_extra_arguments(extra, alias):
-    """Ensure that no positional arguments are provided to the alias."""
     args = _to_args(extra)
     if args:
         print(f"git {alias} does not accept positional arguments.", file=sys.stderr)
@@ -1183,7 +1153,6 @@ def _reject_extra_arguments(extra, alias):
 
 # Valida i flag permessi per i comandi di release e li restituisce.
 def _parse_release_flags(extra, alias):
-    """Return the allowed changelog flags for release commands."""
     args = _to_args(extra)
     if not args:
         return []
@@ -1606,7 +1575,7 @@ def cmd_rmunt(extra):
 
 # Resetta HEAD con --hard (alias rs).
 def cmd_rs(extra):
-    return run_git_cmd(["reset", "--hard", "HEAD"], extra)
+    return _run_reset_with_help(["reset", "--hard", "HEAD"], extra)
 
 
 # Resetta con --soft per mantenere i contenuti (alias rssft).
@@ -1894,7 +1863,6 @@ def print_all_help():
 
 # Gestisce il parsing degli argomenti ed esegue l'alias richiesto.
 def main(argv=None):
-    """Parse CLI arguments and either show help text or invoke the requested alias."""
     args = list(argv) if argv is not None else sys.argv[1:]
     git_root = get_git_root()
     load_cli_config(git_root)
