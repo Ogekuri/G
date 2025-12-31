@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.18](https://github.com/Ogekuri/G/compare/v0.0.17..v0.0.18) - 2025-12-31
+### 🐛  Bug Fixes
+- *(core)* add regression test for --include-draft
+
 ## [0.0.17](https://github.com/Ogekuri/G/compare/v0.0.16..v0.0.17) - 2025-12-31
 ### 📚  Documentation
 - *(core)* fix command's help.
@@ -96,6 +100,7 @@
 - \[0.0.15\]: https://github.com/Ogekuri/G/releases/tag/v0.0.15
 - \[0.0.16\]: https://github.com/Ogekuri/G/releases/tag/v0.0.16
 - \[0.0.17\]: https://github.com/Ogekuri/G/releases/tag/v0.0.17
+- \[0.0.18\]: https://github.com/Ogekuri/G/releases/tag/v0.0.18
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
@@ -113,3 +118,4 @@
 [0.0.15]: https://github.com/Ogekuri/G/compare/v0.0.14..v0.0.15
 [0.0.16]: https://github.com/Ogekuri/G/compare/v0.0.15..v0.0.16
 [0.0.17]: https://github.com/Ogekuri/G/compare/v0.0.16..v0.0.17
+[0.0.18]: https://github.com/Ogekuri/G/compare/v0.0.17..v0.0.18

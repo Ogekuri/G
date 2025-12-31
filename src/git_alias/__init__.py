@@ -1,5 +1,5 @@
 """Pacchetto principale della CLI git-alias per uvx."""
 
-__version__ = "0.0.17"
+__version__ = "0.0.18"
 
 from .core import main  # noqa: F401
