@@ -77,6 +77,11 @@ class ReleaseFlowTest(unittest.TestCase):
             core.cmd_major(["--include-unreleased", "--include-draft"])
         run_release.assert_called_once_with("major", changelog_args=["--include-unreleased", "--include-draft"])
 
+    def test_patch_accepts_include_draft_flag(self):
+        with mock.patch.object(core, "_run_release_command") as run_release:
+            core.cmd_patch(["--include-draft"])
+        run_release.assert_called_once_with("patch", changelog_args=["--include-draft"])
+
     def test_release_commands_reject_unknown_flags(self):
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
