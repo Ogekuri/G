@@ -15,12 +15,22 @@ class AliasHelpTest(unittest.TestCase):
     @staticmethod
     def run_script(args):
         result = subprocess.run(
-            [sys.executable, "-m", "git_alias.core", *args],
+            [sys.executable, "-c", "from git_alias.core import main; raise SystemExit(main())", *args],
             check=True,
             stdout=subprocess.PIPE,
             text=True,
         )
         return result.stdout.strip()
+
+    @staticmethod
+    def run_script_result(args, check=True):
+        return subprocess.run(
+            [sys.executable, "-c", "from git_alias.core import main; raise SystemExit(main())", *args],
+            check=check,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
 
     def test_all_commands_have_help_text(self):
         missing = [
@@ -116,3 +126,16 @@ class AliasHelpTest(unittest.TestCase):
                     output,
                     msg=f"{alias} help missing option {flag}",
                 )
+
+    def test_usage_includes_version_when_no_args(self):
+        result = self.run_script_result([], check=False)
+        self.assertNotEqual(result.returncode, 0)
+        version = self.module.get_cli_version()
+        expected = f"Usage: g <command> [options] ({version})"
+        self.assertIn(expected, result.stdout.splitlines())
+
+    def test_global_version_flags(self):
+        version = self.module.get_cli_version()
+        for flag in ("--ver", "--version"):
+            result = self.run_script_result([flag], check=True)
+            self.assertEqual(result.stdout.strip(), version)

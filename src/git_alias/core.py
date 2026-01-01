@@ -42,6 +42,8 @@ MANAGEMENT_HELP = [
     ("--write-config", "Generate the .g.conf file in the repository root with default values."),
     ("--upgrade", "Reinstall git-alias via uv tool install."),
     ("--remove", "Uninstall git-alias using uv tool uninstall."),
+    ("--ver", "Print the CLI version."),
+    ("--version", "Print the CLI version."),
     ("--help", "Print the full help screen or the help text of a specific alias."),
 ]
 
@@ -93,6 +95,19 @@ def _load_config_rules(key, fallback):
 # Restituisce le regole usate per rilevare le versioni nei file.
 def get_version_rules():
     return _load_config_rules("ver_rules", DEFAULT_VER_RULES)
+
+
+# Recupera la versione del pacchetto leggendo __init__.py senza import.
+def get_cli_version():
+    init_path = Path(__file__).resolve().with_name("__init__.py")
+    try:
+        content = init_path.read_text(encoding="utf-8")
+    except OSError:
+        return "unknown"
+    match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', content)
+    if match:
+        return match.group(1)
+    return "unknown"
 
 
 # Individua la radice del repository git corrente.
@@ -1827,7 +1842,7 @@ def print_command_help(name, width=None):
 
 # Stampa la descrizione di tutti i comandi disponibili in ordine alfabetico.
 def print_all_help():
-    print("Usage: g <command> [options]")
+    print(f"Usage: g <command> [options] ({get_cli_version()})")
     print()
     print("Management Commands:")
     for flag, description in MANAGEMENT_HELP:
@@ -1870,6 +1885,9 @@ def main(argv=None):
         print("Please provide a command or --help", file=sys.stderr)
         print_all_help()
         sys.exit(1)
+    if args[0] in ("--ver", "--version"):
+        print(get_cli_version())
+        return
     if args[0] == "--write-config":
         write_default_config(git_root)
         return
@@ -1908,7 +1926,3 @@ def main(argv=None):
         if err_text:
             print(err_text, file=sys.stderr)
         sys.exit(exc.returncode or 1)
-
-
-if __name__ == "__main__":
-    main()

@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git Alias CLI
-**Versione**: 0.43
+**Versione**: 0.44
 **Autore**: Francesco Rolando  
 **Data**: 2025-12-20
 
@@ -31,6 +31,8 @@ tags: ["markdown", "requisiti", "git-alias"]
   - [3. Requisiti](#3-requisiti)
     - [3.1 Progettazione e Implementazione](#31-progettazione-e-implementazione)
     - [3.2 Funzioni](#32-funzioni)
+    - [3.3 Struttura File Progetto](#33-struttura-file-progetto)
+    - [3.4 Organizzazione Componenti](#34-organizzazione-componenti)
 
 ## Cronologia Revisioni
 | Data | Versione | Motivo e descrizione della modifica |
@@ -79,6 +81,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2025-12-20 | 0.41 | Formato dei messaggi di step per `major`/`minor`/`patch` con prefisso e separazione |
 | 2025-12-20 | 0.42 | Flag `--include-unreleased` e `--include-draft` per i comandi `major`/`minor`/`patch` |
 | 2025-12-20 | 0.43 | Help dei comandi con opzioni esplicite nella stringa di help |
+| 2025-12-31 | 0.44 | Versione CLI in usage senza argomenti e flag globali `--ver`/`--version` |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -158,3 +161,30 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-026**: I comandi `major`, `minor` e `patch` devono automatizzare il rilascio di una nuova versione incrementando rispettivamente il numero `major`, `minor` o `patch` (azzerando gli indici meno significativi) e condividere la stessa implementazione di supporto. Devono accettare i flag `--include-unreleased` e `--include-draft`: quando presenti devono inoltrarli al comando `changelog` nello step di rigenerazione del changelog, mantenendo sempre `--force-write`; quando assenti devono rigenerare il changelog usando solo `--force-write`. Prima dell'esecuzione devono verificare che (a) i branch configurati `master`, `develop`, `work` esistano localmente; (b) i remote `origin/master` e `origin/develop` esistano; (c) non ci siano aggiornamenti remoti pendenti per `master` e `develop`; (d) il branch corrente sia `work`; (e) la working area sia pulita; (f) l'index sia vuoto. Ogni step deve stampare un messaggio di progresso quando va a buon fine e segnalare con un messaggio esplicito l'eventuale fallimento dello step corrente: la riga di log deve iniziare con `--- `, includere l'etichetta `[release:major]`, `[release:minor]` oppure `[release:patch]` a seconda del comando, e terminare con ` ---`, con una riga vuota prima della prima riga di log di release per separarla dalle stampe precedenti. Superati i controlli devono: determinare la versione corrente tramite `ver`; calcolare la nuova versione applicando la regola del comando richiesto; aggiornare i file tramite `chver`; aggiungere tutte le modifiche allo stage; creare il commit di rilascio con l'alias `release`; creare un tag annotato `v<ver>` con descrizione `release version: <ver>`; rigenerare `CHANGELOG.md` con `changelog --force-write` più i flag inoltrati; aggiungere il changelog allo stage; aggiornare l'ultima commit con `git commit --amend`; eseguire merge fast-forward da `work` verso `develop`, effettuare il push del branch `develop` su `origin`, eseguire merge fast-forward da `develop` verso `master`, effettuare il push del branch `master` su `origin`; tornare sul branch `work`; mostrare un messaggio di successo e l'output di `de` relativo all'ultima commit.
 - **REQ-027**: Il comando `release` deve condividere la stessa logica e gli stessi controlli dell'alias `wip` per quanto riguarda lo stato dello staging/worktree e gli eventuali amend, ma prima di eseguire la commit deve determinare la versione corrente tramite `ver`; se la versione non può essere determinata il comando deve fallire riportando il messaggio di errore restituito dal processo di rilevazione. Quando la versione è disponibile deve generare un commit standard con il messaggio `release version: <ver>` (dove `<ver>` è `major.minor.patch`), così da essere usato dagli alias `major`/`minor`/`patch`.
 - **REQ-028**: L'alias `ra` deve comportarsi come inverso di `aa`: deve verificare di trovarsi sul branch `work` configurato, assicurarsi che non esistano modifiche nel working tree da aggiungere allo staging, verificare che lo staging contenga file pronti per la commit e, solo allora, rimuovere tutte le voci dallo staging riportandole nella working area.
+- **REQ-029**: Quando la CLI viene invocata senza argomenti deve stampare la riga di usage con la versione letta da `__init__.py` e appenderla alla fine nel formato `(x.y.z)`.
+- **REQ-030**: Quando la CLI viene invocata con i flag globali `--ver` o `--version` deve stampare la versione letta da `__init__.py` ed uscire con successo.
+
+### 3.3 Struttura File Progetto
+```
+├── src/git_alias/
+│   ├── __init__.py          # Versione pacchetto
+│   ├── __main__.py          # Entry point modulo
+│   └── core.py              # Implementazione principale (66KB)
+├── tests/                   # Suite test (77 test case)
+├── docs/
+│   └── requirements.md      # Requisiti esistenti
+├── pyproject.toml           # Configurazione progetto
+├── README.md                # Documentazione
+├── CHANGELOG.md             # Cronologia modifiche
+└── .g.conf                  # Configurazione runtime
+```
+
+### 3.4 Organizzazione Componenti
+Il sistema è organizzato attorno al modulo `core.py` che implementa:
+- Dispatcher principale con gestione comandi e fallback
+- alias git implementati come funzioni `cmd_*`
+- Sistema di help con testi descrittivi
+- Gestione configurazione JSON
+- Funzioni diagnostiche per stato repository
+- Wrapper per gestione errori processi esterni
+- Sistema di validazione per operazioni commit/staging
