@@ -3,6 +3,8 @@
 # VERSION: 0.0.19
 # AUTHORS: Ogekuri
 
+now=$(date '+%Y-%m-%d_%H-%M-%S')
+
 # 1. Ottieni il percorso assoluto completo del file (risolvendo i link simbolici)
 FULL_PATH=$(readlink -f "$0")
 
@@ -22,21 +24,21 @@ VENVDIR="${SCRIPT_PATH}/.venv"
 
 # Se non c'è il ${VENVDIR} lo crea
 if ! [ -d "${VENVDIR}/" ]; then
-    echo "ERROR! Virtual environment not present!"
-    exit
+  echo -n "Create virtual environment ..."
+  mkdir ${VENVDIR}/
+  virtualenv --python=python3 ${VENVDIR}/ >/dev/null
+  echo "done."
+
+  # Install requirements
+  source ${VENVDIR}/bin/activate
+
+  echo -n "Install python requirements ..."
+  ${VENVDIR}/bin/pip install -r "${SCRIPT_PATH}/requirements.txt" >/dev/null
+  echo "done." 
+else
+  # echo "Virtual environment found."
+  source ${VENVDIR}/bin/activate
 fi
-
-source ${VENVDIR}/bin/activate
-
-now=$(date '+%Y-%m-%d_%H-%M-%S')
-
-#
-# Only local packages on virtual environment
-#  pip freeze -l > pip-freeze.txt # or --local instead of -l
-#
-# Only local packages installed by the user on virtual environment
-#  pip freeze --user > pip-freeze.txt
-#
 
 # Execute application:
 PYTHONPATH="${SCRIPT_PATH}/src:${PYTHONPATH}" \
