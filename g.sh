@@ -1,6 +1,6 @@
 #!/bin/bash
 # -*- coding: utf-8 -*-
-# VERSION: 0.0.18
+# VERSION: 0.0.19
 # AUTHORS: Ogekuri
 
 # 1. Ottieni il percorso assoluto completo del file (risolvendo i link simbolici)
