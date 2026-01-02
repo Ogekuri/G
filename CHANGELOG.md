@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.21](https://github.com/Ogekuri/G/compare/v0.0.20..v0.0.21) - 2026-01-02
+### ⛰️  Features
+- *(core)* removed obsolete release command.
+
 ## [0.0.20](https://github.com/Ogekuri/G/compare/v0.0.19..v0.0.20) - 2026-01-01
 ### 🐛  Bug Fixes
 - *(core)* fix virtual environment creation on g.sh script.
@@ -111,6 +115,7 @@
 - \[0.0.18\]: https://github.com/Ogekuri/G/releases/tag/v0.0.18
 - \[0.0.19\]: https://github.com/Ogekuri/G/releases/tag/v0.0.19
 - \[0.0.20\]: https://github.com/Ogekuri/G/releases/tag/v0.0.20
+- \[0.0.21\]: https://github.com/Ogekuri/G/releases/tag/v0.0.21
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
@@ -131,3 +136,4 @@
 [0.0.18]: https://github.com/Ogekuri/G/compare/v0.0.17..v0.0.18
 [0.0.19]: https://github.com/Ogekuri/G/compare/v0.0.18..v0.0.19
 [0.0.20]: https://github.com/Ogekuri/G/compare/v0.0.19..v0.0.20
+[0.0.21]: https://github.com/Ogekuri/G/compare/v0.0.20..v0.0.21
