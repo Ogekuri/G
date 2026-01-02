@@ -1,5 +1,5 @@
 ---
-title: "Requisiti di Git Alias CLI"
+title: "Requisiti di Git-Alias CLI"
 description: "Specifiche dei requisiti software"
 date: "2025-12-20"
 author: "Francesco Rolando"
@@ -12,13 +12,13 @@ visibility: "bozza"
 tags: ["markdown", "requisiti", "git-alias"]
 ---
 
-# Requisiti di Git Alias CLI
+# Requisiti di Git-Alias CLI
 **Versione**: 0.47
 **Autore**: Francesco Rolando  
 **Data**: 2025-12-20
 
 ## Indice
-- [Requisiti di Git Alias CLI](#requisiti-di-git-alias-cli)
+- [Requisiti di Git-Alias CLI](#requisiti-di-git-alias-cli)
   - [Indice](#indice)
   - [Cronologia Revisioni](#cronologia-revisioni)
   - [1. Introduzione](#1-introduzione)
@@ -87,7 +87,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-01-02 | 0.47 | Requisito esplicito per tutti i commenti del codice sorgente in lingua italiana |
 
 ## 1. Introduzione
-Questo documento descrive i requisiti del progetto Git Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
+Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
 
 ### 1.1 Regole del Documento
 Questo documento deve sempre seguire queste regole:
