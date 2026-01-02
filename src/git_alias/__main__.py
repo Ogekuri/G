@@ -1,4 +1,4 @@
-"""Allow running the tool as a module."""
+"""Consente l'esecuzione del tool come modulo."""
 from .core import main
 import sys
 
