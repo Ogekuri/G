@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.23](https://github.com/Ogekuri/G/compare/v0.0.22..v0.0.23) - 2026-01-11
+### ⛰️  Features
+- *(core)* add new version check.
+
 ## [0.0.22](https://github.com/Ogekuri/G/compare/v0.0.21..v0.0.22) - 2026-01-02
 ### 📚  Documentation
 - *(core)* update README.md and TODO.md files.
@@ -121,6 +125,7 @@
 - \[0.0.20\]: https://github.com/Ogekuri/G/releases/tag/v0.0.20
 - \[0.0.21\]: https://github.com/Ogekuri/G/releases/tag/v0.0.21
 - \[0.0.22\]: https://github.com/Ogekuri/G/releases/tag/v0.0.22
+- \[0.0.23\]: https://github.com/Ogekuri/G/releases/tag/v0.0.23
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
@@ -143,3 +148,4 @@
 [0.0.20]: https://github.com/Ogekuri/G/compare/v0.0.19..v0.0.20
 [0.0.21]: https://github.com/Ogekuri/G/compare/v0.0.20..v0.0.21
 [0.0.22]: https://github.com/Ogekuri/G/compare/v0.0.21..v0.0.22
+[0.0.23]: https://github.com/Ogekuri/G/compare/v0.0.22..v0.0.23
