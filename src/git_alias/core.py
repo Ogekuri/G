@@ -14,8 +14,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 CONFIG_FILENAME = ".g.conf"
+
+GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/Ogekuri/G/releases/latest"
 
 DEFAULT_VER_RULES = [
     ("README.md", r'\s*"(\d+\.\d+\.\d+)"\s*'),
@@ -108,6 +111,53 @@ def get_cli_version():
     if match:
         return match.group(1)
     return "unknown"
+
+
+# Normalizza una tag version in una stringa semver (rimuove l'eventuale prefisso 'v').
+def _normalize_semver_text(text: str) -> str:
+    value = (text or "").strip()
+    if value.lower().startswith("v"):
+        value = value[1:]
+    return value
+
+
+# Verifica online se esiste una versione più recente e, se presente, avvisa l'utente.
+def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
+    current = _parse_semver_tuple(get_cli_version())
+    if current is None:
+        return
+    request = Request(
+        GITHUB_LATEST_RELEASE_API,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "git-alias",
+        },
+        method="GET",
+    )
+    try:
+        with urlopen(request, timeout=timeout_seconds) as response:
+            payload_bytes = response.read()
+    except Exception:
+        return
+    try:
+        payload_text = payload_bytes.decode("utf-8") if isinstance(payload_bytes, (bytes, bytearray)) else str(payload_bytes)
+        data = json.loads(payload_text)
+    except Exception:
+        return
+    if not isinstance(data, dict):
+        return
+    tag = data.get("tag_name") or ""
+    latest_text = _normalize_semver_text(str(tag))
+    latest = _parse_semver_tuple(latest_text)
+    if latest is None:
+        return
+    if latest <= current:
+        return
+    current_text = "{}.{}.{}".format(*current)
+    print(
+        f"New version available (current: {current_text}, latest: {latest_text}). Upgrade with: g --upgrade",
+        file=sys.stderr,
+    )
 
 
 # Individua la radice del repository git corrente.
@@ -1875,7 +1925,7 @@ def print_all_help():
 
 
 # Gestisce il parsing degli argomenti ed esegue l'alias richiesto.
-def main(argv=None):
+def main(argv=None, *, check_updates: bool = True):
     args = list(argv) if argv is not None else sys.argv[1:]
     git_root = get_git_root()
     load_cli_config(git_root)
@@ -1883,6 +1933,11 @@ def main(argv=None):
         print("Please provide a command or --help", file=sys.stderr)
         print_all_help()
         sys.exit(1)
+    if args[0] == "--help" and len(args) > 1 and args[1] not in COMMANDS:
+        print(f"Unknown command: {args[1]}", file=sys.stderr)
+        sys.exit(1)
+    if check_updates:
+        check_for_newer_version(timeout_seconds=1.0)
     if args[0] in ("--ver", "--version"):
         print(get_cli_version())
         return
@@ -1902,9 +1957,6 @@ def main(argv=None):
         name = args[1]
         if name in COMMANDS:
             print_command_help(name)
-        else:
-            print(f"Unknown command: {name}", file=sys.stderr)
-            sys.exit(1)
         return
     name = args[0]
     extras = args[1:]

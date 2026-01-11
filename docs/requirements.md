@@ -1,7 +1,7 @@
 ---
 title: "Requisiti di Git-Alias CLI"
 description: "Specifiche dei requisiti software"
-date: "2025-12-20"
+date: "2026-01-11"
 author: "Francesco Rolando"
 scope:
   paths:
@@ -13,9 +13,9 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.47
+**Versione**: 0.48
 **Autore**: Francesco Rolando  
-**Data**: 2025-12-20
+**Data**: 2026-01-11
 
 ## Indice
 - [Requisiti di Git-Alias CLI](#requisiti-di-git-alias-cli)
@@ -85,6 +85,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-01-02 | 0.45 | Rimozione del comando CLI `release` mantenendo la funzione interna per i workflow di rilascio |
 | 2026-01-02 | 0.46 | Requisito esplicito per tutti i messaggi CLI in lingua inglese |
 | 2026-01-02 | 0.47 | Requisito esplicito per tutti i commenti del codice sorgente in lingua italiana |
+| 2026-01-11 | 0.48 | Controllo non bloccante della disponibilità di una nuova versione tramite GitHub API |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -168,6 +169,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-030**: Quando la CLI viene invocata con i flag globali `--ver` o `--version` deve stampare la versione letta da `__init__.py` ed uscire con successo.
 - **REQ-031**: Tutti i messaggi di output della CLI (usage, help, informazioni, verbose, debug, messaggi di errore) devono essere in lingua inglese.
 - **REQ-032**: Tutti i commenti nei codici sorgenti devono essere scritti esclusivamente in lingua italiana. Ogni parte importante del codice (classi, funzioni complesse, logica di business, algoritmi critici) deve essere adeguatamente commentata. Ogni nuova funzionalità aggiunta deve includere commenti esplicativi. In caso di modifica di codice esistente, è obbligatorio aggiornare i commenti preesistenti affinché riflettano fedelmente il nuovo comportamento. Non lasciare mai commenti obsoleti o incoerenti con l'implementazione attuale.
+- **REQ-033**: Dopo aver validato gli input e prima di eseguire qualsiasi operazione, la CLI deve verificare online la disponibilità di una nuova versione effettuando una chiamata HTTP GET con timeout di 1 secondo a `https://api.github.com/repos/Ogekuri/G/releases/latest`, determinare l'ultima versione disponibile dalla risposta JSON (campo `tag_name`, con eventuale prefisso `v`), e confrontarla con la versione corrente. Se il server non è contattabile o la chiamata fallisce, la CLI deve considerare la versione attuale come ultima disponibile e procedere senza segnalare nulla. Se la chiamata ha successo e la versione disponibile è maggiore di quella attuale, la CLI deve stampare un messaggio di avviso che indichi la versione attuale e quella disponibile e includa l'istruzione di aggiornamento tramite `--upgrade`.
 
 ### 3.3 Struttura File Progetto
 ```

@@ -1,6 +1,6 @@
+import contextlib
+import io
 import re
-import subprocess
-import sys
 import unittest
 
 from git_alias import core
@@ -14,23 +14,24 @@ class AliasHelpTest(unittest.TestCase):
 
     @staticmethod
     def run_script(args):
-        result = subprocess.run(
-            [sys.executable, "-c", "from git_alias.core import main; raise SystemExit(main())", *args],
-            check=True,
-            stdout=subprocess.PIPE,
-            text=True,
-        )
-        return result.stdout.strip()
+        code, stdout, _ = AliasHelpTest.run_script_result(args, check=True)
+        if code != 0:
+            raise AssertionError(f"Expected exit code 0, got {code}")
+        return stdout.strip()
 
     @staticmethod
     def run_script_result(args, check=True):
-        return subprocess.run(
-            [sys.executable, "-c", "from git_alias.core import main; raise SystemExit(main())", *args],
-            check=check,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
+        out = io.StringIO()
+        err = io.StringIO()
+        exit_code = 0
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            try:
+                core.main(args, check_updates=False)
+            except SystemExit as exc:
+                exit_code = int(exc.code) if isinstance(exc.code, int) else 1
+        if check and exit_code != 0:
+            raise AssertionError(f"Expected exit code 0, got {exit_code}: {err.getvalue()}")
+        return exit_code, out.getvalue(), err.getvalue()
 
     def test_all_commands_have_help_text(self):
         missing = [
@@ -128,14 +129,14 @@ class AliasHelpTest(unittest.TestCase):
                 )
 
     def test_usage_includes_version_when_no_args(self):
-        result = self.run_script_result([], check=False)
-        self.assertNotEqual(result.returncode, 0)
+        code, stdout, _ = self.run_script_result([], check=False)
+        self.assertNotEqual(code, 0)
         version = self.module.get_cli_version()
         expected = f"Usage: g <command> [options] ({version})"
-        self.assertIn(expected, result.stdout.splitlines())
+        self.assertIn(expected, stdout.splitlines())
 
     def test_global_version_flags(self):
         version = self.module.get_cli_version()
         for flag in ("--ver", "--version"):
-            result = self.run_script_result([flag], check=True)
-            self.assertEqual(result.stdout.strip(), version)
+            _, stdout, _ = self.run_script_result([flag], check=True)
+            self.assertEqual(stdout.strip(), version)
