@@ -276,6 +276,7 @@ HELP_TEXTS = {
     "major": "Release a new major version from the work branch. Options: --include-unreleased, --include-draft.",
     "minor": "Release a new minor version from the work branch. Options: --include-unreleased, --include-draft.",
     "new": "Conventional commit new(module): description.",
+    "refactor": "Conventional commit refactor(module): description.",
     "fix": "Conventional commit fix(module): description.",
     "change": "Conventional commit change(module): description.",
     "docs": "Conventional commit docs(module): description.",
@@ -666,7 +667,7 @@ class TagInfo:
 DELIM = "\x1f"
 RECORD = "\x1e"
 _CONVENTIONAL_RE = re.compile(
-    r"^(?P<type>new|fix|change|docs|style|revert|misc)"
+    r"^(?P<type>new|fix|change|refactor|docs|style|revert|misc)"
     r"(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?:\s+(?P<desc>.+)$",
     re.IGNORECASE,
 )
@@ -677,6 +678,7 @@ SECTION_EMOJI = {
     "Features": "⛰️",
     "Bug Fixes": "🐛",
     "Changes": "🚜",
+    "Refactor": "✨",
     "Documentation": "📚",
     "Styling": "🎨",
     "Miscellaneous Tasks": "⚙️",
@@ -763,6 +765,7 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
         "new": "Features",
         "fix": "Bug Fixes",
         "change": "Changes",
+        "refactor": "Refactor",
         "docs": "Documentation",
         "style": "Styling",
         "revert": "Revert",
@@ -799,6 +802,7 @@ def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_ran
         "Features",
         "Bug Fixes",
         "Changes",
+        "Refactor",
         "Documentation",
         "Styling",
         "Miscellaneous Tasks",
@@ -1450,6 +1454,11 @@ def cmd_new(extra):
     return _run_conventional_commit("new", "new", extra)
 
 
+# Esegue l'alias 'refactor' creando un commit convenzionale per refactoring del codice.
+def cmd_refactor(extra):
+    return _run_conventional_commit("refactor", "refactor", extra)
+
+
 # Esegue l'alias 'fix' creando un commit convenzionale.
 def cmd_fix(extra):
     return _run_conventional_commit("fix", "fix", extra)
@@ -1855,6 +1864,7 @@ COMMANDS = {
     "me": cmd_me,
     "minor": cmd_minor,
     "new": cmd_new,
+    "refactor": cmd_refactor,
     "patch": cmd_patch,
     "ra": cmd_ra,
     "pl": cmd_pl,
