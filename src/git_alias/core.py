@@ -283,6 +283,7 @@ HELP_TEXTS = {
     "style": "Conventional commit style(module): description.",
     "revert": "Conventional commit revert(module): description.",
     "misc": "Conventional commit misc(module): description.",
+    "cover": "Conventional commit cover(module): description.",
     "me": "Merge",
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
@@ -667,7 +668,7 @@ class TagInfo:
 DELIM = "\x1f"
 RECORD = "\x1e"
 _CONVENTIONAL_RE = re.compile(
-    r"^(?P<type>new|fix|change|refactor|docs|style|revert|misc)"
+    r"^(?P<type>new|fix|change|refactor|docs|style|revert|misc|cover)"
     r"(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?:\s+(?P<desc>.+)$",
     re.IGNORECASE,
 )
@@ -683,6 +684,7 @@ SECTION_EMOJI = {
     "Styling": "🎨",
     "Miscellaneous Tasks": "⚙️",
     "Revert": "◀️",
+    "Requirements": "🎯",
 }
 
 MIN_SUPPORTED_HISTORY_VERSION = (0, 1, 0)
@@ -765,6 +767,7 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
         "new": "Features",
         "fix": "Bug Fixes",
         "change": "Changes",
+        "cover": "Requirements",
         "refactor": "Refactor",
         "docs": "Documentation",
         "style": "Styling",
@@ -802,6 +805,7 @@ def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_ran
         "Features",
         "Bug Fixes",
         "Changes",
+        "Requirements",
         "Refactor",
         "Documentation",
         "Styling",
@@ -1489,6 +1493,11 @@ def cmd_misc(extra):
     return _run_conventional_commit("misc", "misc", extra)
 
 
+# Esegue l'alias 'cover' creando un commit convenzionale per la copertura dei requisiti.
+def cmd_cover(extra):
+    return _run_conventional_commit("cover", "cover", extra)
+
+
 # Aggiunge tutto e committa con messaggio (alias cma).
 def cmd_co(extra):
     return run_git_cmd(["checkout"], extra)
@@ -1864,6 +1873,7 @@ COMMANDS = {
     "me": cmd_me,
     "minor": cmd_minor,
     "new": cmd_new,
+    "cover": cmd_cover,
     "refactor": cmd_refactor,
     "patch": cmd_patch,
     "ra": cmd_ra,

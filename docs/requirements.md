@@ -13,9 +13,9 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.48
+**Versione**: 0.49
 **Autore**: Francesco Rolando  
-**Data**: 2026-01-11
+**Data**: 2026-01-25
 
 ## Indice
 - [Requisiti di Git-Alias CLI](#requisiti-di-git-alias-cli)
@@ -86,6 +86,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-01-02 | 0.46 | Requisito esplicito per tutti i messaggi CLI in lingua inglese |
 | 2026-01-02 | 0.47 | Requisito esplicito per tutti i commenti del codice sorgente in lingua italiana |
 | 2026-01-11 | 0.48 | Controllo non bloccante della disponibilità di una nuova versione tramite GitHub API |
+| 2026-01-25 | 0.49 | Aggiunta del comando `cover` (Cover Requirements) come alias convenzionale con icona 🎯; comportamento identico agli altri comandi convenzionali |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -158,7 +159,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-019**: L'alias `bd` deve eliminare un branch locale specificato dall'utente utilizzando `git branch -d <branch>`.
 - **REQ-020**: Il sistema deve fornire funzioni di supporto riutilizzabili dagli alias che consentano di verificare (a) la presenza di file o modifiche non ancora aggiunti allo staging, (b) la presenza di file già in staging ma non ancora committati, (c) la disponibilità di aggiornamenti remoti per il branch `develop`, e (d) la disponibilità di aggiornamenti remoti per il branch `master`. Le funzioni per i punti (c) e (d) devono prima sincronizzare i riferimenti remoti (ad esempio con `git remote -v update`) e poi determinare se il branch remoto è in avanti rispetto a quello locale.
 - **REQ-021**: L'alias `wip` deve eseguire un commit "work in progress" riutilizzando le stesse funzioni di verifica dell'alias `cm`, generando automaticamente un messaggio fisso `wip: work in progress.` e, come `cm`, deve rilevare se l'ultimo commit è una WIP non ancora presente su `develop`: in tal caso deve aggiornare il commit esistente con `git commit --amend` e stampare l'azione; altrimenti deve creare un nuovo commit e segnalarlo.
- - **REQ-022**: Gli alias `new`, `fix`, `change`, `refactor`, `docs`, `style`, `revert` e `misc` devono eseguire commit convenzionali compatibili con il comando `changelog`, utilizzando messaggi nel formato `<tipo>(<modulo>): <descrizione>`. Ogni comando deve riutilizzare gli stessi controlli di readiness di `cm`/`wip`, accettare il testo del commit come argomento obbligatorio e consentire di specificare il modulo anticipando il testo con `nome_modulo: descrizione`. Quando il modulo non viene indicato, deve essere applicato un valore di default configurabile tramite `.g.conf` (parametro `default_module`, default `core`).
+ - **REQ-022**: Gli alias `new`, `fix`, `change`, `refactor`, `docs`, `style`, `revert`, `misc` e `cover` devono eseguire commit convenzionali compatibili con il comando `changelog`, utilizzando messaggi nel formato `<tipo>(<modulo>): <descrizione>`. Il comando `cover` (Cover Requirements) deve avere come icona 🎯 e deve comportarsi in modo identico agli altri comandi convenzionali elencati. Ogni comando deve riutilizzare gli stessi controlli di readiness di `cm`/`wip`, accettare il testo del commit come argomento obbligatorio e consentire di specificare il modulo anticipando il testo con `nome_modulo: descrizione`. Quando il modulo non viene indicato, deve essere applicato un valore di default configurabile tramite `.g.conf` (parametro `default_module`, default `core`).
 
   Nota: Il tipo `refactor` è definito come "Code Refactoring" e deve essere visualizzato nelle sezioni del changelog con l'icona ✨ (U+2728) nella relativa intestazione di sezione.
 - **REQ-023**: Tutti i messaggi stampati da `core.py` (su stdout, stderr, in modalità normale, verbose o debug) devono essere in lingua inglese, inclusi gli help dei comandi e le diagnostiche degli alias.
