@@ -684,7 +684,7 @@ SECTION_EMOJI = {
     "Styling": "🎨",
     "Miscellaneous Tasks": "⚙️",
     "Revert": "◀️",
-    "Requirements": "🎯",
+    "Cover Requirements": "🎯",
 }
 
 MIN_SUPPORTED_HISTORY_VERSION = (0, 1, 0)
@@ -767,7 +767,7 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
         "new": "Features",
         "fix": "Bug Fixes",
         "change": "Changes",
-        "cover": "Requirements",
+        "cover": "Cover Requirements",
         "refactor": "Refactor",
         "docs": "Documentation",
         "style": "Styling",
@@ -805,7 +805,7 @@ def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_ran
         "Features",
         "Bug Fixes",
         "Changes",
-        "Requirements",
+        "Cover Requirements",
         "Refactor",
         "Documentation",
         "Styling",
