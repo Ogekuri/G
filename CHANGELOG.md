@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.25](https://github.com/Ogekuri/G/compare/v0.0.24..v0.0.25) - 2026-01-25
+### 🐛  Bug Fixes
+- *(core)* change cover strings.
+
+### 🚜  Changes
+- *(useReq)* add cover conventional commit alias with emoji 🎯 and update requirements [2026-01-25 14:36:20]
+- *(useReq)* add 'refactor' conventional commit type and alias; update requirements to include refactor and ✨ icon [e283ce7d-85bb-472c-b36a-e7c70b68f0ce]
+
 ## [0.0.24](https://github.com/Ogekuri/G/compare/v0.0.23..v0.0.24) - 2026-01-16
 ### 📚  Documentation
 - *(core)* add WORKFLOW.md.
@@ -131,6 +139,7 @@
 - \[0.0.22\]: https://github.com/Ogekuri/G/releases/tag/v0.0.22
 - \[0.0.23\]: https://github.com/Ogekuri/G/releases/tag/v0.0.23
 - \[0.0.24\]: https://github.com/Ogekuri/G/releases/tag/v0.0.24
+- \[0.0.25\]: https://github.com/Ogekuri/G/releases/tag/v0.0.25
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
@@ -155,3 +164,4 @@
 [0.0.22]: https://github.com/Ogekuri/G/compare/v0.0.21..v0.0.22
 [0.0.23]: https://github.com/Ogekuri/G/compare/v0.0.22..v0.0.23
 [0.0.24]: https://github.com/Ogekuri/G/compare/v0.0.23..v0.0.24
+[0.0.25]: https://github.com/Ogekuri/G/compare/v0.0.24..v0.0.25
