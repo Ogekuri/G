@@ -3,3 +3,4 @@ build>=1.0.0
 setuptools>=68.0.0
 wheel>=0.41.0
 pytest>=8.0.0
+pathspec
