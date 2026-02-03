@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.26](https://github.com/Ogekuri/G/compare/v0.0.25..v0.0.26) - 2026-02-03
+### ⛰️  Features
+- *(core)* add pathspec to requirements.txt
+
+### 🐛  Bug Fixes
+- *(useReq)* anchor ver_rules glob matching to repo root [2026-02-03 13:21:15]
+
+### 🚜  Changes
+- *(useReq)* Optimize performance with git ls-files and version check cache [2026-02-03 14:01:40]
+- *(useReq)* filter ver_rules matches from cache paths and cover tests [2026-02-03 13:39:07]
+- *(useReq)* use pathspec gitignore for ver_rules matching [2026-02-03 13:28:29]
+
 ## [0.0.25](https://github.com/Ogekuri/G/compare/v0.0.24..v0.0.25) - 2026-01-25
 ### 🐛  Bug Fixes
 - *(core)* change cover strings.
@@ -140,6 +152,7 @@
 - \[0.0.23\]: https://github.com/Ogekuri/G/releases/tag/v0.0.23
 - \[0.0.24\]: https://github.com/Ogekuri/G/releases/tag/v0.0.24
 - \[0.0.25\]: https://github.com/Ogekuri/G/releases/tag/v0.0.25
+- \[0.0.26\]: https://github.com/Ogekuri/G/releases/tag/v0.0.26
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
@@ -165,3 +178,4 @@
 [0.0.23]: https://github.com/Ogekuri/G/compare/v0.0.22..v0.0.23
 [0.0.24]: https://github.com/Ogekuri/G/compare/v0.0.23..v0.0.24
 [0.0.25]: https://github.com/Ogekuri/G/compare/v0.0.24..v0.0.25
+[0.0.26]: https://github.com/Ogekuri/G/compare/v0.0.25..v0.0.26
