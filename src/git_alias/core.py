@@ -8,6 +8,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -21,6 +22,10 @@ import pathspec
 CONFIG_FILENAME = ".g.conf"
 
 GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/Ogekuri/G/releases/latest"
+
+# Configurazione cache per il controllo versione online
+VERSION_CHECK_CACHE_FILE = Path(tempfile.gettempdir()) / ".g_version_check_cache.json"
+VERSION_CHECK_TTL_HOURS = 6
 
 DEFAULT_VER_RULES = [
     ("README.md", r'\s*"(\d+\.\d+\.\d+)"\s*'),
@@ -133,11 +138,40 @@ def _normalize_semver_text(text: str) -> str:
     return value
 
 
-# Verifica online se esiste una versione più recente e, se presente, avvisa l'utente.
+# Verifica online se esiste una versione più recente e, se presente, avvisa l'utente, usando una cache temporizzata.
 def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
     current = _parse_semver_tuple(get_cli_version())
     if current is None:
         return
+    
+    # Controlla se esiste una cache valida
+    cache_valid = False
+    if VERSION_CHECK_CACHE_FILE.exists():
+        try:
+            with open(VERSION_CHECK_CACHE_FILE, 'r') as f:
+                cache_data = json.load(f)
+            expires_str = cache_data.get('expires', '')
+            if expires_str:
+                expires = datetime.fromisoformat(expires_str)
+                if datetime.now() < expires:
+                    # Cache valida, controlla se c'è un aggiornamento disponibile
+                    cached_latest = cache_data.get('latest_version', '')
+                    latest = _parse_semver_tuple(cached_latest)
+                    if latest and latest > current:
+                        current_text = "{}.{}.{}".format(*current)
+                        print(
+                            f"New version available (current: {current_text}, latest: {cached_latest}). "
+                            f"Upgrade with: g --upgrade",
+                            file=sys.stderr,
+                        )
+                    cache_valid = True
+        except Exception:
+            pass  # Ignora errori di lettura cache
+    
+    if cache_valid:
+        return  # Cache valida, skip controllo online
+    
+    # Esegui il controllo online
     request = Request(
         GITHUB_LATEST_RELEASE_API,
         headers={
@@ -163,13 +197,28 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
     latest = _parse_semver_tuple(latest_text)
     if latest is None:
         return
-    if latest <= current:
-        return
-    current_text = "{}.{}.{}".format(*current)
-    print(
-        f"New version available (current: {current_text}, latest: {latest_text}). Upgrade with: g --upgrade",
-        file=sys.stderr,
-    )
+    
+    # Salva nella cache
+    try:
+        cache_data = {
+            "last_check": datetime.now().isoformat(),
+            "current_version": "{}.{}.{}".format(*current),
+            "latest_version": latest_text,
+            "expires": (datetime.now() + timedelta(hours=VERSION_CHECK_TTL_HOURS)).isoformat()
+        }
+        with open(VERSION_CHECK_CACHE_FILE, 'w') as f:
+            json.dump(cache_data, f)
+    except Exception:
+        pass  # Ignora errori di scrittura cache
+    
+    # Mostra avviso se disponibile aggiornamento
+    if latest > current:
+        current_text = "{}.{}.{}".format(*current)
+        print(
+            f"New version available (current: {current_text}, latest: {latest_text}). "
+            f"Upgrade with: g --upgrade",
+            file=sys.stderr,
+        )
 
 
 # Individua la radice del repository git corrente.
@@ -955,25 +1004,49 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool, inclu
 
 
 # Trova i file che corrispondono al pattern di versione tramite pathspec.
+# Trova i file che corrispondono al pattern di versione tramite git ls-files con fallback a pathspec.
 def _collect_version_files(root, pattern):
     files = []
     seen = set()
     trimmed = (pattern or "").strip()
     if not trimmed:
         return files
+    
+    # Ottieni tutti i file tracciati da git
+    try:
+        proc = subprocess.run(
+            ["git", "ls-files"],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        tracked_files = proc.stdout.strip().split('\n') if proc.stdout.strip() else []
+    except subprocess.CalledProcessError:
+        # Fallback a rglob se git non è disponibile
+        tracked_files = []
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+            relative = path.relative_to(root).as_posix()
+            if _is_version_path_excluded(relative):
+                continue
+            tracked_files.append(relative)
+    
+    # Applica il pattern usando pathspec (mantiene REQ-017)
     spec = pathspec.PathSpec.from_lines("gitignore", [trimmed])
-    for path in root.rglob("*"):
-        if not path.is_file():
+    for relative_path in tracked_files:
+        if not relative_path:  # skip empty lines
             continue
-        relative = path.relative_to(root).as_posix()
-        if _is_version_path_excluded(relative):
-            continue
-        if not spec.match_file(relative):
-            continue
-        resolved = path.resolve()
-        if resolved not in seen:
-            seen.add(resolved)
-            files.append(path)
+        if spec.match_file(relative_path):
+            file_path = root / relative_path
+            if file_path.exists() and file_path.is_file():
+                resolved = file_path.resolve()
+                if resolved not in seen:
+                    seen.add(resolved)
+                    files.append(file_path)
+    
     return files
 
 

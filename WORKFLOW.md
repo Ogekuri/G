@@ -6,10 +6,10 @@ This document lists the stages and functions executed during `major`, `minor`, a
 Preliminary preparation and validation operations.
 
 *   **Config Loading**: Reading the `.g.conf` file and initializing parameters.
-*   **Update Check**: Online check for new CLI version availability.
+*   **Update Check**: Online check for new CLI version availability using a 6-hour TTL cache (REQ-033) to reduce network overhead.
 *   **Argument Parsing**: Validation of `--include-unreleased` and `--include-draft` flags.
 *   **Prerequisites Check**: Verifying the existence of branches (`master`, `develop`, `work`), remote (`origin`), and "clean" status.
-*   **Version Detection**: Scanning configured files (pathspec GitIgnore patterns) while excluding hardcoded cache/temp paths to determine the current version.
+*   **Version Detection**: Scanning configured files using `git ls-files` with pathspec GitIgnore patterns (REQ-017) to determine the current version, with automatic fallback to `rglob()` if git is unavailable.
 *   **New Version Calculation**: Determining the next version number based on the converter used.
 
 ## Processing Stages (Release Flow)
