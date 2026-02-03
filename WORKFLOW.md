@@ -9,7 +9,7 @@ Preliminary preparation and validation operations.
 *   **Update Check**: Online check for new CLI version availability.
 *   **Argument Parsing**: Validation of `--include-unreleased` and `--include-draft` flags.
 *   **Prerequisites Check**: Verifying the existence of branches (`master`, `develop`, `work`), remote (`origin`), and "clean" status.
-*   **Version Detection**: Scanning configured files (root-anchored glob patterns) to determine the current version.
+*   **Version Detection**: Scanning configured files (pathspec GitIgnore patterns) to determine the current version.
 *   **New Version Calculation**: Determining the next version number based on the converter used.
 
 ## Processing Stages (Release Flow)

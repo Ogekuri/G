@@ -16,6 +16,8 @@ from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
+import pathspec
+
 CONFIG_FILENAME = ".g.conf"
 
 GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/Ogekuri/G/releases/latest"
@@ -942,19 +944,24 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool, inclu
     return "\n".join(lines).rstrip() + "\n"
 
 
-# Trova i file che corrispondono alla wildcard di versione ancorata alla root.
+# Trova i file che corrispondono al pattern di versione tramite pathspec.
 def _collect_version_files(root, pattern):
     files = []
     seen = set()
     trimmed = (pattern or "").strip()
     if not trimmed:
         return files
-    for path in root.glob(trimmed):
-        if path.is_file():
-            resolved = path.resolve()
-            if resolved not in seen:
-                seen.add(resolved)
-                files.append(path)
+    spec = pathspec.PathSpec.from_lines("gitignore", [trimmed])
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(root).as_posix()
+        if not spec.match_file(relative):
+            continue
+        resolved = path.resolve()
+        if resolved not in seen:
+            seen.add(resolved)
+            files.append(path)
     return files
 
 
