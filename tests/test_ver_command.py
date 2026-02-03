@@ -97,3 +97,30 @@ class VerCommandTest(unittest.TestCase):
                 self.assertIn("No version matches found", message)
                 self.assertIn("module.py", message)
                 self.assertIn(regex, message)
+
+    def test_cmd_ver_ignores_cached_and_temp_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "module.py").write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+            ignored_paths = [
+                root / ".git" / "ignored.py",
+                root / ".vscode" / "ignored.py",
+                root / "tmp" / "ignored.py",
+                root / "temp" / "ignored.py",
+                root / ".cache" / "ignored.py",
+                root / ".pytest_cache" / "ignored.py",
+                root / "node_modules" / ".cache" / "ignored.py",
+            ]
+            for path in ignored_paths:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('__version__ = "9.9.9"\n', encoding="utf-8")
+            self._set_rules(
+                [
+                    {"pattern": "**/*.py", "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'},
+                ]
+            )
+            with mock.patch.object(core, "get_git_root", return_value=root):
+                buffer = io.StringIO()
+                with contextlib.redirect_stdout(buffer):
+                    core.cmd_ver([])
+                self.assertEqual(buffer.getvalue().strip(), "1.2.3")

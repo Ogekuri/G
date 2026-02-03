@@ -27,6 +27,16 @@ DEFAULT_VER_RULES = [
     ("src/**/*.py", r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'),
     ("pyproject.toml", r'\bversion\s*=\s*"(\d+\.\d+\.\d+)"'),
 ]
+VERSION_CLEANUP_REGEXES = [
+    r"(^|/)\.git(/|$)",
+    r"(^|/)\.vscode(/|$)",
+    r"(^|/)tmp(/|$)",
+    r"(^|/)temp(/|$)",
+    r"(^|/)\.cache(/|$)",
+    r"(^|/)\.pytest_cache(/|$)",
+    r"(^|/)node_modules/\.cache(/|$)",
+]
+VERSION_CLEANUP_PATTERNS = [re.compile(pattern) for pattern in VERSION_CLEANUP_REGEXES]
 
 DEFAULT_CONFIG = {
     "master": "master",
@@ -956,6 +966,8 @@ def _collect_version_files(root, pattern):
         if not path.is_file():
             continue
         relative = path.relative_to(root).as_posix()
+        if _is_version_path_excluded(relative):
+            continue
         if not spec.match_file(relative):
             continue
         resolved = path.resolve()
@@ -963,6 +975,11 @@ def _collect_version_files(root, pattern):
             seen.add(resolved)
             files.append(path)
     return files
+
+
+# Verifica se un percorso relativo deve essere escluso dalla ricerca versioni.
+def _is_version_path_excluded(relative_path: str) -> bool:
+    return any(regex.search(relative_path) for regex in VERSION_CLEANUP_PATTERNS)
 
 
 # Itera tutte le versioni estratte tramite le regex fornite.
