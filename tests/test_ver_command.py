@@ -34,6 +34,28 @@ class VerCommandTest(unittest.TestCase):
                     core.cmd_ver([])
                 self.assertEqual(buffer.getvalue().strip(), "1.2.3")
 
+    def test_cmd_ver_anchors_src_glob_at_root(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "src" / "git_alias").mkdir(parents=True)
+            (root / "src" / "git_alias" / "__init__.py").write_text(
+                '__version__ = "1.2.3"\n', encoding="utf-8"
+            )
+            (root / "prova" / "src").mkdir(parents=True)
+            (root / "prova" / "src" / "__init__.py").write_text(
+                '__version__ = "2.0.0"\n', encoding="utf-8"
+            )
+            self._set_rules(
+                [
+                    {"pattern": "src/**/*.py", "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'},
+                ]
+            )
+            with mock.patch.object(core, "get_git_root", return_value=root):
+                buffer = io.StringIO()
+                with contextlib.redirect_stdout(buffer):
+                    core.cmd_ver([])
+                self.assertEqual(buffer.getvalue().strip(), "1.2.3")
+
     def test_cmd_ver_detects_conflict(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

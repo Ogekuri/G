@@ -942,14 +942,14 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool, inclu
     return "\n".join(lines).rstrip() + "\n"
 
 
-# Trova i file che corrispondono alla wildcard di versione.
+# Trova i file che corrispondono alla wildcard di versione ancorata alla root.
 def _collect_version_files(root, pattern):
     files = []
     seen = set()
     trimmed = (pattern or "").strip()
     if not trimmed:
         return files
-    for path in root.rglob(trimmed):
+    for path in root.glob(trimmed):
         if path.is_file():
             resolved = path.resolve()
             if resolved not in seen:
