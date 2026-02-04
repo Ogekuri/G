@@ -367,7 +367,7 @@ HELP_TEXTS = {
     "unstg": "Un-stage a file from commit: git unstg '<filename>'. Unstage all files with: git unstg *.",
     "wip": "Commit work in progress with an automatic message and the same checks as cm.",
     "ver": "Verify version consistency across configured files.",
-    "ori": "Display all unique origin remotes and show detailed status for each.",
+    "str": "Display all unique remotes and show detailed status for each.",
 }
 
 RESET_HELP = """
@@ -1652,34 +1652,34 @@ def cmd_gr(extra):
     return run_command(["gitk", "--simplify-by-decoration", "--all"] + _to_args(extra))
 
 
-# Visualizza tutti gli origin remoti univoci e ne mostra lo stato.
-def cmd_ori(extra):
+# Visualizza tutti i remote univoci e ne mostra lo stato.
+def cmd_str(extra):
     # Esegue git remote -v per ottenere l'elenco dei remote
     result = run_git_text(["remote", "-v"])
     lines = result.strip().split("\n")
     
-    # Filtra e raccoglie tutti gli "origin" univoci
-    origins = set()
+    # Filtra e raccoglie tutti i remote univoci
+    remotes = set()
     for line in lines:
         if line.strip():
             parts = line.split()
             if parts:
                 remote_name = parts[0]
-                origins.add(remote_name)
+                remotes.add(remote_name)
     
-    # Stampa gli origin trovati
-    print("Remote origins found:")
-    for origin in sorted(origins):
-        print(f"  {origin}")
+    # Stampa i remote trovati
+    print("Remotes found:")
+    for remote in sorted(remotes):
+        print(f"  {remote}")
     print()
     
-    # Per ogni origin univoco esegue git remote show
-    for origin in sorted(origins):
-        print(f"--- Status for '{origin}' ---")
+    # Per ogni remote univoco esegue git remote show
+    for remote in sorted(remotes):
+        print(f"--- Status for '{remote}' ---")
         try:
-            run_git_cmd(["remote", "show", origin])
+            run_git_cmd(["remote", "show", remote])
         except CommandExecutionError as e:
-            print(f"Error showing status for '{origin}'", file=sys.stderr)
+            print(f"Error showing status for '{remote}'", file=sys.stderr)
             raise
 
 
@@ -2003,7 +2003,7 @@ COMMANDS = {
     "minor": cmd_minor,
     "new": cmd_new,
     "cover": cmd_cover,
-    "ori": cmd_ori,
+    "str": cmd_str,
     "refactor": cmd_refactor,
     "patch": cmd_patch,
     "ra": cmd_ra,
