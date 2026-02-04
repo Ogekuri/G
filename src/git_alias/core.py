@@ -1655,8 +1655,8 @@ def cmd_gr(extra):
 # Visualizza tutti gli origin remoti univoci e ne mostra lo stato.
 def cmd_ori(extra):
     # Esegue git remote -v per ottenere l'elenco dei remote
-    result = run_git_quiet(["remote", "-v"])
-    lines = result.stdout.decode("utf-8").strip().split("\n")
+    result = run_git_text(["remote", "-v"])
+    lines = result.strip().split("\n")
     
     # Filtra e raccoglie tutti gli "origin" univoci
     origins = set()
@@ -1677,8 +1677,7 @@ def cmd_ori(extra):
     for origin in sorted(origins):
         print(f"--- Status for '{origin}' ---")
         try:
-            result = run_git(["remote", "show", origin])
-            print(result.stdout.decode("utf-8"))
+            run_git_cmd(["remote", "show", origin])
         except CommandExecutionError as e:
             print(f"Error showing status for '{origin}'", file=sys.stderr)
             raise
