@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.28](https://github.com/Ogekuri/G/compare/v0.0.27..v0.0.28) - 2026-02-04
+### 🐛  Bug Fixes
+- *(ori)* fix undefined function references [2026-02-04 09:21:40]
+
+### 🚜  Changes
+- *(str)* rename ori command to str, update requirements, code, and comments [2026-02-04 09:26:42]
+- *(ori)* Add ori command for remote inspection [2026-02-04 08:14:31]
+
 ## [0.0.27](https://github.com/Ogekuri/G/compare/v0.0.26..v0.0.27) - 2026-02-04
 ### ⛰️  Features
 - *(core)* add clean.sh script.
@@ -158,6 +166,7 @@
 - \[0.0.25\]: https://github.com/Ogekuri/G/releases/tag/v0.0.25
 - \[0.0.26\]: https://github.com/Ogekuri/G/releases/tag/v0.0.26
 - \[0.0.27\]: https://github.com/Ogekuri/G/releases/tag/v0.0.27
+- \[0.0.28\]: https://github.com/Ogekuri/G/releases/tag/v0.0.28
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
@@ -185,3 +194,4 @@
 [0.0.25]: https://github.com/Ogekuri/G/compare/v0.0.24..v0.0.25
 [0.0.26]: https://github.com/Ogekuri/G/compare/v0.0.25..v0.0.26
 [0.0.27]: https://github.com/Ogekuri/G/compare/v0.0.26..v0.0.27
+[0.0.28]: https://github.com/Ogekuri/G/compare/v0.0.27..v0.0.28
