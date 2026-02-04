@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.53
+**Versione**: 0.54
 **Autore**: Francesco Rolando  
 **Data**: 2026-02-03
 
@@ -91,6 +91,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-03 | 0.51 | Pulizia hardcoded dei file esclusi dal matching `ver_rules` |
 | 2026-02-03 | 0.52 | Ottimizzazione ricerca file tramite `git ls-files` nel comando `ver` |
 | 2026-02-03 | 0.53 | Cache temporizzata per il controllo versione online (TTL 6 ore) |
+| 2026-02-04 | 0.54 | Aggiunta del comando `ori` per visualizzare e analizzare i remote del repository |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -150,7 +151,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-005**: L'alias di commit `cm` deve permettere commit standard senza automatismi aggiuntivi né messaggi precompilati, ma prima di eseguire `git commit` deve verificare (riutilizzando funzioni diagnostiche centralizzate) che (a) non esistano file o modifiche nello working tree ancora da aggiungere all'index/stage, (b) l'index contenga effettivamente modifiche pronte al commit, e (c) l'ultimo commit del branch corrente non sia una `wip: work in progress.` non mergiata. Se l'ultimo commit ha il messaggio `wip: work in progress.` e non è stato ancora portato ne sui rami `develop`/`master` configurati, `cm` deve aggiornare quel commit tramite `git commit --amend` e stampare un messaggio esplicito; in tutti gli altri casi deve creare un nuovo commit e segnalare l'azione eseguita.
 - **REQ-006**: Gli alias di navigazione branch devono consentire checkout mirati (`co`) utilizzando i nomi di branch configurati nel file `.g.conf` (default `work`, `develop`, `master`).
 - **REQ-007**: Gli alias di fetch/pull/push devono eseguire le varianti generiche per il ramo corrente (`fe`, `feall`, `pl`, `pt`, `pu`), senza scorciatoie dedicate ai rami configurati.
-- **REQ-008**: Gli alias di ispezione devono fornire viste su branch, log e stato (`br`, `lb`, `ck`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`).
+- **REQ-008**: Gli alias di ispezione devono fornire viste su branch, log e stato (`br`, `lb`, `ck`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`, `ori`).
 - **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
 - **REQ-010**: Il sistema deve limitare i workflow di rilascio agli alias dedicati documentati (attualmente `major`, `minor`, `patch`) e non deve introdurre ulteriori scorciatoie automatiche oltre a quelli descritti.
 - **REQ-011**: Gli alias di reset e pulizia devono applicare le modalità di reset (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`) e le pulizie dello working tree (`rmloc`, `rmstg`, `rmunt`). I comandi di reset (`rs*`) devono stampare il testo di help dedicato quando invocati con `--help`, senza dipendere da alias separati.
@@ -178,6 +179,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-031**: Tutti i messaggi di output della CLI (usage, help, informazioni, verbose, debug, messaggi di errore) devono essere in lingua inglese.
 - **REQ-032**: Tutti i commenti nei codici sorgenti devono essere scritti esclusivamente in lingua italiana. Ogni parte importante del codice (classi, funzioni complesse, logica di business, algoritmi critici) deve essere adeguatamente commentata. Ogni nuova funzionalità aggiunta deve includere commenti esplicativi. In caso di modifica di codice esistente, è obbligatorio aggiornare i commenti preesistenti affinché riflettano fedelmente il nuovo comportamento. Non lasciare mai commenti obsoleti o incoerenti con l'implementazione attuale.
 - **REQ-033**: Dopo aver validato gli input e prima di eseguire qualsiasi operazione, la CLI deve verificare la disponibilità di una nuova versione utilizzando un meccanismo di cache temporizzata. Il sistema deve memorizzare il risultato del controllo in un file cache JSON nella directory temporanea di sistema (utilizzando `tempfile.gettempdir()`) con nome `.g_version_check_cache.json` e tempo di vita (TTL) di 6 ore. All'avvio, se esiste una cache valida (non scaduta), il sistema deve utilizzare i dati memorizzati senza effettuare chiamate di rete; se la cache è assente o scaduta, deve effettuare una chiamata HTTP GET con timeout di 1 secondo a `https://api.github.com/repos/Ogekuri/G/releases/latest`, determinare l'ultima versione disponibile dalla risposta JSON (campo `tag_name`, con eventuale prefisso `v`), confrontarla con la versione corrente e salvare il risultato nella cache con timestamp di scadenza. Se il server non è contattabile o la chiamata fallisce, la CLI deve considerare la versione attuale come ultima disponibile e procedere senza segnalare nulla. Se la versione disponibile è maggiore di quella attuale (sia da cache che da chiamata online), la CLI deve stampare un messaggio di avviso che indichi la versione attuale e quella disponibile e includa l'istruzione di aggiornamento tramite `--upgrade`. Eventuali errori di lettura o scrittura della cache non devono impedire l'esecuzione del comando.
+- **REQ-034**: Il comando `ori` deve eseguire `git remote -v`, filtrare e stampare tutte le occorrenze di "origin" uniche trovate nell'output e, per ogni "origin" univoco identificato, eseguire il comando `git remote show <origin>` stampando lo stato completo restituito dal comando.
 
 ### 3.3 Struttura File Progetto
 ```
