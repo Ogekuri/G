@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.29](https://github.com/Ogekuri/G/compare/v0.0.28..v0.0.29) - 2026-02-07
+### 📚  Documentation
+- *(core)* update README.md.
+
 ## [0.0.28](https://github.com/Ogekuri/G/compare/v0.0.27..v0.0.28) - 2026-02-04
 ### 🐛  Bug Fixes
 - *(ori)* fix undefined function references [2026-02-04 09:21:40]
@@ -167,6 +171,7 @@
 - \[0.0.26\]: https://github.com/Ogekuri/G/releases/tag/v0.0.26
 - \[0.0.27\]: https://github.com/Ogekuri/G/releases/tag/v0.0.27
 - \[0.0.28\]: https://github.com/Ogekuri/G/releases/tag/v0.0.28
+- \[0.0.29\]: https://github.com/Ogekuri/G/releases/tag/v0.0.29
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
@@ -195,3 +200,4 @@
 [0.0.26]: https://github.com/Ogekuri/G/compare/v0.0.25..v0.0.26
 [0.0.27]: https://github.com/Ogekuri/G/compare/v0.0.26..v0.0.27
 [0.0.28]: https://github.com/Ogekuri/G/compare/v0.0.27..v0.0.28
+[0.0.29]: https://github.com/Ogekuri/G/compare/v0.0.28..v0.0.29
