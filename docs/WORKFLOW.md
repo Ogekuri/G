@@ -1,121 +1,117 @@
 # Workflow Analysis
 
-## CLI Entry Point & Dispatch
-- Component: `src/git_alias/core.py`
-- Calls:
-    - `main()`: Entry point for the CLI tool. [`src/git_alias/core.py`, 2078-2128]
-        - description: Parses command line arguments, loads configuration, checks for updates, and dispatches execution to the appropriate command handler or git command. Handles global flags like --version, --help, --upgrade.
-        - input: argv: list, command line arguments; check_updates: bool, flag to enable version check
-        - output: None
-        - calls:
-            - `get_git_root()`: Finds the root directory of the git repository. [`src/git_alias/core.py`, 225-241]
-                - description: Traverses up from the current directory to find the .git folder or .git file (for worktrees).
-                - input: None
-                - output: Path, path to the git root directory
-            - `load_cli_config()`: Loads CLI configuration from files. [`src/git_alias/core.py`, 248-283]
-                - description: Loads configuration rules from default locations and project-specific files, updating the global context.
-                - input: root: Path, git repository root path
-                - output: None
-            - `check_for_newer_version()`: Checks for newer versions of the tool. [`src/git_alias/core.py`, 142-224]
-                - description: Queries PyPI (or configured source) to check if a newer version is available, with a timeout.
-                - input: timeout_seconds: float, max time to wait for check
-                - output: None
+## Command Line Interface (CLI) Entry Point
+*   **Component**: `git_alias.core`
+    *   `main()`: Main entry point [`src/git_alias/core.py`, 2078-2220]
+        *   description: Handles argument parsing, configuration loading, and command dispatch. It initializes the environment and routes execution to specific command handlers based on user input.
+        *   input: argv: list, command line arguments; check_updates: bool, flag to enable version checks
+        *   output: None
+        *   calls:
+            *   `get_git_root()`: Locate git root [`src/git_alias/core.py`, 225-241]
+                *   description: Finds the root directory of the current git repository by traversing up from the current working directory.
+                *   input: None
+                *   output: Path: Path, the absolute path to the git root directory
+            *   `load_cli_config()`: Load configuration [`src/git_alias/core.py`, 248-283]
+                *   description: Loads the CLI configuration from the repository's config file, merging it with defaults.
+                *   input: root: Path, git repository root path
+                *   output: None
+
+## Staging Changes
+*   **Component**: `git_alias.core`
+    *   `cmd_aa()`: Stage all changes [`src/git_alias/core.py`, 1431-1439]
+        *   description: Stages all modified and untracked files in the repository. It verifies if there are changes before attempting to stage them.
+        *   input: extra: list, additional command line arguments
+        *   output: returncode: int, exit code of the git command
+        *   calls:
+            *   `_git_status_lines()`: Get git status [`src/git_alias/core.py`, 577-590]
+                *   description: Retrieves the porcelain status output from git to analyze current repository state.
+                *   input: None
+                *   output: list[str], lines of git status output
+            *   `has_unstaged_changes()`: Check unstaged changes [`src/git_alias/core.py`, 591-603]
+                *   description: Analyzes status lines to determine if there are any unstaged changes that can be added.
+                *   input: status_lines: list, optional list of status lines
+                *   output: bool, True if unstaged changes exist
+            *   `run_git_cmd()`: Run git command [`src/git_alias/core.py`, 517-522]
+                *   description: Executes a git command with specified arguments.
+                *   input: base_args: list, command arguments; extra: list, extra args; cwd: Path, working directory
+                *   output: returncode: int, process exit code
+
+## Commit Creation
+*   **Component**: `git_alias.core`
+    *   `cmd_cm()`: Create commit [`src/git_alias/core.py`, 1510-1516]
+        *   description: Creates a new commit using a standard or generated message. It ensures the repository is in a valid state for committing.
+        *   input: extra: list, additional arguments
+        *   output: returncode: int, exit code of the git commit
+        *   calls:
+            *   `_prepare_commit_message()`: Prepare message [`src/git_alias/core.py`, 1345-1356]
+                *   description: Constructs or retrieves the commit message based on flags and alias type.
+                *   input: extra: list, arguments; alias: str, command alias
+                *   output: str, final commit message
+            *   `_ensure_commit_ready()`: Check commit readiness [`src/git_alias/core.py`, 1495-1509]
+                *   description: Verifies preconditions for committing, such as being on a valid branch and having staged changes.
+                *   input: alias: str, command alias for error reporting
+                *   output: None
+            *   `_execute_commit()`: Execute commit [`src/git_alias/core.py`, 1380-1410]
+                *   description: Runs the actual git commit command, handling amend logic if applicable.
+                *   input: message: str, commit message; alias: str, command alias; allow_amend: bool, flag to allow --amend
+                *   output: returncode: int, exit code
 
 ## Release Management
-- Component: `src/git_alias/core.py`
-- Calls:
-    - `cmd_major()`: Performs a major version release. [`src/git_alias/core.py`, 1921-1926]
-        - description: Orchestrates the major release process by parsing flags and invoking the generic release command.
-        - input: extra: list, extra command line arguments
-        - output: None
-        - calls:
-            - `_parse_release_flags()`: Parses arguments for release commands. [`src/git_alias/core.py`, 1325-1344]
-                - description: Validates and extracts flags for changelog generation and release behavior.
-                - input: extra: list, raw arguments; alias: str, command alias name
-                - output: list, processed arguments for changelog
-            - `_run_release_command()`: Wrapper to run the release flow safely. [`src/git_alias/core.py`, 1291-1307]
-                - description: handling top-level exceptions and execution context for the release process.
-                - input: level: str, release level (major/minor/patch); changelog_args: list, arguments for changelog
-                - output: None
-                - calls:
-                    - `_execute_release_flow()`: Core logic for executing a release. [`src/git_alias/core.py`, 1247-1289]
-                        - description: Orchestrates the full release lifecycle: prerequisite checks, version bumping, file updates, committing, tagging, changelog generation, and merging branches.
-                        - input: level: str, release level; changelog_args: list, arguments for changelog
-                        - output: None
-                        - calls:
-                            - `_ensure_release_prerequisites()`: Verifies repo state for release. [`src/git_alias/core.py`, 1176-1204]
-                                - description: Checks that required branches (master, develop, work) exist and are synced.
-                                - input: None
-                                - output: dict, map of branch keys to names
-                            - `get_version_rules()`: Gets versioning rules. [`src/git_alias/core.py`, 116-120]
-                                - description: Retrieves the configured regex patterns and rules for version detection.
-                                - input: None
-                                - output: dict, version rules
-                            - `_determine_canonical_version()`: Finds current version. [`src/git_alias/core.py`, 1073-1115]
-                                - description: Scans files based on rules to find the current canonical version number.
-                                - input: root: Path, repo root; rules: dict, version rules
-                                - output: str, current version string
-                            - `_bump_semver_version()`: Calculates next version. [`src/git_alias/core.py`, 1205-1224]
-                                - description: Increments the major, minor, or patch component of the semantic version.
-                                - input: current_version: str, version string; level: str, increment level
-                                - output: str, new version string
-                            - `_run_release_step()`: Executes a single release step. [`src/git_alias/core.py`, 1225-1246]
-                                - description: Runs a specific action (lambda) with error handling and logging, allowing rollback or exit on failure.
-                                - input: level: str, context; step_name: str, description; action: callable, function to execute
-                                - output: None
+*   **Component**: `git_alias.core`
+    *   `cmd_major()`: Major release [`src/git_alias/core.py`, 1921-1926]
+        *   description: Initiates a major version release workflow. (Note: cmd_minor and cmd_patch follow identical logic).
+        *   input: extra: list, arguments
+        *   output: None
+        *   calls:
+            *   `_run_release_command()`: Run release [`src/git_alias/core.py`, 1291-1307]
+                *   description: Wrapper that sets up the release process and handles common flags.
+                *   input: level: str, increment level (major/minor/patch); changelog_args: list, arguments for changelog
+                *   output: None
+                *   calls:
+                    *   `_execute_release_flow()`: Execute release [`src/git_alias/core.py`, 1247-1290]
+                        *   description: Orchestrates the release: checks prerequisites, bumps version, updates files, generates changelog, commits, and tags.
+                        *   input: level: str, increment level; changelog_args: list, changelog options
+                        *   output: None
+                        *   calls:
+                            *   `_determine_canonical_version()`: Get current version [`src/git_alias/core.py`, 1073-1115]
+                                *   description: Scans project files based on configured rules to find the current version.
+                                *   input: root: Path, git root; rules: list, version regex rules
+                                *   output: str, current version string
+                            *   `_bump_semver_version()`: Bump version [`src/git_alias/core.py`, 1205-1224]
+                                *   description: Calculates the next semantic version based on the increment level.
+                                *   input: current_version: str; level: str
+                                *   output: str, new version string
+                            *   `_replace_versions_in_text()`: Update files [`src/git_alias/core.py`, 1124-1140]
+                                *   description: Replaces version strings in file content using regex.
+                                *   input: text: str; compiled_regex: Pattern; replacement: str
+                                *   output: new_text: str; count: int
+                            *   `generate_changelog_document()`: Generate changelog [`src/git_alias/core.py`, 959-1008]
+                                *   description: Generates the full changelog content from git history.
+                                *   input: repo_root: Path; include_unreleased: bool; include_draft: bool
+                                *   output: str, markdown content
 
-## Conventional Commits
-- Component: `src/git_alias/core.py`
-- Calls:
-    - `cmd_fix()`: Creates a 'fix' commit. [`src/git_alias/core.py`, 1565-1567]
-        - description: Entry point for creating a bug fix commit following conventional commit standards.
-        - input: extra: list, extra arguments
-        - output: None
-        - calls:
-            - `_run_conventional_commit()`: Generic conventional commit handler. [`src/git_alias/core.py`, 1373-1377]
-                - description: Prepares the message and executes the commit for a specific type (fix, feat, etc).
-                - input: kind: str, commit type; alias: str, command alias; extra: list, arguments
-                - output: None
-                - calls:
-                    - `_build_conventional_message()`: Formats the commit message. [`src/git_alias/core.py`, 1357-1372]
-                        - description: Constructs the final commit message string from arguments, including scope if provided.
-                        - input: kind: str, type; extra: list, args; alias: str, command alias
-                        - output: str, commit message
-                    - `_ensure_commit_ready()`: Checks commit prerequisites. [`src/git_alias/core.py`, 1495-1509]
-                        - description: Verifies that staging is not empty (unless allowing empty) and pre-commit checks pass.
-                        - input: alias: str, command alias
-                        - output: None
-                    - `_execute_commit()`: Executes the git commit command. [`src/git_alias/core.py`, 1380-1409]
-                        - description: Runs `git commit`, optionally handling `--amend` logic if a WIP commit exists, and handles git errors.
-                        - input: message: str, commit message; alias: str, command alias; allow_amend: bool, flag
-                        - output: None
-                        - calls:
-                            - `_should_amend_existing_commit()`: Decides if amend is needed. [`src/git_alias/core.py`, 698-714]
-                                - description: Checks if the last commit was a WIP or if configuration dictates an amend.
-                                - input: None
-                                - output: tuple, (bool, reason)
-                            - `run_git_cmd()`: Runs a raw git command. [`src/git_alias/core.py`, 517-522]
-                                - description: Executes a git subprocess with the provided arguments and handles input/output.
-                                - input: base_args: list, command parts; extra: list, optional args; cwd: Path, working dir
-                                - output: None
-
-## Staging Operations
-- Component: `src/git_alias/core.py`
-- Calls:
-    - `cmd_aa()`: Adds all changes to staging. [`src/git_alias/core.py`, 1431-1437]
-        - description: Stages all modified and new files, similar to `git add -A` but with status checks.
-        - input: extra: list, extra arguments
-        - output: None
-        - calls:
-            - `_git_status_lines()`: Gets git status output. [`src/git_alias/core.py`, 577-590]
-                - description: Runs `git status --porcelain` to get a parsable status list.
-                - input: None
-                - output: list, lines of status output
-            - `has_unstaged_changes()`: Checks for unstaged changes. [`src/git_alias/core.py`, 591-603]
-                - description: Analyzes status lines to determine if there are files that need staging.
-                - input: status_lines: list, optional cached status
-                - output: bool, true if changes exist
-            - `run_git_cmd()`: Executes the git add command. [`src/git_alias/core.py`, 517-522]
-                - description: Runs `git add --all` to stage files.
-                - input: base_args: list, command parts; extra: list, optional args
-                - output: None
+## Changelog Generation
+*   **Component**: `git_alias.core`
+    *   `cmd_changelog()`: Generate changelog command [`src/git_alias/core.py`, 1939-2033]
+        *   description: CLI command to generate or print the changelog.
+        *   input: extra: list, arguments
+        *   output: None
+        *   calls:
+            *   `generate_changelog_document()`: Generate document [`src/git_alias/core.py`, 959-1008]
+                *   description: Core logic to build the changelog markdown.
+                *   input: repo_root: Path; include_unreleased: bool; include_draft: bool
+                *   output: str, markdown content
+                *   calls:
+                    *   `generate_section_for_range()`: Generate section [`src/git_alias/core.py`, 852-888]
+                        *   description: Generates a changelog section for a specific revision range (e.g., between tags).
+                        *   input: repo_root: Path; title: str; date_s: str; rev_range: str
+                        *   output: Optional[str], section markdown or None
+                        *   calls:
+                            *   `git_log_subjects()`: Get commits [`src/git_alias/core.py`, 806-818]
+                                *   description: Retrieves commit subjects for a given range.
+                                *   input: repo_root: Path; rev_range: str
+                                *   output: List[str], list of commit subjects
+                            *   `categorize_commit()`: Categorize commit [`src/git_alias/core.py`, 819-843]
+                                *   description: Parses a commit message to determine its category (Features, Fixes, etc.) based on conventional commits.
+                                *   input: subject: str
+                                *   output: section: Optional[str]; line: str
