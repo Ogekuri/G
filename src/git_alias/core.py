@@ -366,7 +366,7 @@ HELP_TEXTS = {
     "tg": "Create a new annotate tag. Syntax: git tg <description> <tag>.",
     "unstg": "Un-stage a file from commit: git unstg '<filename>'. Unstage all files with: git unstg *.",
     "wip": "Commit work in progress with an automatic message and the same checks as cm.",
-    "ver": "Verify version consistency across configured files.",
+    "ver": "Verify version consistency across configured files. Options: --verbose, --debug.",
     "str": "Display all unique remotes and show detailed status for each.",
 }
 
@@ -1070,11 +1070,24 @@ def _iter_versions_in_text(text, compiled_regexes):
 
 
 # Determina la versione canonica analizzando i file configurati.
-def _determine_canonical_version(root: Path, rules):
+def _determine_canonical_version(root: Path, rules, *, verbose: bool = False, debug: bool = False):
     canonical = None
     canonical_file = None
     for pattern, expression in rules:
         files = _collect_version_files(root, pattern)
+        relative_map = {}
+        for file_path in files:
+            try:
+                relative_map[file_path] = file_path.relative_to(root).as_posix()
+            except ValueError:
+                relative_map[file_path] = str(file_path)
+        if debug:
+            print(f"Pattern '{pattern}' matched files:")
+            if files:
+                for file_path in files:
+                    print(f"  {relative_map[file_path]}")
+            else:
+                print("  (none)")
         if not files:
             raise VersionDetectionError(
                 f"No files matched the version rule pattern '{pattern}'."
@@ -1094,8 +1107,13 @@ def _determine_canonical_version(root: Path, rules):
             except OSError as exc:
                 print(f"Unable to read {file_path}: {exc}", file=sys.stderr)
                 continue
-            for version in _iter_versions_in_text(text, [compiled]):
+            versions = list(_iter_versions_in_text(text, [compiled]))
+            if verbose:
+                match_state = "yes" if versions else "no"
+                print(f"Regex match for {relative_map[file_path]}: {match_state}.")
+            if versions:
                 matched_in_rule = True
+            for version in versions:
                 if canonical is None:
                     canonical = version
                     canonical_file = file_path
@@ -1831,14 +1849,18 @@ def cmd_unstg(extra):
 
 # Verifica la consistenza delle versioni nei file configurati (alias ver).
 def cmd_ver(extra):
-    del extra  # non usato
+    args = _to_args(extra)
+    verbose = "--verbose" in args
+    debug = "--debug" in args
+    if debug:
+        verbose = True
     root = get_git_root()
     rules = get_version_rules()
     if not rules:
         print("No version rules configured.", file=sys.stderr)
         sys.exit(1)
     try:
-        canonical = _determine_canonical_version(root, rules)
+        canonical = _determine_canonical_version(root, rules, verbose=verbose, debug=debug)
     except VersionDetectionError as exc:
         print(str(exc), file=sys.stderr)
         sys.exit(1)

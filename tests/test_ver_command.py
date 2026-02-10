@@ -124,3 +124,40 @@ class VerCommandTest(unittest.TestCase):
                 with contextlib.redirect_stdout(buffer):
                     core.cmd_ver([])
                 self.assertEqual(buffer.getvalue().strip(), "1.2.3")
+
+    def test_cmd_ver_verbose_reports_regex_matches(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "module.py").write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+            (root / "notes.py").write_text("no version here\n", encoding="utf-8")
+            self._set_rules(
+                [
+                    {"pattern": "*.py", "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'},
+                ]
+            )
+            with mock.patch.object(core, "get_git_root", return_value=root):
+                buffer = io.StringIO()
+                with contextlib.redirect_stdout(buffer):
+                    core.cmd_ver(["--verbose"])
+                output = buffer.getvalue()
+                self.assertIn("Regex match for module.py: yes.", output)
+                self.assertIn("Regex match for notes.py: no.", output)
+                self.assertEqual(output.strip().splitlines()[-1], "1.2.3")
+
+    def test_cmd_ver_debug_reports_globbing_matches(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "module.py").write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+            self._set_rules(
+                [
+                    {"pattern": "*.py", "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'},
+                ]
+            )
+            with mock.patch.object(core, "get_git_root", return_value=root):
+                buffer = io.StringIO()
+                with contextlib.redirect_stdout(buffer):
+                    core.cmd_ver(["--debug"])
+                output = buffer.getvalue()
+                self.assertIn("Pattern '*.py' matched files:", output)
+                self.assertIn("  module.py", output)
+                self.assertIn("Regex match for module.py: yes.", output)

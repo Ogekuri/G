@@ -118,6 +118,7 @@ class AliasHelpTest(unittest.TestCase):
             "major": ["--include-unreleased", "--include-draft"],
             "minor": ["--include-unreleased", "--include-draft"],
             "patch": ["--include-unreleased", "--include-draft"],
+            "ver": ["--verbose", "--debug"],
         }
         for alias, flags in expected_flags.items():
             output = self.run_script([alias, "--help"])

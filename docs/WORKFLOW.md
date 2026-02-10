@@ -115,3 +115,37 @@
                                 *   description: Parses a commit message to determine its category (Features, Fixes, etc.) based on conventional commits.
                                 *   input: subject: str
                                 *   output: section: Optional[str]; line: str
+
+## Version Verification
+*   **Component**: `git_alias.core`
+    *   `cmd_ver()`: Verify version consistency [`src/git_alias/core.py`, 1850-1867]
+        *   description: Validates version rules, emits optional verbose/debug diagnostics, and prints the canonical version.
+        *   input: extra: list, additional arguments
+        *   output: None
+        *   calls:
+            *   `get_git_root()`: Locate repository root [`src/git_alias/core.py`, 225-238]
+                *   description: Finds the root directory of the current git repository by traversing up from the current working directory.
+                *   input: None
+                *   output: Path: Path, the absolute path to the git root directory
+            *   `get_version_rules()`: Load version rules [`src/git_alias/core.py`, 115-117]
+                *   description: Retrieves the version rule list from configuration defaults or overrides.
+                *   input: None
+                *   output: list, version rule tuples
+            *   `_determine_canonical_version()`: Determine canonical version [`src/git_alias/core.py`, 1073-1130]
+                *   description: Applies pathspec filtering, regex matching, and consistency checks while emitting verbose/debug match evidence.
+                *   input: root: Path, git root; rules: list, version rules; verbose: bool, verbose diagnostics flag; debug: bool, debug diagnostics flag
+                *   output: canonical: str, detected version string
+                *   calls:
+                    *   `_collect_version_files()`: Collect files for pattern [`src/git_alias/core.py`, 1009-1051]
+                        *   description: Lists tracked files or falls back to rglob, then filters by pathspec to select candidates.
+                        *   input: root: Path, git root; pattern: str, glob pattern
+                        *   output: files: list, matched file paths
+                        *   calls:
+                            *   `_is_version_path_excluded()`: Filter excluded paths [`src/git_alias/core.py`, 1054-1056]
+                                *   description: Checks if a relative path matches known cache/temp exclusions.
+                                *   input: relative_path: str, relative path
+                                *   output: bool, True when excluded
+                    *   `_iter_versions_in_text()`: Extract version matches [`src/git_alias/core.py`, 1059-1069]
+                        *   description: Iterates regex matches and yields the detected version tokens.
+                        *   input: text: str, file content; compiled_regexes: list, compiled regex patterns
+                        *   output: version: str, matched version token
