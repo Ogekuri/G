@@ -76,6 +76,25 @@ class VerCommandTest(unittest.TestCase):
                         core.cmd_ver([])
                     self.assertEqual(buffer.getvalue().strip(), "1.2.3")
 
+    def test_cmd_ver_normalizes_git_ls_files_absolute_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "src" / "debriddo").mkdir(parents=True)
+            file_path = root / "src" / "debriddo" / "main.py"
+            file_path.write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+            self._set_rules(
+                [
+                    {"pattern": "src/**/*.py", "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'},
+                ]
+            )
+            proc = mock.Mock(stdout=f"{file_path}\n", stderr="")
+            with mock.patch.object(core, "get_git_root", return_value=root):
+                with mock.patch("subprocess.run", return_value=proc):
+                    buffer = io.StringIO()
+                    with contextlib.redirect_stdout(buffer):
+                        core.cmd_ver([])
+                    self.assertEqual(buffer.getvalue().strip(), "1.2.3")
+
     def test_cmd_ver_detects_conflict(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

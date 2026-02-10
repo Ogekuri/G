@@ -1043,10 +1043,22 @@ def _collect_version_files(root, pattern):
     # Applica il pattern usando pathspec (mantiene REQ-017)
     spec = pathspec.PathSpec.from_lines("gitignore", [normalized_pattern])
     for relative_path in tracked_files:
-        normalized_relative = (relative_path or "").replace("\\", "/")
+        normalized_relative = (relative_path or "").replace("\\", "/").strip()
         if not normalized_relative:  # skip empty lines
             continue
-        if spec.match_file(normalized_relative):
+        if normalized_relative.startswith("./"):
+            normalized_relative = normalized_relative[2:]
+        path_candidate = Path(normalized_relative)
+        if path_candidate.is_absolute():
+            # Normalizza eventuali percorsi assoluti di git ls-files rispetto alla root.
+            try:
+                normalized_relative = path_candidate.relative_to(root).as_posix()
+            except ValueError:
+                continue
+        matches = spec.match_file(normalized_relative)
+        if not matches and normalized_pattern.startswith("/") and not normalized_relative.startswith("/"):
+            matches = spec.match_file(f"/{normalized_relative}")
+        if matches:
             file_path = root / normalized_relative
             if file_path.exists() and file_path.is_file():
                 resolved = file_path.resolve()
