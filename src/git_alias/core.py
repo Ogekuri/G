@@ -1012,6 +1012,11 @@ def _collect_version_files(root, pattern):
     trimmed = (pattern or "").strip()
     if not trimmed:
         return files
+    normalized_pattern = trimmed.replace("\\", "/")
+    if normalized_pattern.startswith("./"):
+        normalized_pattern = normalized_pattern[2:]
+    if "/" in normalized_pattern and not normalized_pattern.startswith("/"):
+        normalized_pattern = f"/{normalized_pattern}"
     
     # Ottieni tutti i file tracciati da git
     try:
@@ -1036,12 +1041,13 @@ def _collect_version_files(root, pattern):
             tracked_files.append(relative)
     
     # Applica il pattern usando pathspec (mantiene REQ-017)
-    spec = pathspec.PathSpec.from_lines("gitignore", [trimmed])
+    spec = pathspec.PathSpec.from_lines("gitignore", [normalized_pattern])
     for relative_path in tracked_files:
-        if not relative_path:  # skip empty lines
+        normalized_relative = (relative_path or "").replace("\\", "/")
+        if not normalized_relative:  # skip empty lines
             continue
-        if spec.match_file(relative_path):
-            file_path = root / relative_path
+        if spec.match_file(normalized_relative):
+            file_path = root / normalized_relative
             if file_path.exists() and file_path.is_file():
                 resolved = file_path.resolve()
                 if resolved not in seen:
