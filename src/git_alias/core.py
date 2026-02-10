@@ -1004,8 +1004,7 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool, inclu
     return "\n".join(lines).rstrip() + "\n"
 
 
-# Trova i file che corrispondono al pattern di versione tramite pathspec.
-# Trova i file che corrispondono al pattern di versione tramite git ls-files con fallback a pathspec.
+# Trova i file che corrispondono al pattern di versione usando rglob e pathspec.
 def _collect_version_files(root, pattern):
     files = []
     seen = set()
@@ -1017,54 +1016,27 @@ def _collect_version_files(root, pattern):
         normalized_pattern = normalized_pattern[2:]
     if "/" in normalized_pattern and not normalized_pattern.startswith("/"):
         normalized_pattern = f"/{normalized_pattern}"
-    
-    # Ottieni tutti i file tracciati da git
-    try:
-        proc = subprocess.run(
-            ["git", "ls-files"],
-            cwd=root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=True
-        )
-        tracked_files = proc.stdout.strip().split('\n') if proc.stdout.strip() else []
-    except subprocess.CalledProcessError:
-        # Fallback a rglob se git non è disponibile
-        tracked_files = []
-        for path in root.rglob("*"):
-            if not path.is_file():
-                continue
-            relative = path.relative_to(root).as_posix()
-            if _is_version_path_excluded(relative):
-                continue
-            tracked_files.append(relative)
-    
     # Applica il pattern usando pathspec (mantiene REQ-017)
     spec = pathspec.PathSpec.from_lines("gitignore", [normalized_pattern])
-    for relative_path in tracked_files:
-        normalized_relative = (relative_path or "").replace("\\", "/").strip()
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(root).as_posix()
+        if _is_version_path_excluded(relative):
+            continue
+        normalized_relative = (relative or "").replace("\\", "/").strip()
         if not normalized_relative:  # skip empty lines
             continue
         if normalized_relative.startswith("./"):
             normalized_relative = normalized_relative[2:]
-        path_candidate = Path(normalized_relative)
-        if path_candidate.is_absolute():
-            # Normalizza eventuali percorsi assoluti di git ls-files rispetto alla root.
-            try:
-                normalized_relative = path_candidate.relative_to(root).as_posix()
-            except ValueError:
-                continue
         matches = spec.match_file(normalized_relative)
         if not matches and normalized_pattern.startswith("/") and not normalized_relative.startswith("/"):
             matches = spec.match_file(f"/{normalized_relative}")
         if matches:
-            file_path = root / normalized_relative
-            if file_path.exists() and file_path.is_file():
-                resolved = file_path.resolve()
-                if resolved not in seen:
-                    seen.add(resolved)
-                    files.append(file_path)
+            resolved = path.resolve()
+            if resolved not in seen:
+                seen.add(resolved)
+                files.append(path)
     
     return files
 

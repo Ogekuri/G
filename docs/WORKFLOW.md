@@ -118,7 +118,7 @@
 
 ## Version Verification
 *   **Component**: `git_alias.core`
-    *   `cmd_ver()`: Verify version consistency [`src/git_alias/core.py`, 1868-1885]
+    *   `cmd_ver()`: Verify version consistency [`src/git_alias/core.py`, 1841-1857]
         *   description: Validates version rules, emits optional verbose/debug diagnostics, and prints the canonical version.
         *   input: extra: list, additional arguments
         *   output: None
@@ -131,13 +131,13 @@
                 *   description: Retrieves the version rule list from configuration defaults or overrides.
                 *   input: None
                 *   output: list, version rule tuples
-            *   `_determine_canonical_version()`: Determine canonical version [`src/git_alias/core.py`, 1091-1148]
+            *   `_determine_canonical_version()`: Determine canonical version [`src/git_alias/core.py`, 1063-1120]
                 *   description: Applies pathspec filtering, regex matching, and consistency checks while emitting verbose/debug match evidence.
                 *   input: root: Path, git root; rules: list, version rules; verbose: bool, verbose diagnostics flag; debug: bool, debug diagnostics flag
                 *   output: canonical: str, detected version string
                 *   calls:
-                    *   `_collect_version_files()`: Collect files for pattern [`src/git_alias/core.py`, 1009-1069]
-                        *   description: Normalizes git ls-files entries (absolute/relative), applies pathspec anchored matching, and falls back to rglob with exclusions.
+                    *   `_collect_version_files()`: Collect files for pattern [`src/git_alias/core.py`, 1008-1041]
+                        *   description: Collects files via rglob, applies anchored pathspec matching, and excludes cache/temp paths.
                         *   input: root: Path, git root; pattern: str, glob pattern
                         *   output: files: list, matched file paths
                         *   calls:

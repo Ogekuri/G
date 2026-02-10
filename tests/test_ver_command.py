@@ -56,7 +56,7 @@ class VerCommandTest(unittest.TestCase):
                     core.cmd_ver([])
                 self.assertEqual(buffer.getvalue().strip(), "1.2.3")
 
-    def test_cmd_ver_normalizes_git_ls_files_paths(self):
+    def test_cmd_ver_uses_rglob_for_nested_paths(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "src" / "debriddo").mkdir(parents=True)
@@ -68,15 +68,13 @@ class VerCommandTest(unittest.TestCase):
                     {"pattern": "src/**/*.py", "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'},
                 ]
             )
-            proc = mock.Mock(stdout="src\\debriddo\\main.py\n", stderr="")
             with mock.patch.object(core, "get_git_root", return_value=root):
-                with mock.patch("subprocess.run", return_value=proc):
-                    buffer = io.StringIO()
-                    with contextlib.redirect_stdout(buffer):
-                        core.cmd_ver([])
-                    self.assertEqual(buffer.getvalue().strip(), "1.2.3")
+                buffer = io.StringIO()
+                with contextlib.redirect_stdout(buffer):
+                    core.cmd_ver([])
+                self.assertEqual(buffer.getvalue().strip(), "1.2.3")
 
-    def test_cmd_ver_normalizes_git_ls_files_absolute_paths(self):
+    def test_cmd_ver_uses_rglob_without_git_ls_files(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "src" / "debriddo").mkdir(parents=True)
@@ -87,9 +85,8 @@ class VerCommandTest(unittest.TestCase):
                     {"pattern": "src/**/*.py", "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'},
                 ]
             )
-            proc = mock.Mock(stdout=f"{file_path}\n", stderr="")
             with mock.patch.object(core, "get_git_root", return_value=root):
-                with mock.patch("subprocess.run", return_value=proc):
+                with mock.patch.object(core.subprocess, "run", side_effect=AssertionError("git ls-files should not be used")):
                     buffer = io.StringIO()
                     with contextlib.redirect_stdout(buffer):
                         core.cmd_ver([])
