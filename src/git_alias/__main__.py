@@ -1,4 +1,5 @@
-"""Consente l'esecuzione del tool come modulo."""
+## @file __main__.py
+# @brief Module-execution adapter for invoking CLI main entrypoint.
 from .core import main
 import sys
 

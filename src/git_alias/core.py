@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# Implementazione portabile degli alias git dell'utente.
+## @file core.py
+# @brief Core command dispatch and git-alias runtime orchestration.
 
 import argparse
 import json
@@ -19,19 +20,29 @@ from urllib.request import Request, urlopen
 
 import pathspec
 
+## @brief Constant `CONFIG_FILENAME` used by CLI runtime paths and policies.
+
 CONFIG_FILENAME = ".g.conf"
+
+## @brief Constant `GITHUB_LATEST_RELEASE_API` used by CLI runtime paths and policies.
 
 GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/Ogekuri/G/releases/latest"
 
-# Configurazione cache per il controllo versione online
+## @brief Constant `VERSION_CHECK_CACHE_FILE` used by CLI runtime paths and policies.
 VERSION_CHECK_CACHE_FILE = Path(tempfile.gettempdir()) / ".g_version_check_cache.json"
+## @brief Constant `VERSION_CHECK_TTL_HOURS` used by CLI runtime paths and policies.
+
 VERSION_CHECK_TTL_HOURS = 6
+
+## @brief Constant `DEFAULT_VER_RULES` used by CLI runtime paths and policies.
 
 DEFAULT_VER_RULES = [
     ("README.md", r'\s*"(\d+\.\d+\.\d+)"\s*'),
     ("src/**/*.py", r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'),
     ("pyproject.toml", r'\bversion\s*=\s*"(\d+\.\d+\.\d+)"'),
 ]
+## @brief Constant `VERSION_CLEANUP_REGEXES` used by CLI runtime paths and policies.
+
 VERSION_CLEANUP_REGEXES = [
     r"(^|/)\.git(/|$)",
     r"(^|/)\.vscode(/|$)",
@@ -41,7 +52,11 @@ VERSION_CLEANUP_REGEXES = [
     r"(^|/)\.pytest_cache(/|$)",
     r"(^|/)node_modules/\.cache(/|$)",
 ]
+## @brief Constant `VERSION_CLEANUP_PATTERNS` used by CLI runtime paths and policies.
+
 VERSION_CLEANUP_PATTERNS = [re.compile(pattern) for pattern in VERSION_CLEANUP_REGEXES]
+
+## @brief Constant `DEFAULT_CONFIG` used by CLI runtime paths and policies.
 
 DEFAULT_CONFIG = {
     "master": "master",
@@ -56,8 +71,14 @@ DEFAULT_CONFIG = {
     ],
 }
 
+## @brief Constant `CONFIG` used by CLI runtime paths and policies.
+
 CONFIG = DEFAULT_CONFIG.copy()
+## @brief Constant `BRANCH_KEYS` used by CLI runtime paths and policies.
+
 BRANCH_KEYS = ("master", "develop", "work")
+## @brief Constant `MANAGEMENT_HELP` used by CLI runtime paths and policies.
+
 MANAGEMENT_HELP = [
     ("--write-config", "Generate the .g.conf file in the repository root with default values."),
     ("--upgrade", "Reinstall git-alias via uv tool install."),
@@ -68,24 +89,32 @@ MANAGEMENT_HELP = [
 ]
 
 
-# Restituisce un valore di configurazione con fallback ai default.
+## @brief Execute `get_config_value` runtime logic for Git-Alias CLI.
+# @param name Input parameter consumed by `get_config_value`.
+# @return Result emitted by `get_config_value` according to command contract.
 def get_config_value(name):
     return CONFIG.get(name, DEFAULT_CONFIG[name])
 
 
-# Restituisce il nome di branch configurato per la chiave richiesta.
+## @brief Execute `get_branch` runtime logic for Git-Alias CLI.
+# @param name Input parameter consumed by `get_branch`.
+# @return Result emitted by `get_branch` according to command contract.
 def get_branch(name):
     if name not in BRANCH_KEYS:
         raise KeyError(f"Unknown branch key {name}")
     return get_config_value(name)
 
 
-# Recupera il comando di editor definito nella configurazione.
+## @brief Execute `get_editor` runtime logic for Git-Alias CLI.
+# @return Result emitted by `get_editor` according to command contract.
 def get_editor():
     return get_config_value("editor")
 
 
-# Carica le coppie wildcard/regexp definite nel file di configurazione.
+## @brief Execute `_load_config_rules` runtime logic for Git-Alias CLI.
+# @param key Input parameter consumed by `_load_config_rules`.
+# @param fallback Input parameter consumed by `_load_config_rules`.
+# @return Result emitted by `_load_config_rules` according to command contract.
 def _load_config_rules(key, fallback):
     raw_value = CONFIG.get(key, DEFAULT_CONFIG[key])
     if not isinstance(raw_value, list):
@@ -112,12 +141,14 @@ def _load_config_rules(key, fallback):
     return rules if rules else list(fallback)
 
 
-# Restituisce le regole usate per rilevare le versioni nei file.
+## @brief Execute `get_version_rules` runtime logic for Git-Alias CLI.
+# @return Result emitted by `get_version_rules` according to command contract.
 def get_version_rules():
     return _load_config_rules("ver_rules", DEFAULT_VER_RULES)
 
 
-# Recupera la versione del pacchetto leggendo __init__.py senza import.
+## @brief Execute `get_cli_version` runtime logic for Git-Alias CLI.
+# @return Result emitted by `get_cli_version` according to command contract.
 def get_cli_version():
     init_path = Path(__file__).resolve().with_name("__init__.py")
     try:
@@ -130,7 +161,9 @@ def get_cli_version():
     return "unknown"
 
 
-# Normalizza una tag version in una stringa semver (rimuove l'eventuale prefisso 'v').
+## @brief Execute `_normalize_semver_text` runtime logic for Git-Alias CLI.
+# @param text Input parameter consumed by `_normalize_semver_text`.
+# @return Result emitted by `_normalize_semver_text` according to command contract.
 def _normalize_semver_text(text: str) -> str:
     value = (text or "").strip()
     if value.lower().startswith("v"):
@@ -138,7 +171,9 @@ def _normalize_semver_text(text: str) -> str:
     return value
 
 
-# Verifica online se esiste una versione più recente e, se presente, avvisa l'utente, usando una cache temporizzata.
+## @brief Execute `check_for_newer_version` runtime logic for Git-Alias CLI.
+# @param timeout_seconds Input parameter consumed by `check_for_newer_version`.
+# @return Result emitted by `check_for_newer_version` according to command contract.
 def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
     current = _parse_semver_tuple(get_cli_version())
     if current is None:
@@ -221,7 +256,8 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
         )
 
 
-# Individua la radice del repository git corrente.
+## @brief Execute `get_git_root` runtime logic for Git-Alias CLI.
+# @return Result emitted by `get_git_root` according to command contract.
 def get_git_root():
     try:
         result = _run_checked(
@@ -238,13 +274,17 @@ def get_git_root():
     return Path.cwd()
 
 
-# Calcola il percorso del file di configurazione .g.conf.
+## @brief Execute `get_config_path` runtime logic for Git-Alias CLI.
+# @param root Input parameter consumed by `get_config_path`.
+# @return Result emitted by `get_config_path` according to command contract.
 def get_config_path(root=None):
     base = Path(root) if root is not None else get_git_root()
     return base / CONFIG_FILENAME
 
 
-# Carica nella memoria le impostazioni definite in .g.conf.
+## @brief Execute `load_cli_config` runtime logic for Git-Alias CLI.
+# @param root Input parameter consumed by `load_cli_config`.
+# @return Result emitted by `load_cli_config` according to command contract.
 def load_cli_config(root=None):
     CONFIG.update(DEFAULT_CONFIG)
     config_path = get_config_path(root)
@@ -280,7 +320,9 @@ def load_cli_config(root=None):
     return config_path
 
 
-# Scrive il file di configurazione con i valori di default.
+## @brief Execute `write_default_config` runtime logic for Git-Alias CLI.
+# @param root Input parameter consumed by `write_default_config`.
+# @return Result emitted by `write_default_config` according to command contract.
 def write_default_config(root=None):
     config_path = get_config_path(root)
     payload = json.dumps(DEFAULT_CONFIG, indent=2)
@@ -289,7 +331,8 @@ def write_default_config(root=None):
     return config_path
 
 
-# Parsa la stringa dell'editor e restituisce il comando base.
+## @brief Execute `_editor_base_command` runtime logic for Git-Alias CLI.
+# @return Result emitted by `_editor_base_command` according to command contract.
 def _editor_base_command():
     raw_value = get_editor() or DEFAULT_CONFIG["editor"]
     try:
@@ -305,9 +348,13 @@ def _editor_base_command():
     return parts
 
 
-# Esegue l'editor configurato con gli argomenti specificati.
+## @brief Execute `run_editor_command` runtime logic for Git-Alias CLI.
+# @param args Input parameter consumed by `run_editor_command`.
+# @return Result emitted by `run_editor_command` according to command contract.
 def run_editor_command(args):
     return run_command(_editor_base_command() + list(args))
+
+## @brief Constant `HELP_TEXTS` used by CLI runtime paths and policies.
 
 HELP_TEXTS = {
     "aa": "Add all file changes/added to stage area for commit.",
@@ -369,6 +416,8 @@ HELP_TEXTS = {
     "ver": "Verify version consistency across configured files. Options: --verbose, --debug.",
     "str": "Display all unique remotes and show detailed status for each.",
 }
+
+## @brief Constant `RESET_HELP` used by CLI runtime paths and policies.
 
 RESET_HELP = """
 
@@ -450,17 +499,24 @@ RESET_HELP = """
 
 """
 
+## @brief Constant `RESET_HELP_COMMANDS` used by CLI runtime paths and policies.
+
 RESET_HELP_COMMANDS = {"rs", "rshrd", "rskep", "rsmix", "rsmrg", "rssft"}
 
 
-# Converte la sequenza di argomenti extra in una lista espandibile.
+## @brief Execute `_to_args` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `_to_args`.
+# @return Result emitted by `_to_args` according to command contract.
 def _to_args(extra):
     return list(extra) if extra else []
 
 
-# Rappresenta un errore emesso da un processo esterno.
+## @brief Class `CommandExecutionError` models a typed runtime container/error boundary.
 class CommandExecutionError(RuntimeError):
-    # Inizializza l'eccezione con i dettagli del comando fallito.
+    ## @brief Execute `__init__` runtime logic for Git-Alias CLI.
+    # @param self Input parameter consumed by `__init__`.
+    # @param exc Input parameter consumed by `__init__`.
+    # @return Result emitted by `__init__` according to command contract.
     def __init__(self, exc: subprocess.CalledProcessError):
         self.cmd = exc.cmd
         self.returncode = exc.returncode
@@ -469,7 +525,9 @@ class CommandExecutionError(RuntimeError):
         message = self._format_message()
         super().__init__(message)
 
-    # Compone il messaggio di errore partendo dall'output disponibile.
+    ## @brief Execute `_format_message` runtime logic for Git-Alias CLI.
+    # @param self Input parameter consumed by `_format_message`.
+    # @return Result emitted by `_format_message` according to command contract.
     def _format_message(self) -> str:
         text = self._decode_stream(self.stderr).strip()
         if text:
@@ -482,7 +540,9 @@ class CommandExecutionError(RuntimeError):
         return f"Command '{cmd_display}' failed with exit code {self.returncode}"
 
     @staticmethod
-    # Decodifica uno stream di output in testo gestendo gli errori.
+    ## @brief Execute `_decode_stream` runtime logic for Git-Alias CLI.
+    # @param data Input parameter consumed by `_decode_stream`.
+    # @return Result emitted by `_decode_stream` according to command contract.
     def _decode_stream(data) -> str:
         if data is None:
             return ""
@@ -494,7 +554,10 @@ class CommandExecutionError(RuntimeError):
         return str(data)
 
 
-# Esegue un comando esterno e converte gli errori in CommandExecutionError.
+## @brief Execute `_run_checked` runtime logic for Git-Alias CLI.
+# @param *popenargs Input parameter consumed by `_run_checked`.
+# @param **kwargs Input parameter consumed by `_run_checked`.
+# @return Result emitted by `_run_checked` according to command contract.
 def _run_checked(*popenargs, **kwargs):
     kwargs.setdefault("check", True)
     try:
@@ -503,34 +566,49 @@ def _run_checked(*popenargs, **kwargs):
         raise CommandExecutionError(exc) from None
 
 
-# Eccezione dedicata alla rilevazione della versione corrente.
+## @brief Class `VersionDetectionError` models a typed runtime container/error boundary.
 class VersionDetectionError(RuntimeError):
     pass
 
 
-# Eccezione dedicata al flusso dei rilasci automatici.
+## @brief Class `ReleaseError` models a typed runtime container/error boundary.
 class ReleaseError(RuntimeError):
     pass
 
 
-# Invia un comando git con argomenti principali e supplementari nella directory indicata.
+## @brief Execute `run_git_cmd` runtime logic for Git-Alias CLI.
+# @param base_args Input parameter consumed by `run_git_cmd`.
+# @param extra Input parameter consumed by `run_git_cmd`.
+# @param cwd Input parameter consumed by `run_git_cmd`.
+# @param **kwargs Input parameter consumed by `run_git_cmd`.
+# @return Result emitted by `run_git_cmd` according to command contract.
 def run_git_cmd(base_args, extra=None, cwd=None, **kwargs):
     full = ["git"] + list(base_args) + _to_args(extra)
     return _run_checked(full, cwd=cwd, **kwargs)
 
 
-# Esegue git e restituisce l'output come stringa per usi interni.
+## @brief Execute `capture_git_output` runtime logic for Git-Alias CLI.
+# @param base_args Input parameter consumed by `capture_git_output`.
+# @param cwd Input parameter consumed by `capture_git_output`.
+# @return Result emitted by `capture_git_output` according to command contract.
 def capture_git_output(base_args, cwd=None):
     result = _run_checked(["git"] + list(base_args), cwd=cwd, stdout=subprocess.PIPE, text=True)
     return result.stdout.strip()
 
 
-# Invoca un comando esterno con la sintassi fornita.
+## @brief Execute `run_command` runtime logic for Git-Alias CLI.
+# @param cmd Input parameter consumed by `run_command`.
+# @param cwd Input parameter consumed by `run_command`.
+# @return Result emitted by `run_command` according to command contract.
 def run_command(cmd, cwd=None):
     return _run_checked(cmd, cwd=cwd)
 
 
-# Esegue comandi git e restituisce l'output testuale.
+## @brief Execute `run_git_text` runtime logic for Git-Alias CLI.
+# @param args Input parameter consumed by `run_git_text`.
+# @param cwd Input parameter consumed by `run_git_text`.
+# @param check Input parameter consumed by `run_git_text`.
+# @return Result emitted by `run_git_text` according to command contract.
 def run_git_text(args, cwd=None, check=True):
     try:
         proc = _run_checked(
@@ -549,12 +627,19 @@ def run_git_text(args, cwd=None, check=True):
     return proc.stdout.strip()
 
 
-# Esegue una pipeline nella shell quando serve costruire comandi complessi.
+## @brief Execute `run_shell` runtime logic for Git-Alias CLI.
+# @param command Input parameter consumed by `run_shell`.
+# @param cwd Input parameter consumed by `run_shell`.
+# @return Result emitted by `run_shell` according to command contract.
 def run_shell(command, cwd=None):
     return _run_checked(command, shell=True, cwd=cwd)
 
 
-# Esegue comandi git e restituisce l'output testuale.
+## @brief Execute `run_git_text` runtime logic for Git-Alias CLI.
+# @param args Input parameter consumed by `run_git_text`.
+# @param cwd Input parameter consumed by `run_git_text`.
+# @param check Input parameter consumed by `run_git_text`.
+# @return Result emitted by `run_git_text` according to command contract.
 def run_git_text(args, cwd=None, check=True):
     try:
         proc = _run_checked(
@@ -573,7 +658,8 @@ def run_git_text(args, cwd=None, check=True):
     return proc.stdout.strip()
 
 
-# Recupera le linee di stato porcelain del repository.
+## @brief Execute `_git_status_lines` runtime logic for Git-Alias CLI.
+# @return Result emitted by `_git_status_lines` according to command contract.
 def _git_status_lines():
     proc = _run_checked(
         ["git", "status", "--porcelain"],
@@ -587,7 +673,9 @@ def _git_status_lines():
     return proc.stdout.splitlines()
 
 
-# Determina se esistono modifiche non ancora nello staging.
+## @brief Execute `has_unstaged_changes` runtime logic for Git-Alias CLI.
+# @param status_lines Input parameter consumed by `has_unstaged_changes`.
+# @return Result emitted by `has_unstaged_changes` according to command contract.
 def has_unstaged_changes(status_lines=None):
     lines = status_lines if status_lines is not None else _git_status_lines()
     for line in lines:
@@ -600,7 +688,9 @@ def has_unstaged_changes(status_lines=None):
     return False
 
 
-# Verifica la presenza di elementi già pronti nello staging.
+## @brief Execute `has_staged_changes` runtime logic for Git-Alias CLI.
+# @param status_lines Input parameter consumed by `has_staged_changes`.
+# @return Result emitted by `has_staged_changes` according to command contract.
 def has_staged_changes(status_lines=None):
     lines = status_lines if status_lines is not None else _git_status_lines()
     for line in lines:
@@ -611,11 +701,16 @@ def has_staged_changes(status_lines=None):
     return False
 
 
+## @brief Constant `_REMOTE_REFS_UPDATED` used by CLI runtime paths and policies.
+
 _REMOTE_REFS_UPDATED = False
+## @brief Constant `WIP_MESSAGE_RE` used by CLI runtime paths and policies.
+
 WIP_MESSAGE_RE = re.compile(r"^wip: work in progress\.$")
 
 
-# Aggiorna una sola volta i riferimenti remoti usando git.
+## @brief Execute `_refresh_remote_refs` runtime logic for Git-Alias CLI.
+# @return Result emitted by `_refresh_remote_refs` according to command contract.
 def _refresh_remote_refs():
     global _REMOTE_REFS_UPDATED
     if _REMOTE_REFS_UPDATED:
@@ -628,7 +723,10 @@ def _refresh_remote_refs():
     _REMOTE_REFS_UPDATED = True
 
 
-# Calcola la divergenza tra il branch locale e quello remoto.
+## @brief Execute `_branch_remote_divergence` runtime logic for Git-Alias CLI.
+# @param branch_key Input parameter consumed by `_branch_remote_divergence`.
+# @param remote Input parameter consumed by `_branch_remote_divergence`.
+# @return Result emitted by `_branch_remote_divergence` according to command contract.
 def _branch_remote_divergence(branch_key, remote="origin"):
     _refresh_remote_refs()
     branch = get_branch(branch_key)
@@ -648,23 +746,29 @@ def _branch_remote_divergence(branch_key, remote="origin"):
     return (local_ahead, remote_ahead)
 
 
-# Indica se il branch remoto ha commit non ancora recuperati.
+## @brief Execute `has_remote_branch_updates` runtime logic for Git-Alias CLI.
+# @param branch_key Input parameter consumed by `has_remote_branch_updates`.
+# @param remote Input parameter consumed by `has_remote_branch_updates`.
+# @return Result emitted by `has_remote_branch_updates` according to command contract.
 def has_remote_branch_updates(branch_key, remote="origin"):
     _, remote_ahead = _branch_remote_divergence(branch_key, remote=remote)
     return remote_ahead > 0
 
 
-# Verifica la presenza di aggiornamenti remoti per develop.
+## @brief Execute `has_remote_develop_updates` runtime logic for Git-Alias CLI.
+# @return Result emitted by `has_remote_develop_updates` according to command contract.
 def has_remote_develop_updates():
     return has_remote_branch_updates("develop")
 
 
-# Verifica la presenza di aggiornamenti remoti per master.
+## @brief Execute `has_remote_master_updates` runtime logic for Git-Alias CLI.
+# @return Result emitted by `has_remote_master_updates` according to command contract.
 def has_remote_master_updates():
     return has_remote_branch_updates("master")
 
 
-# Restituisce il messaggio dell'ultima commit locale.
+## @brief Execute `_head_commit_message` runtime logic for Git-Alias CLI.
+# @return Result emitted by `_head_commit_message` according to command contract.
 def _head_commit_message():
     try:
         return run_git_text(["log", "-1", "--pretty=%s"]).strip()
@@ -672,7 +776,8 @@ def _head_commit_message():
         return ""
 
 
-# Ritorna l'hash della commit HEAD del repository.
+## @brief Execute `_head_commit_hash` runtime logic for Git-Alias CLI.
+# @return Result emitted by `_head_commit_hash` according to command contract.
 def _head_commit_hash():
     try:
         return run_git_text(["rev-parse", "HEAD"]).strip()
@@ -680,7 +785,10 @@ def _head_commit_hash():
         return ""
 
 
-# Controlla se una commit è presente nel branch indicato.
+## @brief Execute `_commit_exists_in_branch` runtime logic for Git-Alias CLI.
+# @param commit_hash Input parameter consumed by `_commit_exists_in_branch`.
+# @param branch_name Input parameter consumed by `_commit_exists_in_branch`.
+# @return Result emitted by `_commit_exists_in_branch` according to command contract.
 def _commit_exists_in_branch(commit_hash, branch_name):
     if not commit_hash or not branch_name:
         return False
@@ -694,7 +802,8 @@ def _commit_exists_in_branch(commit_hash, branch_name):
     return proc.returncode == 0
 
 
-# Stabilisce se bisogna ammendare la commit WIP corrente.
+## @brief Execute `_should_amend_existing_commit` runtime logic for Git-Alias CLI.
+# @return Result emitted by `_should_amend_existing_commit` according to command contract.
 def _should_amend_existing_commit():
     message = _head_commit_message()
     if not (message and WIP_MESSAGE_RE.match(message)):
@@ -711,7 +820,8 @@ def _should_amend_existing_commit():
     return (True, "HEAD WIP commit is still pending locally.")
 
 
-# Verifica se il processo si trova all'interno di un repository git.
+## @brief Execute `is_inside_git_repo` runtime logic for Git-Alias CLI.
+# @return Result emitted by `is_inside_git_repo` according to command contract.
 def is_inside_git_repo():
     try:
         output = run_git_text(["rev-parse", "--is-inside-work-tree"])
@@ -721,22 +831,38 @@ def is_inside_git_repo():
 
 
 @dataclass
+## @brief Class `TagInfo` models a typed runtime container/error boundary.
+
 class TagInfo:
     name: str
     iso_date: str
     object_name: str
 
 
+## @brief Constant `DELIM` used by CLI runtime paths and policies.
+
 DELIM = "\x1f"
+## @brief Constant `RECORD` used by CLI runtime paths and policies.
+
 RECORD = "\x1e"
+## @brief Constant `_CONVENTIONAL_RE` used by CLI runtime paths and policies.
+
 _CONVENTIONAL_RE = re.compile(
     r"^(?P<type>new|fix|change|refactor|docs|style|revert|misc|cover)"
     r"(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?:\s+(?P<desc>.+)$",
     re.IGNORECASE,
 )
+## @brief Constant `_MODULE_PREFIX_RE` used by CLI runtime paths and policies.
+
 _MODULE_PREFIX_RE = re.compile(r"^(?P<module>[A-Za-z0-9_]+):\s*(?P<body>.*)$")
+## @brief Constant `_SEMVER_TAG_RE` used by CLI runtime paths and policies.
+
 _SEMVER_TAG_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
+## @brief Constant `SEMVER_RE` used by CLI runtime paths and policies.
+
 SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
+## @brief Constant `SECTION_EMOJI` used by CLI runtime paths and policies.
+
 SECTION_EMOJI = {
     "Features": "⛰️",
     "Bug Fixes": "🐛",
@@ -749,15 +875,21 @@ SECTION_EMOJI = {
     "Cover Requirements": "🎯",
 }
 
+## @brief Constant `MIN_SUPPORTED_HISTORY_VERSION` used by CLI runtime paths and policies.
+
 MIN_SUPPORTED_HISTORY_VERSION = (0, 1, 0)
 
 
-# Determina se il tag semantico deve essere incluso nel changelog di default.
+## @brief Execute `_tag_semver_tuple` runtime logic for Git-Alias CLI.
+# @param tag_name Input parameter consumed by `_tag_semver_tuple`.
+# @return Result emitted by `_tag_semver_tuple` according to command contract.
 def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[int, int, int]]:
     return _parse_semver_tuple(tag_name.lstrip("v"))
 
 
-# Verifica se un tag semantico rientra nella storia supportata.
+## @brief Execute `_is_supported_release_tag` runtime logic for Git-Alias CLI.
+# @param tag_name Input parameter consumed by `_is_supported_release_tag`.
+# @return Result emitted by `_is_supported_release_tag` according to command contract.
 def _is_supported_release_tag(tag_name: str) -> bool:
     semver = _tag_semver_tuple(tag_name)
     if semver is None:
@@ -765,12 +897,18 @@ def _is_supported_release_tag(tag_name: str) -> bool:
     return semver >= MIN_SUPPORTED_HISTORY_VERSION
 
 
-# Determina se includere un tag in base al flag draft.
+## @brief Execute `_should_include_tag` runtime logic for Git-Alias CLI.
+# @param tag_name Input parameter consumed by `_should_include_tag`.
+# @param include_draft Input parameter consumed by `_should_include_tag`.
+# @return Result emitted by `_should_include_tag` according to command contract.
 def _should_include_tag(tag_name: str, include_draft: bool) -> bool:
     return include_draft or _is_supported_release_tag(tag_name)
 
 
-# Recupera l'ultimo tag supportato in base alle regole draft.
+## @brief Execute `_latest_supported_tag_name` runtime logic for Git-Alias CLI.
+# @param tags Input parameter consumed by `_latest_supported_tag_name`.
+# @param include_draft Input parameter consumed by `_latest_supported_tag_name`.
+# @return Result emitted by `_latest_supported_tag_name` according to command contract.
 def _latest_supported_tag_name(tags: List[TagInfo], include_draft: bool) -> Optional[str]:
     if include_draft:
         return tags[-1].name if tags else None
@@ -780,7 +918,10 @@ def _latest_supported_tag_name(tags: List[TagInfo], include_draft: bool) -> Opti
     return None
 
 
-# Ottiene i tag semantici ordinati per data di creazione.
+## @brief Execute `list_tags_sorted_by_date` runtime logic for Git-Alias CLI.
+# @param repo_root Input parameter consumed by `list_tags_sorted_by_date`.
+# @param merged_ref Input parameter consumed by `list_tags_sorted_by_date`.
+# @return Result emitted by `list_tags_sorted_by_date` according to command contract.
 def list_tags_sorted_by_date(repo_root: Path, merged_ref: Optional[str] = None) -> List[TagInfo]:
     fmt = f"%(refname:strip=2){DELIM}%(creatordate:short){DELIM}%(objectname)"
     args = ["for-each-ref", "--sort=creatordate", f"--format={fmt}"]
@@ -802,7 +943,10 @@ def list_tags_sorted_by_date(repo_root: Path, merged_ref: Optional[str] = None) 
     return tags
 
 
-# Estrae i soggetti dei commit in un intervallo di log.
+## @brief Execute `git_log_subjects` runtime logic for Git-Alias CLI.
+# @param repo_root Input parameter consumed by `git_log_subjects`.
+# @param rev_range Input parameter consumed by `git_log_subjects`.
+# @return Result emitted by `git_log_subjects` according to command contract.
 def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]:
     fmt = f"%s{RECORD}"
     out = run_git_text(
@@ -815,7 +959,9 @@ def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]:
     return [x.strip() for x in out.split(RECORD) if x.strip()]
 
 
-# Classifica un soggetto di commit secondo le categorie supportate.
+## @brief Execute `categorize_commit` runtime logic for Git-Alias CLI.
+# @param subject Input parameter consumed by `categorize_commit`.
+# @return Result emitted by `categorize_commit` according to command contract.
 def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
     match = _CONVENTIONAL_RE.match(subject.strip())
     if not match:
@@ -840,7 +986,9 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
     return (section, line) if section else (None, "")
 
 
-# Estrae la versione di rilascio da un commit new(core): release version: X.Y.Z.
+## @brief Execute `_extract_release_version` runtime logic for Git-Alias CLI.
+# @param subject Input parameter consumed by `_extract_release_version`.
+# @return Result emitted by `_extract_release_version` according to command contract.
 def _extract_release_version(subject: str) -> Optional[str]:
     match = re.search(r"release version:\s+(\d+\.\d+\.\d+)", subject, re.IGNORECASE)
     if not match:
@@ -848,7 +996,13 @@ def _extract_release_version(subject: str) -> Optional[str]:
     return match.group(1)
 
 
-# Genera la sezione di changelog relativa a un intervallo di commit.
+## @brief Execute `generate_section_for_range` runtime logic for Git-Alias CLI.
+# @param repo_root Input parameter consumed by `generate_section_for_range`.
+# @param title Input parameter consumed by `generate_section_for_range`.
+# @param date_s Input parameter consumed by `generate_section_for_range`.
+# @param rev_range Input parameter consumed by `generate_section_for_range`.
+# @param expected_version Input parameter consumed by `generate_section_for_range`.
+# @return Result emitted by `generate_section_for_range` according to command contract.
 def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_range: str, expected_version: Optional[str] = None) -> Optional[str]:
     subjects = git_log_subjects(repo_root, rev_range)
     buckets: Dict[str, List[str]] = defaultdict(list)
@@ -885,7 +1039,9 @@ def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_ran
     return "\n".join(lines).rstrip() + "\n"
 
 
-# Deriva l'URL base del remote origin per i link di confronto.
+## @brief Execute `_canonical_origin_base` runtime logic for Git-Alias CLI.
+# @param repo_root Input parameter consumed by `_canonical_origin_base`.
+# @return Result emitted by `_canonical_origin_base` according to command contract.
 def _canonical_origin_base(repo_root: Path) -> Optional[str]:
     url = run_git_text(["remote", "get-url", "origin"], cwd=repo_root, check=False).strip()
     if not url:
@@ -904,7 +1060,11 @@ def _canonical_origin_base(repo_root: Path) -> Optional[str]:
     return base
 
 
-# Costruisce l'URL di confronto o di release per un tag.
+## @brief Execute `get_origin_compare_url` runtime logic for Git-Alias CLI.
+# @param base_url Input parameter consumed by `get_origin_compare_url`.
+# @param prev_tag Input parameter consumed by `get_origin_compare_url`.
+# @param tag Input parameter consumed by `get_origin_compare_url`.
+# @return Result emitted by `get_origin_compare_url` according to command contract.
 def get_origin_compare_url(base_url: Optional[str], prev_tag: Optional[str], tag: str) -> Optional[str]:
     if not base_url:
         return None
@@ -913,14 +1073,23 @@ def get_origin_compare_url(base_url: Optional[str], prev_tag: Optional[str], tag
     return f"{base_url}/releases/tag/{tag}"
 
 
-# Costruisce l'URL della pagina release per un tag.
+## @brief Execute `get_release_page_url` runtime logic for Git-Alias CLI.
+# @param base_url Input parameter consumed by `get_release_page_url`.
+# @param tag Input parameter consumed by `get_release_page_url`.
+# @return Result emitted by `get_release_page_url` according to command contract.
 def get_release_page_url(base_url: Optional[str], tag: str) -> Optional[str]:
     if not base_url:
         return None
     return f"{base_url}/releases/tag/{tag}"
 
 
-# Compone la sezione History con i riferimenti di confronto.
+## @brief Execute `build_history_section` runtime logic for Git-Alias CLI.
+# @param repo_root Input parameter consumed by `build_history_section`.
+# @param tags Input parameter consumed by `build_history_section`.
+# @param include_unreleased Input parameter consumed by `build_history_section`.
+# @param include_draft Input parameter consumed by `build_history_section`.
+# @param include_unreleased_link Input parameter consumed by `build_history_section`.
+# @return Result emitted by `build_history_section` according to command contract.
 def build_history_section(
     repo_root: Path,
     tags: List[TagInfo],
@@ -955,7 +1124,11 @@ def build_history_section(
     return "\n".join(lines).rstrip() + "\n"
 
 
-# Assembla il documento completo del changelog.
+## @brief Execute `generate_changelog_document` runtime logic for Git-Alias CLI.
+# @param repo_root Input parameter consumed by `generate_changelog_document`.
+# @param include_unreleased Input parameter consumed by `generate_changelog_document`.
+# @param include_draft Input parameter consumed by `generate_changelog_document`.
+# @return Result emitted by `generate_changelog_document` according to command contract.
 def generate_changelog_document(repo_root: Path, include_unreleased: bool, include_draft: bool = False) -> str:
     tags = list_tags_sorted_by_date(repo_root)
     history_tags = list_tags_sorted_by_date(repo_root, merged_ref="HEAD")
@@ -1004,7 +1177,10 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool, inclu
     return "\n".join(lines).rstrip() + "\n"
 
 
-# Trova i file che corrispondono al pattern di versione usando rglob e pathspec.
+## @brief Execute `_collect_version_files` runtime logic for Git-Alias CLI.
+# @param root Input parameter consumed by `_collect_version_files`.
+# @param pattern Input parameter consumed by `_collect_version_files`.
+# @return Result emitted by `_collect_version_files` according to command contract.
 def _collect_version_files(root, pattern):
     files = []
     seen = set()
@@ -1041,12 +1217,17 @@ def _collect_version_files(root, pattern):
     return files
 
 
-# Verifica se un percorso relativo deve essere escluso dalla ricerca versioni.
+## @brief Execute `_is_version_path_excluded` runtime logic for Git-Alias CLI.
+# @param relative_path Input parameter consumed by `_is_version_path_excluded`.
+# @return Result emitted by `_is_version_path_excluded` according to command contract.
 def _is_version_path_excluded(relative_path: str) -> bool:
     return any(regex.search(relative_path) for regex in VERSION_CLEANUP_PATTERNS)
 
 
-# Itera tutte le versioni estratte tramite le regex fornite.
+## @brief Execute `_iter_versions_in_text` runtime logic for Git-Alias CLI.
+# @param text Input parameter consumed by `_iter_versions_in_text`.
+# @param compiled_regexes Input parameter consumed by `_iter_versions_in_text`.
+# @return Result emitted by `_iter_versions_in_text` according to command contract.
 def _iter_versions_in_text(text, compiled_regexes):
     for regex in compiled_regexes:
         for match in regex.finditer(text):
@@ -1059,7 +1240,12 @@ def _iter_versions_in_text(text, compiled_regexes):
                 yield match.group(0)
 
 
-# Determina la versione canonica analizzando i file configurati.
+## @brief Execute `_determine_canonical_version` runtime logic for Git-Alias CLI.
+# @param root Input parameter consumed by `_determine_canonical_version`.
+# @param rules Input parameter consumed by `_determine_canonical_version`.
+# @param verbose Input parameter consumed by `_determine_canonical_version`.
+# @param debug Input parameter consumed by `_determine_canonical_version`.
+# @return Result emitted by `_determine_canonical_version` according to command contract.
 def _determine_canonical_version(root: Path, rules, *, verbose: bool = False, debug: bool = False):
     canonical = None
     canonical_file = None
@@ -1120,7 +1306,9 @@ def _determine_canonical_version(root: Path, rules, *, verbose: bool = False, de
     return canonical
 
 
-# Analizza una stringa di versione semantica e restituisce la tupla numerica.
+## @brief Execute `_parse_semver_tuple` runtime logic for Git-Alias CLI.
+# @param text Input parameter consumed by `_parse_semver_tuple`.
+# @return Result emitted by `_parse_semver_tuple` according to command contract.
 def _parse_semver_tuple(text):
     match = SEMVER_RE.match((text or "").strip())
     if not match:
@@ -1128,7 +1316,11 @@ def _parse_semver_tuple(text):
     return tuple(int(match.group(i)) for i in range(1, 4))
 
 
-# Sostituisce le occorrenze di versione nel testo in base alle regex fornite.
+## @brief Execute `_replace_versions_in_text` runtime logic for Git-Alias CLI.
+# @param text Input parameter consumed by `_replace_versions_in_text`.
+# @param compiled_regex Input parameter consumed by `_replace_versions_in_text`.
+# @param replacement Input parameter consumed by `_replace_versions_in_text`.
+# @return Result emitted by `_replace_versions_in_text` according to command contract.
 def _replace_versions_in_text(text, compiled_regex, replacement):
     last_index = 0
     pieces = []
@@ -1145,7 +1337,8 @@ def _replace_versions_in_text(text, compiled_regex, replacement):
     return "".join(pieces), count
 
 
-# Determina il nome del branch corrente del repository.
+## @brief Execute `_current_branch_name` runtime logic for Git-Alias CLI.
+# @return Result emitted by `_current_branch_name` according to command contract.
 def _current_branch_name():
     proc = _run_checked(
         ["git", "rev-parse", "--abbrev-ref", "HEAD"],
@@ -1159,7 +1352,9 @@ def _current_branch_name():
     return branch
 
 
-# Verifica l'esistenza di un riferimento git locale.
+## @brief Execute `_ref_exists` runtime logic for Git-Alias CLI.
+# @param ref_name Input parameter consumed by `_ref_exists`.
+# @return Result emitted by `_ref_exists` according to command contract.
 def _ref_exists(ref_name):
     proc = subprocess.run(
         ["git", "show-ref", "--verify", "--quiet", ref_name],
@@ -1170,17 +1365,22 @@ def _ref_exists(ref_name):
     return proc.returncode == 0
 
 
-# Verifica che un branch locale esista.
+## @brief Execute `_local_branch_exists` runtime logic for Git-Alias CLI.
+# @param branch_name Input parameter consumed by `_local_branch_exists`.
+# @return Result emitted by `_local_branch_exists` according to command contract.
 def _local_branch_exists(branch_name):
     return _ref_exists(f"refs/heads/{branch_name}")
 
 
-# Verifica che il branch remoto esista tra i riferimenti locali.
+## @brief Execute `_remote_branch_exists` runtime logic for Git-Alias CLI.
+# @param branch_name Input parameter consumed by `_remote_branch_exists`.
+# @return Result emitted by `_remote_branch_exists` according to command contract.
 def _remote_branch_exists(branch_name):
     return _ref_exists(f"refs/remotes/origin/{branch_name}")
 
 
-# Assicura che i prerequisiti per i rilasci siano soddisfatti.
+## @brief Execute `_ensure_release_prerequisites` runtime logic for Git-Alias CLI.
+# @return Result emitted by `_ensure_release_prerequisites` according to command contract.
 def _ensure_release_prerequisites():
     master_branch = get_branch("master")
     develop_branch = get_branch("develop")
@@ -1209,7 +1409,10 @@ def _ensure_release_prerequisites():
     return {"master": master_branch, "develop": develop_branch, "work": work_branch}
 
 
-# Calcola la prossima versione semantica in base al tipo di rilascio.
+## @brief Execute `_bump_semver_version` runtime logic for Git-Alias CLI.
+# @param current_version Input parameter consumed by `_bump_semver_version`.
+# @param level Input parameter consumed by `_bump_semver_version`.
+# @return Result emitted by `_bump_semver_version` according to command contract.
 def _bump_semver_version(current_version, level):
     parts = _parse_semver_tuple(current_version)
     if parts is None:
@@ -1229,7 +1432,11 @@ def _bump_semver_version(current_version, level):
     return f"{major}.{minor}.{patch}"
 
 
-# Esegue un singolo step del rilascio con logging.
+## @brief Execute `_run_release_step` runtime logic for Git-Alias CLI.
+# @param level Input parameter consumed by `_run_release_step`.
+# @param step_name Input parameter consumed by `_run_release_step`.
+# @param action Input parameter consumed by `_run_release_step`.
+# @return Result emitted by `_run_release_step` according to command contract.
 def _run_release_step(level, step_name, action):
     label = f"[release:{level}]"
     try:
@@ -1251,7 +1458,10 @@ def _run_release_step(level, step_name, action):
         raise ReleaseError(f"\n--- {label} Step '{step_name}' failed: {exc} ---") from None
 
 
-# Esegue il flusso completo del rilascio.
+## @brief Execute `_execute_release_flow` runtime logic for Git-Alias CLI.
+# @param level Input parameter consumed by `_execute_release_flow`.
+# @param changelog_args Input parameter consumed by `_execute_release_flow`.
+# @return Result emitted by `_execute_release_flow` according to command contract.
 def _execute_release_flow(level, changelog_args=None):
     branches = _ensure_release_prerequisites()
     rules = get_version_rules()
@@ -1295,7 +1505,10 @@ def _execute_release_flow(level, changelog_args=None):
     print(f"Release {target_version} completed successfully.")
 
 
-# Gestisce le eccezioni del flusso di rilascio.
+## @brief Execute `_run_release_command` runtime logic for Git-Alias CLI.
+# @param level Input parameter consumed by `_run_release_command`.
+# @param changelog_args Input parameter consumed by `_run_release_command`.
+# @return Result emitted by `_run_release_command` according to command contract.
 def _run_release_command(level, changelog_args=None):
     try:
         _execute_release_flow(level, changelog_args=changelog_args)
@@ -1312,7 +1525,10 @@ def _run_release_command(level, changelog_args=None):
         sys.exit(exc.returncode or 1)
 
 
-# Gestisce i comandi di reset mostrando l'help quando richiesto.
+## @brief Execute `_run_reset_with_help` runtime logic for Git-Alias CLI.
+# @param base_args Input parameter consumed by `_run_reset_with_help`.
+# @param extra Input parameter consumed by `_run_reset_with_help`.
+# @return Result emitted by `_run_reset_with_help` according to command contract.
 def _run_reset_with_help(base_args, extra):
     args = _to_args(extra)
     if "--help" in args:
@@ -1321,7 +1537,10 @@ def _run_reset_with_help(base_args, extra):
     return run_git_cmd(base_args, args)
 
 
-# Verifica che un alias non riceva argomenti posizionali.
+## @brief Execute `_reject_extra_arguments` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `_reject_extra_arguments`.
+# @param alias Input parameter consumed by `_reject_extra_arguments`.
+# @return Result emitted by `_reject_extra_arguments` according to command contract.
 def _reject_extra_arguments(extra, alias):
     args = _to_args(extra)
     if args:
@@ -1329,7 +1548,10 @@ def _reject_extra_arguments(extra, alias):
         sys.exit(1)
 
 
-# Valida i flag permessi per i comandi di release e li restituisce.
+## @brief Execute `_parse_release_flags` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `_parse_release_flags`.
+# @param alias Input parameter consumed by `_parse_release_flags`.
+# @return Result emitted by `_parse_release_flags` according to command contract.
 def _parse_release_flags(extra, alias):
     args = _to_args(extra)
     if not args:
@@ -1349,7 +1571,10 @@ def _parse_release_flags(extra, alias):
     return deduped
 
 
-# Prepara le operazioni di commit condivise tra gli alias cm e wip.
+## @brief Execute `_prepare_commit_message` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `_prepare_commit_message`.
+# @param alias Input parameter consumed by `_prepare_commit_message`.
+# @return Result emitted by `_prepare_commit_message` according to command contract.
 def _prepare_commit_message(extra, alias):
     args = _to_args(extra)
     if not args:
@@ -1361,7 +1586,11 @@ def _prepare_commit_message(extra, alias):
     return " ".join(args)
 
 
-# Costruisce il messaggio convenzionale partendo dagli argomenti.
+## @brief Execute `_build_conventional_message` runtime logic for Git-Alias CLI.
+# @param kind Input parameter consumed by `_build_conventional_message`.
+# @param extra Input parameter consumed by `_build_conventional_message`.
+# @param alias Input parameter consumed by `_build_conventional_message`.
+# @return Result emitted by `_build_conventional_message` according to command contract.
 def _build_conventional_message(kind: str, extra, alias: str) -> str:
     text = _prepare_commit_message(extra, alias).strip()
     match = _MODULE_PREFIX_RE.match(text)
@@ -1377,14 +1606,22 @@ def _build_conventional_message(kind: str, extra, alias: str) -> str:
     return f"{kind}({scope}): {body}"
 
 
-# Coordina l'esecuzione dei commit convenzionali condivisi.
+## @brief Execute `_run_conventional_commit` runtime logic for Git-Alias CLI.
+# @param kind Input parameter consumed by `_run_conventional_commit`.
+# @param alias Input parameter consumed by `_run_conventional_commit`.
+# @param extra Input parameter consumed by `_run_conventional_commit`.
+# @return Result emitted by `_run_conventional_commit` according to command contract.
 def _run_conventional_commit(kind: str, alias: str, extra):
     message = _build_conventional_message(kind, extra, alias)
     _ensure_commit_ready(alias)
     return _execute_commit(message, alias, allow_amend=False)
 
 
-# Esegue git commit applicando i controlli e l'eventuale amend.
+## @brief Execute `_execute_commit` runtime logic for Git-Alias CLI.
+# @param message Input parameter consumed by `_execute_commit`.
+# @param alias Input parameter consumed by `_execute_commit`.
+# @param allow_amend Input parameter consumed by `_execute_commit`.
+# @return Result emitted by `_execute_commit` according to command contract.
 def _execute_commit(message, alias, allow_amend=True):
     if allow_amend:
         amend, reason = _should_amend_existing_commit()
@@ -1415,7 +1652,8 @@ def _execute_commit(message, alias, allow_amend=True):
         raise
 
 
-# Aggiorna il comando installato sfruttando il tool uv.
+## @brief Execute `upgrade_self` runtime logic for Git-Alias CLI.
+# @return Result emitted by `upgrade_self` according to command contract.
 def upgrade_self():
     _run_checked(
         [
@@ -1430,12 +1668,15 @@ def upgrade_self():
     )
 
 
-# Rimuove il comando installato utilizzando lo strumento uv.
+## @brief Execute `remove_self` runtime logic for Git-Alias CLI.
+# @return Result emitted by `remove_self` according to command contract.
 def remove_self():
     _run_checked(["uv", "tool", "uninstall", "git-alias"])
 
 
-# Aggiunge tutte le modifiche e i nuovi file all'area di staging (alias aa).
+## @brief Execute `cmd_aa` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_aa`.
+# @return Result emitted by `cmd_aa` according to command contract.
 def cmd_aa(extra):
     status_lines = _git_status_lines()
     if not has_unstaged_changes(status_lines):
@@ -1444,7 +1685,9 @@ def cmd_aa(extra):
     return run_git_cmd(["add", "--all"], extra)
 
 
-# Rimuove tutti i file dallo staging riportandoli nel working tree (alias ra).
+## @brief Execute `cmd_ra` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_ra`.
+# @return Result emitted by `cmd_ra` according to command contract.
 def cmd_ra(extra):
     if extra:
         args = _to_args(extra)
@@ -1469,7 +1712,9 @@ def cmd_ra(extra):
     return run_git_cmd(["reset", "--mixed"], [])
 
 
-# Crea un archivio master compresso e lo nomina con il tag corrente (alias ar).
+## @brief Execute `cmd_ar` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_ar`.
+# @return Result emitted by `cmd_ar` according to command contract.
 def cmd_ar(extra):
     args = _to_args(extra)
     master_branch = get_branch("master")
@@ -1484,22 +1729,30 @@ def cmd_ar(extra):
     return gzip_proc
 
 
-# Mostra i rami locali disponibili (alias br).
+## @brief Execute `cmd_br` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_br`.
+# @return Result emitted by `cmd_br` according to command contract.
 def cmd_br(extra):
     return run_git_cmd(["branch"], extra)
 
 
-# Elimina un branch locale (alias bd).
+## @brief Execute `cmd_bd` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_bd`.
+# @return Result emitted by `cmd_bd` according to command contract.
 def cmd_bd(extra):
     return run_git_cmd(["branch", "-d"], extra)
 
 
-# Controlla le differenze e i possibili conflitti (alias ck).
+## @brief Execute `cmd_ck` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_ck`.
+# @return Result emitted by `cmd_ck` according to command contract.
 def cmd_ck(extra):
     return run_git_cmd(["diff", "--check"], extra)
 
 
-# Esegue commit con messaggio (alias cm).
+## @brief Execute `_ensure_commit_ready` runtime logic for Git-Alias CLI.
+# @param alias Input parameter consumed by `_ensure_commit_ready`.
+# @return Result emitted by `_ensure_commit_ready` according to command contract.
 def _ensure_commit_ready(alias):
     status_lines = _git_status_lines()
     if has_unstaged_changes(status_lines):
@@ -1514,14 +1767,18 @@ def _ensure_commit_ready(alias):
     return True
 
 
-# Esegue l'alias 'cm' con i controlli condivisi di commit.
+## @brief Execute `cmd_cm` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_cm`.
+# @return Result emitted by `cmd_cm` according to command contract.
 def cmd_cm(extra):
     message = _prepare_commit_message(extra, "cm")
     _ensure_commit_ready("cm")
     return _execute_commit(message, "cm")
 
 
-# Esegue l'alias 'wip' con messaggio fisso e verifiche condivise.
+## @brief Execute `cmd_wip` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_wip`.
+# @return Result emitted by `cmd_wip` according to command contract.
 def cmd_wip(extra):
     if extra:
         args = _to_args(extra)
@@ -1535,7 +1792,9 @@ def cmd_wip(extra):
     return _execute_commit(message, "wip")
 
 
-# Esegue l'alias 'release' determinando prima la versione corrente.
+## @brief Execute `cmd_release` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_release`.
+# @return Result emitted by `cmd_release` according to command contract.
 def cmd_release(extra):
     args = _to_args(extra)
     if args:
@@ -1559,77 +1818,107 @@ def cmd_release(extra):
     return _execute_commit(message, "release")
 
 
-# Esegue l'alias 'new' creando un commit convenzionale.
+## @brief Execute `cmd_new` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_new`.
+# @return Result emitted by `cmd_new` according to command contract.
 def cmd_new(extra):
     return _run_conventional_commit("new", "new", extra)
 
 
-# Esegue l'alias 'refactor' creando un commit convenzionale per refactoring del codice.
+## @brief Execute `cmd_refactor` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_refactor`.
+# @return Result emitted by `cmd_refactor` according to command contract.
 def cmd_refactor(extra):
     return _run_conventional_commit("refactor", "refactor", extra)
 
 
-# Esegue l'alias 'fix' creando un commit convenzionale.
+## @brief Execute `cmd_fix` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_fix`.
+# @return Result emitted by `cmd_fix` according to command contract.
 def cmd_fix(extra):
     return _run_conventional_commit("fix", "fix", extra)
 
 
-# Esegue l'alias 'change' creando un commit convenzionale.
+## @brief Execute `cmd_change` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_change`.
+# @return Result emitted by `cmd_change` according to command contract.
 def cmd_change(extra):
     return _run_conventional_commit("change", "change", extra)
 
 
-# Esegue l'alias 'docs' creando un commit convenzionale.
+## @brief Execute `cmd_docs` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_docs`.
+# @return Result emitted by `cmd_docs` according to command contract.
 def cmd_docs(extra):
     return _run_conventional_commit("docs", "docs", extra)
 
 
-# Esegue l'alias 'style' creando un commit convenzionale.
+## @brief Execute `cmd_style` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_style`.
+# @return Result emitted by `cmd_style` according to command contract.
 def cmd_style(extra):
     return _run_conventional_commit("style", "style", extra)
 
 
-# Esegue l'alias 'revert' creando un commit convenzionale.
+## @brief Execute `cmd_revert` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_revert`.
+# @return Result emitted by `cmd_revert` according to command contract.
 def cmd_revert(extra):
     return _run_conventional_commit("revert", "revert", extra)
 
 
-# Esegue l'alias 'misc' creando un commit convenzionale.
+## @brief Execute `cmd_misc` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_misc`.
+# @return Result emitted by `cmd_misc` according to command contract.
 def cmd_misc(extra):
     return _run_conventional_commit("misc", "misc", extra)
 
 
-# Esegue l'alias 'cover' creando un commit convenzionale per la copertura dei requisiti.
+## @brief Execute `cmd_cover` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_cover`.
+# @return Result emitted by `cmd_cover` according to command contract.
 def cmd_cover(extra):
     return _run_conventional_commit("cover", "cover", extra)
 
 
-# Aggiunge tutto e committa con messaggio (alias cma).
+## @brief Execute `cmd_co` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_co`.
+# @return Result emitted by `cmd_co` according to command contract.
 def cmd_co(extra):
     return run_git_cmd(["checkout"], extra)
 
 
-# Descrive la revisione HEAD con git describe (alias de).
+## @brief Execute `cmd_de` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_de`.
+# @return Result emitted by `cmd_de` according to command contract.
 def cmd_de(extra):
     return run_git_cmd(["describe"], extra)
 
 
-# Scarta le modifiche del file indicato (alias di).
+## @brief Execute `cmd_di` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_di`.
+# @return Result emitted by `cmd_di` according to command contract.
 def cmd_di(extra):
     return run_git_cmd(["checkout", "--"], extra)
 
 
-# Mantiene la versione locale durante un conflitto (--ours).
+## @brief Execute `cmd_diyou` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_diyou`.
+# @return Result emitted by `cmd_diyou` according to command contract.
 def cmd_diyou(extra):
     return run_git_cmd(["checkout", "--ours", "--"], extra)
 
 
-# Mantiene la versione remota durante un conflitto (--theirs).
+## @brief Execute `cmd_dime` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_dime`.
+# @return Result emitted by `cmd_dime` according to command contract.
 def cmd_dime(extra):
     return run_git_cmd(["checkout", "--theirs", "--"], extra)
 
 
-# Apre uno o piu file con l'editor configurato (alias ed).
+## @brief Execute `cmd_ed` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_ed`.
+# @return Result emitted by `cmd_ed` according to command contract.
 def cmd_ed(extra):
     paths = _to_args(extra)
     if not paths:
@@ -1640,27 +1929,37 @@ def cmd_ed(extra):
         run_editor_command([expanded])
 
 
-# Scarica aggiornamenti dal remote per il ramo corrente (alias fe).
+## @brief Execute `cmd_fe` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_fe`.
+# @return Result emitted by `cmd_fe` according to command contract.
 def cmd_fe(extra):
     return run_git_cmd(["fetch"], extra)
 
 
-# Effettua fetch di tutti i rami, tag e pulisce quelli orfani (alias feall).
+## @brief Execute `cmd_feall` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_feall`.
+# @return Result emitted by `cmd_feall` according to command contract.
 def cmd_feall(extra):
     return cmd_fe(["--all", "--tags", "--prune"] + _to_args(extra))
 
 
-# Apre gitk con tutti i commit (alias gp).
+## @brief Execute `cmd_gp` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_gp`.
+# @return Result emitted by `cmd_gp` according to command contract.
 def cmd_gp(extra):
     return run_command(["gitk", "--all"] + _to_args(extra))
 
 
-# Apre gitk semplificato per semplificare il grafo (alias gr).
+## @brief Execute `cmd_gr` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_gr`.
+# @return Result emitted by `cmd_gr` according to command contract.
 def cmd_gr(extra):
     return run_command(["gitk", "--simplify-by-decoration", "--all"] + _to_args(extra))
 
 
-# Visualizza tutti i remote univoci e ne mostra lo stato.
+## @brief Execute `cmd_str` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_str`.
+# @return Result emitted by `cmd_str` according to command contract.
 def cmd_str(extra):
     # Esegue git remote -v per ottenere l'elenco dei remote
     result = run_git_text(["remote", "-v"])
@@ -1691,12 +1990,16 @@ def cmd_str(extra):
             raise
 
 
-# Elenca tutti i rami locali e remoti con informazioni aggiuntive (alias lb).
+## @brief Execute `cmd_lb` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_lb`.
+# @return Result emitted by `cmd_lb` according to command contract.
 def cmd_lb(extra):
     return run_git_cmd(["branch", "-v", "-a"], extra)
 
 
-# Esegue l'alias 'lg' per mostrare la cronologia dei commit.
+## @brief Execute `cmd_lg` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_lg`.
+# @return Result emitted by `cmd_lg` according to command contract.
 def cmd_lg(extra):
     return run_git_cmd(
         [
@@ -1711,12 +2014,16 @@ def cmd_lg(extra):
     )
 
 
-# Mostra i dettagli dell'ultimo commit (alias lh).
+## @brief Execute `cmd_lh` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_lh`.
+# @return Result emitted by `cmd_lh` according to command contract.
 def cmd_lh(extra):
     return run_git_cmd(["log", "-1", "HEAD"], extra)
 
 
-# Mostra i commit nel formato oneline completo (alias ll).
+## @brief Execute `cmd_ll` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_ll`.
+# @return Result emitted by `cmd_ll` according to command contract.
 def cmd_ll(extra):
     return run_git_cmd(
         [
@@ -1730,42 +2037,58 @@ def cmd_ll(extra):
     )
 
 
-# Mostra soltanto i merge (alias lm).
+## @brief Execute `cmd_lm` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_lm`.
+# @return Result emitted by `cmd_lm` according to command contract.
 def cmd_lm(extra):
     return run_git_cmd(["log", "--merges"], extra)
 
 
-# Elenca i tag presenti (alias lt).
+## @brief Execute `cmd_lt` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_lt`.
+# @return Result emitted by `cmd_lt` according to command contract.
 def cmd_lt(extra):
     return run_git_cmd(["tag", "-l"], extra)
 
 
-# Esegue merge con --ff-only (alias me).
+## @brief Execute `cmd_me` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_me`.
+# @return Result emitted by `cmd_me` according to command contract.
 def cmd_me(extra):
     return run_git_cmd(["merge", "--ff-only"], extra)
 
 
-# Esegue pull --ff-only sul ramo corrente (alias pl).
+## @brief Execute `cmd_pl` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_pl`.
+# @return Result emitted by `cmd_pl` according to command contract.
 def cmd_pl(extra):
     return run_git_cmd(["pull", "--ff-only"], extra)
 
 
-# Esegue push di tutti i tag (alias pt).
+## @brief Execute `cmd_pt` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_pt`.
+# @return Result emitted by `cmd_pt` according to command contract.
 def cmd_pt(extra):
     return run_git_cmd(["push", "--tags"], extra)
 
 
-# Esegue push e imposta upstream nel remote (alias pu).
+## @brief Execute `cmd_pu` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_pu`.
+# @return Result emitted by `cmd_pu` according to command contract.
 def cmd_pu(extra):
     return run_git_cmd(["push", "-u"], extra)
 
 
-# Mostra il reflog (alias rf).
+## @brief Execute `cmd_rf` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_rf`.
+# @return Result emitted by `cmd_rf` according to command contract.
 def cmd_rf(extra):
     return run_git_cmd(["reflog"], extra)
 
 
-# Rimuove un tag localmente e lo elimina da origin (alias rmtg).
+## @brief Execute `cmd_rmtg` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_rmtg`.
+# @return Result emitted by `cmd_rmtg` according to command contract.
 def cmd_rmtg(extra):
     args = _to_args(extra)
     if not args:
@@ -1777,67 +2100,93 @@ def cmd_rmtg(extra):
     return run_git_cmd(["push", "--delete", "origin", tag], tail)
 
 
-# Reset hard e pulisce l'area di lavoro (alias rmloc).
+## @brief Execute `cmd_rmloc` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_rmloc`.
+# @return Result emitted by `cmd_rmloc` according to command contract.
 def cmd_rmloc(extra):
     return run_git_cmd(["reset", "--hard", "--"], extra)
 
 
-# Rimuove i file dallo stage (alias rmstg).
+## @brief Execute `cmd_rmstg` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_rmstg`.
+# @return Result emitted by `cmd_rmstg` according to command contract.
 def cmd_rmstg(extra):
     return run_git_cmd(["rm", "--cached", "--"], extra)
 
 
-# Pulisce i file non tracciati (alias rmunt).
+## @brief Execute `cmd_rmunt` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_rmunt`.
+# @return Result emitted by `cmd_rmunt` according to command contract.
 def cmd_rmunt(extra):
     return run_git_cmd(["clean", "-d", "-f", "--"], extra)
 
 
-# Resetta HEAD con --hard (alias rs).
+## @brief Execute `cmd_rs` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_rs`.
+# @return Result emitted by `cmd_rs` according to command contract.
 def cmd_rs(extra):
     return _run_reset_with_help(["reset", "--hard", "HEAD"], extra)
 
 
-# Resetta con --soft per mantenere i contenuti (alias rssft).
+## @brief Execute `cmd_rssft` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_rssft`.
+# @return Result emitted by `cmd_rssft` according to command contract.
 def cmd_rssft(extra):
     return _run_reset_with_help(["reset", "--soft", "--"], extra)
 
 
-# Resetta con --mixed per deselezionare gli staged (alias rsmix).
+## @brief Execute `cmd_rsmix` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_rsmix`.
+# @return Result emitted by `cmd_rsmix` according to command contract.
 def cmd_rsmix(extra):
     return _run_reset_with_help(["reset", "--mixed", "--"], extra)
 
 
-# Resetta con --hard (alias rshrd).
+## @brief Execute `cmd_rshrd` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_rshrd`.
+# @return Result emitted by `cmd_rshrd` according to command contract.
 def cmd_rshrd(extra):
     return _run_reset_with_help(["reset", "--hard", "--"], extra)
 
 
-# Resetta con --merge per gestire conflitti parziali (alias rsmrg).
+## @brief Execute `cmd_rsmrg` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_rsmrg`.
+# @return Result emitted by `cmd_rsmrg` according to command contract.
 def cmd_rsmrg(extra):
     return _run_reset_with_help(["reset", "--merge", "--"], extra)
 
 
-# Resetta con --keep mantenendo i file locali (alias rskep).
+## @brief Execute `cmd_rskep` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_rskep`.
+# @return Result emitted by `cmd_rskep` according to command contract.
 def cmd_rskep(extra):
     return _run_reset_with_help(["reset", "--keep", "--"], extra)
 
 
-# Mostra lo stato corrente del repository (alias st).
+## @brief Execute `cmd_st` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_st`.
+# @return Result emitted by `cmd_st` according to command contract.
 def cmd_st(extra):
     return run_git_cmd(["status"], extra)
 
 
-# Crea un tag annotato (alias tg).
+## @brief Execute `cmd_tg` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_tg`.
+# @return Result emitted by `cmd_tg` according to command contract.
 def cmd_tg(extra):
     return run_git_cmd(["tag", "-a", "-m"], extra)
 
 
-# Cancella lo stage dei file con reset --mixed (alias unstg).
+## @brief Execute `cmd_unstg` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_unstg`.
+# @return Result emitted by `cmd_unstg` according to command contract.
 def cmd_unstg(extra):
     return run_git_cmd(["reset", "--mixed", "--"], extra)
 
 
-# Verifica la consistenza delle versioni nei file configurati (alias ver).
+## @brief Execute `cmd_ver` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_ver`.
+# @return Result emitted by `cmd_ver` according to command contract.
 def cmd_ver(extra):
     args = _to_args(extra)
     verbose = "--verbose" in args
@@ -1857,7 +2206,9 @@ def cmd_ver(extra):
     print(canonical)
 
 
-# Aggiorna tutte le versioni nei file configurati applicando la semantica nuova.
+## @brief Execute `cmd_chver` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_chver`.
+# @return Result emitted by `cmd_chver` according to command contract.
 def cmd_chver(extra):
     args = _to_args(extra)
     if len(args) != 1:
@@ -1929,25 +2280,33 @@ def cmd_chver(extra):
     print(f"{action} completed: version is now {confirmed}.")
 
 
-# Esegue il rilascio incrementando il numero major.
+## @brief Execute `cmd_major` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_major`.
+# @return Result emitted by `cmd_major` according to command contract.
 def cmd_major(extra):
     changelog_args = _parse_release_flags(extra, "major")
     _run_release_command("major", changelog_args=changelog_args)
 
 
-# Esegue il rilascio incrementando il numero minor.
+## @brief Execute `cmd_minor` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_minor`.
+# @return Result emitted by `cmd_minor` according to command contract.
 def cmd_minor(extra):
     changelog_args = _parse_release_flags(extra, "minor")
     _run_release_command("minor", changelog_args=changelog_args)
 
 
-# Esegue il rilascio incrementando il numero patch.
+## @brief Execute `cmd_patch` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_patch`.
+# @return Result emitted by `cmd_patch` according to command contract.
 def cmd_patch(extra):
     changelog_args = _parse_release_flags(extra, "patch")
     _run_release_command("patch", changelog_args=changelog_args)
 
 
-# Genera il file CHANGELOG.md tramite l'alias 'changelog'.
+## @brief Execute `cmd_changelog` runtime logic for Git-Alias CLI.
+# @param extra Input parameter consumed by `cmd_changelog`.
+# @return Result emitted by `cmd_changelog` according to command contract.
 def cmd_changelog(extra):
     parser = argparse.ArgumentParser(prog="g changelog", add_help=False)
     parser.add_argument("--force-write", dest="force_write", action="store_true")
@@ -1980,6 +2339,8 @@ def cmd_changelog(extra):
         sys.exit(1)
     destination.write_text(content, encoding="utf-8")
     print(f"\nGenerated file: {destination}")
+
+## @brief Constant `COMMANDS` used by CLI runtime paths and policies.
 
 COMMANDS = {
     "aa": cmd_aa,
@@ -2042,7 +2403,10 @@ COMMANDS = {
     "style": cmd_style,
 }
 
-# Stampa la descrizione di un singolo comando.
+## @brief Execute `print_command_help` runtime logic for Git-Alias CLI.
+# @param name Input parameter consumed by `print_command_help`.
+# @param width Input parameter consumed by `print_command_help`.
+# @return Result emitted by `print_command_help` according to command contract.
 def print_command_help(name, width=None):
     description = HELP_TEXTS.get(name, "No help text is available for this command.")
     if width is None:
@@ -2050,7 +2414,8 @@ def print_command_help(name, width=None):
     else:
         print(f"{name.ljust(width)} - {description}")
 
-# Stampa la descrizione di tutti i comandi disponibili in ordine alfabetico.
+## @brief Execute `print_all_help` runtime logic for Git-Alias CLI.
+# @return Result emitted by `print_all_help` according to command contract.
 def print_all_help():
     print(f"Usage: g <command> [options] ({get_cli_version()})")
     print()
@@ -2086,7 +2451,10 @@ def print_all_help():
         print_command_help(name, width=help_width)
 
 
-# Gestisce il parsing degli argomenti ed esegue l'alias richiesto.
+## @brief Execute `main` runtime logic for Git-Alias CLI.
+# @param argv Input parameter consumed by `main`.
+# @param check_updates Input parameter consumed by `main`.
+# @return Result emitted by `main` according to command contract.
 def main(argv=None, *, check_updates: bool = True):
     args = list(argv) if argv is not None else sys.argv[1:]
     git_root = get_git_root()
