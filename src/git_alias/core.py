@@ -179,7 +179,7 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
     if current is None:
         return
     
-    # Controlla se esiste una cache valida
+    # @details Reuse non-expired cache payload before any online request.
     cache_valid = False
     if VERSION_CHECK_CACHE_FILE.exists():
         try:
@@ -189,7 +189,7 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
             if expires_str:
                 expires = datetime.fromisoformat(expires_str)
                 if datetime.now() < expires:
-                    # Cache valida, controlla se c'è un aggiornamento disponibile
+                    # @details Emit upgrade warning when cached latest version is newer.
                     cached_latest = cache_data.get('latest_version', '')
                     latest = _parse_semver_tuple(cached_latest)
                     if latest and latest > current:
@@ -201,12 +201,14 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
                         )
                     cache_valid = True
         except Exception:
-            pass  # Ignora errori di lettura cache
+            # @details Ignore cache read failures because version checks are non-blocking.
+            pass
     
     if cache_valid:
-        return  # Cache valida, skip controllo online
+        # @details Skip network request when cache entry is valid.
+        return
     
-    # Esegui il controllo online
+    # @details Execute online release lookup when cache is absent or expired.
     request = Request(
         GITHUB_LATEST_RELEASE_API,
         headers={
@@ -233,7 +235,7 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
     if latest is None:
         return
     
-    # Salva nella cache
+    # @details Persist fresh release-check payload with TTL metadata.
     try:
         cache_data = {
             "last_check": datetime.now().isoformat(),
@@ -244,9 +246,10 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
         with open(VERSION_CHECK_CACHE_FILE, 'w') as f:
             json.dump(cache_data, f)
     except Exception:
-        pass  # Ignora errori di scrittura cache
+        # @details Ignore cache write failures because command execution must continue.
+        pass
     
-    # Mostra avviso se disponibile aggiornamento
+    # @details Emit upgrade hint when fetched latest version is newer than current.
     if latest > current:
         current_text = "{}.{}.{}".format(*current)
         print(
@@ -1192,7 +1195,7 @@ def _collect_version_files(root, pattern):
         normalized_pattern = normalized_pattern[2:]
     if "/" in normalized_pattern and not normalized_pattern.startswith("/"):
         normalized_pattern = f"/{normalized_pattern}"
-    # Applica il pattern usando pathspec (mantiene REQ-017)
+    # @details Apply pathspec matcher to preserve configured GitIgnore-like semantics.
     spec = pathspec.PathSpec.from_lines("gitignore", [normalized_pattern])
     for path in root.rglob("*"):
         if not path.is_file():
@@ -1961,11 +1964,11 @@ def cmd_gr(extra):
 # @param extra Input parameter consumed by `cmd_str`.
 # @return Result emitted by `cmd_str` according to command contract.
 def cmd_str(extra):
-    # Esegue git remote -v per ottenere l'elenco dei remote
+    # @details Query git remotes with transport metadata.
     result = run_git_text(["remote", "-v"])
     lines = result.strip().split("\n")
     
-    # Filtra e raccoglie tutti i remote univoci
+    # @details Deduplicate remote names from `git remote -v` rows.
     remotes = set()
     for line in lines:
         if line.strip():
@@ -1974,13 +1977,13 @@ def cmd_str(extra):
                 remote_name = parts[0]
                 remotes.add(remote_name)
     
-    # Stampa i remote trovati
+    # @details Print normalized remote name inventory.
     print("Remotes found:")
     for remote in sorted(remotes):
         print(f"  {remote}")
     print()
     
-    # Per ogni remote univoco esegue git remote show
+    # @details Print detailed status for each unique remote.
     for remote in sorted(remotes):
         print(f"--- Status for '{remote}' ---")
         try:
