@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 ## @file core.py
 # @brief Core command dispatch and git-alias runtime orchestration.
+# @details Provides command routing, repository diagnostics, changelog/version workflows, and process wrappers.
 
 import argparse
 import json
@@ -90,6 +91,7 @@ MANAGEMENT_HELP = [
 
 
 ## @brief Execute `get_config_value` runtime logic for Git-Alias CLI.
+# @details Executes `get_config_value` using deterministic CLI control-flow and explicit error propagation.
 # @param name Input parameter consumed by `get_config_value`.
 # @return Result emitted by `get_config_value` according to command contract.
 def get_config_value(name):
@@ -97,6 +99,7 @@ def get_config_value(name):
 
 
 ## @brief Execute `get_branch` runtime logic for Git-Alias CLI.
+# @details Executes `get_branch` using deterministic CLI control-flow and explicit error propagation.
 # @param name Input parameter consumed by `get_branch`.
 # @return Result emitted by `get_branch` according to command contract.
 def get_branch(name):
@@ -106,12 +109,14 @@ def get_branch(name):
 
 
 ## @brief Execute `get_editor` runtime logic for Git-Alias CLI.
+# @details Executes `get_editor` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `get_editor` according to command contract.
 def get_editor():
     return get_config_value("editor")
 
 
 ## @brief Execute `_load_config_rules` runtime logic for Git-Alias CLI.
+# @details Executes `_load_config_rules` using deterministic CLI control-flow and explicit error propagation.
 # @param key Input parameter consumed by `_load_config_rules`.
 # @param fallback Input parameter consumed by `_load_config_rules`.
 # @return Result emitted by `_load_config_rules` according to command contract.
@@ -142,12 +147,14 @@ def _load_config_rules(key, fallback):
 
 
 ## @brief Execute `get_version_rules` runtime logic for Git-Alias CLI.
+# @details Executes `get_version_rules` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `get_version_rules` according to command contract.
 def get_version_rules():
     return _load_config_rules("ver_rules", DEFAULT_VER_RULES)
 
 
 ## @brief Execute `get_cli_version` runtime logic for Git-Alias CLI.
+# @details Executes `get_cli_version` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `get_cli_version` according to command contract.
 def get_cli_version():
     init_path = Path(__file__).resolve().with_name("__init__.py")
@@ -162,6 +169,7 @@ def get_cli_version():
 
 
 ## @brief Execute `_normalize_semver_text` runtime logic for Git-Alias CLI.
+# @details Executes `_normalize_semver_text` using deterministic CLI control-flow and explicit error propagation.
 # @param text Input parameter consumed by `_normalize_semver_text`.
 # @return Result emitted by `_normalize_semver_text` according to command contract.
 def _normalize_semver_text(text: str) -> str:
@@ -172,6 +180,7 @@ def _normalize_semver_text(text: str) -> str:
 
 
 ## @brief Execute `check_for_newer_version` runtime logic for Git-Alias CLI.
+# @details Executes `check_for_newer_version` using deterministic CLI control-flow and explicit error propagation.
 # @param timeout_seconds Input parameter consumed by `check_for_newer_version`.
 # @return Result emitted by `check_for_newer_version` according to command contract.
 def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
@@ -260,6 +269,7 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
 
 
 ## @brief Execute `get_git_root` runtime logic for Git-Alias CLI.
+# @details Executes `get_git_root` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `get_git_root` according to command contract.
 def get_git_root():
     try:
@@ -278,6 +288,7 @@ def get_git_root():
 
 
 ## @brief Execute `get_config_path` runtime logic for Git-Alias CLI.
+# @details Executes `get_config_path` using deterministic CLI control-flow and explicit error propagation.
 # @param root Input parameter consumed by `get_config_path`.
 # @return Result emitted by `get_config_path` according to command contract.
 def get_config_path(root=None):
@@ -286,6 +297,7 @@ def get_config_path(root=None):
 
 
 ## @brief Execute `load_cli_config` runtime logic for Git-Alias CLI.
+# @details Executes `load_cli_config` using deterministic CLI control-flow and explicit error propagation.
 # @param root Input parameter consumed by `load_cli_config`.
 # @return Result emitted by `load_cli_config` according to command contract.
 def load_cli_config(root=None):
@@ -324,6 +336,7 @@ def load_cli_config(root=None):
 
 
 ## @brief Execute `write_default_config` runtime logic for Git-Alias CLI.
+# @details Executes `write_default_config` using deterministic CLI control-flow and explicit error propagation.
 # @param root Input parameter consumed by `write_default_config`.
 # @return Result emitted by `write_default_config` according to command contract.
 def write_default_config(root=None):
@@ -335,6 +348,7 @@ def write_default_config(root=None):
 
 
 ## @brief Execute `_editor_base_command` runtime logic for Git-Alias CLI.
+# @details Executes `_editor_base_command` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `_editor_base_command` according to command contract.
 def _editor_base_command():
     raw_value = get_editor() or DEFAULT_CONFIG["editor"]
@@ -352,6 +366,7 @@ def _editor_base_command():
 
 
 ## @brief Execute `run_editor_command` runtime logic for Git-Alias CLI.
+# @details Executes `run_editor_command` using deterministic CLI control-flow and explicit error propagation.
 # @param args Input parameter consumed by `run_editor_command`.
 # @return Result emitted by `run_editor_command` according to command contract.
 def run_editor_command(args):
@@ -508,6 +523,7 @@ RESET_HELP_COMMANDS = {"rs", "rshrd", "rskep", "rsmix", "rsmrg", "rssft"}
 
 
 ## @brief Execute `_to_args` runtime logic for Git-Alias CLI.
+# @details Executes `_to_args` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `_to_args`.
 # @return Result emitted by `_to_args` according to command contract.
 def _to_args(extra):
@@ -558,6 +574,7 @@ class CommandExecutionError(RuntimeError):
 
 
 ## @brief Execute `_run_checked` runtime logic for Git-Alias CLI.
+# @details Executes `_run_checked` using deterministic CLI control-flow and explicit error propagation.
 # @param *popenargs Input parameter consumed by `_run_checked`.
 # @param **kwargs Input parameter consumed by `_run_checked`.
 # @return Result emitted by `_run_checked` according to command contract.
@@ -580,6 +597,7 @@ class ReleaseError(RuntimeError):
 
 
 ## @brief Execute `run_git_cmd` runtime logic for Git-Alias CLI.
+# @details Executes `run_git_cmd` using deterministic CLI control-flow and explicit error propagation.
 # @param base_args Input parameter consumed by `run_git_cmd`.
 # @param extra Input parameter consumed by `run_git_cmd`.
 # @param cwd Input parameter consumed by `run_git_cmd`.
@@ -591,6 +609,7 @@ def run_git_cmd(base_args, extra=None, cwd=None, **kwargs):
 
 
 ## @brief Execute `capture_git_output` runtime logic for Git-Alias CLI.
+# @details Executes `capture_git_output` using deterministic CLI control-flow and explicit error propagation.
 # @param base_args Input parameter consumed by `capture_git_output`.
 # @param cwd Input parameter consumed by `capture_git_output`.
 # @return Result emitted by `capture_git_output` according to command contract.
@@ -600,6 +619,7 @@ def capture_git_output(base_args, cwd=None):
 
 
 ## @brief Execute `run_command` runtime logic for Git-Alias CLI.
+# @details Executes `run_command` using deterministic CLI control-flow and explicit error propagation.
 # @param cmd Input parameter consumed by `run_command`.
 # @param cwd Input parameter consumed by `run_command`.
 # @return Result emitted by `run_command` according to command contract.
@@ -608,6 +628,7 @@ def run_command(cmd, cwd=None):
 
 
 ## @brief Execute `run_git_text` runtime logic for Git-Alias CLI.
+# @details Executes `run_git_text` using deterministic CLI control-flow and explicit error propagation.
 # @param args Input parameter consumed by `run_git_text`.
 # @param cwd Input parameter consumed by `run_git_text`.
 # @param check Input parameter consumed by `run_git_text`.
@@ -631,6 +652,7 @@ def run_git_text(args, cwd=None, check=True):
 
 
 ## @brief Execute `run_shell` runtime logic for Git-Alias CLI.
+# @details Executes `run_shell` using deterministic CLI control-flow and explicit error propagation.
 # @param command Input parameter consumed by `run_shell`.
 # @param cwd Input parameter consumed by `run_shell`.
 # @return Result emitted by `run_shell` according to command contract.
@@ -639,6 +661,7 @@ def run_shell(command, cwd=None):
 
 
 ## @brief Execute `run_git_text` runtime logic for Git-Alias CLI.
+# @details Executes `run_git_text` using deterministic CLI control-flow and explicit error propagation.
 # @param args Input parameter consumed by `run_git_text`.
 # @param cwd Input parameter consumed by `run_git_text`.
 # @param check Input parameter consumed by `run_git_text`.
@@ -662,6 +685,7 @@ def run_git_text(args, cwd=None, check=True):
 
 
 ## @brief Execute `_git_status_lines` runtime logic for Git-Alias CLI.
+# @details Executes `_git_status_lines` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `_git_status_lines` according to command contract.
 def _git_status_lines():
     proc = _run_checked(
@@ -677,6 +701,7 @@ def _git_status_lines():
 
 
 ## @brief Execute `has_unstaged_changes` runtime logic for Git-Alias CLI.
+# @details Executes `has_unstaged_changes` using deterministic CLI control-flow and explicit error propagation.
 # @param status_lines Input parameter consumed by `has_unstaged_changes`.
 # @return Result emitted by `has_unstaged_changes` according to command contract.
 def has_unstaged_changes(status_lines=None):
@@ -692,6 +717,7 @@ def has_unstaged_changes(status_lines=None):
 
 
 ## @brief Execute `has_staged_changes` runtime logic for Git-Alias CLI.
+# @details Executes `has_staged_changes` using deterministic CLI control-flow and explicit error propagation.
 # @param status_lines Input parameter consumed by `has_staged_changes`.
 # @return Result emitted by `has_staged_changes` according to command contract.
 def has_staged_changes(status_lines=None):
@@ -713,6 +739,7 @@ WIP_MESSAGE_RE = re.compile(r"^wip: work in progress\.$")
 
 
 ## @brief Execute `_refresh_remote_refs` runtime logic for Git-Alias CLI.
+# @details Executes `_refresh_remote_refs` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `_refresh_remote_refs` according to command contract.
 def _refresh_remote_refs():
     global _REMOTE_REFS_UPDATED
@@ -727,6 +754,7 @@ def _refresh_remote_refs():
 
 
 ## @brief Execute `_branch_remote_divergence` runtime logic for Git-Alias CLI.
+# @details Executes `_branch_remote_divergence` using deterministic CLI control-flow and explicit error propagation.
 # @param branch_key Input parameter consumed by `_branch_remote_divergence`.
 # @param remote Input parameter consumed by `_branch_remote_divergence`.
 # @return Result emitted by `_branch_remote_divergence` according to command contract.
@@ -750,6 +778,7 @@ def _branch_remote_divergence(branch_key, remote="origin"):
 
 
 ## @brief Execute `has_remote_branch_updates` runtime logic for Git-Alias CLI.
+# @details Executes `has_remote_branch_updates` using deterministic CLI control-flow and explicit error propagation.
 # @param branch_key Input parameter consumed by `has_remote_branch_updates`.
 # @param remote Input parameter consumed by `has_remote_branch_updates`.
 # @return Result emitted by `has_remote_branch_updates` according to command contract.
@@ -759,18 +788,21 @@ def has_remote_branch_updates(branch_key, remote="origin"):
 
 
 ## @brief Execute `has_remote_develop_updates` runtime logic for Git-Alias CLI.
+# @details Executes `has_remote_develop_updates` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `has_remote_develop_updates` according to command contract.
 def has_remote_develop_updates():
     return has_remote_branch_updates("develop")
 
 
 ## @brief Execute `has_remote_master_updates` runtime logic for Git-Alias CLI.
+# @details Executes `has_remote_master_updates` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `has_remote_master_updates` according to command contract.
 def has_remote_master_updates():
     return has_remote_branch_updates("master")
 
 
 ## @brief Execute `_head_commit_message` runtime logic for Git-Alias CLI.
+# @details Executes `_head_commit_message` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `_head_commit_message` according to command contract.
 def _head_commit_message():
     try:
@@ -780,6 +812,7 @@ def _head_commit_message():
 
 
 ## @brief Execute `_head_commit_hash` runtime logic for Git-Alias CLI.
+# @details Executes `_head_commit_hash` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `_head_commit_hash` according to command contract.
 def _head_commit_hash():
     try:
@@ -789,6 +822,7 @@ def _head_commit_hash():
 
 
 ## @brief Execute `_commit_exists_in_branch` runtime logic for Git-Alias CLI.
+# @details Executes `_commit_exists_in_branch` using deterministic CLI control-flow and explicit error propagation.
 # @param commit_hash Input parameter consumed by `_commit_exists_in_branch`.
 # @param branch_name Input parameter consumed by `_commit_exists_in_branch`.
 # @return Result emitted by `_commit_exists_in_branch` according to command contract.
@@ -806,6 +840,7 @@ def _commit_exists_in_branch(commit_hash, branch_name):
 
 
 ## @brief Execute `_should_amend_existing_commit` runtime logic for Git-Alias CLI.
+# @details Executes `_should_amend_existing_commit` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `_should_amend_existing_commit` according to command contract.
 def _should_amend_existing_commit():
     message = _head_commit_message()
@@ -824,6 +859,7 @@ def _should_amend_existing_commit():
 
 
 ## @brief Execute `is_inside_git_repo` runtime logic for Git-Alias CLI.
+# @details Executes `is_inside_git_repo` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `is_inside_git_repo` according to command contract.
 def is_inside_git_repo():
     try:
@@ -835,10 +871,14 @@ def is_inside_git_repo():
 
 @dataclass
 ## @brief Class `TagInfo` models a typed runtime container/error boundary.
+# @details Encapsulates tag identity, tag date, and resolved Git object identifier for changelog assembly.
 
 class TagInfo:
+    ## @brief Store raw tag name including `v` prefix when present.
     name: str
+    ## @brief Store ISO date string used for changelog section headers.
     iso_date: str
+    ## @brief Store object hash associated with the tag reference.
     object_name: str
 
 
@@ -884,6 +924,7 @@ MIN_SUPPORTED_HISTORY_VERSION = (0, 1, 0)
 
 
 ## @brief Execute `_tag_semver_tuple` runtime logic for Git-Alias CLI.
+# @details Executes `_tag_semver_tuple` using deterministic CLI control-flow and explicit error propagation.
 # @param tag_name Input parameter consumed by `_tag_semver_tuple`.
 # @return Result emitted by `_tag_semver_tuple` according to command contract.
 def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[int, int, int]]:
@@ -891,6 +932,7 @@ def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[int, int, int]]:
 
 
 ## @brief Execute `_is_supported_release_tag` runtime logic for Git-Alias CLI.
+# @details Executes `_is_supported_release_tag` using deterministic CLI control-flow and explicit error propagation.
 # @param tag_name Input parameter consumed by `_is_supported_release_tag`.
 # @return Result emitted by `_is_supported_release_tag` according to command contract.
 def _is_supported_release_tag(tag_name: str) -> bool:
@@ -901,6 +943,7 @@ def _is_supported_release_tag(tag_name: str) -> bool:
 
 
 ## @brief Execute `_should_include_tag` runtime logic for Git-Alias CLI.
+# @details Executes `_should_include_tag` using deterministic CLI control-flow and explicit error propagation.
 # @param tag_name Input parameter consumed by `_should_include_tag`.
 # @param include_draft Input parameter consumed by `_should_include_tag`.
 # @return Result emitted by `_should_include_tag` according to command contract.
@@ -909,6 +952,7 @@ def _should_include_tag(tag_name: str, include_draft: bool) -> bool:
 
 
 ## @brief Execute `_latest_supported_tag_name` runtime logic for Git-Alias CLI.
+# @details Executes `_latest_supported_tag_name` using deterministic CLI control-flow and explicit error propagation.
 # @param tags Input parameter consumed by `_latest_supported_tag_name`.
 # @param include_draft Input parameter consumed by `_latest_supported_tag_name`.
 # @return Result emitted by `_latest_supported_tag_name` according to command contract.
@@ -922,6 +966,7 @@ def _latest_supported_tag_name(tags: List[TagInfo], include_draft: bool) -> Opti
 
 
 ## @brief Execute `list_tags_sorted_by_date` runtime logic for Git-Alias CLI.
+# @details Executes `list_tags_sorted_by_date` using deterministic CLI control-flow and explicit error propagation.
 # @param repo_root Input parameter consumed by `list_tags_sorted_by_date`.
 # @param merged_ref Input parameter consumed by `list_tags_sorted_by_date`.
 # @return Result emitted by `list_tags_sorted_by_date` according to command contract.
@@ -947,6 +992,7 @@ def list_tags_sorted_by_date(repo_root: Path, merged_ref: Optional[str] = None) 
 
 
 ## @brief Execute `git_log_subjects` runtime logic for Git-Alias CLI.
+# @details Executes `git_log_subjects` using deterministic CLI control-flow and explicit error propagation.
 # @param repo_root Input parameter consumed by `git_log_subjects`.
 # @param rev_range Input parameter consumed by `git_log_subjects`.
 # @return Result emitted by `git_log_subjects` according to command contract.
@@ -963,6 +1009,7 @@ def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]:
 
 
 ## @brief Execute `categorize_commit` runtime logic for Git-Alias CLI.
+# @details Executes `categorize_commit` using deterministic CLI control-flow and explicit error propagation.
 # @param subject Input parameter consumed by `categorize_commit`.
 # @return Result emitted by `categorize_commit` according to command contract.
 def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
@@ -990,6 +1037,7 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
 
 
 ## @brief Execute `_extract_release_version` runtime logic for Git-Alias CLI.
+# @details Executes `_extract_release_version` using deterministic CLI control-flow and explicit error propagation.
 # @param subject Input parameter consumed by `_extract_release_version`.
 # @return Result emitted by `_extract_release_version` according to command contract.
 def _extract_release_version(subject: str) -> Optional[str]:
@@ -1000,6 +1048,7 @@ def _extract_release_version(subject: str) -> Optional[str]:
 
 
 ## @brief Execute `generate_section_for_range` runtime logic for Git-Alias CLI.
+# @details Executes `generate_section_for_range` using deterministic CLI control-flow and explicit error propagation.
 # @param repo_root Input parameter consumed by `generate_section_for_range`.
 # @param title Input parameter consumed by `generate_section_for_range`.
 # @param date_s Input parameter consumed by `generate_section_for_range`.
@@ -1043,6 +1092,7 @@ def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_ran
 
 
 ## @brief Execute `_canonical_origin_base` runtime logic for Git-Alias CLI.
+# @details Executes `_canonical_origin_base` using deterministic CLI control-flow and explicit error propagation.
 # @param repo_root Input parameter consumed by `_canonical_origin_base`.
 # @return Result emitted by `_canonical_origin_base` according to command contract.
 def _canonical_origin_base(repo_root: Path) -> Optional[str]:
@@ -1064,6 +1114,7 @@ def _canonical_origin_base(repo_root: Path) -> Optional[str]:
 
 
 ## @brief Execute `get_origin_compare_url` runtime logic for Git-Alias CLI.
+# @details Executes `get_origin_compare_url` using deterministic CLI control-flow and explicit error propagation.
 # @param base_url Input parameter consumed by `get_origin_compare_url`.
 # @param prev_tag Input parameter consumed by `get_origin_compare_url`.
 # @param tag Input parameter consumed by `get_origin_compare_url`.
@@ -1077,6 +1128,7 @@ def get_origin_compare_url(base_url: Optional[str], prev_tag: Optional[str], tag
 
 
 ## @brief Execute `get_release_page_url` runtime logic for Git-Alias CLI.
+# @details Executes `get_release_page_url` using deterministic CLI control-flow and explicit error propagation.
 # @param base_url Input parameter consumed by `get_release_page_url`.
 # @param tag Input parameter consumed by `get_release_page_url`.
 # @return Result emitted by `get_release_page_url` according to command contract.
@@ -1087,6 +1139,7 @@ def get_release_page_url(base_url: Optional[str], tag: str) -> Optional[str]:
 
 
 ## @brief Execute `build_history_section` runtime logic for Git-Alias CLI.
+# @details Executes `build_history_section` using deterministic CLI control-flow and explicit error propagation.
 # @param repo_root Input parameter consumed by `build_history_section`.
 # @param tags Input parameter consumed by `build_history_section`.
 # @param include_unreleased Input parameter consumed by `build_history_section`.
@@ -1128,6 +1181,7 @@ def build_history_section(
 
 
 ## @brief Execute `generate_changelog_document` runtime logic for Git-Alias CLI.
+# @details Executes `generate_changelog_document` using deterministic CLI control-flow and explicit error propagation.
 # @param repo_root Input parameter consumed by `generate_changelog_document`.
 # @param include_unreleased Input parameter consumed by `generate_changelog_document`.
 # @param include_draft Input parameter consumed by `generate_changelog_document`.
@@ -1181,6 +1235,7 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool, inclu
 
 
 ## @brief Execute `_collect_version_files` runtime logic for Git-Alias CLI.
+# @details Executes `_collect_version_files` using deterministic CLI control-flow and explicit error propagation.
 # @param root Input parameter consumed by `_collect_version_files`.
 # @param pattern Input parameter consumed by `_collect_version_files`.
 # @return Result emitted by `_collect_version_files` according to command contract.
@@ -1221,6 +1276,7 @@ def _collect_version_files(root, pattern):
 
 
 ## @brief Execute `_is_version_path_excluded` runtime logic for Git-Alias CLI.
+# @details Executes `_is_version_path_excluded` using deterministic CLI control-flow and explicit error propagation.
 # @param relative_path Input parameter consumed by `_is_version_path_excluded`.
 # @return Result emitted by `_is_version_path_excluded` according to command contract.
 def _is_version_path_excluded(relative_path: str) -> bool:
@@ -1228,6 +1284,7 @@ def _is_version_path_excluded(relative_path: str) -> bool:
 
 
 ## @brief Execute `_iter_versions_in_text` runtime logic for Git-Alias CLI.
+# @details Executes `_iter_versions_in_text` using deterministic CLI control-flow and explicit error propagation.
 # @param text Input parameter consumed by `_iter_versions_in_text`.
 # @param compiled_regexes Input parameter consumed by `_iter_versions_in_text`.
 # @return Result emitted by `_iter_versions_in_text` according to command contract.
@@ -1244,6 +1301,7 @@ def _iter_versions_in_text(text, compiled_regexes):
 
 
 ## @brief Execute `_determine_canonical_version` runtime logic for Git-Alias CLI.
+# @details Executes `_determine_canonical_version` using deterministic CLI control-flow and explicit error propagation.
 # @param root Input parameter consumed by `_determine_canonical_version`.
 # @param rules Input parameter consumed by `_determine_canonical_version`.
 # @param verbose Input parameter consumed by `_determine_canonical_version`.
@@ -1310,6 +1368,7 @@ def _determine_canonical_version(root: Path, rules, *, verbose: bool = False, de
 
 
 ## @brief Execute `_parse_semver_tuple` runtime logic for Git-Alias CLI.
+# @details Executes `_parse_semver_tuple` using deterministic CLI control-flow and explicit error propagation.
 # @param text Input parameter consumed by `_parse_semver_tuple`.
 # @return Result emitted by `_parse_semver_tuple` according to command contract.
 def _parse_semver_tuple(text):
@@ -1320,6 +1379,7 @@ def _parse_semver_tuple(text):
 
 
 ## @brief Execute `_replace_versions_in_text` runtime logic for Git-Alias CLI.
+# @details Executes `_replace_versions_in_text` using deterministic CLI control-flow and explicit error propagation.
 # @param text Input parameter consumed by `_replace_versions_in_text`.
 # @param compiled_regex Input parameter consumed by `_replace_versions_in_text`.
 # @param replacement Input parameter consumed by `_replace_versions_in_text`.
@@ -1341,6 +1401,7 @@ def _replace_versions_in_text(text, compiled_regex, replacement):
 
 
 ## @brief Execute `_current_branch_name` runtime logic for Git-Alias CLI.
+# @details Executes `_current_branch_name` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `_current_branch_name` according to command contract.
 def _current_branch_name():
     proc = _run_checked(
@@ -1356,6 +1417,7 @@ def _current_branch_name():
 
 
 ## @brief Execute `_ref_exists` runtime logic for Git-Alias CLI.
+# @details Executes `_ref_exists` using deterministic CLI control-flow and explicit error propagation.
 # @param ref_name Input parameter consumed by `_ref_exists`.
 # @return Result emitted by `_ref_exists` according to command contract.
 def _ref_exists(ref_name):
@@ -1369,6 +1431,7 @@ def _ref_exists(ref_name):
 
 
 ## @brief Execute `_local_branch_exists` runtime logic for Git-Alias CLI.
+# @details Executes `_local_branch_exists` using deterministic CLI control-flow and explicit error propagation.
 # @param branch_name Input parameter consumed by `_local_branch_exists`.
 # @return Result emitted by `_local_branch_exists` according to command contract.
 def _local_branch_exists(branch_name):
@@ -1376,6 +1439,7 @@ def _local_branch_exists(branch_name):
 
 
 ## @brief Execute `_remote_branch_exists` runtime logic for Git-Alias CLI.
+# @details Executes `_remote_branch_exists` using deterministic CLI control-flow and explicit error propagation.
 # @param branch_name Input parameter consumed by `_remote_branch_exists`.
 # @return Result emitted by `_remote_branch_exists` according to command contract.
 def _remote_branch_exists(branch_name):
@@ -1383,6 +1447,7 @@ def _remote_branch_exists(branch_name):
 
 
 ## @brief Execute `_ensure_release_prerequisites` runtime logic for Git-Alias CLI.
+# @details Executes `_ensure_release_prerequisites` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `_ensure_release_prerequisites` according to command contract.
 def _ensure_release_prerequisites():
     master_branch = get_branch("master")
@@ -1413,6 +1478,7 @@ def _ensure_release_prerequisites():
 
 
 ## @brief Execute `_bump_semver_version` runtime logic for Git-Alias CLI.
+# @details Executes `_bump_semver_version` using deterministic CLI control-flow and explicit error propagation.
 # @param current_version Input parameter consumed by `_bump_semver_version`.
 # @param level Input parameter consumed by `_bump_semver_version`.
 # @return Result emitted by `_bump_semver_version` according to command contract.
@@ -1436,6 +1502,7 @@ def _bump_semver_version(current_version, level):
 
 
 ## @brief Execute `_run_release_step` runtime logic for Git-Alias CLI.
+# @details Executes `_run_release_step` using deterministic CLI control-flow and explicit error propagation.
 # @param level Input parameter consumed by `_run_release_step`.
 # @param step_name Input parameter consumed by `_run_release_step`.
 # @param action Input parameter consumed by `_run_release_step`.
@@ -1462,6 +1529,7 @@ def _run_release_step(level, step_name, action):
 
 
 ## @brief Execute `_execute_release_flow` runtime logic for Git-Alias CLI.
+# @details Executes `_execute_release_flow` using deterministic CLI control-flow and explicit error propagation.
 # @param level Input parameter consumed by `_execute_release_flow`.
 # @param changelog_args Input parameter consumed by `_execute_release_flow`.
 # @return Result emitted by `_execute_release_flow` according to command contract.
@@ -1509,6 +1577,7 @@ def _execute_release_flow(level, changelog_args=None):
 
 
 ## @brief Execute `_run_release_command` runtime logic for Git-Alias CLI.
+# @details Executes `_run_release_command` using deterministic CLI control-flow and explicit error propagation.
 # @param level Input parameter consumed by `_run_release_command`.
 # @param changelog_args Input parameter consumed by `_run_release_command`.
 # @return Result emitted by `_run_release_command` according to command contract.
@@ -1529,6 +1598,7 @@ def _run_release_command(level, changelog_args=None):
 
 
 ## @brief Execute `_run_reset_with_help` runtime logic for Git-Alias CLI.
+# @details Executes `_run_reset_with_help` using deterministic CLI control-flow and explicit error propagation.
 # @param base_args Input parameter consumed by `_run_reset_with_help`.
 # @param extra Input parameter consumed by `_run_reset_with_help`.
 # @return Result emitted by `_run_reset_with_help` according to command contract.
@@ -1541,6 +1611,7 @@ def _run_reset_with_help(base_args, extra):
 
 
 ## @brief Execute `_reject_extra_arguments` runtime logic for Git-Alias CLI.
+# @details Executes `_reject_extra_arguments` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `_reject_extra_arguments`.
 # @param alias Input parameter consumed by `_reject_extra_arguments`.
 # @return Result emitted by `_reject_extra_arguments` according to command contract.
@@ -1552,6 +1623,7 @@ def _reject_extra_arguments(extra, alias):
 
 
 ## @brief Execute `_parse_release_flags` runtime logic for Git-Alias CLI.
+# @details Executes `_parse_release_flags` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `_parse_release_flags`.
 # @param alias Input parameter consumed by `_parse_release_flags`.
 # @return Result emitted by `_parse_release_flags` according to command contract.
@@ -1575,6 +1647,7 @@ def _parse_release_flags(extra, alias):
 
 
 ## @brief Execute `_prepare_commit_message` runtime logic for Git-Alias CLI.
+# @details Executes `_prepare_commit_message` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `_prepare_commit_message`.
 # @param alias Input parameter consumed by `_prepare_commit_message`.
 # @return Result emitted by `_prepare_commit_message` according to command contract.
@@ -1590,6 +1663,7 @@ def _prepare_commit_message(extra, alias):
 
 
 ## @brief Execute `_build_conventional_message` runtime logic for Git-Alias CLI.
+# @details Executes `_build_conventional_message` using deterministic CLI control-flow and explicit error propagation.
 # @param kind Input parameter consumed by `_build_conventional_message`.
 # @param extra Input parameter consumed by `_build_conventional_message`.
 # @param alias Input parameter consumed by `_build_conventional_message`.
@@ -1610,6 +1684,7 @@ def _build_conventional_message(kind: str, extra, alias: str) -> str:
 
 
 ## @brief Execute `_run_conventional_commit` runtime logic for Git-Alias CLI.
+# @details Executes `_run_conventional_commit` using deterministic CLI control-flow and explicit error propagation.
 # @param kind Input parameter consumed by `_run_conventional_commit`.
 # @param alias Input parameter consumed by `_run_conventional_commit`.
 # @param extra Input parameter consumed by `_run_conventional_commit`.
@@ -1621,6 +1696,7 @@ def _run_conventional_commit(kind: str, alias: str, extra):
 
 
 ## @brief Execute `_execute_commit` runtime logic for Git-Alias CLI.
+# @details Executes `_execute_commit` using deterministic CLI control-flow and explicit error propagation.
 # @param message Input parameter consumed by `_execute_commit`.
 # @param alias Input parameter consumed by `_execute_commit`.
 # @param allow_amend Input parameter consumed by `_execute_commit`.
@@ -1656,6 +1732,7 @@ def _execute_commit(message, alias, allow_amend=True):
 
 
 ## @brief Execute `upgrade_self` runtime logic for Git-Alias CLI.
+# @details Executes `upgrade_self` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `upgrade_self` according to command contract.
 def upgrade_self():
     _run_checked(
@@ -1672,12 +1749,14 @@ def upgrade_self():
 
 
 ## @brief Execute `remove_self` runtime logic for Git-Alias CLI.
+# @details Executes `remove_self` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `remove_self` according to command contract.
 def remove_self():
     _run_checked(["uv", "tool", "uninstall", "git-alias"])
 
 
 ## @brief Execute `cmd_aa` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_aa` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_aa`.
 # @return Result emitted by `cmd_aa` according to command contract.
 def cmd_aa(extra):
@@ -1689,6 +1768,7 @@ def cmd_aa(extra):
 
 
 ## @brief Execute `cmd_ra` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_ra` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_ra`.
 # @return Result emitted by `cmd_ra` according to command contract.
 def cmd_ra(extra):
@@ -1716,6 +1796,7 @@ def cmd_ra(extra):
 
 
 ## @brief Execute `cmd_ar` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_ar` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_ar`.
 # @return Result emitted by `cmd_ar` according to command contract.
 def cmd_ar(extra):
@@ -1733,6 +1814,7 @@ def cmd_ar(extra):
 
 
 ## @brief Execute `cmd_br` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_br` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_br`.
 # @return Result emitted by `cmd_br` according to command contract.
 def cmd_br(extra):
@@ -1740,6 +1822,7 @@ def cmd_br(extra):
 
 
 ## @brief Execute `cmd_bd` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_bd` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_bd`.
 # @return Result emitted by `cmd_bd` according to command contract.
 def cmd_bd(extra):
@@ -1747,6 +1830,7 @@ def cmd_bd(extra):
 
 
 ## @brief Execute `cmd_ck` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_ck` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_ck`.
 # @return Result emitted by `cmd_ck` according to command contract.
 def cmd_ck(extra):
@@ -1754,6 +1838,7 @@ def cmd_ck(extra):
 
 
 ## @brief Execute `_ensure_commit_ready` runtime logic for Git-Alias CLI.
+# @details Executes `_ensure_commit_ready` using deterministic CLI control-flow and explicit error propagation.
 # @param alias Input parameter consumed by `_ensure_commit_ready`.
 # @return Result emitted by `_ensure_commit_ready` according to command contract.
 def _ensure_commit_ready(alias):
@@ -1771,6 +1856,7 @@ def _ensure_commit_ready(alias):
 
 
 ## @brief Execute `cmd_cm` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_cm` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_cm`.
 # @return Result emitted by `cmd_cm` according to command contract.
 def cmd_cm(extra):
@@ -1780,6 +1866,7 @@ def cmd_cm(extra):
 
 
 ## @brief Execute `cmd_wip` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_wip` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_wip`.
 # @return Result emitted by `cmd_wip` according to command contract.
 def cmd_wip(extra):
@@ -1796,6 +1883,7 @@ def cmd_wip(extra):
 
 
 ## @brief Execute `cmd_release` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_release` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_release`.
 # @return Result emitted by `cmd_release` according to command contract.
 def cmd_release(extra):
@@ -1822,6 +1910,7 @@ def cmd_release(extra):
 
 
 ## @brief Execute `cmd_new` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_new` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_new`.
 # @return Result emitted by `cmd_new` according to command contract.
 def cmd_new(extra):
@@ -1829,6 +1918,7 @@ def cmd_new(extra):
 
 
 ## @brief Execute `cmd_refactor` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_refactor` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_refactor`.
 # @return Result emitted by `cmd_refactor` according to command contract.
 def cmd_refactor(extra):
@@ -1836,6 +1926,7 @@ def cmd_refactor(extra):
 
 
 ## @brief Execute `cmd_fix` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_fix` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_fix`.
 # @return Result emitted by `cmd_fix` according to command contract.
 def cmd_fix(extra):
@@ -1843,6 +1934,7 @@ def cmd_fix(extra):
 
 
 ## @brief Execute `cmd_change` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_change` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_change`.
 # @return Result emitted by `cmd_change` according to command contract.
 def cmd_change(extra):
@@ -1850,6 +1942,7 @@ def cmd_change(extra):
 
 
 ## @brief Execute `cmd_docs` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_docs` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_docs`.
 # @return Result emitted by `cmd_docs` according to command contract.
 def cmd_docs(extra):
@@ -1857,6 +1950,7 @@ def cmd_docs(extra):
 
 
 ## @brief Execute `cmd_style` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_style` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_style`.
 # @return Result emitted by `cmd_style` according to command contract.
 def cmd_style(extra):
@@ -1864,6 +1958,7 @@ def cmd_style(extra):
 
 
 ## @brief Execute `cmd_revert` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_revert` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_revert`.
 # @return Result emitted by `cmd_revert` according to command contract.
 def cmd_revert(extra):
@@ -1871,6 +1966,7 @@ def cmd_revert(extra):
 
 
 ## @brief Execute `cmd_misc` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_misc` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_misc`.
 # @return Result emitted by `cmd_misc` according to command contract.
 def cmd_misc(extra):
@@ -1878,6 +1974,7 @@ def cmd_misc(extra):
 
 
 ## @brief Execute `cmd_cover` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_cover` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_cover`.
 # @return Result emitted by `cmd_cover` according to command contract.
 def cmd_cover(extra):
@@ -1885,6 +1982,7 @@ def cmd_cover(extra):
 
 
 ## @brief Execute `cmd_co` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_co` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_co`.
 # @return Result emitted by `cmd_co` according to command contract.
 def cmd_co(extra):
@@ -1892,6 +1990,7 @@ def cmd_co(extra):
 
 
 ## @brief Execute `cmd_de` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_de` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_de`.
 # @return Result emitted by `cmd_de` according to command contract.
 def cmd_de(extra):
@@ -1899,6 +1998,7 @@ def cmd_de(extra):
 
 
 ## @brief Execute `cmd_di` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_di` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_di`.
 # @return Result emitted by `cmd_di` according to command contract.
 def cmd_di(extra):
@@ -1906,6 +2006,7 @@ def cmd_di(extra):
 
 
 ## @brief Execute `cmd_diyou` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_diyou` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_diyou`.
 # @return Result emitted by `cmd_diyou` according to command contract.
 def cmd_diyou(extra):
@@ -1913,6 +2014,7 @@ def cmd_diyou(extra):
 
 
 ## @brief Execute `cmd_dime` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_dime` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_dime`.
 # @return Result emitted by `cmd_dime` according to command contract.
 def cmd_dime(extra):
@@ -1920,6 +2022,7 @@ def cmd_dime(extra):
 
 
 ## @brief Execute `cmd_ed` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_ed` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_ed`.
 # @return Result emitted by `cmd_ed` according to command contract.
 def cmd_ed(extra):
@@ -1933,6 +2036,7 @@ def cmd_ed(extra):
 
 
 ## @brief Execute `cmd_fe` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_fe` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_fe`.
 # @return Result emitted by `cmd_fe` according to command contract.
 def cmd_fe(extra):
@@ -1940,6 +2044,7 @@ def cmd_fe(extra):
 
 
 ## @brief Execute `cmd_feall` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_feall` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_feall`.
 # @return Result emitted by `cmd_feall` according to command contract.
 def cmd_feall(extra):
@@ -1947,6 +2052,7 @@ def cmd_feall(extra):
 
 
 ## @brief Execute `cmd_gp` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_gp` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_gp`.
 # @return Result emitted by `cmd_gp` according to command contract.
 def cmd_gp(extra):
@@ -1954,6 +2060,7 @@ def cmd_gp(extra):
 
 
 ## @brief Execute `cmd_gr` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_gr` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_gr`.
 # @return Result emitted by `cmd_gr` according to command contract.
 def cmd_gr(extra):
@@ -1961,6 +2068,7 @@ def cmd_gr(extra):
 
 
 ## @brief Execute `cmd_str` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_str` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_str`.
 # @return Result emitted by `cmd_str` according to command contract.
 def cmd_str(extra):
@@ -1994,6 +2102,7 @@ def cmd_str(extra):
 
 
 ## @brief Execute `cmd_lb` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_lb` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_lb`.
 # @return Result emitted by `cmd_lb` according to command contract.
 def cmd_lb(extra):
@@ -2001,6 +2110,7 @@ def cmd_lb(extra):
 
 
 ## @brief Execute `cmd_lg` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_lg` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_lg`.
 # @return Result emitted by `cmd_lg` according to command contract.
 def cmd_lg(extra):
@@ -2018,6 +2128,7 @@ def cmd_lg(extra):
 
 
 ## @brief Execute `cmd_lh` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_lh` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_lh`.
 # @return Result emitted by `cmd_lh` according to command contract.
 def cmd_lh(extra):
@@ -2025,6 +2136,7 @@ def cmd_lh(extra):
 
 
 ## @brief Execute `cmd_ll` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_ll` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_ll`.
 # @return Result emitted by `cmd_ll` according to command contract.
 def cmd_ll(extra):
@@ -2041,6 +2153,7 @@ def cmd_ll(extra):
 
 
 ## @brief Execute `cmd_lm` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_lm` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_lm`.
 # @return Result emitted by `cmd_lm` according to command contract.
 def cmd_lm(extra):
@@ -2048,6 +2161,7 @@ def cmd_lm(extra):
 
 
 ## @brief Execute `cmd_lt` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_lt` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_lt`.
 # @return Result emitted by `cmd_lt` according to command contract.
 def cmd_lt(extra):
@@ -2055,6 +2169,7 @@ def cmd_lt(extra):
 
 
 ## @brief Execute `cmd_me` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_me` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_me`.
 # @return Result emitted by `cmd_me` according to command contract.
 def cmd_me(extra):
@@ -2062,6 +2177,7 @@ def cmd_me(extra):
 
 
 ## @brief Execute `cmd_pl` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_pl` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_pl`.
 # @return Result emitted by `cmd_pl` according to command contract.
 def cmd_pl(extra):
@@ -2069,6 +2185,7 @@ def cmd_pl(extra):
 
 
 ## @brief Execute `cmd_pt` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_pt` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_pt`.
 # @return Result emitted by `cmd_pt` according to command contract.
 def cmd_pt(extra):
@@ -2076,6 +2193,7 @@ def cmd_pt(extra):
 
 
 ## @brief Execute `cmd_pu` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_pu` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_pu`.
 # @return Result emitted by `cmd_pu` according to command contract.
 def cmd_pu(extra):
@@ -2083,6 +2201,7 @@ def cmd_pu(extra):
 
 
 ## @brief Execute `cmd_rf` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_rf` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_rf`.
 # @return Result emitted by `cmd_rf` according to command contract.
 def cmd_rf(extra):
@@ -2090,6 +2209,7 @@ def cmd_rf(extra):
 
 
 ## @brief Execute `cmd_rmtg` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_rmtg` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_rmtg`.
 # @return Result emitted by `cmd_rmtg` according to command contract.
 def cmd_rmtg(extra):
@@ -2104,6 +2224,7 @@ def cmd_rmtg(extra):
 
 
 ## @brief Execute `cmd_rmloc` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_rmloc` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_rmloc`.
 # @return Result emitted by `cmd_rmloc` according to command contract.
 def cmd_rmloc(extra):
@@ -2111,6 +2232,7 @@ def cmd_rmloc(extra):
 
 
 ## @brief Execute `cmd_rmstg` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_rmstg` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_rmstg`.
 # @return Result emitted by `cmd_rmstg` according to command contract.
 def cmd_rmstg(extra):
@@ -2118,6 +2240,7 @@ def cmd_rmstg(extra):
 
 
 ## @brief Execute `cmd_rmunt` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_rmunt` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_rmunt`.
 # @return Result emitted by `cmd_rmunt` according to command contract.
 def cmd_rmunt(extra):
@@ -2125,6 +2248,7 @@ def cmd_rmunt(extra):
 
 
 ## @brief Execute `cmd_rs` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_rs` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_rs`.
 # @return Result emitted by `cmd_rs` according to command contract.
 def cmd_rs(extra):
@@ -2132,6 +2256,7 @@ def cmd_rs(extra):
 
 
 ## @brief Execute `cmd_rssft` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_rssft` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_rssft`.
 # @return Result emitted by `cmd_rssft` according to command contract.
 def cmd_rssft(extra):
@@ -2139,6 +2264,7 @@ def cmd_rssft(extra):
 
 
 ## @brief Execute `cmd_rsmix` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_rsmix` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_rsmix`.
 # @return Result emitted by `cmd_rsmix` according to command contract.
 def cmd_rsmix(extra):
@@ -2146,6 +2272,7 @@ def cmd_rsmix(extra):
 
 
 ## @brief Execute `cmd_rshrd` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_rshrd` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_rshrd`.
 # @return Result emitted by `cmd_rshrd` according to command contract.
 def cmd_rshrd(extra):
@@ -2153,6 +2280,7 @@ def cmd_rshrd(extra):
 
 
 ## @brief Execute `cmd_rsmrg` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_rsmrg` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_rsmrg`.
 # @return Result emitted by `cmd_rsmrg` according to command contract.
 def cmd_rsmrg(extra):
@@ -2160,6 +2288,7 @@ def cmd_rsmrg(extra):
 
 
 ## @brief Execute `cmd_rskep` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_rskep` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_rskep`.
 # @return Result emitted by `cmd_rskep` according to command contract.
 def cmd_rskep(extra):
@@ -2167,6 +2296,7 @@ def cmd_rskep(extra):
 
 
 ## @brief Execute `cmd_st` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_st` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_st`.
 # @return Result emitted by `cmd_st` according to command contract.
 def cmd_st(extra):
@@ -2174,6 +2304,7 @@ def cmd_st(extra):
 
 
 ## @brief Execute `cmd_tg` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_tg` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_tg`.
 # @return Result emitted by `cmd_tg` according to command contract.
 def cmd_tg(extra):
@@ -2181,6 +2312,7 @@ def cmd_tg(extra):
 
 
 ## @brief Execute `cmd_unstg` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_unstg` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_unstg`.
 # @return Result emitted by `cmd_unstg` according to command contract.
 def cmd_unstg(extra):
@@ -2188,6 +2320,7 @@ def cmd_unstg(extra):
 
 
 ## @brief Execute `cmd_ver` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_ver` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_ver`.
 # @return Result emitted by `cmd_ver` according to command contract.
 def cmd_ver(extra):
@@ -2210,6 +2343,7 @@ def cmd_ver(extra):
 
 
 ## @brief Execute `cmd_chver` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_chver` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_chver`.
 # @return Result emitted by `cmd_chver` according to command contract.
 def cmd_chver(extra):
@@ -2284,6 +2418,7 @@ def cmd_chver(extra):
 
 
 ## @brief Execute `cmd_major` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_major` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_major`.
 # @return Result emitted by `cmd_major` according to command contract.
 def cmd_major(extra):
@@ -2292,6 +2427,7 @@ def cmd_major(extra):
 
 
 ## @brief Execute `cmd_minor` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_minor` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_minor`.
 # @return Result emitted by `cmd_minor` according to command contract.
 def cmd_minor(extra):
@@ -2300,6 +2436,7 @@ def cmd_minor(extra):
 
 
 ## @brief Execute `cmd_patch` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_patch` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_patch`.
 # @return Result emitted by `cmd_patch` according to command contract.
 def cmd_patch(extra):
@@ -2308,6 +2445,7 @@ def cmd_patch(extra):
 
 
 ## @brief Execute `cmd_changelog` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_changelog` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_changelog`.
 # @return Result emitted by `cmd_changelog` according to command contract.
 def cmd_changelog(extra):
@@ -2407,6 +2545,7 @@ COMMANDS = {
 }
 
 ## @brief Execute `print_command_help` runtime logic for Git-Alias CLI.
+# @details Executes `print_command_help` using deterministic CLI control-flow and explicit error propagation.
 # @param name Input parameter consumed by `print_command_help`.
 # @param width Input parameter consumed by `print_command_help`.
 # @return Result emitted by `print_command_help` according to command contract.
@@ -2418,6 +2557,7 @@ def print_command_help(name, width=None):
         print(f"{name.ljust(width)} - {description}")
 
 ## @brief Execute `print_all_help` runtime logic for Git-Alias CLI.
+# @details Executes `print_all_help` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `print_all_help` according to command contract.
 def print_all_help():
     print(f"Usage: g <command> [options] ({get_cli_version()})")
@@ -2455,6 +2595,7 @@ def print_all_help():
 
 
 ## @brief Execute `main` runtime logic for Git-Alias CLI.
+# @details Executes `main` using deterministic CLI control-flow and explicit error propagation.
 # @param argv Input parameter consumed by `main`.
 # @param check_updates Input parameter consumed by `main`.
 # @return Result emitted by `main` according to command contract.
