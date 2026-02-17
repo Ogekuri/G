@@ -102,6 +102,23 @@
     - `cmd_str()`: enumerate unique remotes and print `git remote show` for each [`src/git_alias/core.py:L1664-L1691`].
       - description: Executes `run_git_text(["remote", "-v"])`; deduplicates first column remote names; prints list; executes `run_git_cmd(["remote", "show", remote])` per remote; re-raises command failure.
 
+- Feature: Visual diff aliases.
+  - Module: `src/git_alias/core.py`.
+    - `cmd_dw()`: run directory diff between working tree and HEAD [`src/git_alias/core.py:L2047-L2053`].
+      - description: Executes `run_git_cmd(["difftool", "-d", "HEAD"], extra)`; keeps CLI extra args forwarding for downstream git difftool flags.
+      - `run_git_cmd()`: execute git command with optional extra args [`src/git_alias/core.py:L606-L608`].
+        - description: Builds git argv as `["git"] + base_args + _to_args(extra)` and delegates process execution/error propagation to `_run_checked()`.
+    - `cmd_dc()`: run directory diff between `HEAD~1` and `HEAD` [`src/git_alias/core.py:L2007-L2013`].
+      - description: Executes `run_git_cmd(["difftool", "-d", "HEAD~1", "HEAD"], extra)` to compare the latest two commits with optional passthrough flags.
+      - `run_git_cmd()`: execute git command with optional extra args [`src/git_alias/core.py:L606-L608`].
+        - description: Constructs deterministic git argv and propagates external process failures through `CommandExecutionError`.
+    - `cmd_d()`: run directory diff between two explicit git references [`src/git_alias/core.py:L1995-L2005`].
+      - description: Converts `extra` through `_to_args()`; validates exact arity `len(args) == 2`; emits explicit stderr error and exits non-zero on invalid arity; executes `run_git_cmd(["difftool", "-d", args[0], args[1]])`.
+      - `_to_args()`: normalize optional iterable args into list [`src/git_alias/core.py:L529-L530`].
+        - description: Returns empty list when `extra` is falsy, otherwise materializes a list preserving positional order.
+      - `run_git_cmd()`: execute git command with optional extra args [`src/git_alias/core.py:L606-L608`].
+        - description: Runs validated reference pair against git difftool and preserves raw git return code/error semantics.
+
 - Feature: CI/CD release packaging workflow.
   - Module: `.github/workflows/release-uvx.yml`.
     - `build-release` job: build and publish Python distributions on git tag push [`.github/workflows/release-uvx.yml:L13-L48`].
@@ -147,4 +164,5 @@
   - `REQ-017`/`REQ-025` alignment: version detection and rewrite paths implemented by `_collect_version_files()`, `_determine_canonical_version()`, `cmd_chver()` [`docs/REQUIREMENTS.md:L166-L177`, `src/git_alias/core.py:L1008-L1120`, `src/git_alias/core.py:L1861-L1929`].
   - `REQ-018`/`REQ-026` alignment: changelog generation and release workflow integration implemented by `cmd_changelog()`, `generate_changelog_document()`, `_execute_release_flow()` [`docs/REQUIREMENTS.md:L167-L178`, `src/git_alias/core.py:L959-L1004`, `src/git_alias/core.py:L1255-L1295`, `src/git_alias/core.py:L1951-L1982`].
   - `REQ-033` alignment: cached online update-check in `check_for_newer_version()` with 6-hour TTL and GitHub API endpoint [`docs/REQUIREMENTS.md:L184-L184`, `src/git_alias/core.py:L24-L29`, `src/git_alias/core.py:L142-L221`].
+  - `REQ-008`/`REQ-037` alignment: visual inspection aliases and difftool mappings implemented by `cmd_d()`, `cmd_dc()`, `cmd_dw()`, surfaced by `HELP_TEXTS` and `COMMANDS` entries [`docs/REQUIREMENTS.md:L162-L191`, `src/git_alias/core.py:L377-L439`, `src/git_alias/core.py:L1995-L2053`, `src/git_alias/core.py:L2517-L2536`].
   - `REQ-036` alignment: scripted multi-format Doxygen generation implemented by `main()`, `write_doxyfile()`, `build_pdf_documentation()`, `build_markdown_documentation()` [`docs/REQUIREMENTS.md:L187-L187`, `doxygen.sh:L10-L160`].
