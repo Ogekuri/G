@@ -13,9 +13,9 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.59
+**Versione**: 0.60
 **Autore**: Francesco Rolando  
-**Data**: 2026-02-15
+**Data**: 2026-02-17
 
 ## Indice
 - [Requisiti di Git-Alias CLI](#requisiti-di-git-alias-cli)
@@ -97,6 +97,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-10 | 0.57 | Ricerca `ver_rules` tramite rglob senza uso di `git ls-files` |
 | 2026-02-15 | 0.58 | Documentazione sorgente standardizzata in formato Doxygen LLM-native su tutti i componenti |
 | 2026-02-15 | 0.59 | Rimozione requisiti relativi alle modalità di commentazione/documentazione interna del codice sorgente |
+| 2026-02-17 | 0.60 | Introduzione script `doxygen.sh` per generazione documentazione Doxygen multi-formato da `src/` |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -135,6 +136,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **CPT-004**:Librerie standard Python: `os`, `shlex`, `subprocess`, `sys`, `datetime`, `pathlib`.
 - **CPT-005**:Dipendenze esterne: eseguibili `git`, `gitk`, `uv`/`uvx`.
 - **CPT-006**:Libreria esterna `pathspec` per il matching dei pattern di configurazione.
+- **CPT-007**:Script shell `doxygen.sh` in root progetto per orchestrazione generazione documentazione Doxygen.
 
 ## 3. Requisiti
 ### 3.1 Progettazione e Implementazione
@@ -184,6 +186,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-033**: Dopo aver validato gli input e prima di eseguire qualsiasi operazione, la CLI deve verificare la disponibilità di una nuova versione utilizzando un meccanismo di cache temporizzata. Il sistema deve memorizzare il risultato del controllo in un file cache JSON nella directory temporanea di sistema (utilizzando `tempfile.gettempdir()`) con nome `.g_version_check_cache.json` e tempo di vita (TTL) di 6 ore. All'avvio, se esiste una cache valida (non scaduta), il sistema deve utilizzare i dati memorizzati senza effettuare chiamate di rete; se la cache è assente o scaduta, deve effettuare una chiamata HTTP GET con timeout di 1 secondo a `https://api.github.com/repos/Ogekuri/G/releases/latest`, determinare l'ultima versione disponibile dalla risposta JSON (campo `tag_name`, con eventuale prefisso `v`), confrontarla con la versione corrente e salvare il risultato nella cache con timestamp di scadenza. Se il server non è contattabile o la chiamata fallisce, la CLI deve considerare la versione attuale come ultima disponibile e procedere senza segnalare nulla. Se la versione disponibile è maggiore di quella attuale (sia da cache che da chiamata online), la CLI deve stampare un messaggio di avviso che indichi la versione attuale e quella disponibile e includa l'istruzione di aggiornamento tramite `--upgrade`. Eventuali errori di lettura o scrittura della cache non devono impedire l'esecuzione del comando.
 - **REQ-034**: Il comando `str` deve eseguire `git remote -v`, filtrare e stampare tutti i remote univoci trovati nell'output e, per ogni remote univoco identificato, eseguire il comando `git remote show <remote>` stampando lo stato completo restituito dal comando.
 - **REQ-035**: Il comando `ver` deve supportare il flag `--verbose` per stampare l'elenco dei file controllati durante il processo e l'esito positivo o negativo del match della `regex` per ciascun file. Con il flag `--debug` deve includere anche le informazioni di ricerca del globbing, stampando l'elenco completo dei file che matchano il `pattern` associato alla regola.
+- **REQ-036**: Il sistema deve fornire nella root del repository uno script eseguibile `doxygen.sh` che, quando invocato, deve utilizzare l'eseguibile `doxygen` disponibile nel sistema operativo per generare documentazione completa dei sorgenti in `src/` con configurazione orientata a estrazione completa (`EXTRACT_ALL`, ricorsione directory, supporto membri privati/statici). Lo script deve generare output in `doxygen/` suddiviso per formato: HTML in `doxygen/html`, PDF in `doxygen/pdf` (con produzione del file PDF finale tramite pipeline LaTeX/PDF), Markdown in `doxygen/markdown`.
 
 ### 3.3 Struttura File Progetto
 ```
@@ -192,6 +195,8 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 │   ├── __main__.py          # Entry point modulo
 │   └── core.py              # Implementazione principale (66KB)
 ├── tests/                   # Suite test (77 test case)
+├── doxygen.sh               # Script generazione documentazione Doxygen
+├── doxygen/                 # Output documentazione generata (html/pdf/markdown)
 ├── docs/
 │   └── requirements.md      # Requisiti esistenti
 ├── pyproject.toml           # Configurazione progetto

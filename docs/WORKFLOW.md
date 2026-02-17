@@ -107,6 +107,21 @@
     - `build-release` job: build and publish Python distributions on git tag push [`.github/workflows/release-uvx.yml:L13-L48`].
       - description: Triggered on `push.tags: v*`; checks out repository; sets Python 3.11 and `uv`; installs dependencies from `requirements.txt`; builds artifacts with `python -m build`; attests provenance; publishes GitHub release assets.
 
+- Feature: Doxygen documentation generation pipeline.
+  - Module: `doxygen.sh`.
+    - `main()`: orchestrate multi-format documentation build from `src/` [`doxygen.sh:L10-L40`].
+      - description: Validates external dependencies (`doxygen`, `pdflatex`, `makeindex`, `pandoc`); recreates deterministic output directories; generates temporary Doxygen configuration; invokes Doxygen scan; compiles LaTeX output to `refman.pdf`; converts generated HTML pages to Markdown files preserving tree structure.
+      - `require_command()`: validate executable availability in PATH [`doxygen.sh:L49-L55`].
+        - description: Resolves each required binary with `command -v`; emits explicit error on missing tool and terminates non-zero.
+      - `prepare_output_directories()`: reset output workspace [`doxygen.sh:L64-L67`].
+        - description: Removes stale artifacts under `doxygen/html`, `doxygen/pdf`, `doxygen/markdown`; recreates empty directories for deterministic regeneration.
+      - `write_doxyfile()`: emit runtime Doxygen configuration [`doxygen.sh:L112-L160`].
+        - description: Writes configuration focused on complete extraction (`EXTRACT_ALL`, private/static members, recursive scan) and enables HTML + LaTeX outputs rooted under `doxygen/`.
+      - `build_pdf_documentation()`: compile LaTeX artifact into PDF [`doxygen.sh:L76-L91`].
+        - description: Executes `pdflatex` + `makeindex` cycle in `doxygen/pdf`; validates existence of `doxygen/pdf/refman.pdf`; fails explicitly when missing.
+      - `build_markdown_documentation()`: transform Doxygen HTML pages to Markdown [`doxygen.sh:L100-L108`].
+        - description: Iterates all generated HTML files and converts each file to GitHub-flavored Markdown via `pandoc` into mirrored `doxygen/markdown` subpaths.
+
 - Cross-cutting: external interactions and reusable logic inventory.
   - External API calls.
     - `check_for_newer_version()`: HTTP GET to GitHub Releases API via `urlopen(Request(...))` [`src/git_alias/core.py:L175-L186`, `src/git_alias/core.py:L24-L25`].
@@ -132,3 +147,4 @@
   - `REQ-017`/`REQ-025` alignment: version detection and rewrite paths implemented by `_collect_version_files()`, `_determine_canonical_version()`, `cmd_chver()` [`docs/REQUIREMENTS.md:L166-L177`, `src/git_alias/core.py:L1008-L1120`, `src/git_alias/core.py:L1861-L1929`].
   - `REQ-018`/`REQ-026` alignment: changelog generation and release workflow integration implemented by `cmd_changelog()`, `generate_changelog_document()`, `_execute_release_flow()` [`docs/REQUIREMENTS.md:L167-L178`, `src/git_alias/core.py:L959-L1004`, `src/git_alias/core.py:L1255-L1295`, `src/git_alias/core.py:L1951-L1982`].
   - `REQ-033` alignment: cached online update-check in `check_for_newer_version()` with 6-hour TTL and GitHub API endpoint [`docs/REQUIREMENTS.md:L184-L184`, `src/git_alias/core.py:L24-L29`, `src/git_alias/core.py:L142-L221`].
+  - `REQ-036` alignment: scripted multi-format Doxygen generation implemented by `main()`, `write_doxyfile()`, `build_pdf_documentation()`, `build_markdown_documentation()` [`docs/REQUIREMENTS.md:L187-L187`, `doxygen.sh:L10-L160`].
