@@ -34,6 +34,14 @@ class ConventionalCommitAliasesTest(unittest.TestCase):
             core.cmd_change(["Refactoring"])
         execute.assert_called_once_with("change(ui): Refactoring", "change", allow_amend=False)
 
+    def test_implement_uses_default_module_when_prefix_missing(self):
+        with mock.patch.object(core, "_ensure_commit_ready") as ensure, mock.patch.object(
+            core, "_execute_commit", return_value=None
+        ) as execute:
+            core.cmd_implement(["Nuova", "feature"])
+        ensure.assert_called_once_with("implement")
+        execute.assert_called_once_with("implement(core): Nuova feature", "implement", allow_amend=False)
+
     def test_missing_message_raises_error(self):
         with mock.patch.object(core, "_ensure_commit_ready"):
             err = io.StringIO()

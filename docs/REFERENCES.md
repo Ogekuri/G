@@ -31,7 +31,7 @@ import sys
 
 ---
 
-# core.py | Python | 2686L | 166 symbols | 16 imports | 655 comments
+# core.py | Python | 2699L | 167 symbols | 16 imports | 659 comments
 > Path: `/home/ogekuri/G/src/git_alias/core.py`
 
 ## Imports
@@ -123,418 +123,421 @@ import pathspec
 
 - var `HELP_TEXTS = {` (L377)
 - Brief: Constant `HELP_TEXTS` used by CLI runtime paths and policies.
-- var `RESET_HELP_COMMANDS = {"rs", "rshrd", "rskep", "rsmix", "rsmrg", "rssft"}` (L525)
+- var `RESET_HELP_COMMANDS = {"rs", "rshrd", "rskep", "rsmix", "rsmrg", "rssft"}` (L526)
 - Brief: Constant `RESET_HELP_COMMANDS` used by CLI runtime paths and policies.
-### fn `def _to_args(extra)` `priv` (L532-535)
+### fn `def _to_args(extra)` `priv` (L533-536)
 - Return: Result emitted by `_to_args` according to command contract.
 
-### class `class CommandExecutionError(RuntimeError)` : RuntimeError (L537-578)
+### class `class CommandExecutionError(RuntimeError)` : RuntimeError (L538-579)
 - Brief: Class `CommandExecutionError` models a typed runtime container/error boundary. Execute `__init__` runtime logic for Git-Alias CLI. Execute `_format_message` runtime logic for Git-Alias CLI. Execute `_decode_stream` runtime logic for Git-Alias CLI.
 - Param: self Input parameter consumed by `__init__`. exc Input parameter consumed by `__init__`. self Input parameter consumed by `_format_message`. data Input parameter consumed by `_decode_stream`.
 - Return: Result emitted by `__init__` according to command contract. Result emitted by `_format_message` according to command contract. Result emitted by `_decode_stream` according to command contract.
-- fn `def __init__(self, exc: subprocess.CalledProcessError)` `priv` (L542-549)
+- fn `def __init__(self, exc: subprocess.CalledProcessError)` `priv` (L543-550)
   - Return: Result emitted by `__init__` according to command contract.
-- fn `def _format_message(self) -> str` `priv` (L553-563)
+- fn `def _format_message(self) -> str` `priv` (L554-564)
   - Return: Result emitted by `_format_message` according to command contract.
-- fn `def _decode_stream(data) -> str` `priv` (L568-578)
+- fn `def _decode_stream(data) -> str` `priv` (L569-579)
   - Return: Result emitted by `_decode_stream` according to command contract.
 
-### fn `def _run_checked(*popenargs, **kwargs)` `priv` (L584-591)
+### fn `def _run_checked(*popenargs, **kwargs)` `priv` (L585-592)
 - Return: Result emitted by `_run_checked` according to command contract.
 
-### class `class VersionDetectionError(RuntimeError)` : RuntimeError (L593-596)
+### class `class VersionDetectionError(RuntimeError)` : RuntimeError (L594-597)
 - Brief: Class `VersionDetectionError` models a typed runtime container/error boundary.
 
-### class `class ReleaseError(RuntimeError)` : RuntimeError (L598-601)
+### class `class ReleaseError(RuntimeError)` : RuntimeError (L599-602)
 - Brief: Class `ReleaseError` models a typed runtime container/error boundary.
 
-### fn `def run_git_cmd(base_args, extra=None, cwd=None, **kwargs)` (L609-613)
+### fn `def run_git_cmd(base_args, extra=None, cwd=None, **kwargs)` (L610-614)
 - Return: Result emitted by `run_git_cmd` according to command contract.
 
-### fn `def capture_git_output(base_args, cwd=None)` (L619-623)
+### fn `def capture_git_output(base_args, cwd=None)` (L620-624)
 - Return: Result emitted by `capture_git_output` according to command contract.
 
-### fn `def run_command(cmd, cwd=None)` (L629-632)
+### fn `def run_command(cmd, cwd=None)` (L630-633)
 - Return: Result emitted by `run_command` according to command contract.
 
-### fn `def run_git_text(args, cwd=None, check=True)` (L639-656)
+### fn `def run_git_text(args, cwd=None, check=True)` (L640-657)
 - Return: Result emitted by `run_git_text` according to command contract.
 
-### fn `def run_shell(command, cwd=None)` (L662-665)
+### fn `def run_shell(command, cwd=None)` (L663-666)
 - Return: Result emitted by `run_shell` according to command contract.
 
-### fn `def run_git_text(args, cwd=None, check=True)` (L672-689)
+### fn `def run_git_text(args, cwd=None, check=True)` (L673-690)
 - Return: Result emitted by `run_git_text` according to command contract.
 
-### fn `def _git_status_lines()` `priv` (L693-705)
+### fn `def _git_status_lines()` `priv` (L694-706)
 - Return: Result emitted by `_git_status_lines` according to command contract.
 
-### fn `def has_unstaged_changes(status_lines=None)` (L710-721)
+### fn `def has_unstaged_changes(status_lines=None)` (L711-722)
 - Return: Result emitted by `has_unstaged_changes` according to command contract.
 
-### fn `def has_staged_changes(status_lines=None)` (L726-735)
+### fn `def has_staged_changes(status_lines=None)` (L727-736)
 - Return: Result emitted by `has_staged_changes` according to command contract.
 
-- var `WIP_MESSAGE_RE = re.compile(r"^wip: work in progress\.$")` (L741)
+- var `WIP_MESSAGE_RE = re.compile(r"^wip: work in progress\.$")` (L742)
 - Brief: Constant `WIP_MESSAGE_RE` used by CLI runtime paths and policies.
-### fn `def _refresh_remote_refs()` `priv` (L747-758)
+### fn `def _refresh_remote_refs()` `priv` (L748-759)
 - Return: Result emitted by `_refresh_remote_refs` according to command contract.
 
-### fn `def _branch_remote_divergence(branch_key, remote="origin")` `priv` (L764-782)
+### fn `def _branch_remote_divergence(branch_key, remote="origin")` `priv` (L765-783)
 - Return: Result emitted by `_branch_remote_divergence` according to command contract.
 
-### fn `def has_remote_branch_updates(branch_key, remote="origin")` (L788-792)
+### fn `def has_remote_branch_updates(branch_key, remote="origin")` (L789-793)
 - Return: Result emitted by `has_remote_branch_updates` according to command contract.
 
-### fn `def has_remote_develop_updates()` (L796-799)
+### fn `def has_remote_develop_updates()` (L797-800)
 - Return: Result emitted by `has_remote_develop_updates` according to command contract.
 
-### fn `def has_remote_master_updates()` (L803-806)
+### fn `def has_remote_master_updates()` (L804-807)
 - Return: Result emitted by `has_remote_master_updates` according to command contract.
 
-### fn `def _head_commit_message()` `priv` (L810-816)
+### fn `def _head_commit_message()` `priv` (L811-817)
 - Return: Result emitted by `_head_commit_message` according to command contract.
 
-### fn `def _head_commit_hash()` `priv` (L820-826)
+### fn `def _head_commit_hash()` `priv` (L821-827)
 - Return: Result emitted by `_head_commit_hash` according to command contract.
 
-### fn `def _commit_exists_in_branch(commit_hash, branch_name)` `priv` (L832-844)
+### fn `def _commit_exists_in_branch(commit_hash, branch_name)` `priv` (L833-845)
 - Return: Result emitted by `_commit_exists_in_branch` according to command contract.
 
-### fn `def _should_amend_existing_commit()` `priv` (L848-863)
+### fn `def _should_amend_existing_commit()` `priv` (L849-864)
 - Return: Result emitted by `_should_amend_existing_commit` according to command contract.
 
-### fn `def is_inside_git_repo()` (L867-874)
+### fn `def is_inside_git_repo()` (L868-875)
 - Return: Result emitted by `is_inside_git_repo` according to command contract.
 
-### class `class TagInfo` (L879-887)
+### class `class TagInfo` (L880-888)
 - Brief: Store raw tag name including `v` prefix when present. Store ISO date string used for changelog section headers. Store object hash associated with the tag reference.
 - Details: Encapsulates tag identity, tag date, and resolved Git object identifier for changelog assembly.
 
-- var `DELIM = "\x1f"` (L890)
+- var `DELIM = "\x1f"` (L891)
 - Brief: Constant `DELIM` used by CLI runtime paths and policies.
-- var `RECORD = "\x1e"` (L893)
+- var `RECORD = "\x1e"` (L894)
 - Brief: Constant `RECORD` used by CLI runtime paths and policies.
-- var `SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")` (L909)
+- var `SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")` (L910)
 - Brief: Constant `SEMVER_RE` used by CLI runtime paths and policies.
-- var `SECTION_EMOJI = {` (L912)
+- var `SECTION_EMOJI = {` (L913)
 - Brief: Constant `SECTION_EMOJI` used by CLI runtime paths and policies.
-- var `MIN_SUPPORTED_HISTORY_VERSION = (0, 1, 0)` (L926)
+- var `MIN_SUPPORTED_HISTORY_VERSION = (0, 1, 0)` (L928)
 - Brief: Constant `MIN_SUPPORTED_HISTORY_VERSION` used by CLI runtime paths and policies.
-### fn `def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[int, int, int]]` `priv` (L933-936)
+### fn `def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[int, int, int]]` `priv` (L935-938)
 - Return: Result emitted by `_tag_semver_tuple` according to command contract.
 
-### fn `def _is_supported_release_tag(tag_name: str) -> bool` `priv` (L941-947)
+### fn `def _is_supported_release_tag(tag_name: str) -> bool` `priv` (L943-949)
 - Return: Result emitted by `_is_supported_release_tag` according to command contract.
 
-### fn `def _should_include_tag(tag_name: str, include_draft: bool) -> bool` `priv` (L953-956)
+### fn `def _should_include_tag(tag_name: str, include_draft: bool) -> bool` `priv` (L955-958)
 - Return: Result emitted by `_should_include_tag` according to command contract.
 
-### fn `def _latest_supported_tag_name(tags: List[TagInfo], include_draft: bool) -> Optional[str]` `priv` (L962-970)
+### fn `def _latest_supported_tag_name(tags: List[TagInfo], include_draft: bool) -> Optional[str]` `priv` (L964-972)
 - Return: Result emitted by `_latest_supported_tag_name` according to command contract.
 
-### fn `def list_tags_sorted_by_date(repo_root: Path, merged_ref: Optional[str] = None) -> List[TagInfo]` (L976-996)
+### fn `def list_tags_sorted_by_date(repo_root: Path, merged_ref: Optional[str] = None) -> List[TagInfo]` (L978-998)
 - Return: Result emitted by `list_tags_sorted_by_date` according to command contract.
 
-### fn `def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]` (L1002-1013)
+### fn `def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]` (L1004-1015)
 - Return: Result emitted by `git_log_subjects` according to command contract.
 
-### fn `def categorize_commit(subject: str) -> Tuple[Optional[str], str]` (L1018-1041)
+### fn `def categorize_commit(subject: str) -> Tuple[Optional[str], str]` (L1020-1044)
 - Return: Result emitted by `categorize_commit` according to command contract.
 
-### fn `def _extract_release_version(subject: str) -> Optional[str]` `priv` (L1046-1052)
+### fn `def _extract_release_version(subject: str) -> Optional[str]` `priv` (L1049-1055)
 - Return: Result emitted by `_extract_release_version` according to command contract.
 
-### fn `def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_range: str, expected_version: Optional[str] = None) -> Optional[str]` (L1061-1096)
+### fn `def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_range: str, expected_version: Optional[str] = None) -> Optional[str]` (L1064-1100)
 - Return: Result emitted by `generate_section_for_range` according to command contract.
 
-### fn `def _canonical_origin_base(repo_root: Path) -> Optional[str]` `priv` (L1101-1118)
+### fn `def _canonical_origin_base(repo_root: Path) -> Optional[str]` `priv` (L1105-1122)
 - Return: Result emitted by `_canonical_origin_base` according to command contract.
 
-### fn `def get_origin_compare_url(base_url: Optional[str], prev_tag: Optional[str], tag: str) -> Optional[str]` (L1125-1132)
+### fn `def get_origin_compare_url(base_url: Optional[str], prev_tag: Optional[str], tag: str) -> Optional[str]` (L1129-1136)
 - Return: Result emitted by `get_origin_compare_url` according to command contract.
 
-### fn `def get_release_page_url(base_url: Optional[str], tag: str) -> Optional[str]` (L1138-1143)
+### fn `def get_release_page_url(base_url: Optional[str], tag: str) -> Optional[str]` (L1142-1147)
 - Return: Result emitted by `get_release_page_url` according to command contract.
 
-### fn `def build_history_section(` (L1152-1157)
+### fn `def build_history_section(` (L1156-1161)
 - Return: Result emitted by `build_history_section` according to command contract.
 
-### fn `def generate_changelog_document(repo_root: Path, include_unreleased: bool, include_draft: bool = False) -> str` (L1192-1239)
+### fn `def generate_changelog_document(repo_root: Path, include_unreleased: bool, include_draft: bool = False) -> str` (L1196-1243)
 - Return: Result emitted by `generate_changelog_document` according to command contract.
 
-### fn `def _collect_version_files(root, pattern)` `priv` (L1245-1280)
+### fn `def _collect_version_files(root, pattern)` `priv` (L1249-1284)
 - Details: Apply pathspec matcher to preserve configured GitIgnore-like semantics.
 - Return: Result emitted by `_collect_version_files` according to command contract.
 
-### fn `def _is_version_path_excluded(relative_path: str) -> bool` `priv` (L1285-1288)
+### fn `def _is_version_path_excluded(relative_path: str) -> bool` `priv` (L1289-1292)
 - Return: Result emitted by `_is_version_path_excluded` according to command contract.
 
-### fn `def _iter_versions_in_text(text, compiled_regexes)` `priv` (L1294-1305)
+### fn `def _iter_versions_in_text(text, compiled_regexes)` `priv` (L1298-1309)
 - Return: Result emitted by `_iter_versions_in_text` according to command contract.
 
-### fn `def _determine_canonical_version(root: Path, rules, *, verbose: bool = False, debug: bool = False)` `priv` (L1313-1372)
+### fn `def _determine_canonical_version(root: Path, rules, *, verbose: bool = False, debug: bool = False)` `priv` (L1317-1376)
 - Return: Result emitted by `_determine_canonical_version` according to command contract.
 
-### fn `def _parse_semver_tuple(text)` `priv` (L1377-1383)
+### fn `def _parse_semver_tuple(text)` `priv` (L1381-1387)
 - Return: Result emitted by `_parse_semver_tuple` according to command contract.
 
-### fn `def _replace_versions_in_text(text, compiled_regex, replacement)` `priv` (L1390-1405)
+### fn `def _replace_versions_in_text(text, compiled_regex, replacement)` `priv` (L1394-1409)
 - Return: Result emitted by `_replace_versions_in_text` according to command contract.
 
-### fn `def _current_branch_name()` `priv` (L1409-1421)
+### fn `def _current_branch_name()` `priv` (L1413-1425)
 - Return: Result emitted by `_current_branch_name` according to command contract.
 
-### fn `def _ref_exists(ref_name)` `priv` (L1426-1435)
+### fn `def _ref_exists(ref_name)` `priv` (L1430-1439)
 - Return: Result emitted by `_ref_exists` according to command contract.
 
-### fn `def _local_branch_exists(branch_name)` `priv` (L1440-1443)
+### fn `def _local_branch_exists(branch_name)` `priv` (L1444-1447)
 - Return: Result emitted by `_local_branch_exists` according to command contract.
 
-### fn `def _remote_branch_exists(branch_name)` `priv` (L1448-1451)
+### fn `def _remote_branch_exists(branch_name)` `priv` (L1452-1455)
 - Return: Result emitted by `_remote_branch_exists` according to command contract.
 
-### fn `def _ensure_release_prerequisites()` `priv` (L1455-1482)
+### fn `def _ensure_release_prerequisites()` `priv` (L1459-1486)
 - Return: Result emitted by `_ensure_release_prerequisites` according to command contract.
 
-### fn `def _bump_semver_version(current_version, level)` `priv` (L1488-1506)
+### fn `def _bump_semver_version(current_version, level)` `priv` (L1492-1510)
 - Return: Result emitted by `_bump_semver_version` according to command contract.
 
-### fn `def _run_release_step(level, step_name, action)` `priv` (L1513-1533)
+### fn `def _run_release_step(level, step_name, action)` `priv` (L1517-1537)
 - Return: Result emitted by `_run_release_step` according to command contract.
 
-### fn `def _execute_release_flow(level, changelog_args=None)` `priv` (L1539-1581)
+### fn `def _execute_release_flow(level, changelog_args=None)` `priv` (L1543-1585)
 - Return: Result emitted by `_execute_release_flow` according to command contract.
 
-### fn `def _run_release_command(level, changelog_args=None)` `priv` (L1587-1602)
+### fn `def _run_release_command(level, changelog_args=None)` `priv` (L1591-1606)
 - Return: Result emitted by `_run_release_command` according to command contract.
 
-### fn `def _run_reset_with_help(base_args, extra)` `priv` (L1608-1615)
+### fn `def _run_reset_with_help(base_args, extra)` `priv` (L1612-1619)
 - Return: Result emitted by `_run_reset_with_help` according to command contract.
 
-### fn `def _reject_extra_arguments(extra, alias)` `priv` (L1621-1627)
+### fn `def _reject_extra_arguments(extra, alias)` `priv` (L1625-1631)
 - Return: Result emitted by `_reject_extra_arguments` according to command contract.
 
-### fn `def _parse_release_flags(extra, alias)` `priv` (L1633-1651)
+### fn `def _parse_release_flags(extra, alias)` `priv` (L1637-1655)
 - Return: Result emitted by `_parse_release_flags` according to command contract.
 
-### fn `def _prepare_commit_message(extra, alias)` `priv` (L1657-1667)
+### fn `def _prepare_commit_message(extra, alias)` `priv` (L1661-1671)
 - Return: Result emitted by `_prepare_commit_message` according to command contract.
 
-### fn `def _build_conventional_message(kind: str, extra, alias: str) -> str` `priv` (L1674-1688)
+### fn `def _build_conventional_message(kind: str, extra, alias: str) -> str` `priv` (L1678-1692)
 - Return: Result emitted by `_build_conventional_message` according to command contract.
 
-### fn `def _run_conventional_commit(kind: str, alias: str, extra)` `priv` (L1695-1700)
+### fn `def _run_conventional_commit(kind: str, alias: str, extra)` `priv` (L1699-1704)
 - Return: Result emitted by `_run_conventional_commit` according to command contract.
 
-### fn `def _execute_commit(message, alias, allow_amend=True)` `priv` (L1707-1736)
+### fn `def _execute_commit(message, alias, allow_amend=True)` `priv` (L1711-1740)
 - Return: Result emitted by `_execute_commit` according to command contract.
 
-### fn `def upgrade_self()` (L1740-1753)
+### fn `def upgrade_self()` (L1744-1757)
 - Return: Result emitted by `upgrade_self` according to command contract.
 
-### fn `def remove_self()` (L1757-1760)
+### fn `def remove_self()` (L1761-1764)
 - Return: Result emitted by `remove_self` according to command contract.
 
-### fn `def cmd_aa(extra)` (L1765-1772)
+### fn `def cmd_aa(extra)` (L1769-1776)
 - Return: Result emitted by `cmd_aa` according to command contract.
 
-### fn `def cmd_ra(extra)` (L1777-1800)
+### fn `def cmd_ra(extra)` (L1781-1804)
 - Return: Result emitted by `cmd_ra` according to command contract.
 
-### fn `def cmd_ar(extra)` (L1805-1818)
+### fn `def cmd_ar(extra)` (L1809-1822)
 - Return: Result emitted by `cmd_ar` according to command contract.
 
-### fn `def cmd_br(extra)` (L1823-1826)
+### fn `def cmd_br(extra)` (L1827-1830)
 - Return: Result emitted by `cmd_br` according to command contract.
 
-### fn `def cmd_bd(extra)` (L1831-1834)
+### fn `def cmd_bd(extra)` (L1835-1838)
 - Return: Result emitted by `cmd_bd` according to command contract.
 
-### fn `def cmd_ck(extra)` (L1839-1842)
+### fn `def cmd_ck(extra)` (L1843-1846)
 - Return: Result emitted by `cmd_ck` according to command contract.
 
-### fn `def _ensure_commit_ready(alias)` `priv` (L1847-1860)
+### fn `def _ensure_commit_ready(alias)` `priv` (L1851-1864)
 - Return: Result emitted by `_ensure_commit_ready` according to command contract.
 
-### fn `def cmd_cm(extra)` (L1865-1870)
+### fn `def cmd_cm(extra)` (L1869-1874)
 - Return: Result emitted by `cmd_cm` according to command contract.
 
-### fn `def cmd_wip(extra)` (L1875-1887)
+### fn `def cmd_wip(extra)` (L1879-1891)
 - Return: Result emitted by `cmd_wip` according to command contract.
 
-### fn `def cmd_release(extra)` (L1892-1914)
+### fn `def cmd_release(extra)` (L1896-1918)
 - Return: Result emitted by `cmd_release` according to command contract.
 
-### fn `def cmd_new(extra)` (L1919-1922)
+### fn `def cmd_new(extra)` (L1923-1926)
 - Return: Result emitted by `cmd_new` according to command contract.
 
-### fn `def cmd_refactor(extra)` (L1927-1930)
+### fn `def cmd_refactor(extra)` (L1931-1934)
 - Return: Result emitted by `cmd_refactor` according to command contract.
 
-### fn `def cmd_fix(extra)` (L1935-1938)
+### fn `def cmd_fix(extra)` (L1939-1942)
 - Return: Result emitted by `cmd_fix` according to command contract.
 
-### fn `def cmd_change(extra)` (L1943-1946)
+### fn `def cmd_change(extra)` (L1947-1950)
 - Return: Result emitted by `cmd_change` according to command contract.
 
-### fn `def cmd_docs(extra)` (L1951-1954)
+### fn `def cmd_implement(extra)` (L1955-1958)
+- Return: Result emitted by `cmd_implement` according to command contract.
+
+### fn `def cmd_docs(extra)` (L1963-1966)
 - Return: Result emitted by `cmd_docs` according to command contract.
 
-### fn `def cmd_style(extra)` (L1959-1962)
+### fn `def cmd_style(extra)` (L1971-1974)
 - Return: Result emitted by `cmd_style` according to command contract.
 
-### fn `def cmd_revert(extra)` (L1967-1970)
+### fn `def cmd_revert(extra)` (L1979-1982)
 - Return: Result emitted by `cmd_revert` according to command contract.
 
-### fn `def cmd_misc(extra)` (L1975-1978)
+### fn `def cmd_misc(extra)` (L1987-1990)
 - Return: Result emitted by `cmd_misc` according to command contract.
 
-### fn `def cmd_cover(extra)` (L1983-1986)
+### fn `def cmd_cover(extra)` (L1995-1998)
 - Return: Result emitted by `cmd_cover` according to command contract.
 
-### fn `def cmd_co(extra)` (L1991-1994)
+### fn `def cmd_co(extra)` (L2003-2006)
 - Return: Result emitted by `cmd_co` according to command contract.
 
-### fn `def cmd_d(extra)` (L1999-2006)
+### fn `def cmd_d(extra)` (L2011-2018)
 - Return: Result emitted by `cmd_d` according to command contract.
 
-### fn `def cmd_dc(extra)` (L2011-2014)
+### fn `def cmd_dc(extra)` (L2023-2026)
 - Return: Result emitted by `cmd_dc` according to command contract.
 
-### fn `def cmd_de(extra)` (L2019-2022)
+### fn `def cmd_de(extra)` (L2031-2034)
 - Return: Result emitted by `cmd_de` according to command contract.
 
-### fn `def cmd_di(extra)` (L2027-2030)
+### fn `def cmd_di(extra)` (L2039-2042)
 - Return: Result emitted by `cmd_di` according to command contract.
 
-### fn `def cmd_diyou(extra)` (L2035-2038)
+### fn `def cmd_diyou(extra)` (L2047-2050)
 - Return: Result emitted by `cmd_diyou` according to command contract.
 
-### fn `def cmd_dime(extra)` (L2043-2046)
+### fn `def cmd_dime(extra)` (L2055-2058)
 - Return: Result emitted by `cmd_dime` according to command contract.
 
-### fn `def cmd_dw(extra)` (L2051-2054)
+### fn `def cmd_dw(extra)` (L2063-2066)
 - Return: Result emitted by `cmd_dw` according to command contract.
 
-### fn `def cmd_ed(extra)` (L2059-2068)
+### fn `def cmd_ed(extra)` (L2071-2080)
 - Return: Result emitted by `cmd_ed` according to command contract.
 
-### fn `def cmd_fe(extra)` (L2073-2076)
+### fn `def cmd_fe(extra)` (L2085-2088)
 - Return: Result emitted by `cmd_fe` according to command contract.
 
-### fn `def cmd_feall(extra)` (L2081-2084)
+### fn `def cmd_feall(extra)` (L2093-2096)
 - Return: Result emitted by `cmd_feall` according to command contract.
 
-### fn `def cmd_gp(extra)` (L2089-2092)
+### fn `def cmd_gp(extra)` (L2101-2104)
 - Return: Result emitted by `cmd_gp` according to command contract.
 
-### fn `def cmd_gr(extra)` (L2097-2100)
+### fn `def cmd_gr(extra)` (L2109-2112)
 - Return: Result emitted by `cmd_gr` according to command contract.
 
-### fn `def cmd_str(extra)` (L2105-2134)
+### fn `def cmd_str(extra)` (L2117-2146)
 - Details: Query git remotes with transport metadata. Deduplicate remote names from `git remote -v` rows. Print normalized remote name inventory. Print detailed status for each unique remote.
 - Return: Result emitted by `cmd_str` according to command contract.
 
-### fn `def cmd_lb(extra)` (L2139-2142)
+### fn `def cmd_lb(extra)` (L2151-2154)
 - Return: Result emitted by `cmd_lb` according to command contract.
 
-### fn `def cmd_lg(extra)` (L2147-2160)
+### fn `def cmd_lg(extra)` (L2159-2172)
 - Return: Result emitted by `cmd_lg` according to command contract.
 
-### fn `def cmd_lh(extra)` (L2165-2168)
+### fn `def cmd_lh(extra)` (L2177-2180)
 - Return: Result emitted by `cmd_lh` according to command contract.
 
-### fn `def cmd_ll(extra)` (L2173-2185)
+### fn `def cmd_ll(extra)` (L2185-2197)
 - Return: Result emitted by `cmd_ll` according to command contract.
 
-### fn `def cmd_lm(extra)` (L2190-2193)
+### fn `def cmd_lm(extra)` (L2202-2205)
 - Return: Result emitted by `cmd_lm` according to command contract.
 
-### fn `def cmd_lt(extra)` (L2198-2201)
+### fn `def cmd_lt(extra)` (L2210-2213)
 - Return: Result emitted by `cmd_lt` according to command contract.
 
-### fn `def cmd_me(extra)` (L2206-2209)
+### fn `def cmd_me(extra)` (L2218-2221)
 - Return: Result emitted by `cmd_me` according to command contract.
 
-### fn `def cmd_pl(extra)` (L2214-2217)
+### fn `def cmd_pl(extra)` (L2226-2229)
 - Return: Result emitted by `cmd_pl` according to command contract.
 
-### fn `def cmd_pt(extra)` (L2222-2225)
+### fn `def cmd_pt(extra)` (L2234-2237)
 - Return: Result emitted by `cmd_pt` according to command contract.
 
-### fn `def cmd_pu(extra)` (L2230-2233)
+### fn `def cmd_pu(extra)` (L2242-2245)
 - Return: Result emitted by `cmd_pu` according to command contract.
 
-### fn `def cmd_rf(extra)` (L2238-2241)
+### fn `def cmd_rf(extra)` (L2250-2253)
 - Return: Result emitted by `cmd_rf` according to command contract.
 
-### fn `def cmd_rmtg(extra)` (L2246-2256)
+### fn `def cmd_rmtg(extra)` (L2258-2268)
 - Return: Result emitted by `cmd_rmtg` according to command contract.
 
-### fn `def cmd_rmloc(extra)` (L2261-2264)
+### fn `def cmd_rmloc(extra)` (L2273-2276)
 - Return: Result emitted by `cmd_rmloc` according to command contract.
 
-### fn `def cmd_rmstg(extra)` (L2269-2272)
+### fn `def cmd_rmstg(extra)` (L2281-2284)
 - Return: Result emitted by `cmd_rmstg` according to command contract.
 
-### fn `def cmd_rmunt(extra)` (L2277-2280)
+### fn `def cmd_rmunt(extra)` (L2289-2292)
 - Return: Result emitted by `cmd_rmunt` according to command contract.
 
-### fn `def cmd_rs(extra)` (L2285-2288)
+### fn `def cmd_rs(extra)` (L2297-2300)
 - Return: Result emitted by `cmd_rs` according to command contract.
 
-### fn `def cmd_rssft(extra)` (L2293-2296)
+### fn `def cmd_rssft(extra)` (L2305-2308)
 - Return: Result emitted by `cmd_rssft` according to command contract.
 
-### fn `def cmd_rsmix(extra)` (L2301-2304)
+### fn `def cmd_rsmix(extra)` (L2313-2316)
 - Return: Result emitted by `cmd_rsmix` according to command contract.
 
-### fn `def cmd_rshrd(extra)` (L2309-2312)
+### fn `def cmd_rshrd(extra)` (L2321-2324)
 - Return: Result emitted by `cmd_rshrd` according to command contract.
 
-### fn `def cmd_rsmrg(extra)` (L2317-2320)
+### fn `def cmd_rsmrg(extra)` (L2329-2332)
 - Return: Result emitted by `cmd_rsmrg` according to command contract.
 
-### fn `def cmd_rskep(extra)` (L2325-2328)
+### fn `def cmd_rskep(extra)` (L2337-2340)
 - Return: Result emitted by `cmd_rskep` according to command contract.
 
-### fn `def cmd_st(extra)` (L2333-2336)
+### fn `def cmd_st(extra)` (L2345-2348)
 - Return: Result emitted by `cmd_st` according to command contract.
 
-### fn `def cmd_tg(extra)` (L2341-2344)
+### fn `def cmd_tg(extra)` (L2353-2356)
 - Return: Result emitted by `cmd_tg` according to command contract.
 
-### fn `def cmd_unstg(extra)` (L2349-2352)
+### fn `def cmd_unstg(extra)` (L2361-2364)
 - Return: Result emitted by `cmd_unstg` according to command contract.
 
-### fn `def cmd_ver(extra)` (L2357-2375)
+### fn `def cmd_ver(extra)` (L2369-2387)
 - Return: Result emitted by `cmd_ver` according to command contract.
 
-### fn `def cmd_chver(extra)` (L2380-2450)
+### fn `def cmd_chver(extra)` (L2392-2462)
 - Return: Result emitted by `cmd_chver` according to command contract.
 
-### fn `def cmd_major(extra)` (L2455-2459)
+### fn `def cmd_major(extra)` (L2467-2471)
 - Return: Result emitted by `cmd_major` according to command contract.
 
-### fn `def cmd_minor(extra)` (L2464-2468)
+### fn `def cmd_minor(extra)` (L2476-2480)
 - Return: Result emitted by `cmd_minor` according to command contract.
 
-### fn `def cmd_patch(extra)` (L2473-2477)
+### fn `def cmd_patch(extra)` (L2485-2489)
 - Return: Result emitted by `cmd_patch` according to command contract.
 
-### fn `def cmd_changelog(extra)` (L2482-2514)
+### fn `def cmd_changelog(extra)` (L2494-2526)
 - Return: Result emitted by `cmd_changelog` according to command contract.
 
-- var `COMMANDS = {` (L2517)
+- var `COMMANDS = {` (L2529)
 - Brief: Constant `COMMANDS` used by CLI runtime paths and policies.
-### fn `def print_command_help(name, width=None)` (L2586-2592)
+### fn `def print_command_help(name, width=None)` (L2599-2605)
 - Return: Result emitted by `print_command_help` according to command contract.
 
-### fn `def print_all_help()` (L2596-2630)
+### fn `def print_all_help()` (L2609-2643)
 - Return: Result emitted by `print_all_help` according to command contract.
 
-### fn `def main(argv=None, *, check_updates: bool = True)` (L2636-2686)
+### fn `def main(argv=None, *, check_updates: bool = True)` (L2649-2699)
 - Return: Result emitted by `main` according to command contract.
 
 ## Symbol Index
@@ -566,144 +569,145 @@ import pathspec
 |`_editor_base_command`|fn|priv|353-367|def _editor_base_command()|
 |`run_editor_command`|fn|pub|372-374|def run_editor_command(args)|
 |`HELP_TEXTS`|var|pub|377||
-|`RESET_HELP_COMMANDS`|var|pub|525||
-|`_to_args`|fn|priv|532-535|def _to_args(extra)|
-|`CommandExecutionError`|class|pub|537-578|class CommandExecutionError(RuntimeError)|
-|`CommandExecutionError.__init__`|fn|priv|542-549|def __init__(self, exc: subprocess.CalledProcessError)|
-|`CommandExecutionError._format_message`|fn|priv|553-563|def _format_message(self) -> str|
-|`CommandExecutionError._decode_stream`|fn|priv|568-578|def _decode_stream(data) -> str|
-|`_run_checked`|fn|priv|584-591|def _run_checked(*popenargs, **kwargs)|
-|`VersionDetectionError`|class|pub|593-596|class VersionDetectionError(RuntimeError)|
-|`ReleaseError`|class|pub|598-601|class ReleaseError(RuntimeError)|
-|`run_git_cmd`|fn|pub|609-613|def run_git_cmd(base_args, extra=None, cwd=None, **kwargs)|
-|`capture_git_output`|fn|pub|619-623|def capture_git_output(base_args, cwd=None)|
-|`run_command`|fn|pub|629-632|def run_command(cmd, cwd=None)|
-|`run_git_text`|fn|pub|639-656|def run_git_text(args, cwd=None, check=True)|
-|`run_shell`|fn|pub|662-665|def run_shell(command, cwd=None)|
-|`run_git_text`|fn|pub|672-689|def run_git_text(args, cwd=None, check=True)|
-|`_git_status_lines`|fn|priv|693-705|def _git_status_lines()|
-|`has_unstaged_changes`|fn|pub|710-721|def has_unstaged_changes(status_lines=None)|
-|`has_staged_changes`|fn|pub|726-735|def has_staged_changes(status_lines=None)|
-|`WIP_MESSAGE_RE`|var|pub|741||
-|`_refresh_remote_refs`|fn|priv|747-758|def _refresh_remote_refs()|
-|`_branch_remote_divergence`|fn|priv|764-782|def _branch_remote_divergence(branch_key, remote="origin")|
-|`has_remote_branch_updates`|fn|pub|788-792|def has_remote_branch_updates(branch_key, remote="origin")|
-|`has_remote_develop_updates`|fn|pub|796-799|def has_remote_develop_updates()|
-|`has_remote_master_updates`|fn|pub|803-806|def has_remote_master_updates()|
-|`_head_commit_message`|fn|priv|810-816|def _head_commit_message()|
-|`_head_commit_hash`|fn|priv|820-826|def _head_commit_hash()|
-|`_commit_exists_in_branch`|fn|priv|832-844|def _commit_exists_in_branch(commit_hash, branch_name)|
-|`_should_amend_existing_commit`|fn|priv|848-863|def _should_amend_existing_commit()|
-|`is_inside_git_repo`|fn|pub|867-874|def is_inside_git_repo()|
-|`TagInfo`|class|pub|879-887|class TagInfo|
-|`DELIM`|var|pub|890||
-|`RECORD`|var|pub|893||
-|`SEMVER_RE`|var|pub|909||
-|`SECTION_EMOJI`|var|pub|912||
-|`MIN_SUPPORTED_HISTORY_VERSION`|var|pub|926||
-|`_tag_semver_tuple`|fn|priv|933-936|def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[in...|
-|`_is_supported_release_tag`|fn|priv|941-947|def _is_supported_release_tag(tag_name: str) -> bool|
-|`_should_include_tag`|fn|priv|953-956|def _should_include_tag(tag_name: str, include_draft: boo...|
-|`_latest_supported_tag_name`|fn|priv|962-970|def _latest_supported_tag_name(tags: List[TagInfo], inclu...|
-|`list_tags_sorted_by_date`|fn|pub|976-996|def list_tags_sorted_by_date(repo_root: Path, merged_ref:...|
-|`git_log_subjects`|fn|pub|1002-1013|def git_log_subjects(repo_root: Path, rev_range: str) -> ...|
-|`categorize_commit`|fn|pub|1018-1041|def categorize_commit(subject: str) -> Tuple[Optional[str...|
-|`_extract_release_version`|fn|priv|1046-1052|def _extract_release_version(subject: str) -> Optional[str]|
-|`generate_section_for_range`|fn|pub|1061-1096|def generate_section_for_range(repo_root: Path, title: st...|
-|`_canonical_origin_base`|fn|priv|1101-1118|def _canonical_origin_base(repo_root: Path) -> Optional[str]|
-|`get_origin_compare_url`|fn|pub|1125-1132|def get_origin_compare_url(base_url: Optional[str], prev_...|
-|`get_release_page_url`|fn|pub|1138-1143|def get_release_page_url(base_url: Optional[str], tag: st...|
-|`build_history_section`|fn|pub|1152-1157|def build_history_section(|
-|`generate_changelog_document`|fn|pub|1192-1239|def generate_changelog_document(repo_root: Path, include_...|
-|`_collect_version_files`|fn|priv|1245-1280|def _collect_version_files(root, pattern)|
-|`_is_version_path_excluded`|fn|priv|1285-1288|def _is_version_path_excluded(relative_path: str) -> bool|
-|`_iter_versions_in_text`|fn|priv|1294-1305|def _iter_versions_in_text(text, compiled_regexes)|
-|`_determine_canonical_version`|fn|priv|1313-1372|def _determine_canonical_version(root: Path, rules, *, ve...|
-|`_parse_semver_tuple`|fn|priv|1377-1383|def _parse_semver_tuple(text)|
-|`_replace_versions_in_text`|fn|priv|1390-1405|def _replace_versions_in_text(text, compiled_regex, repla...|
-|`_current_branch_name`|fn|priv|1409-1421|def _current_branch_name()|
-|`_ref_exists`|fn|priv|1426-1435|def _ref_exists(ref_name)|
-|`_local_branch_exists`|fn|priv|1440-1443|def _local_branch_exists(branch_name)|
-|`_remote_branch_exists`|fn|priv|1448-1451|def _remote_branch_exists(branch_name)|
-|`_ensure_release_prerequisites`|fn|priv|1455-1482|def _ensure_release_prerequisites()|
-|`_bump_semver_version`|fn|priv|1488-1506|def _bump_semver_version(current_version, level)|
-|`_run_release_step`|fn|priv|1513-1533|def _run_release_step(level, step_name, action)|
-|`_execute_release_flow`|fn|priv|1539-1581|def _execute_release_flow(level, changelog_args=None)|
-|`_run_release_command`|fn|priv|1587-1602|def _run_release_command(level, changelog_args=None)|
-|`_run_reset_with_help`|fn|priv|1608-1615|def _run_reset_with_help(base_args, extra)|
-|`_reject_extra_arguments`|fn|priv|1621-1627|def _reject_extra_arguments(extra, alias)|
-|`_parse_release_flags`|fn|priv|1633-1651|def _parse_release_flags(extra, alias)|
-|`_prepare_commit_message`|fn|priv|1657-1667|def _prepare_commit_message(extra, alias)|
-|`_build_conventional_message`|fn|priv|1674-1688|def _build_conventional_message(kind: str, extra, alias: ...|
-|`_run_conventional_commit`|fn|priv|1695-1700|def _run_conventional_commit(kind: str, alias: str, extra)|
-|`_execute_commit`|fn|priv|1707-1736|def _execute_commit(message, alias, allow_amend=True)|
-|`upgrade_self`|fn|pub|1740-1753|def upgrade_self()|
-|`remove_self`|fn|pub|1757-1760|def remove_self()|
-|`cmd_aa`|fn|pub|1765-1772|def cmd_aa(extra)|
-|`cmd_ra`|fn|pub|1777-1800|def cmd_ra(extra)|
-|`cmd_ar`|fn|pub|1805-1818|def cmd_ar(extra)|
-|`cmd_br`|fn|pub|1823-1826|def cmd_br(extra)|
-|`cmd_bd`|fn|pub|1831-1834|def cmd_bd(extra)|
-|`cmd_ck`|fn|pub|1839-1842|def cmd_ck(extra)|
-|`_ensure_commit_ready`|fn|priv|1847-1860|def _ensure_commit_ready(alias)|
-|`cmd_cm`|fn|pub|1865-1870|def cmd_cm(extra)|
-|`cmd_wip`|fn|pub|1875-1887|def cmd_wip(extra)|
-|`cmd_release`|fn|pub|1892-1914|def cmd_release(extra)|
-|`cmd_new`|fn|pub|1919-1922|def cmd_new(extra)|
-|`cmd_refactor`|fn|pub|1927-1930|def cmd_refactor(extra)|
-|`cmd_fix`|fn|pub|1935-1938|def cmd_fix(extra)|
-|`cmd_change`|fn|pub|1943-1946|def cmd_change(extra)|
-|`cmd_docs`|fn|pub|1951-1954|def cmd_docs(extra)|
-|`cmd_style`|fn|pub|1959-1962|def cmd_style(extra)|
-|`cmd_revert`|fn|pub|1967-1970|def cmd_revert(extra)|
-|`cmd_misc`|fn|pub|1975-1978|def cmd_misc(extra)|
-|`cmd_cover`|fn|pub|1983-1986|def cmd_cover(extra)|
-|`cmd_co`|fn|pub|1991-1994|def cmd_co(extra)|
-|`cmd_d`|fn|pub|1999-2006|def cmd_d(extra)|
-|`cmd_dc`|fn|pub|2011-2014|def cmd_dc(extra)|
-|`cmd_de`|fn|pub|2019-2022|def cmd_de(extra)|
-|`cmd_di`|fn|pub|2027-2030|def cmd_di(extra)|
-|`cmd_diyou`|fn|pub|2035-2038|def cmd_diyou(extra)|
-|`cmd_dime`|fn|pub|2043-2046|def cmd_dime(extra)|
-|`cmd_dw`|fn|pub|2051-2054|def cmd_dw(extra)|
-|`cmd_ed`|fn|pub|2059-2068|def cmd_ed(extra)|
-|`cmd_fe`|fn|pub|2073-2076|def cmd_fe(extra)|
-|`cmd_feall`|fn|pub|2081-2084|def cmd_feall(extra)|
-|`cmd_gp`|fn|pub|2089-2092|def cmd_gp(extra)|
-|`cmd_gr`|fn|pub|2097-2100|def cmd_gr(extra)|
-|`cmd_str`|fn|pub|2105-2134|def cmd_str(extra)|
-|`cmd_lb`|fn|pub|2139-2142|def cmd_lb(extra)|
-|`cmd_lg`|fn|pub|2147-2160|def cmd_lg(extra)|
-|`cmd_lh`|fn|pub|2165-2168|def cmd_lh(extra)|
-|`cmd_ll`|fn|pub|2173-2185|def cmd_ll(extra)|
-|`cmd_lm`|fn|pub|2190-2193|def cmd_lm(extra)|
-|`cmd_lt`|fn|pub|2198-2201|def cmd_lt(extra)|
-|`cmd_me`|fn|pub|2206-2209|def cmd_me(extra)|
-|`cmd_pl`|fn|pub|2214-2217|def cmd_pl(extra)|
-|`cmd_pt`|fn|pub|2222-2225|def cmd_pt(extra)|
-|`cmd_pu`|fn|pub|2230-2233|def cmd_pu(extra)|
-|`cmd_rf`|fn|pub|2238-2241|def cmd_rf(extra)|
-|`cmd_rmtg`|fn|pub|2246-2256|def cmd_rmtg(extra)|
-|`cmd_rmloc`|fn|pub|2261-2264|def cmd_rmloc(extra)|
-|`cmd_rmstg`|fn|pub|2269-2272|def cmd_rmstg(extra)|
-|`cmd_rmunt`|fn|pub|2277-2280|def cmd_rmunt(extra)|
-|`cmd_rs`|fn|pub|2285-2288|def cmd_rs(extra)|
-|`cmd_rssft`|fn|pub|2293-2296|def cmd_rssft(extra)|
-|`cmd_rsmix`|fn|pub|2301-2304|def cmd_rsmix(extra)|
-|`cmd_rshrd`|fn|pub|2309-2312|def cmd_rshrd(extra)|
-|`cmd_rsmrg`|fn|pub|2317-2320|def cmd_rsmrg(extra)|
-|`cmd_rskep`|fn|pub|2325-2328|def cmd_rskep(extra)|
-|`cmd_st`|fn|pub|2333-2336|def cmd_st(extra)|
-|`cmd_tg`|fn|pub|2341-2344|def cmd_tg(extra)|
-|`cmd_unstg`|fn|pub|2349-2352|def cmd_unstg(extra)|
-|`cmd_ver`|fn|pub|2357-2375|def cmd_ver(extra)|
-|`cmd_chver`|fn|pub|2380-2450|def cmd_chver(extra)|
-|`cmd_major`|fn|pub|2455-2459|def cmd_major(extra)|
-|`cmd_minor`|fn|pub|2464-2468|def cmd_minor(extra)|
-|`cmd_patch`|fn|pub|2473-2477|def cmd_patch(extra)|
-|`cmd_changelog`|fn|pub|2482-2514|def cmd_changelog(extra)|
-|`COMMANDS`|var|pub|2517||
-|`print_command_help`|fn|pub|2586-2592|def print_command_help(name, width=None)|
-|`print_all_help`|fn|pub|2596-2630|def print_all_help()|
-|`main`|fn|pub|2636-2686|def main(argv=None, *, check_updates: bool = True)|
+|`RESET_HELP_COMMANDS`|var|pub|526||
+|`_to_args`|fn|priv|533-536|def _to_args(extra)|
+|`CommandExecutionError`|class|pub|538-579|class CommandExecutionError(RuntimeError)|
+|`CommandExecutionError.__init__`|fn|priv|543-550|def __init__(self, exc: subprocess.CalledProcessError)|
+|`CommandExecutionError._format_message`|fn|priv|554-564|def _format_message(self) -> str|
+|`CommandExecutionError._decode_stream`|fn|priv|569-579|def _decode_stream(data) -> str|
+|`_run_checked`|fn|priv|585-592|def _run_checked(*popenargs, **kwargs)|
+|`VersionDetectionError`|class|pub|594-597|class VersionDetectionError(RuntimeError)|
+|`ReleaseError`|class|pub|599-602|class ReleaseError(RuntimeError)|
+|`run_git_cmd`|fn|pub|610-614|def run_git_cmd(base_args, extra=None, cwd=None, **kwargs)|
+|`capture_git_output`|fn|pub|620-624|def capture_git_output(base_args, cwd=None)|
+|`run_command`|fn|pub|630-633|def run_command(cmd, cwd=None)|
+|`run_git_text`|fn|pub|640-657|def run_git_text(args, cwd=None, check=True)|
+|`run_shell`|fn|pub|663-666|def run_shell(command, cwd=None)|
+|`run_git_text`|fn|pub|673-690|def run_git_text(args, cwd=None, check=True)|
+|`_git_status_lines`|fn|priv|694-706|def _git_status_lines()|
+|`has_unstaged_changes`|fn|pub|711-722|def has_unstaged_changes(status_lines=None)|
+|`has_staged_changes`|fn|pub|727-736|def has_staged_changes(status_lines=None)|
+|`WIP_MESSAGE_RE`|var|pub|742||
+|`_refresh_remote_refs`|fn|priv|748-759|def _refresh_remote_refs()|
+|`_branch_remote_divergence`|fn|priv|765-783|def _branch_remote_divergence(branch_key, remote="origin")|
+|`has_remote_branch_updates`|fn|pub|789-793|def has_remote_branch_updates(branch_key, remote="origin")|
+|`has_remote_develop_updates`|fn|pub|797-800|def has_remote_develop_updates()|
+|`has_remote_master_updates`|fn|pub|804-807|def has_remote_master_updates()|
+|`_head_commit_message`|fn|priv|811-817|def _head_commit_message()|
+|`_head_commit_hash`|fn|priv|821-827|def _head_commit_hash()|
+|`_commit_exists_in_branch`|fn|priv|833-845|def _commit_exists_in_branch(commit_hash, branch_name)|
+|`_should_amend_existing_commit`|fn|priv|849-864|def _should_amend_existing_commit()|
+|`is_inside_git_repo`|fn|pub|868-875|def is_inside_git_repo()|
+|`TagInfo`|class|pub|880-888|class TagInfo|
+|`DELIM`|var|pub|891||
+|`RECORD`|var|pub|894||
+|`SEMVER_RE`|var|pub|910||
+|`SECTION_EMOJI`|var|pub|913||
+|`MIN_SUPPORTED_HISTORY_VERSION`|var|pub|928||
+|`_tag_semver_tuple`|fn|priv|935-938|def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[in...|
+|`_is_supported_release_tag`|fn|priv|943-949|def _is_supported_release_tag(tag_name: str) -> bool|
+|`_should_include_tag`|fn|priv|955-958|def _should_include_tag(tag_name: str, include_draft: boo...|
+|`_latest_supported_tag_name`|fn|priv|964-972|def _latest_supported_tag_name(tags: List[TagInfo], inclu...|
+|`list_tags_sorted_by_date`|fn|pub|978-998|def list_tags_sorted_by_date(repo_root: Path, merged_ref:...|
+|`git_log_subjects`|fn|pub|1004-1015|def git_log_subjects(repo_root: Path, rev_range: str) -> ...|
+|`categorize_commit`|fn|pub|1020-1044|def categorize_commit(subject: str) -> Tuple[Optional[str...|
+|`_extract_release_version`|fn|priv|1049-1055|def _extract_release_version(subject: str) -> Optional[str]|
+|`generate_section_for_range`|fn|pub|1064-1100|def generate_section_for_range(repo_root: Path, title: st...|
+|`_canonical_origin_base`|fn|priv|1105-1122|def _canonical_origin_base(repo_root: Path) -> Optional[str]|
+|`get_origin_compare_url`|fn|pub|1129-1136|def get_origin_compare_url(base_url: Optional[str], prev_...|
+|`get_release_page_url`|fn|pub|1142-1147|def get_release_page_url(base_url: Optional[str], tag: st...|
+|`build_history_section`|fn|pub|1156-1161|def build_history_section(|
+|`generate_changelog_document`|fn|pub|1196-1243|def generate_changelog_document(repo_root: Path, include_...|
+|`_collect_version_files`|fn|priv|1249-1284|def _collect_version_files(root, pattern)|
+|`_is_version_path_excluded`|fn|priv|1289-1292|def _is_version_path_excluded(relative_path: str) -> bool|
+|`_iter_versions_in_text`|fn|priv|1298-1309|def _iter_versions_in_text(text, compiled_regexes)|
+|`_determine_canonical_version`|fn|priv|1317-1376|def _determine_canonical_version(root: Path, rules, *, ve...|
+|`_parse_semver_tuple`|fn|priv|1381-1387|def _parse_semver_tuple(text)|
+|`_replace_versions_in_text`|fn|priv|1394-1409|def _replace_versions_in_text(text, compiled_regex, repla...|
+|`_current_branch_name`|fn|priv|1413-1425|def _current_branch_name()|
+|`_ref_exists`|fn|priv|1430-1439|def _ref_exists(ref_name)|
+|`_local_branch_exists`|fn|priv|1444-1447|def _local_branch_exists(branch_name)|
+|`_remote_branch_exists`|fn|priv|1452-1455|def _remote_branch_exists(branch_name)|
+|`_ensure_release_prerequisites`|fn|priv|1459-1486|def _ensure_release_prerequisites()|
+|`_bump_semver_version`|fn|priv|1492-1510|def _bump_semver_version(current_version, level)|
+|`_run_release_step`|fn|priv|1517-1537|def _run_release_step(level, step_name, action)|
+|`_execute_release_flow`|fn|priv|1543-1585|def _execute_release_flow(level, changelog_args=None)|
+|`_run_release_command`|fn|priv|1591-1606|def _run_release_command(level, changelog_args=None)|
+|`_run_reset_with_help`|fn|priv|1612-1619|def _run_reset_with_help(base_args, extra)|
+|`_reject_extra_arguments`|fn|priv|1625-1631|def _reject_extra_arguments(extra, alias)|
+|`_parse_release_flags`|fn|priv|1637-1655|def _parse_release_flags(extra, alias)|
+|`_prepare_commit_message`|fn|priv|1661-1671|def _prepare_commit_message(extra, alias)|
+|`_build_conventional_message`|fn|priv|1678-1692|def _build_conventional_message(kind: str, extra, alias: ...|
+|`_run_conventional_commit`|fn|priv|1699-1704|def _run_conventional_commit(kind: str, alias: str, extra)|
+|`_execute_commit`|fn|priv|1711-1740|def _execute_commit(message, alias, allow_amend=True)|
+|`upgrade_self`|fn|pub|1744-1757|def upgrade_self()|
+|`remove_self`|fn|pub|1761-1764|def remove_self()|
+|`cmd_aa`|fn|pub|1769-1776|def cmd_aa(extra)|
+|`cmd_ra`|fn|pub|1781-1804|def cmd_ra(extra)|
+|`cmd_ar`|fn|pub|1809-1822|def cmd_ar(extra)|
+|`cmd_br`|fn|pub|1827-1830|def cmd_br(extra)|
+|`cmd_bd`|fn|pub|1835-1838|def cmd_bd(extra)|
+|`cmd_ck`|fn|pub|1843-1846|def cmd_ck(extra)|
+|`_ensure_commit_ready`|fn|priv|1851-1864|def _ensure_commit_ready(alias)|
+|`cmd_cm`|fn|pub|1869-1874|def cmd_cm(extra)|
+|`cmd_wip`|fn|pub|1879-1891|def cmd_wip(extra)|
+|`cmd_release`|fn|pub|1896-1918|def cmd_release(extra)|
+|`cmd_new`|fn|pub|1923-1926|def cmd_new(extra)|
+|`cmd_refactor`|fn|pub|1931-1934|def cmd_refactor(extra)|
+|`cmd_fix`|fn|pub|1939-1942|def cmd_fix(extra)|
+|`cmd_change`|fn|pub|1947-1950|def cmd_change(extra)|
+|`cmd_implement`|fn|pub|1955-1958|def cmd_implement(extra)|
+|`cmd_docs`|fn|pub|1963-1966|def cmd_docs(extra)|
+|`cmd_style`|fn|pub|1971-1974|def cmd_style(extra)|
+|`cmd_revert`|fn|pub|1979-1982|def cmd_revert(extra)|
+|`cmd_misc`|fn|pub|1987-1990|def cmd_misc(extra)|
+|`cmd_cover`|fn|pub|1995-1998|def cmd_cover(extra)|
+|`cmd_co`|fn|pub|2003-2006|def cmd_co(extra)|
+|`cmd_d`|fn|pub|2011-2018|def cmd_d(extra)|
+|`cmd_dc`|fn|pub|2023-2026|def cmd_dc(extra)|
+|`cmd_de`|fn|pub|2031-2034|def cmd_de(extra)|
+|`cmd_di`|fn|pub|2039-2042|def cmd_di(extra)|
+|`cmd_diyou`|fn|pub|2047-2050|def cmd_diyou(extra)|
+|`cmd_dime`|fn|pub|2055-2058|def cmd_dime(extra)|
+|`cmd_dw`|fn|pub|2063-2066|def cmd_dw(extra)|
+|`cmd_ed`|fn|pub|2071-2080|def cmd_ed(extra)|
+|`cmd_fe`|fn|pub|2085-2088|def cmd_fe(extra)|
+|`cmd_feall`|fn|pub|2093-2096|def cmd_feall(extra)|
+|`cmd_gp`|fn|pub|2101-2104|def cmd_gp(extra)|
+|`cmd_gr`|fn|pub|2109-2112|def cmd_gr(extra)|
+|`cmd_str`|fn|pub|2117-2146|def cmd_str(extra)|
+|`cmd_lb`|fn|pub|2151-2154|def cmd_lb(extra)|
+|`cmd_lg`|fn|pub|2159-2172|def cmd_lg(extra)|
+|`cmd_lh`|fn|pub|2177-2180|def cmd_lh(extra)|
+|`cmd_ll`|fn|pub|2185-2197|def cmd_ll(extra)|
+|`cmd_lm`|fn|pub|2202-2205|def cmd_lm(extra)|
+|`cmd_lt`|fn|pub|2210-2213|def cmd_lt(extra)|
+|`cmd_me`|fn|pub|2218-2221|def cmd_me(extra)|
+|`cmd_pl`|fn|pub|2226-2229|def cmd_pl(extra)|
+|`cmd_pt`|fn|pub|2234-2237|def cmd_pt(extra)|
+|`cmd_pu`|fn|pub|2242-2245|def cmd_pu(extra)|
+|`cmd_rf`|fn|pub|2250-2253|def cmd_rf(extra)|
+|`cmd_rmtg`|fn|pub|2258-2268|def cmd_rmtg(extra)|
+|`cmd_rmloc`|fn|pub|2273-2276|def cmd_rmloc(extra)|
+|`cmd_rmstg`|fn|pub|2281-2284|def cmd_rmstg(extra)|
+|`cmd_rmunt`|fn|pub|2289-2292|def cmd_rmunt(extra)|
+|`cmd_rs`|fn|pub|2297-2300|def cmd_rs(extra)|
+|`cmd_rssft`|fn|pub|2305-2308|def cmd_rssft(extra)|
+|`cmd_rsmix`|fn|pub|2313-2316|def cmd_rsmix(extra)|
+|`cmd_rshrd`|fn|pub|2321-2324|def cmd_rshrd(extra)|
+|`cmd_rsmrg`|fn|pub|2329-2332|def cmd_rsmrg(extra)|
+|`cmd_rskep`|fn|pub|2337-2340|def cmd_rskep(extra)|
+|`cmd_st`|fn|pub|2345-2348|def cmd_st(extra)|
+|`cmd_tg`|fn|pub|2353-2356|def cmd_tg(extra)|
+|`cmd_unstg`|fn|pub|2361-2364|def cmd_unstg(extra)|
+|`cmd_ver`|fn|pub|2369-2387|def cmd_ver(extra)|
+|`cmd_chver`|fn|pub|2392-2462|def cmd_chver(extra)|
+|`cmd_major`|fn|pub|2467-2471|def cmd_major(extra)|
+|`cmd_minor`|fn|pub|2476-2480|def cmd_minor(extra)|
+|`cmd_patch`|fn|pub|2485-2489|def cmd_patch(extra)|
+|`cmd_changelog`|fn|pub|2494-2526|def cmd_changelog(extra)|
+|`COMMANDS`|var|pub|2529||
+|`print_command_help`|fn|pub|2599-2605|def print_command_help(name, width=None)|
+|`print_all_help`|fn|pub|2609-2643|def print_all_help()|
+|`main`|fn|pub|2649-2699|def main(argv=None, *, check_updates: bool = True)|
 

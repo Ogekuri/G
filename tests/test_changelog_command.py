@@ -246,3 +246,18 @@ class ChangelogCommandTest(unittest.TestCase):
         lines = history.splitlines()
         self.assertIn("- \\[0.0.9\\]: https://github.com/Ogekuri/G/releases/tag/v0.0.9", lines)
         self.assertIn("- \\[0.1.0\\]: https://github.com/Ogekuri/G/releases/tag/v0.1.0", lines)
+
+    def test_categorize_commit_maps_implement_type(self):
+        section, line = core.categorize_commit("implement(core): Add implementation command")
+        self.assertEqual(section, "Implementations")
+        self.assertEqual(line, "- *(core)* Add implementation command")
+
+    def test_generate_section_renders_implementations_header_with_icon(self):
+        with mock.patch.object(
+            core,
+            "git_log_subjects",
+            return_value=["implement(core): Build command pipeline"],
+        ):
+            section = core.generate_section_for_range(Path("/tmp"), "v1.2.3", "2026-02-18", "v1.2.2..v1.2.3")
+        self.assertIsNotNone(section)
+        self.assertIn("### 🏗️  Implementations", section)

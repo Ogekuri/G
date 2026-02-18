@@ -405,6 +405,7 @@ HELP_TEXTS = {
     "major": "Release a new major version from the work branch. Options: --include-unreleased, --include-draft.",
     "minor": "Release a new minor version from the work branch. Options: --include-unreleased, --include-draft.",
     "new": "Conventional commit new(module): description.",
+    "implement": "Conventional commit implement(module): description.",
     "refactor": "Conventional commit refactor(module): description.",
     "fix": "Conventional commit fix(module): description.",
     "change": "Conventional commit change(module): description.",
@@ -894,7 +895,7 @@ RECORD = "\x1e"
 ## @brief Constant `_CONVENTIONAL_RE` used by CLI runtime paths and policies.
 
 _CONVENTIONAL_RE = re.compile(
-    r"^(?P<type>new|fix|change|refactor|docs|style|revert|misc|cover)"
+    r"^(?P<type>new|fix|change|implement|refactor|docs|style|revert|misc|cover)"
     r"(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?:\s+(?P<desc>.+)$",
     re.IGNORECASE,
 )
@@ -911,6 +912,7 @@ SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 
 SECTION_EMOJI = {
     "Features": "⛰️",
+    "Implementations": "🏗️",
     "Bug Fixes": "🐛",
     "Changes": "🚜",
     "Refactor": "✨",
@@ -1026,6 +1028,7 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
     line = f"- {scope_text}{desc}"
     mapping = {
         "new": "Features",
+        "implement": "Implementations",
         "fix": "Bug Fixes",
         "change": "Changes",
         "cover": "Cover Requirements",
@@ -1074,6 +1077,7 @@ def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_ran
     lines.append(f"## {title} - {date_s}")
     order = [
         "Features",
+        "Implementations",
         "Bug Fixes",
         "Changes",
         "Cover Requirements",
@@ -1944,6 +1948,14 @@ def cmd_change(extra):
     return _run_conventional_commit("change", "change", extra)
 
 
+## @brief Execute `cmd_implement` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_implement` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_implement`.
+# @return Result emitted by `cmd_implement` according to command contract.
+def cmd_implement(extra):
+    return _run_conventional_commit("implement", "implement", extra)
+
+
 ## @brief Execute `cmd_docs` runtime logic for Git-Alias CLI.
 # @details Executes `cmd_docs` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_docs`.
@@ -2522,6 +2534,7 @@ COMMANDS = {
     "chver": cmd_chver,
     "changelog": cmd_changelog,
     "change": cmd_change,
+    "implement": cmd_implement,
     "ck": cmd_ck,
     "cm": cmd_cm,
     "co": cmd_co,
