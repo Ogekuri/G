@@ -9,7 +9,7 @@
 ```
 
 # __init__.py | Python | 13L | 0 symbols | 1 imports | 7 comments
-> Path: `/home/ogekuri/G/src/git_alias/__init__.py`
+> Path: `src/git_alias/__init__.py`
 
 ## Imports
 ```
@@ -20,7 +20,7 @@ from .core import main  # noqa: F401
 ---
 
 # __main__.py | Python | 11L | 0 symbols | 2 imports | 5 comments
-> Path: `/home/ogekuri/G/src/git_alias/__main__.py`
+> Path: `src/git_alias/__main__.py`
 
 ## Imports
 ```
@@ -32,7 +32,7 @@ import sys
 ---
 
 # core.py | Python | 2699L | 167 symbols | 16 imports | 659 comments
-> Path: `/home/ogekuri/G/src/git_alias/core.py`
+> Path: `src/git_alias/core.py`
 
 ## Imports
 ```
