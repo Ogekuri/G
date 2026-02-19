@@ -1,169 +1,135 @@
-# WORKFLOW
+## Execution Units Index
+- ID: PROC:main
+  - type: process
+  - parent_process: null
+  - role: git-alias CLI runtime dispatcher
+  - entrypoint_symbols:
+    - git_alias.__main__.__main__ guard (`src/git_alias/__main__.py:10-11`)
+    - git_alias.core.main (`src/git_alias/core.py:2649-2699`)
+  - defining_files:
+    - src/git_alias/__main__.py
+    - src/git_alias/core.py
 
-- Feature: CLI bootstrap and command dispatch.
-  - Module: `src/git_alias/__main__.py`, `src/git_alias/core.py`, `src/git_alias/__init__.py`.
-    - `main()`: parse CLI args, load runtime configuration, route management flags and aliases [`src/git_alias/core.py:L2090-L2140`].
-      - description: Builds `args`; resolves repository root via `get_git_root()`; hydrates `CONFIG` via `load_cli_config()`; optionally triggers online version-check cache; routes `--ver/--version`, `--write-config`, `--upgrade`, `--remove`, help rendering, alias dispatch through `COMMANDS`; unknown alias path falls back to `run_git_cmd([name], extras)` to execute native git subcommand; catches `CommandExecutionError` and exits with propagated return code.
-      - `get_git_root()`: resolve active repository root path [`src/git_alias/core.py:L225-L239`].
-        - description: Executes `git rev-parse --show-toplevel` through `_run_checked()`; on failure returns `Path.cwd()` fallback.
-      - `load_cli_config()`: load `.g.conf` into in-memory `CONFIG` [`src/git_alias/core.py:L248-L280`].
-        - description: Reads JSON from `get_config_path()`; validates schema (`dict`, string keys, list for `ver_rules`); prints validation errors to stderr and keeps defaults for invalid values.
-      - `check_for_newer_version()`: detect newer release using cache + GitHub API [`src/git_alias/core.py:L142-L221`].
-        - description: Reads/writes cache file `.g_version_check_cache.json` in system temp directory; validates cache TTL; if stale performs HTTP GET to `https://api.github.com/repos/Ogekuri/G/releases/latest`; parses `tag_name`; compares against `get_cli_version()` semver; prints upgrade hint on stderr when newer version exists.
-      - `print_all_help()`: emit usage, management commands, config snapshot, and command index [`src/git_alias/core.py:L2054-L2086`].
-        - description: Prints usage with `get_cli_version()`; enumerates `MANAGEMENT_HELP`; serializes active config values including structured `ver_rules`; lists `COMMANDS` sorted alphabetically.
+## Execution Units
+### PROC:main
+- type: process
+- parent_process: null
+- role: git-alias command routing, git subprocess orchestration, release/version/changelog workflows
+- defining_files:
+  - src/git_alias/__main__.py
+  - src/git_alias/core.py
+- Entrypoint(s):
+  - `__main__` module execution calls `sys.exit(main())` (`src/git_alias/__main__.py:10-11`)
+  - `main(argv=None, check_updates=True)` (`src/git_alias/core.py:2649-2699`)
+- Lifecycle/trigger:
+  - start_trigger: OS launches Python module/script invoking `git_alias.__main__`
+  - stop_conditions:
+    - normal return from `main`
+    - explicit `sys.exit(...)` in validation/error branches
+  - loop_or_blocking:
+    - no persistent loop; request/response style single-command execution
+  - thread_model: no explicit threads detected in `src/` or `.github/workflows/`
+- Internal Call-Trace Tree:
+  - `__main__` guard: module-entry adapter [`src/git_alias/__main__.py`]
+    - `main(...)`: parse argv, load config, route management flags/aliases [`src/git_alias/core.py:2649-2699`]
+      - `get_git_root(...)`: resolve repository root [`src/git_alias/core.py:274-287`]
+        - `_run_checked(...)`: subprocess wrapper with `CommandExecutionError` normalization [`src/git_alias/core.py:585-590`]
+      - `load_cli_config(...)`: initialize CONFIG from `.g.conf` [`src/git_alias/core.py:303-335`]
+        - `get_config_path(...)`: resolve `.g.conf` path [`src/git_alias/core.py:294-296`]
+      - `check_for_newer_version(...)`: optional cached/API version probe [`src/git_alias/core.py:186-268`]
+        - `get_cli_version(...)`: parse `__version__` from package init [`src/git_alias/core.py:159-168`]
+        - `_parse_semver_tuple(...)`: semver parser [`src/git_alias/core.py:1381-1385`]
+        - `_normalize_semver_text(...)`: drop leading `v` [`src/git_alias/core.py:175-179`]
+      - management-flag branches:
+        - `--ver|--version` -> `get_cli_version(...)` [`src/git_alias/core.py:2662-2664`]
+        - `--write-config` -> `write_default_config(...)` [`src/git_alias/core.py:2665-2667`]
+          - `get_config_path(...)` [`src/git_alias/core.py:294-296`]
+        - `--upgrade` -> `upgrade_self(...)` [`src/git_alias/core.py:2668-2670`]
+          - `_run_checked(...)` [`src/git_alias/core.py:1744-1755`]
+        - `--remove` -> `remove_self(...)` [`src/git_alias/core.py:2671-2673`]
+          - `_run_checked(...)` [`src/git_alias/core.py:1761-1762`]
+        - `--help` -> `print_all_help(...)` / `print_command_help(...)` [`src/git_alias/core.py:2674-2681`]
+          - `print_all_help(...)` [`src/git_alias/core.py:2609-2641`]
+            - `get_cli_version(...)` [`src/git_alias/core.py:2609-2610`]
+            - `print_command_help(...)` [`src/git_alias/core.py:2599-2604`]
+      - alias dispatch branches:
+        - unknown alias fallback -> `run_git_cmd([name], extras)` [`src/git_alias/core.py:2685-2687`]
+          - `_to_args(...)` [`src/git_alias/core.py:533-534`]
+          - `_run_checked(...)` [`src/git_alias/core.py:610-613`]
+        - known alias -> `COMMANDS[name](extras)` [`src/git_alias/core.py:2529-2592`, `src/git_alias/core.py:2694`]
+          - Commit and conventional-commit family:
+            - `cmd_cm(...)` -> `_prepare_commit_message(...)` -> `_ensure_commit_ready(...)` -> `_execute_commit(...)` [`src/git_alias/core.py:1869-1872`]
+            - `cmd_wip(...)` -> `_ensure_commit_ready(...)` -> `_execute_commit(...)` [`src/git_alias/core.py:1879-1889`]
+            - `cmd_release(...)` -> `_ensure_commit_ready(...)` -> `get_version_rules(...)` -> `get_git_root(...)` -> `_determine_canonical_version(...)` -> `_execute_commit(...)` [`src/git_alias/core.py:1896-1916`]
+            - `cmd_new|cmd_refactor|cmd_fix|cmd_change|cmd_implement|cmd_docs|cmd_style|cmd_revert|cmd_misc|cmd_cover` -> `_run_conventional_commit(...)` [`src/git_alias/core.py:1923-1996`]
+              - `_build_conventional_message(...)` -> `_prepare_commit_message(...)` [`src/git_alias/core.py:1678-1690`]
+              - `_ensure_commit_ready(...)` [`src/git_alias/core.py:1851-1862`]
+              - `_execute_commit(..., allow_amend=False)` [`src/git_alias/core.py:1711-1738`]
+            - `_execute_commit(...)`: amend/new decision and commit execution [`src/git_alias/core.py:1711-1738`]
+              - `_should_amend_existing_commit(...)` [`src/git_alias/core.py:849-862`]
+                - `_head_commit_message(...)` [`src/git_alias/core.py:811-815`]
+                - `_head_commit_hash(...)` [`src/git_alias/core.py:821-825`]
+                - `get_branch(...)` -> `get_config_value(...)` [`src/git_alias/core.py:105-108`, `src/git_alias/core.py:97-98`]
+                - `_commit_exists_in_branch(...)` [`src/git_alias/core.py:833-843`]
+              - `run_git_cmd(...)` [`src/git_alias/core.py:1726`, `src/git_alias/core.py:610-613`]
+              - `_git_status_lines(...)` / `has_unstaged_changes(...)` / `has_staged_changes(...)` on commit failure [`src/git_alias/core.py:1728-1737`, `src/git_alias/core.py:694-734`]
+          - Release orchestration family:
+            - `cmd_major|cmd_minor|cmd_patch` -> `_parse_release_flags(...)` -> `_run_release_command(...)` [`src/git_alias/core.py:2467-2487`]
+            - `_run_release_command(...)` -> `_execute_release_flow(...)` [`src/git_alias/core.py:1591-1604`]
+            - `_execute_release_flow(...)`: release state machine [`src/git_alias/core.py:1543-1583`]
+              - `_ensure_release_prerequisites(...)` [`src/git_alias/core.py:1459-1484`]
+                - `_local_branch_exists(...)` / `_remote_branch_exists(...)` -> `_ref_exists(...)` [`src/git_alias/core.py:1444-1453`, `src/git_alias/core.py:1430-1437`]
+                - `_refresh_remote_refs(...)` [`src/git_alias/core.py:748-757`]
+                - `has_remote_branch_updates(...)` -> `_branch_remote_divergence(...)` [`src/git_alias/core.py:789-795`, `src/git_alias/core.py:760-786`]
+                - `_current_branch_name(...)` [`src/git_alias/core.py:1413-1423`]
+                - `_git_status_lines(...)` / `has_unstaged_changes(...)` / `has_staged_changes(...)` [`src/git_alias/core.py:694-734`]
+              - `get_version_rules(...)` -> `_load_config_rules(...)` [`src/git_alias/core.py:152-153`, `src/git_alias/core.py:123-147`]
+              - `get_git_root(...)` [`src/git_alias/core.py:274-287`]
+              - `_determine_canonical_version(...)` -> `_collect_version_files(...)` -> `_is_version_path_excluded(...)` -> `_iter_versions_in_text(...)` [`src/git_alias/core.py:1317-1374`, `src/git_alias/core.py:1249-1308`]
+              - `_bump_semver_version(...)` [`src/git_alias/core.py:1492-1508`]
+              - `_run_release_step(...)` wrappers for sequential internal actions [`src/git_alias/core.py:1517-1535`]
+                - `cmd_chver(...)` [`src/git_alias/core.py:2392-2460`]
+                  - `_parse_semver_tuple(...)`, `get_git_root(...)`, `get_version_rules(...)`, `_determine_canonical_version(...)`, `_collect_version_files(...)`, `_replace_versions_in_text(...)` [`src/git_alias/core.py:2398-2451`]
+                - `cmd_release(...)`, `cmd_tg(...)`, `cmd_changelog(...)`, `cmd_co(...)`, `cmd_me(...)`, `cmd_de(...)`, `cmd_pt(...)` [`src/git_alias/core.py:1559-1582`, `src/git_alias/core.py:1896-1916`, `src/git_alias/core.py:2353-2354`, `src/git_alias/core.py:2494-2525`, `src/git_alias/core.py:2003-2004`, `src/git_alias/core.py:2218-2219`, `src/git_alias/core.py:2031-2032`, `src/git_alias/core.py:2234-2235`]
+                - direct `run_git_cmd(...)` stage/push/amend operations [`src/git_alias/core.py:1558`, `src/git_alias/core.py:1562-1563`, `src/git_alias/core.py:1576`, `src/git_alias/core.py:1579`]
+          - Version/changelog inspection family:
+            - `cmd_ver(...)` -> `get_git_root(...)` -> `get_version_rules(...)` -> `_determine_canonical_version(...)` [`src/git_alias/core.py:2369-2385`]
+            - `cmd_chver(...)` -> `_parse_semver_tuple(...)` + canonical-detection + rewrite/verify loop [`src/git_alias/core.py:2392-2460`]
+            - `cmd_changelog(...)` [`src/git_alias/core.py:2494-2525`]
+              - `is_inside_git_repo(...)` -> `run_git_text(...)` [`src/git_alias/core.py:868-873`, `src/git_alias/core.py:640-655`]
+              - `get_git_root(...)` [`src/git_alias/core.py:2512`]
+              - `generate_changelog_document(...)` [`src/git_alias/core.py:1196-1241`]
+                - `list_tags_sorted_by_date(...)` [`src/git_alias/core.py:978-996`]
+                - `_canonical_origin_base(...)` [`src/git_alias/core.py:1105-1120`]
+                - `_latest_supported_tag_name(...)` / `_should_include_tag(...)` / `_is_supported_release_tag(...)` / `_tag_semver_tuple(...)` [`src/git_alias/core.py:964-970`, `src/git_alias/core.py:955-956`, `src/git_alias/core.py:943-947`, `src/git_alias/core.py:935-936`]
+                - `generate_section_for_range(...)` [`src/git_alias/core.py:1064-1098`]
+                  - `git_log_subjects(...)` -> `run_git_text(...)` [`src/git_alias/core.py:1004-1013`]
+                  - `_extract_release_version(...)` [`src/git_alias/core.py:1049-1053`]
+                  - `categorize_commit(...)` [`src/git_alias/core.py:1020-1042`]
+                - `build_history_section(...)` -> `get_release_page_url(...)` + `get_origin_compare_url(...)` [`src/git_alias/core.py:1156-1187`, `src/git_alias/core.py:1142-1145`, `src/git_alias/core.py:1129-1134`]
+          - Diagnostics/editor and passthrough alias family:
+            - `cmd_str(...)` -> `run_git_text(...)` + `run_git_cmd(...)` per remote [`src/git_alias/core.py:2117-2144`]
+            - `cmd_ed(...)` -> `_to_args(...)` -> `run_editor_command(...)` -> `_editor_base_command(...)` -> `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2071-2079`, `src/git_alias/core.py:372-373`, `src/git_alias/core.py:353-365`, `src/git_alias/core.py:630-631`, `src/git_alias/core.py:585-590`]
+            - `cmd_feall(...)` -> `cmd_fe(...)` -> `run_git_cmd(...)` [`src/git_alias/core.py:2093-2094`, `src/git_alias/core.py:2085-2086`]
+            - `cmd_d(...)` -> `_to_args(...)` -> `run_git_cmd(...)` [`src/git_alias/core.py:2011-2016`]
+            - reset-help aliases `cmd_rs|cmd_rssft|cmd_rsmix|cmd_rshrd|cmd_rsmrg|cmd_rskep` -> `_run_reset_with_help(...)` -> `_to_args(...)` -> `run_git_cmd(...)` [`src/git_alias/core.py:2297-2338`, `src/git_alias/core.py:1612-1617`]
+            - `cmd_ra(...)` -> `_to_args(...)` -> `_current_branch_name(...)` -> `_ensure_commit_ready(...)` -> `run_git_cmd(...)` [`src/git_alias/core.py:1781-1802`]
+            - `cmd_ar(...)` -> `_to_args(...)` -> `get_branch(...)` -> `capture_git_output(...)` -> `_run_checked(...)` + gzip pipeline [`src/git_alias/core.py:1809-1820`, `src/git_alias/core.py:620-622`]
+            - direct passthrough aliases to `run_git_cmd(...)`:
+              - `cmd_br, cmd_bd, cmd_ck, cmd_co, cmd_dc, cmd_de, cmd_di, cmd_diyou, cmd_dime, cmd_dw, cmd_fe, cmd_lb, cmd_lg, cmd_lh, cmd_ll, cmd_lm, cmd_lt, cmd_me, cmd_pl, cmd_pt, cmd_pu, cmd_rf, cmd_rmloc, cmd_rmstg, cmd_rmunt, cmd_st, cmd_tg, cmd_unstg` [`src/git_alias/core.py:1827-1836`, `src/git_alias/core.py:1843-1844`, `src/git_alias/core.py:2003-2064`, `src/git_alias/core.py:2085`, `src/git_alias/core.py:2151-2362`]
+              - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:610-613`, `src/git_alias/core.py:533-534`, `src/git_alias/core.py:585-590`]
+          - global dispatch exception handling:
+            - `except CommandExecutionError`: `CommandExecutionError._decode_stream(...)` then `sys.exit(code)` [`src/git_alias/core.py:2695-2699`, `src/git_alias/core.py:569-577`]
+- External Boundaries:
+  - subprocess execution (`subprocess.run`, `subprocess.Popen`) via `_run_checked`, `_ref_exists`, `cmd_ar` pipeline (`src/git_alias/core.py:585-590`, `src/git_alias/core.py:1431-1437`, `src/git_alias/core.py:1815-1819`)
+  - git CLI boundary through `run_git_cmd`, `run_git_text`, `capture_git_output` (`src/git_alias/core.py:610-622`, `src/git_alias/core.py:640-688`)
+  - filesystem read/write boundary for config/version/changelog/cache (`src/git_alias/core.py:303-346`, `src/git_alias/core.py:2392-2444`, `src/git_alias/core.py:2524`, `src/git_alias/core.py:193-257`)
+  - network boundary to GitHub Releases API (`urlopen(Request(...))`) (`src/git_alias/core.py:221-233`)
+  - environment/tool boundary (`uv tool install/uninstall`) (`src/git_alias/core.py:1744-1762`)
 
-- Feature: Configuration and editor execution path.
-  - Module: `src/git_alias/core.py`.
-    - `write_default_config()`: write default `.g.conf` template to repo root [`src/git_alias/core.py:L284-L289`].
-      - description: Resolves config path with `get_config_path()` and persists `DEFAULT_CONFIG` as pretty JSON plus newline.
-    - `cmd_ed()`: open one or more files with configured editor command [`src/git_alias/core.py:L1633-L1641`].
-      - description: Validates positional args; expands `~` via `os.path.expanduser`; invokes `run_editor_command()` per path.
-      - `run_editor_command()`: execute editor base command with supplied arguments [`src/git_alias/core.py:L309-L310`].
-        - description: Delegates to `run_command(_editor_base_command() + args)`; external process failure is normalized by `_run_checked()`.
-      - `_editor_base_command()`: tokenize configured editor string with fallback [`src/git_alias/core.py:L293-L305`].
-        - description: Parses `editor` setting via `shlex.split`; on invalid syntax logs warning and falls back to default editor from `DEFAULT_CONFIG`.
-
-- Feature: Shared command execution and error normalization.
-  - Module: `src/git_alias/core.py`.
-    - `_run_checked()`: subprocess wrapper with typed error translation [`src/git_alias/core.py:L498-L504`].
-      - description: Forces `check=True` unless overridden; converts `subprocess.CalledProcessError` to `CommandExecutionError` so callers can access `stderr` and `returncode`.
-    - `run_git_cmd()`: execute git command with optional extra args [`src/git_alias/core.py:L517-L519`].
-      - description: Constructs `["git"] + base_args + _to_args(extra)` and delegates to `_run_checked()`.
-    - `run_git_text()`: execute git command and return stdout text [`src/git_alias/core.py:L558-L573`].
-      - description: Captures stdout/stderr; on `CommandExecutionError` converts to `RuntimeError` with decoded stderr to simplify non-fatal diagnostic flows.
-    - `CommandExecutionError._decode_stream()`: normalize byte/string stderr payloads [`src/git_alias/core.py:L484-L494`].
-      - description: Converts unknown stream encodings to UTF-8 text with replacement strategy for robust error reporting.
-
-- Feature: Commit-readiness enforcement and conventional commit generation.
-  - Module: `src/git_alias/core.py`.
-    - `cmd_cm()`: standard commit flow [`src/git_alias/core.py:L1518-L1521`].
-      - description: Builds user message via `_prepare_commit_message()`; enforces clean staging preconditions with `_ensure_commit_ready()`; executes commit via `_execute_commit()`.
-      - `_prepare_commit_message()`: validate and compose commit message text [`src/git_alias/core.py:L1353-L1361`].
-        - description: Requires at least one argument; supports alias-local `--help`; returns joined message tokens.
-      - `_ensure_commit_ready()`: block commit if worktree/index state invalid [`src/git_alias/core.py:L1503-L1514`].
-        - description: Uses `_git_status_lines()` + `has_unstaged_changes()` + `has_staged_changes()`; emits explicit stderr diagnostics and exits on invalid states.
-      - `_execute_commit()`: run commit with optional amend-on-WIP logic [`src/git_alias/core.py:L1388-L1415`].
-        - description: Chooses amend/new by `_should_amend_existing_commit()`; executes `git commit` with stdin message; on failure re-checks status to provide deterministic error cause (unstaged vs empty index).
-        - `_should_amend_existing_commit()`: decide if HEAD WIP commit should be amended [`src/git_alias/core.py:L698-L711`].
-          - description: Reads HEAD subject/hash; verifies commit not already integrated into configured `develop`/`master` using `_commit_exists_in_branch()`.
-    - `cmd_wip()`: fixed-message WIP commit flow [`src/git_alias/core.py:L1525-L1535`].
-      - description: Rejects positional args except `--help`; reuses `_ensure_commit_ready()` and `_execute_commit("wip: work in progress.")`.
-    - `cmd_release()`: internal release commit generator [`src/git_alias/core.py:L1539-L1559`].
-      - description: Enforces commit readiness; resolves canonical version through `_determine_canonical_version()` and writes commit message `release version: X.Y.Z`.
-    - `cmd_new()`/`cmd_fix()`/`cmd_change()`/`cmd_implement()`/`cmd_refactor()`/`cmd_docs()`/`cmd_style()`/`cmd_revert()`/`cmd_misc()`/`cmd_cover()`: conventional commit aliases [`src/git_alias/core.py:L1919-L1991`].
-      - description: All aliases delegate to `_run_conventional_commit(kind, alias, extra)` to reuse validation and commit machinery.
-      - `_run_conventional_commit()`: run shared conventional commit pipeline [`src/git_alias/core.py:L1381-L1384`].
-        - description: Builds `<kind>(<module>): <body>` via `_build_conventional_message()`, then executes commit with amend disabled.
-      - `_build_conventional_message()`: infer scope and normalize conventional message [`src/git_alias/core.py:L1365-L1377`].
-        - description: Parses optional `<module>:` prefix with `_MODULE_PREFIX_RE`; otherwise uses `default_module` from config; enforces non-empty body.
-
-- Feature: Version detection, mutation, and consistency verification.
-  - Module: `src/git_alias/core.py`.
-    - `cmd_ver()`: detect and print canonical project version [`src/git_alias/core.py:L1841-L1857`].
-      - description: Parses `--verbose` and `--debug`; loads rules via `get_version_rules()`; computes canonical value through `_determine_canonical_version()`; exits on mismatch/no-match conditions.
-      - `_determine_canonical_version()`: compute single source-of-truth semver across configured files [`src/git_alias/core.py:L1063-L1120`].
-        - description: For each `(pattern, regex)` rule, collects files through `_collect_version_files()`; compiles regex; extracts matched versions via `_iter_versions_in_text()`; raises `VersionDetectionError` for unmatched patterns or conflicting versions.
-        - `_collect_version_files()`: pathspec+rglob file selector with hardcoded exclusions [`src/git_alias/core.py:L1008-L1041`].
-          - description: Iterates `root.rglob("*")`; skips non-files and excluded paths via `_is_version_path_excluded()`; matches normalized paths using `pathspec.PathSpec`.
-        - `_iter_versions_in_text()`: generator for regex-captured version tokens [`src/git_alias/core.py:L1050-L1060`].
-          - description: Yields first non-empty capture group per match or whole match if regex has no groups.
-    - `cmd_chver()`: rewrite version strings across files then re-verify [`src/git_alias/core.py:L1861-L1929`].
-      - description: Validates target semver format; resolves current canonical version; rewrites matched segments via `_replace_versions_in_text()` and `file_path.write_text()`; reruns `_determine_canonical_version()` as postcondition check.
-      - `_replace_versions_in_text()`: deterministic segment replacement by regex spans [`src/git_alias/core.py:L1132-L1145`].
-        - description: Reconstructs string by concatenating untouched slices and replacement token; returns `(new_text, count)`.
-
-- Feature: Automated release orchestration (major/minor/patch).
-  - Module: `src/git_alias/core.py`.
-    - `cmd_major()`/`cmd_minor()`/`cmd_patch()`: release entrypoints [`src/git_alias/core.py:L1933-L1947`].
-      - description: Validate release flags via `_parse_release_flags()` then invoke `_run_release_command(level, changelog_args)`.
-      - `_run_release_command()`: exception boundary for release flow [`src/git_alias/core.py:L1299-L1312`].
-        - description: Runs `_execute_release_flow()` and maps `ReleaseError`, `VersionDetectionError`, and `CommandExecutionError` to deterministic stderr outputs and exit codes.
-      - `_execute_release_flow()`: full release state machine [`src/git_alias/core.py:L1255-L1295`].
-        - description: Validates prerequisites via `_ensure_release_prerequisites()`; computes next semver with `_bump_semver_version()`; executes ordered steps (`cmd_chver`, `git add --all`, `cmd_release`, `cmd_tg`, `cmd_changelog`, amend, force-retag, branch merges/pushes, tags push) using `_run_release_step()` wrappers.
-        - `_ensure_release_prerequisites()`: repository invariants before release [`src/git_alias/core.py:L1184-L1210`].
-          - description: Verifies configured local/remote branches exist, remote refs are updated, no remote-ahead branches, current branch equals configured `work`, worktree clean, staging empty.
-        - `_run_release_step()`: structured step execution and failure wrapping [`src/git_alias/core.py:L1233-L1251`].
-          - description: Executes callback; prints success marker; converts command/system errors into labeled `ReleaseError` blocks.
-
-- Feature: Changelog generation from conventional commits.
-  - Module: `src/git_alias/core.py`.
-    - `cmd_changelog()`: CLI surface for changelog generation [`src/git_alias/core.py:L1951-L1982`].
-      - description: Parses flags (`--force-write`, `--include-unreleased`, `--include-draft`, `--print-only`); requires Git repo; materializes output from `generate_changelog_document()`; writes `CHANGELOG.md` unless print-only.
-      - `generate_changelog_document()`: assemble full markdown changelog [`src/git_alias/core.py:L959-L1004`].
-        - description: Reads tags via `list_tags_sorted_by_date()`; optionally builds unreleased section; creates per-release sections using `generate_section_for_range()`; appends history links from `build_history_section()`.
-        - `generate_section_for_range()`: render categorized section for a revision range [`src/git_alias/core.py:L852-L885`].
-          - description: Fetches subjects with `git_log_subjects()`; filters release subjects by expected version via `_extract_release_version()`; groups entries by `categorize_commit()` mapping and emits ordered markdown subsections.
-        - `build_history_section()`: compose compare/release reference links [`src/git_alias/core.py:L924-L955`].
-          - description: Resolves canonical origin URL via `_canonical_origin_base()`; emits clickable release links and compare references for tags plus optional unreleased range.
-
-- Feature: Remote diagnostics alias.
-  - Module: `src/git_alias/core.py`.
-    - `cmd_str()`: enumerate unique remotes and print `git remote show` for each [`src/git_alias/core.py:L1664-L1691`].
-      - description: Executes `run_git_text(["remote", "-v"])`; deduplicates first column remote names; prints list; executes `run_git_cmd(["remote", "show", remote])` per remote; re-raises command failure.
-
-- Feature: Visual diff aliases.
-  - Module: `src/git_alias/core.py`.
-    - `cmd_dw()`: run directory diff between working tree and HEAD [`src/git_alias/core.py:L2047-L2053`].
-      - description: Executes `run_git_cmd(["difftool", "-d", "HEAD"], extra)`; keeps CLI extra args forwarding for downstream git difftool flags.
-      - `run_git_cmd()`: execute git command with optional extra args [`src/git_alias/core.py:L606-L608`].
-        - description: Builds git argv as `["git"] + base_args + _to_args(extra)` and delegates process execution/error propagation to `_run_checked()`.
-    - `cmd_dc()`: run directory diff between `HEAD~1` and `HEAD` [`src/git_alias/core.py:L2007-L2013`].
-      - description: Executes `run_git_cmd(["difftool", "-d", "HEAD~1", "HEAD"], extra)` to compare the latest two commits with optional passthrough flags.
-      - `run_git_cmd()`: execute git command with optional extra args [`src/git_alias/core.py:L606-L608`].
-        - description: Constructs deterministic git argv and propagates external process failures through `CommandExecutionError`.
-    - `cmd_d()`: run directory diff between two explicit git references [`src/git_alias/core.py:L1995-L2005`].
-      - description: Converts `extra` through `_to_args()`; validates exact arity `len(args) == 2`; emits explicit stderr error and exits non-zero on invalid arity; executes `run_git_cmd(["difftool", "-d", args[0], args[1]])`.
-      - `_to_args()`: normalize optional iterable args into list [`src/git_alias/core.py:L529-L530`].
-        - description: Returns empty list when `extra` is falsy, otherwise materializes a list preserving positional order.
-      - `run_git_cmd()`: execute git command with optional extra args [`src/git_alias/core.py:L606-L608`].
-        - description: Runs validated reference pair against git difftool and preserves raw git return code/error semantics.
-
-- Feature: CI/CD release packaging workflow.
-  - Module: `.github/workflows/release-uvx.yml`.
-    - `build-release` job: build and publish Python distributions on git tag push [`.github/workflows/release-uvx.yml:L13-L48`].
-      - description: Triggered on `push.tags: v*`; checks out repository; sets Python 3.11 and `uv`; installs dependencies from `requirements.txt`; builds artifacts with `python -m build`; attests provenance; publishes GitHub release assets.
-
-- Feature: Doxygen documentation generation pipeline.
-  - Module: `doxygen.sh`.
-    - `main()`: orchestrate multi-format documentation build from `src/` [`doxygen.sh:L10-L40`].
-      - description: Validates external dependencies (`doxygen`, `pdflatex`, `makeindex`, `pandoc`); recreates deterministic output directories; generates temporary Doxygen configuration; invokes Doxygen scan; compiles LaTeX output to `refman.pdf`; converts generated HTML pages to Markdown files preserving tree structure.
-      - `require_command()`: validate executable availability in PATH [`doxygen.sh:L49-L55`].
-        - description: Resolves each required binary with `command -v`; emits explicit error on missing tool and terminates non-zero.
-      - `prepare_output_directories()`: reset output workspace [`doxygen.sh:L64-L67`].
-        - description: Removes stale artifacts under `doxygen/html`, `doxygen/pdf`, `doxygen/markdown`; recreates empty directories for deterministic regeneration.
-      - `write_doxyfile()`: emit runtime Doxygen configuration [`doxygen.sh:L112-L160`].
-        - description: Writes configuration focused on complete extraction (`EXTRACT_ALL`, private/static members, recursive scan) and enables HTML + LaTeX outputs rooted under `doxygen/`.
-      - `build_pdf_documentation()`: compile LaTeX artifact into PDF [`doxygen.sh:L76-L91`].
-        - description: Executes `pdflatex` + `makeindex` cycle in `doxygen/pdf`; validates existence of `doxygen/pdf/refman.pdf`; fails explicitly when missing.
-      - `build_markdown_documentation()`: transform Doxygen HTML pages to Markdown [`doxygen.sh:L100-L108`].
-        - description: Iterates all generated HTML files and converts each file to GitHub-flavored Markdown via `pandoc` into mirrored `doxygen/markdown` subpaths.
-
-- Cross-cutting: external interactions and reusable logic inventory.
-  - External API calls.
-    - `check_for_newer_version()`: HTTP GET to GitHub Releases API via `urlopen(Request(...))` [`src/git_alias/core.py:L175-L186`, `src/git_alias/core.py:L24-L25`].
-  - File-system reads/writes.
-    - Config: `load_cli_config()` reads `.g.conf`; `write_default_config()` writes `.g.conf` [`src/git_alias/core.py:L248-L289`].
-    - Version scanning/updating: `_collect_version_files()` traverses repository, `_determine_canonical_version()` reads files, `cmd_chver()` writes modified files [`src/git_alias/core.py:L1008-L1120`, `src/git_alias/core.py:L1861-L1929`].
-    - Changelog: `cmd_changelog()` writes `CHANGELOG.md` [`src/git_alias/core.py:L1974-L1982`].
-    - Update cache: `check_for_newer_version()` reads/writes temp JSON cache [`src/git_alias/core.py:L149-L153`, `src/git_alias/core.py:L202-L210`, `src/git_alias/core.py:L27-L28`].
-  - External command/process boundaries.
-    - Git command gateway: `run_git_cmd()`, `run_git_text()`, `capture_git_output()` [`src/git_alias/core.py:L517-L525`, `src/git_alias/core.py:L558-L573`].
-    - Tooling commands: `upgrade_self()`/`remove_self()` invoke `uv tool` [`src/git_alias/core.py:L1419-L1435`].
-    - Editor/GUI commands: `run_editor_command()`, `cmd_gp()`, `cmd_gr()` [`src/git_alias/core.py:L309-L310`, `src/git_alias/core.py:L1654-L1660`].
-  - External database access.
-    - Evidence: no SQL client imports, no ORM imports, no DB connection calls found in analyzed modules (`src/git_alias/*.py`, `.github/workflows/release-uvx.yml`).
-  - Common reusable logic.
-    - Commit-state checks: `_git_status_lines()`, `has_unstaged_changes()`, `has_staged_changes()`, `_ensure_commit_ready()` reused by `cm`, `wip`, `release`, conventional commits [`src/git_alias/core.py:L577-L611`, `src/git_alias/core.py:L1503-L1514`].
-    - Release guardrails: `_ensure_release_prerequisites()`, `_run_release_step()` reused by `major`/`minor`/`patch` [`src/git_alias/core.py:L1184-L1251`].
-    - Version rules infrastructure: `_load_config_rules()`, `get_version_rules()`, `_determine_canonical_version()` reused by `ver`, `chver`, `release` [`src/git_alias/core.py:L89-L117`, `src/git_alias/core.py:L1063-L1120`, `src/git_alias/core.py:L1841-L1929`, `src/git_alias/core.py:L1539-L1559`].
-
-- Requirements traceability (code-to-spec evidence).
-  - `REQ-001`/`REQ-002`/`REQ-003` alignment: management flags `--upgrade`, `--remove`, `--help` handled in `main()` and helpers [`docs/REQUIREMENTS.md:L150-L153`, `src/git_alias/core.py:L2054-L2118`].
-  - `REQ-005`/`REQ-021`/`REQ-027` alignment: commit readiness and WIP/amend behavior centralized in `_ensure_commit_ready()`, `_should_amend_existing_commit()`, `_execute_commit()`, reused by `cmd_cm()`, `cmd_wip()`, `cmd_release()` [`docs/REQUIREMENTS.md:L154-L155`, `docs/REQUIREMENTS.md:L170-L179`, `src/git_alias/core.py:L698-L712`, `src/git_alias/core.py:L1388-L1559`].
-  - `REQ-017`/`REQ-025` alignment: version detection and rewrite paths implemented by `_collect_version_files()`, `_determine_canonical_version()`, `cmd_chver()` [`docs/REQUIREMENTS.md:L166-L177`, `src/git_alias/core.py:L1008-L1120`, `src/git_alias/core.py:L1861-L1929`].
-  - `REQ-018`/`REQ-026` alignment: changelog generation and release workflow integration implemented by `cmd_changelog()`, `generate_changelog_document()`, `_execute_release_flow()` [`docs/REQUIREMENTS.md:L172-L181`, `src/git_alias/core.py:L1194-L1244`, `src/git_alias/core.py:L1544-L1586`, `src/git_alias/core.py:L2491-L2523`].
-  - `REQ-022` alignment: conventional commit aliases include `implement` via `cmd_implement()` and shared formatter `_run_conventional_commit()` with `<tipo>(<modulo>): <descrizione>` message contract [`docs/REQUIREMENTS.md:L176-L178`, `src/git_alias/core.py:L1386-L1719`, `src/git_alias/core.py:L1949-L1953`, `src/git_alias/core.py:L2534-L2572`].
-  - `REQ-033` alignment: cached online update-check in `check_for_newer_version()` with 6-hour TTL and GitHub API endpoint [`docs/REQUIREMENTS.md:L184-L184`, `src/git_alias/core.py:L24-L29`, `src/git_alias/core.py:L142-L221`].
-  - `REQ-008`/`REQ-037` alignment: visual inspection aliases and difftool mappings implemented by `cmd_d()`, `cmd_dc()`, `cmd_dw()`, surfaced by `HELP_TEXTS` and `COMMANDS` entries [`docs/REQUIREMENTS.md:L162-L191`, `src/git_alias/core.py:L377-L439`, `src/git_alias/core.py:L1995-L2053`, `src/git_alias/core.py:L2517-L2536`].
-  - `REQ-036` alignment: scripted multi-format Doxygen generation implemented by `main()`, `write_doxyfile()`, `build_pdf_documentation()`, `build_markdown_documentation()` [`docs/REQUIREMENTS.md:L187-L187`, `doxygen.sh:L10-L160`].
+## Communication Edges
+- EDGE:none
+  - reason: only one execution unit (`PROC:main`) and no explicit thread/process creation in repository-owned runtime code under `src/` and `.github/workflows/`
+  - evidence:
+    - no `threading`/`Thread`/`multiprocessing` constructs in `src/` (`src/git_alias/core.py` search result: none)
+    - workflow file is declarative CI configuration with no repository-internal function/thread definitions (`.github/workflows/release-uvx.yml:1-48`)
