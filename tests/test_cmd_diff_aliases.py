@@ -7,6 +7,14 @@ from git_alias import core
 
 
 class CmdDiffAliasesTest(unittest.TestCase):
+    def test_command_aliases_are_renamed_to_dwc_and_dcc(self):
+        self.assertIn("dwc", core.COMMANDS)
+        self.assertIn("dcc", core.COMMANDS)
+        self.assertIn("dwc", core.HELP_TEXTS)
+        self.assertIn("dcc", core.HELP_TEXTS)
+        self.assertNotIn("dw", core.COMMANDS)
+        self.assertNotIn("dc", core.COMMANDS)
+
     def test_cmd_dw_runs_difftool_against_head(self):
         with mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             core.cmd_dw([])
