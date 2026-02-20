@@ -1537,6 +1537,16 @@ def _run_release_step(level, step_name, action):
         raise ReleaseError(f"\n--- {label} Step '{step_name}' failed: {exc} ---") from None
 
 
+## @brief Execute `_create_release_commit_for_flow` runtime logic for Git-Alias CLI.
+# @details Executes release-flow first-commit creation with WIP amend semantics reused from `_execute_commit`.
+# @param target_version Input parameter consumed by `_create_release_commit_for_flow`.
+# @return Result emitted by `_create_release_commit_for_flow` according to command contract.
+def _create_release_commit_for_flow(target_version):
+    _ensure_commit_ready("release")
+    message = f"release version: {target_version}"
+    return _execute_commit(message, "release")
+
+
 ## @brief Execute `_execute_release_flow` runtime logic for Git-Alias CLI.
 # @details Executes `_execute_release_flow` using deterministic CLI control-flow and explicit error propagation.
 # @param level Input parameter consumed by `_execute_release_flow`.
@@ -1558,7 +1568,7 @@ def _execute_release_flow(level, changelog_args=None):
     print()
     _run_release_step(level, "update versions", lambda: cmd_chver([target_version]))
     _run_release_step(level, "stage files", lambda: run_git_cmd(["add", "--all"]))
-    _run_release_step(level, "create release commit", lambda: cmd_release([]))
+    _run_release_step(level, "create release commit", lambda: _create_release_commit_for_flow(target_version))
     _run_release_step(level, "tag release", lambda: cmd_tg([release_message, f"v{target_version}"]))
     _run_release_step(level, "regenerate changelog", lambda: cmd_changelog(changelog_flags))
     _run_release_step(level, "stage changelog", lambda: run_git_cmd(["add", "CHANGELOG.md"]))
