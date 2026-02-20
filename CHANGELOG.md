@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.0.30](https://github.com/Ogekuri/G/compare/v0.0.29..v0.0.30) - 2026-02-20
+### ⛰️  Features
+- *(core)* add dwcc and dccc diff aliases [2026-02-20 11:08:34]
+- *(core)* add implement command and changelog support [2026-02-18 10:10:46]
+- *(core)* add difftool aliases dw dc d [2026-02-17 17:07:56]
+- *(core)* add req/ dir.
+- *(core)* add test .g.conf for debug.
+
+### 🐛  Bug Fixes
+- *(ver)* drop prova ver rule [2026-02-10 18:54:24]
+- *(ver)* normalize git ls-files version paths [2026-02-10 18:22:17]
+- *(ver)* normalize pathspec matching and update tests/docs [2026-02-10 17:58:26]
+- *(core)* WORKFLOW.md position.
+
+### 🚜  Changes
+- *(core)* align command handler naming with aliases [2026-02-20 11:28:33]
+- *(core)* rename diff aliases to dwc/dcc and align specs/tests [2026-02-20 11:01:23]
+- *(doxygen)* add multi-format doxygen generation workflow [2026-02-17 15:20:24]
+- *(core)* enforce doxygen metadata coverage [2026-02-17 15:01:55]
+- *(core)* remove doc-comment requirements and normalize source comments [2026-02-15 19:42:27]
+- *(core)* standardize Doxygen documentation and specs [2026-02-15 19:26:22]
+- *(ver)* switch ver matching to rglob and update specs/tests [2026-02-10 19:09:39]
+- *(core)* update ver verbose/debug requirements and tests [2026-02-10 17:44:31]
+
+### 📚  Documentation
+- *(core)* refresh references index [2026-02-19 17:52:25]
+- *(workflow)* regenerate runtime execution model [2026-02-19 17:47:51]
+- *(references)* generate source references documentation [2026-02-15 19:19:57]
+- *(core)* regenerate workflow call tree [2026-02-15 18:54:30]
+- *(core)* add workflow documentation [2026-02-09 16:19:23]
+- *(core)* update workflow documentation [2026-02-09 10:24:18]
+- *(core)* update WORKFLOW.md with comprehensive technical call tree [2026-02-09 10:19:09]
+- *(core)* create WORKFLOW.md with technical call tree structure [2026-02-09 09:53:54]
+- *(core)* update WORKFLOW.md with comprehensive technical call tree [2026-02-09 09:25:32]
+- *(core)* add workflow analysis [2026-02-08 19:00:42]
+
 ## [0.0.29](https://github.com/Ogekuri/G/compare/v0.0.28..v0.0.29) - 2026-02-07
 ### 📚  Documentation
 - *(core)* update README.md.
@@ -172,6 +208,7 @@
 - \[0.0.27\]: https://github.com/Ogekuri/G/releases/tag/v0.0.27
 - \[0.0.28\]: https://github.com/Ogekuri/G/releases/tag/v0.0.28
 - \[0.0.29\]: https://github.com/Ogekuri/G/releases/tag/v0.0.29
+- \[0.0.30\]: https://github.com/Ogekuri/G/releases/tag/v0.0.30
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
@@ -201,3 +238,4 @@
 [0.0.27]: https://github.com/Ogekuri/G/compare/v0.0.26..v0.0.27
 [0.0.28]: https://github.com/Ogekuri/G/compare/v0.0.27..v0.0.28
 [0.0.29]: https://github.com/Ogekuri/G/compare/v0.0.28..v0.0.29
+[0.0.30]: https://github.com/Ogekuri/G/compare/v0.0.29..v0.0.30
