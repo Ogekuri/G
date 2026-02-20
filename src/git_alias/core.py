@@ -386,11 +386,13 @@ HELP_TEXTS = {
     "co": "Checkout a specific branch: git co '<branch>'.",
     "d": "Run a directory difftool between two refs. Syntax: git d <ref_a> <ref_b>.",
     "dcc": "Run a directory difftool between HEAD~1 and HEAD.",
+    "dccc": "Run a directory difftool between HEAD~2 and HEAD.",
     "de": "Print last tagged commit details.",
     "di": "Discard current changes on file: git di '<filename>'",
     "dime": "Discard merge changes in favor of their files.",
     "diyou": "Discard merge changes in favor of your files.",
     "dwc": "Run a directory difftool between working tree and HEAD.",
+    "dwcc": "Run a directory difftool between working tree and HEAD~1.",
     "ed": "Edit a file. Syntax: git ed <filename>.",
     "fe": "Fetch new data of current branch from origin.",
     "feall": "Fetch new data from origin for all branch.",
@@ -2024,6 +2026,14 @@ def cmd_dc(extra):
     return run_git_cmd(["difftool", "-d", "HEAD~1", "HEAD"], extra)
 
 
+## @brief Execute `cmd_dccc` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_dccc` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_dccc`.
+# @return Result emitted by `cmd_dccc` according to command contract.
+def cmd_dccc(extra):
+    return run_git_cmd(["difftool", "-d", "HEAD~2", "HEAD"], extra)
+
+
 ## @brief Execute `cmd_de` runtime logic for Git-Alias CLI.
 # @details Executes `cmd_de` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_de`.
@@ -2062,6 +2072,14 @@ def cmd_dime(extra):
 # @return Result emitted by `cmd_dw` according to command contract.
 def cmd_dw(extra):
     return run_git_cmd(["difftool", "-d", "HEAD"], extra)
+
+
+## @brief Execute `cmd_dwcc` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_dwcc` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_dwcc`.
+# @return Result emitted by `cmd_dwcc` according to command contract.
+def cmd_dwcc(extra):
+    return run_git_cmd(["difftool", "-d", "HEAD~1"], extra)
 
 
 ## @brief Execute `cmd_ed` runtime logic for Git-Alias CLI.
@@ -2540,12 +2558,14 @@ COMMANDS = {
     "co": cmd_co,
     "d": cmd_d,
     "dcc": cmd_dc,
+    "dccc": cmd_dccc,
     "de": cmd_de,
     "di": cmd_di,
     "dime": cmd_dime,
     "diyou": cmd_diyou,
     "docs": cmd_docs,
     "dwc": cmd_dw,
+    "dwcc": cmd_dwcc,
     "ed": cmd_ed,
     "fix": cmd_fix,
     "fe": cmd_fe,

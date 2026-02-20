@@ -9,9 +9,13 @@ from git_alias import core
 class CmdDiffAliasesTest(unittest.TestCase):
     def test_command_aliases_are_renamed_to_dwc_and_dcc(self):
         self.assertIn("dwc", core.COMMANDS)
+        self.assertIn("dwcc", core.COMMANDS)
         self.assertIn("dcc", core.COMMANDS)
+        self.assertIn("dccc", core.COMMANDS)
         self.assertIn("dwc", core.HELP_TEXTS)
+        self.assertIn("dwcc", core.HELP_TEXTS)
         self.assertIn("dcc", core.HELP_TEXTS)
+        self.assertIn("dccc", core.HELP_TEXTS)
         self.assertNotIn("dw", core.COMMANDS)
         self.assertNotIn("dc", core.COMMANDS)
 
@@ -24,6 +28,16 @@ class CmdDiffAliasesTest(unittest.TestCase):
         with mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             core.cmd_dc([])
             run_git.assert_called_once_with(["difftool", "-d", "HEAD~1", "HEAD"], [])
+
+    def test_cmd_dccc_runs_difftool_between_third_last_and_latest_commit(self):
+        with mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
+            core.cmd_dccc([])
+            run_git.assert_called_once_with(["difftool", "-d", "HEAD~2", "HEAD"], [])
+
+    def test_cmd_dwcc_runs_difftool_against_penultimate_commit(self):
+        with mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
+            core.cmd_dwcc([])
+            run_git.assert_called_once_with(["difftool", "-d", "HEAD~1"], [])
 
     def test_cmd_d_requires_exactly_two_refs(self):
         with mock.patch.object(core, "run_git_cmd") as run_git:

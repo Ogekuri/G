@@ -13,9 +13,9 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.62
+**Versione**: 0.63
 **Autore**: Francesco Rolando  
-**Data**: 2026-02-18
+**Data**: 2026-02-20
 
 ## Indice
 - [Requisiti di Git-Alias CLI](#requisiti-di-git-alias-cli)
@@ -100,6 +100,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-17 | 0.60 | Introduzione script `doxygen.sh` per generazione documentazione Doxygen multi-formato da `src/` |
 | 2026-02-17 | 0.61 | Introduzione alias difftool `dwc`, `dcc`, `d` per confronti working tree/commit e revisioni arbitrarie |
 | 2026-02-18 | 0.62 | Aggiunta alias convenzionale `implement` con categoria changelog "Implementations" (icona 🏗️) e relativo help |
+| 2026-02-20 | 0.63 | Added diff aliases `dwcc` and `dccc` for comparisons against `HEAD~1` and `HEAD~2` |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -190,6 +191,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-035**: Il comando `ver` deve supportare il flag `--verbose` per stampare l'elenco dei file controllati durante il processo e l'esito positivo o negativo del match della `regex` per ciascun file. Con il flag `--debug` deve includere anche le informazioni di ricerca del globbing, stampando l'elenco completo dei file che matchano il `pattern` associato alla regola.
 - **REQ-036**: Il sistema deve fornire nella root del repository uno script eseguibile `doxygen.sh` che, quando invocato, deve utilizzare l'eseguibile `doxygen` disponibile nel sistema operativo per generare documentazione completa dei sorgenti in `src/` con configurazione orientata a estrazione completa (`EXTRACT_ALL`, ricorsione directory, supporto membri privati/statici). Lo script deve generare output in `doxygen/` suddiviso per formato: HTML in `doxygen/html`, PDF in `doxygen/pdf` (con produzione del file PDF finale tramite pipeline LaTeX/PDF), Markdown in `doxygen/markdown`.
 - **REQ-037**: Gli alias di diff visuale devono eseguire confronti tramite `git difftool -d` con mapping fisso: `dwc` deve eseguire `git difftool -d HEAD` (working tree vs ultima commit), `dcc` deve eseguire `git difftool -d HEAD~1 HEAD` (penultima vs ultima commit), `d` deve richiedere esattamente due riferimenti git posizionali (`<ref_a> <ref_b>`) e deve eseguire `git difftool -d <ref_a> <ref_b>` inoltrando eventuali errori del comando git senza trasformazioni aggiuntive.
+- **REQ-038**: The visual diff aliases MUST include `dwcc` mapped to `git difftool -d HEAD~1` (working tree vs penultimate commit) and `dccc` mapped to `git difftool -d HEAD~2 HEAD` (third-last vs last commit), and both aliases MUST expose explicit help text in global and per-command help outputs.
 
 ### 3.3 Struttura File Progetto
 ```
