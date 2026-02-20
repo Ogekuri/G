@@ -32,13 +32,13 @@ This is a companion script for <b><a href="[#quick-start](https://github.com/Oge
 - Acts like a `.gitconfig` [alias] section, providing all standard Git commands with a fallback mechanism.
 - Customizable three-branch workflow: `master`, `develop`, and `work`.
 - Standardized commits with specific commands like: `new(core): foo bar..`. Use these commands for common activities such as:
-    * `new`: Implement new features.
-    * `fix`: Bug fixes.
-    * `change`: Software changes.
-    * `docs`: Add/modify documentation.
-    * `style`: Styling modifications.
-    * `revert`: Revert changes.
-    * `misc`: Miscellaneous tasks.
+    - `new`: Implement new features.
+    - `fix`: Bug fixes.
+    - `change`: Software changes.
+    - `docs`: Add/modify documentation.
+    - `style`: Styling modifications.
+    - `revert`: Revert changes.
+    - `misc`: Miscellaneous tasks.
 - Provides `major`, `minor`, and `patch` commands that auto-generate a `CHANGELOG.md`, create a new tag and commit, and release a new `x.y.z` version on the `master` branch.
 - Automatically bumps the release version number in the source code.
 - Self-upgrading feature.
