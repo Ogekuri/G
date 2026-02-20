@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   build-release:
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 
     steps:
@@ -42,7 +43,7 @@ jobs:
       - name: Build Changelog
         uses: mikepenz/release-changelog-builder-action@v6
         with:
-          mode: "COMMIT"
+          mode: "HYBRID"
           configurationJson: |
             {
               "template": "#{{CHANGELOG}}",
