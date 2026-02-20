@@ -41,12 +41,12 @@ jobs:
           subject-path: dist/*
 
       - name: Build Changelog
-        uses: mikepenz/release-changelog-builder-action@v4
+        uses: mikepenz/release-changelog-builder-action@v6
         with:
-          commitMode: true
+          mode: "COMMIT"
           configurationJson: |
             {
-              "template": "#{{CHANGELOG}}",
+              "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Uncategorized</summary>\n\n#{{UNCATEGORIZED}}\n</details>",
               "categories": [
                { "title": "## ⛰️ Features", "labels": ["new"] },
                { "title": "## 🏗️ Implementations", "labels": ["implement"] },
