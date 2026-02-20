@@ -41,10 +41,9 @@ jobs:
           subject-path: dist/*
 
       - name: Build Changelog
-        uses: mikepenz/release-changelog-builder-action@v6
+        uses: mikepenz/release-changelog-builder-action@v4
         with:
           commitMode: true
-          mode: "COMMIT"
           configurationJson: |
             {
               "template": "#{{CHANGELOG}}",
