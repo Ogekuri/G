@@ -43,6 +43,8 @@ jobs:
       - name: Build Changelog
         uses: mikepenz/release-changelog-builder-action@v6
         with:
+          commitMode: true
+          offlineMode: true
           mode: "COMMIT"
           configurationJson: |
             {
@@ -66,9 +68,7 @@ jobs:
                  "on_property": "title",
                  "target": "$1"
                }
-             ],
-             offlineMode: true,
-             commitMode: true
+             ]
             }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
