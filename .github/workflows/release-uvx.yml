@@ -44,7 +44,6 @@ jobs:
         uses: mikepenz/release-changelog-builder-action@v6
         with:
           commitMode: true
-          offlineMode: true
           mode: "COMMIT"
           configurationJson: |
             {
