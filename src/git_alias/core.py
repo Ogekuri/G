@@ -4,6 +4,7 @@
 # @details Provides command routing, repository diagnostics, changelog/version workflows, and process wrappers.
 
 import argparse
+import importlib
 import json
 import os
 import re
@@ -19,7 +20,7 @@ from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-import pathspec
+pathspec = importlib.import_module("pathspec")
 
 ## @brief Constant `CONFIG_FILENAME` used by CLI runtime paths and policies.
 
@@ -664,30 +665,6 @@ def run_git_text(args, cwd=None, check=True):
 # @return Result emitted by `run_shell` according to command contract.
 def run_shell(command, cwd=None):
     return _run_checked(command, shell=True, cwd=cwd)
-
-
-## @brief Execute `run_git_text` runtime logic for Git-Alias CLI.
-# @details Executes `run_git_text` using deterministic CLI control-flow and explicit error propagation.
-# @param args Input parameter consumed by `run_git_text`.
-# @param cwd Input parameter consumed by `run_git_text`.
-# @param check Input parameter consumed by `run_git_text`.
-# @return Result emitted by `run_git_text` according to command contract.
-def run_git_text(args, cwd=None, check=True):
-    try:
-        proc = _run_checked(
-            ["git", *args],
-            cwd=cwd,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=check,
-        )
-    except CommandExecutionError as exc:
-        message = CommandExecutionError._decode_stream(exc.stderr).strip()
-        if not message:
-            message = f"git {' '.join(args)} failed"
-        raise RuntimeError(message) from None
-    return proc.stdout.strip()
 
 
 ## @brief Execute `_git_status_lines` runtime logic for Git-Alias CLI.
@@ -1380,11 +1357,11 @@ def _determine_canonical_version(root: Path, rules, *, verbose: bool = False, de
 # @details Executes `_parse_semver_tuple` using deterministic CLI control-flow and explicit error propagation.
 # @param text Input parameter consumed by `_parse_semver_tuple`.
 # @return Result emitted by `_parse_semver_tuple` according to command contract.
-def _parse_semver_tuple(text):
+def _parse_semver_tuple(text: str) -> Optional[Tuple[int, int, int]]:
     match = SEMVER_RE.match((text or "").strip())
     if not match:
         return None
-    return tuple(int(match.group(i)) for i in range(1, 4))
+    return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
 
 
 ## @brief Execute `_replace_versions_in_text` runtime logic for Git-Alias CLI.
@@ -1827,7 +1804,8 @@ def cmd_ar(extra):
     with subprocess.Popen(archive_cmd, stdout=subprocess.PIPE) as archive_proc:
         with open(filename, "wb") as output_io:
             gzip_proc = _run_checked(["gzip"], stdin=archive_proc.stdout, stdout=output_io)
-        archive_proc.stdout.close()
+        if archive_proc.stdout is not None:
+            archive_proc.stdout.close()
         archive_proc.wait()
     return gzip_proc
 
@@ -2167,7 +2145,7 @@ def cmd_str(extra):
         print(f"--- Status for '{remote}' ---")
         try:
             run_git_cmd(["remote", "show", remote])
-        except CommandExecutionError as e:
+        except CommandExecutionError:
             print(f"Error showing status for '{remote}'", file=sys.stderr)
             raise
 
