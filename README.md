@@ -2,7 +2,7 @@
 
 ⚠️ **IMPORTANT NOTICE**: Created with **[useReq](https://github.com/Ogekuri/useReq)** 🤖✨ ⚠️
 
-# G/Git-Alias CLI (0.0.38)
+# G/Git-Alias CLI (0.0.39)
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+">

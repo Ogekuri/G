@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.39](https://github.com/Ogekuri/G/compare/v0.0.38..v0.0.39) - 2026-02-20
+### 🐛  Bug Fixes
+- *(core)* workflow fix.
+
 ## [0.0.38](https://github.com/Ogekuri/G/compare/v0.0.37..v0.0.38) - 2026-02-20
 ### 🐛  Bug Fixes
 - *(core)* workflow fix.
@@ -260,6 +264,7 @@
 - \[0.0.36\]: https://github.com/Ogekuri/G/releases/tag/v0.0.36
 - \[0.0.37\]: https://github.com/Ogekuri/G/releases/tag/v0.0.37
 - \[0.0.38\]: https://github.com/Ogekuri/G/releases/tag/v0.0.38
+- \[0.0.39\]: https://github.com/Ogekuri/G/releases/tag/v0.0.39
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
@@ -298,3 +303,4 @@
 [0.0.36]: https://github.com/Ogekuri/G/compare/v0.0.35..v0.0.36
 [0.0.37]: https://github.com/Ogekuri/G/compare/v0.0.36..v0.0.37
 [0.0.38]: https://github.com/Ogekuri/G/compare/v0.0.37..v0.0.38
+[0.0.39]: https://github.com/Ogekuri/G/compare/v0.0.38..v0.0.39
