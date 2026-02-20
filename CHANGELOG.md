@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.0.31](https://github.com/Ogekuri/G/compare/v0.0.30..v0.0.31) - 2026-02-20
+### ⛰️  Features
+- *(core)* update github workflow.
+
+### 🐛  Bug Fixes
+- *(docs)* Update REFERENCES.md based on current implementation [2026-02-20 15:08:15]
+
+### 🚜  Changes
+- *(release-flow)* amend first release commit from WIP when possible [2026-02-20 13:49:48]
+- *(commit)* amend conventional commits on pending wip [2026-02-20 13:22:59]
+
+### 📚  Documentation
+- *(workflow)* regenerate runtime model [2026-02-20 15:32:32]
+- *(core)* Update WORKFLOW.md to match current implementation [2026-02-20 15:16:17]
+
 ## [0.0.30](https://github.com/Ogekuri/G/compare/v0.0.29..v0.0.30) - 2026-02-20
 ### ⛰️  Features
 - *(core)* add dwcc and dccc diff aliases [2026-02-20 11:08:34]
@@ -209,6 +224,7 @@
 - \[0.0.28\]: https://github.com/Ogekuri/G/releases/tag/v0.0.28
 - \[0.0.29\]: https://github.com/Ogekuri/G/releases/tag/v0.0.29
 - \[0.0.30\]: https://github.com/Ogekuri/G/releases/tag/v0.0.30
+- \[0.0.31\]: https://github.com/Ogekuri/G/releases/tag/v0.0.31
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
@@ -239,3 +255,4 @@
 [0.0.28]: https://github.com/Ogekuri/G/compare/v0.0.27..v0.0.28
 [0.0.29]: https://github.com/Ogekuri/G/compare/v0.0.28..v0.0.29
 [0.0.30]: https://github.com/Ogekuri/G/compare/v0.0.29..v0.0.30
+[0.0.31]: https://github.com/Ogekuri/G/compare/v0.0.30..v0.0.31
