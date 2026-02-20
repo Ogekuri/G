@@ -1701,7 +1701,7 @@ def _build_conventional_message(kind: str, extra, alias: str) -> str:
 def _run_conventional_commit(kind: str, alias: str, extra):
     message = _build_conventional_message(kind, extra, alias)
     _ensure_commit_ready(alias)
-    return _execute_commit(message, alias, allow_amend=False)
+    return _execute_commit(message, alias)
 
 
 ## @brief Execute `_execute_commit` runtime logic for Git-Alias CLI.

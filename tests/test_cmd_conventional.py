@@ -16,7 +16,7 @@ class ConventionalCommitAliasesTest(unittest.TestCase):
         ) as execute:
             core.cmd_fix(["Correzione", "bug"])
         ensure.assert_called_once_with("fix")
-        execute.assert_called_once_with("fix(core): Correzione bug", "fix", allow_amend=False)
+        execute.assert_called_once_with("fix(core): Correzione bug", "fix")
 
     def test_docs_extracts_scope_from_prefix(self):
         with mock.patch.object(core, "_ensure_commit_ready") as ensure, mock.patch.object(
@@ -24,7 +24,7 @@ class ConventionalCommitAliasesTest(unittest.TestCase):
         ) as execute:
             core.cmd_docs(["api:", "Aggiornamento", "documentazione"])
         ensure.assert_called_once_with("docs")
-        execute.assert_called_once_with("docs(api): Aggiornamento documentazione", "docs", allow_amend=False)
+        execute.assert_called_once_with("docs(api): Aggiornamento documentazione", "docs")
 
     def test_change_uses_configured_default_scope(self):
         core.CONFIG["default_module"] = "ui"
@@ -32,7 +32,7 @@ class ConventionalCommitAliasesTest(unittest.TestCase):
             core, "_execute_commit", return_value=None
         ) as execute:
             core.cmd_change(["Refactoring"])
-        execute.assert_called_once_with("change(ui): Refactoring", "change", allow_amend=False)
+        execute.assert_called_once_with("change(ui): Refactoring", "change")
 
     def test_implement_uses_default_module_when_prefix_missing(self):
         with mock.patch.object(core, "_ensure_commit_ready") as ensure, mock.patch.object(
@@ -40,7 +40,7 @@ class ConventionalCommitAliasesTest(unittest.TestCase):
         ) as execute:
             core.cmd_implement(["Nuova", "feature"])
         ensure.assert_called_once_with("implement")
-        execute.assert_called_once_with("implement(core): Nuova feature", "implement", allow_amend=False)
+        execute.assert_called_once_with("implement(core): Nuova feature", "implement")
 
     def test_missing_message_raises_error(self):
         with mock.patch.object(core, "_ensure_commit_ready"):

@@ -64,7 +64,7 @@
             - `cmd_new|cmd_refactor|cmd_fix|cmd_change|cmd_implement|cmd_docs|cmd_style|cmd_revert|cmd_misc|cmd_cover` -> `_run_conventional_commit(...)` [`src/git_alias/core.py:1923-1996`]
               - `_build_conventional_message(...)` -> `_prepare_commit_message(...)` [`src/git_alias/core.py:1678-1690`]
               - `_ensure_commit_ready(...)` [`src/git_alias/core.py:1851-1862`]
-              - `_execute_commit(..., allow_amend=False)` [`src/git_alias/core.py:1711-1738`]
+              - `_execute_commit(...)` with WIP amend decision enabled [`src/git_alias/core.py:1711-1738`]
             - `_execute_commit(...)`: amend/new decision and commit execution [`src/git_alias/core.py:1711-1738`]
               - `_should_amend_existing_commit(...)` [`src/git_alias/core.py:849-862`]
                 - `_head_commit_message(...)` [`src/git_alias/core.py:811-815`]
