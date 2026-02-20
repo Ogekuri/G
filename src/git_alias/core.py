@@ -2018,11 +2018,11 @@ def cmd_d(extra):
     return run_git_cmd(["difftool", "-d", args[0], args[1]])
 
 
-## @brief Execute `cmd_dc` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_dc` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_dc`.
-# @return Result emitted by `cmd_dc` according to command contract.
-def cmd_dc(extra):
+## @brief Execute `cmd_dcc` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_dcc` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_dcc`.
+# @return Result emitted by `cmd_dcc` according to command contract.
+def cmd_dcc(extra):
     return run_git_cmd(["difftool", "-d", "HEAD~1", "HEAD"], extra)
 
 
@@ -2066,11 +2066,11 @@ def cmd_dime(extra):
     return run_git_cmd(["checkout", "--theirs", "--"], extra)
 
 
-## @brief Execute `cmd_dw` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_dw` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_dw`.
-# @return Result emitted by `cmd_dw` according to command contract.
-def cmd_dw(extra):
+## @brief Execute `cmd_dwc` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_dwc` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_dwc`.
+# @return Result emitted by `cmd_dwc` according to command contract.
+def cmd_dwc(extra):
     return run_git_cmd(["difftool", "-d", "HEAD"], extra)
 
 
@@ -2557,14 +2557,14 @@ COMMANDS = {
     "cm": cmd_cm,
     "co": cmd_co,
     "d": cmd_d,
-    "dcc": cmd_dc,
+    "dcc": cmd_dcc,
     "dccc": cmd_dccc,
     "de": cmd_de,
     "di": cmd_di,
     "dime": cmd_dime,
     "diyou": cmd_diyou,
     "docs": cmd_docs,
-    "dwc": cmd_dw,
+    "dwc": cmd_dwc,
     "dwcc": cmd_dwcc,
     "ed": cmd_ed,
     "fix": cmd_fix,

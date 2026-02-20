@@ -402,8 +402,8 @@ import pathspec
 ### fn `def cmd_d(extra)` (L2013-2020)
 - Return: Result emitted by `cmd_d` according to command contract.
 
-### fn `def cmd_dc(extra)` (L2025-2028)
-- Return: Result emitted by `cmd_dc` according to command contract.
+### fn `def cmd_dcc(extra)` (L2025-2028)
+- Return: Result emitted by `cmd_dcc` according to command contract.
 
 ### fn `def cmd_dccc(extra)` (L2033-2036)
 - Return: Result emitted by `cmd_dccc` according to command contract.
@@ -420,8 +420,8 @@ import pathspec
 ### fn `def cmd_dime(extra)` (L2065-2068)
 - Return: Result emitted by `cmd_dime` according to command contract.
 
-### fn `def cmd_dw(extra)` (L2073-2076)
-- Return: Result emitted by `cmd_dw` according to command contract.
+### fn `def cmd_dwc(extra)` (L2073-2076)
+- Return: Result emitted by `cmd_dwc` according to command contract.
 
 ### fn `def cmd_dwcc(extra)` (L2081-2084)
 - Return: Result emitted by `cmd_dwcc` according to command contract.
@@ -670,13 +670,13 @@ import pathspec
 |`cmd_cover`|fn|pub|1997-2000|def cmd_cover(extra)|
 |`cmd_co`|fn|pub|2005-2008|def cmd_co(extra)|
 |`cmd_d`|fn|pub|2013-2020|def cmd_d(extra)|
-|`cmd_dc`|fn|pub|2025-2028|def cmd_dc(extra)|
+|`cmd_dcc`|fn|pub|2025-2028|def cmd_dcc(extra)|
 |`cmd_dccc`|fn|pub|2033-2036|def cmd_dccc(extra)|
 |`cmd_de`|fn|pub|2041-2044|def cmd_de(extra)|
 |`cmd_di`|fn|pub|2049-2052|def cmd_di(extra)|
 |`cmd_diyou`|fn|pub|2057-2060|def cmd_diyou(extra)|
 |`cmd_dime`|fn|pub|2065-2068|def cmd_dime(extra)|
-|`cmd_dw`|fn|pub|2073-2076|def cmd_dw(extra)|
+|`cmd_dwc`|fn|pub|2073-2076|def cmd_dwc(extra)|
 |`cmd_dwcc`|fn|pub|2081-2084|def cmd_dwcc(extra)|
 |`cmd_ed`|fn|pub|2089-2098|def cmd_ed(extra)|
 |`cmd_fe`|fn|pub|2103-2106|def cmd_fe(extra)|

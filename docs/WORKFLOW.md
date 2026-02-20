@@ -116,7 +116,7 @@
             - `cmd_ra(...)` -> `_to_args(...)` -> `_current_branch_name(...)` -> `_ensure_commit_ready(...)` -> `run_git_cmd(...)` [`src/git_alias/core.py:1781-1802`]
             - `cmd_ar(...)` -> `_to_args(...)` -> `get_branch(...)` -> `capture_git_output(...)` -> `_run_checked(...)` + gzip pipeline [`src/git_alias/core.py:1809-1820`, `src/git_alias/core.py:620-622`]
             - direct passthrough aliases to `run_git_cmd(...)`:
-              - `cmd_br, cmd_bd, cmd_ck, cmd_co, cmd_dc, cmd_dccc, cmd_de, cmd_di, cmd_diyou, cmd_dime, cmd_dw, cmd_dwcc, cmd_fe, cmd_lb, cmd_lg, cmd_lh, cmd_ll, cmd_lm, cmd_lt, cmd_me, cmd_pl, cmd_pt, cmd_pu, cmd_rf, cmd_rmloc, cmd_rmstg, cmd_rmunt, cmd_st, cmd_tg, cmd_unstg` [`src/git_alias/core.py:1827-1836`, `src/git_alias/core.py:1843-1844`, `src/git_alias/core.py:2005-2082`, `src/git_alias/core.py:2103`, `src/git_alias/core.py:2169-2380`]
+              - `cmd_br, cmd_bd, cmd_ck, cmd_co, cmd_dcc, cmd_dccc, cmd_de, cmd_di, cmd_diyou, cmd_dime, cmd_dwc, cmd_dwcc, cmd_fe, cmd_lb, cmd_lg, cmd_lh, cmd_ll, cmd_lm, cmd_lt, cmd_me, cmd_pl, cmd_pt, cmd_pu, cmd_rf, cmd_rmloc, cmd_rmstg, cmd_rmunt, cmd_st, cmd_tg, cmd_unstg` [`src/git_alias/core.py:1827-1836`, `src/git_alias/core.py:1843-1844`, `src/git_alias/core.py:2005-2082`, `src/git_alias/core.py:2103`, `src/git_alias/core.py:2169-2380`]
               - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:610-613`, `src/git_alias/core.py:533-534`, `src/git_alias/core.py:585-590`]
           - global dispatch exception handling:
             - `except CommandExecutionError`: `CommandExecutionError._decode_stream(...)` then `sys.exit(code)` [`src/git_alias/core.py:2695-2699`, `src/git_alias/core.py:569-577`]

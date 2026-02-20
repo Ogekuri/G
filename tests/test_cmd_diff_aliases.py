@@ -19,14 +19,14 @@ class CmdDiffAliasesTest(unittest.TestCase):
         self.assertNotIn("dw", core.COMMANDS)
         self.assertNotIn("dc", core.COMMANDS)
 
-    def test_cmd_dw_runs_difftool_against_head(self):
+    def test_cmd_dwc_runs_difftool_against_head(self):
         with mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
-            core.cmd_dw([])
+            core.cmd_dwc([])
             run_git.assert_called_once_with(["difftool", "-d", "HEAD"], [])
 
-    def test_cmd_dc_runs_difftool_between_latest_commits(self):
+    def test_cmd_dcc_runs_difftool_between_latest_commits(self):
         with mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
-            core.cmd_dc([])
+            core.cmd_dcc([])
             run_git.assert_called_once_with(["difftool", "-d", "HEAD~1", "HEAD"], [])
 
     def test_cmd_dccc_runs_difftool_between_third_last_and_latest_commit(self):
@@ -53,3 +53,7 @@ class CmdDiffAliasesTest(unittest.TestCase):
         with mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             core.cmd_d(["v1.0.0", "HEAD"])
             run_git.assert_called_once_with(["difftool", "-d", "v1.0.0", "HEAD"])
+
+    def test_command_handlers_match_cmd_plus_command_name(self):
+        for command, handler in core.COMMANDS.items():
+            self.assertEqual(handler.__name__, f"cmd_{command}")
