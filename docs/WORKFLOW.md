@@ -1,136 +1,130 @@
 ## Execution Units Index
-- ID: PROC:main
-  - type: process
-  - parent_process: null
-  - role: git-alias CLI runtime dispatcher
-  - entrypoint_symbols:
-    - git_alias.__main__.__main__ guard (`src/git_alias/__main__.py:10-11`)
-    - git_alias.core.main (`src/git_alias/core.py:2649-2699`)
-  - defining_files:
-    - src/git_alias/__main__.py
-    - src/git_alias/core.py
+
+- `PROC:main`
+  - Type: Process
+  - Role: Main CLI process
+  - Entrypoint: `src/git_alias/__main__.py`, `src/git_alias/core.py:main`
+  - Defining File: `src/git_alias/core.py`
+
+- `PROC:build-release`
+  - Type: Process
+  - Role: GitHub Actions Build & Release Job
+  - Entrypoint: `.github/workflows/release-uvx.yml`
+  - Defining File: `.github/workflows/release-uvx.yml`
 
 ## Execution Units
-### PROC:main
-- type: process
-- parent_process: null
-- role: git-alias command routing, git subprocess orchestration, release/version/changelog workflows
-- defining_files:
-  - src/git_alias/__main__.py
-  - src/git_alias/core.py
-- Entrypoint(s):
-  - `__main__` module execution calls `sys.exit(main())` (`src/git_alias/__main__.py:10-11`)
-  - `main(argv=None, check_updates=True)` (`src/git_alias/core.py:2649-2699`)
-- Lifecycle/trigger:
-  - start_trigger: OS launches Python module/script invoking `git_alias.__main__`
-  - stop_conditions:
-    - normal return from `main`
-    - explicit `sys.exit(...)` in validation/error branches
-  - loop_or_blocking:
-    - no persistent loop; request/response style single-command execution
-  - thread_model: no explicit threads detected in `src/` or `.github/workflows/`
-- Internal Call-Trace Tree:
-  - `__main__` guard: module-entry adapter [`src/git_alias/__main__.py`]
-    - `main(...)`: parse argv, load config, route management flags/aliases [`src/git_alias/core.py:2649-2699`]
-      - `get_git_root(...)`: resolve repository root [`src/git_alias/core.py:274-287`]
-        - `_run_checked(...)`: subprocess wrapper with `CommandExecutionError` normalization [`src/git_alias/core.py:585-590`]
-      - `load_cli_config(...)`: initialize CONFIG from `.g.conf` [`src/git_alias/core.py:303-335`]
-        - `get_config_path(...)`: resolve `.g.conf` path [`src/git_alias/core.py:294-296`]
-      - `check_for_newer_version(...)`: optional cached/API version probe [`src/git_alias/core.py:186-268`]
-        - `get_cli_version(...)`: parse `__version__` from package init [`src/git_alias/core.py:159-168`]
-        - `_parse_semver_tuple(...)`: semver parser [`src/git_alias/core.py:1381-1385`]
-        - `_normalize_semver_text(...)`: drop leading `v` [`src/git_alias/core.py:175-179`]
-      - management-flag branches:
-        - `--ver|--version` -> `get_cli_version(...)` [`src/git_alias/core.py:2662-2664`]
-        - `--write-config` -> `write_default_config(...)` [`src/git_alias/core.py:2665-2667`]
-          - `get_config_path(...)` [`src/git_alias/core.py:294-296`]
-        - `--upgrade` -> `upgrade_self(...)` [`src/git_alias/core.py:2668-2670`]
-          - `_run_checked(...)` [`src/git_alias/core.py:1744-1755`]
-        - `--remove` -> `remove_self(...)` [`src/git_alias/core.py:2671-2673`]
-          - `_run_checked(...)` [`src/git_alias/core.py:1761-1762`]
-        - `--help` -> `print_all_help(...)` / `print_command_help(...)` [`src/git_alias/core.py:2674-2681`]
-          - `print_all_help(...)` [`src/git_alias/core.py:2609-2641`]
-            - `get_cli_version(...)` [`src/git_alias/core.py:2609-2610`]
-            - `print_command_help(...)` [`src/git_alias/core.py:2599-2604`]
-      - alias dispatch branches:
-        - unknown alias fallback -> `run_git_cmd([name], extras)` [`src/git_alias/core.py:2685-2687`]
-          - `_to_args(...)` [`src/git_alias/core.py:533-534`]
-          - `_run_checked(...)` [`src/git_alias/core.py:610-613`]
-        - known alias -> `COMMANDS[name](extras)` [`src/git_alias/core.py:2529-2592`, `src/git_alias/core.py:2694`]
-          - Commit and conventional-commit family:
-            - `cmd_cm(...)` -> `_prepare_commit_message(...)` -> `_ensure_commit_ready(...)` -> `_execute_commit(...)` [`src/git_alias/core.py:1869-1872`]
-            - `cmd_wip(...)` -> `_ensure_commit_ready(...)` -> `_execute_commit(...)` [`src/git_alias/core.py:1879-1889`]
-            - `cmd_release(...)` -> `_ensure_commit_ready(...)` -> `get_version_rules(...)` -> `get_git_root(...)` -> `_determine_canonical_version(...)` -> `_execute_commit(...)` [`src/git_alias/core.py:1908-1928`]
-            - `cmd_new|cmd_refactor|cmd_fix|cmd_change|cmd_implement|cmd_docs|cmd_style|cmd_revert|cmd_misc|cmd_cover` -> `_run_conventional_commit(...)` [`src/git_alias/core.py:1923-1996`]
-              - `_build_conventional_message(...)` -> `_prepare_commit_message(...)` [`src/git_alias/core.py:1678-1690`]
-              - `_ensure_commit_ready(...)` [`src/git_alias/core.py:1851-1862`]
-              - `_execute_commit(...)` with WIP amend decision enabled [`src/git_alias/core.py:1711-1738`]
-            - `_execute_commit(...)`: amend/new decision and commit execution [`src/git_alias/core.py:1711-1738`]
-              - `_should_amend_existing_commit(...)` [`src/git_alias/core.py:849-862`]
-                - `_head_commit_message(...)` [`src/git_alias/core.py:811-815`]
-                - `_head_commit_hash(...)` [`src/git_alias/core.py:821-825`]
-                - `get_branch(...)` -> `get_config_value(...)` [`src/git_alias/core.py:105-108`, `src/git_alias/core.py:97-98`]
-                - `_commit_exists_in_branch(...)` [`src/git_alias/core.py:833-843`]
-              - `run_git_cmd(...)` [`src/git_alias/core.py:1726`, `src/git_alias/core.py:610-613`]
-              - `_git_status_lines(...)` / `has_unstaged_changes(...)` / `has_staged_changes(...)` on commit failure [`src/git_alias/core.py:1728-1737`, `src/git_alias/core.py:694-734`]
-          - Release orchestration family:
-            - `cmd_major|cmd_minor|cmd_patch` -> `_parse_release_flags(...)` -> `_run_release_command(...)` [`src/git_alias/core.py:2467-2487`]
-            - `_run_release_command(...)` -> `_execute_release_flow(...)` [`src/git_alias/core.py:1603-1616`]
-            - `_execute_release_flow(...)`: release state machine [`src/git_alias/core.py:1555-1595`]
-              - `_ensure_release_prerequisites(...)` [`src/git_alias/core.py:1459-1484`]
-                - `_local_branch_exists(...)` / `_remote_branch_exists(...)` -> `_ref_exists(...)` [`src/git_alias/core.py:1444-1453`, `src/git_alias/core.py:1430-1437`]
-                - `_refresh_remote_refs(...)` [`src/git_alias/core.py:748-757`]
-                - `has_remote_branch_updates(...)` -> `_branch_remote_divergence(...)` [`src/git_alias/core.py:789-795`, `src/git_alias/core.py:760-786`]
-                - `_current_branch_name(...)` [`src/git_alias/core.py:1413-1423`]
-                - `_git_status_lines(...)` / `has_unstaged_changes(...)` / `has_staged_changes(...)` [`src/git_alias/core.py:694-734`]
-              - `get_version_rules(...)` -> `_load_config_rules(...)` [`src/git_alias/core.py:152-153`, `src/git_alias/core.py:123-147`]
-              - `get_git_root(...)` [`src/git_alias/core.py:274-287`]
-              - `_determine_canonical_version(...)` -> `_collect_version_files(...)` -> `_is_version_path_excluded(...)` -> `_iter_versions_in_text(...)` [`src/git_alias/core.py:1317-1374`, `src/git_alias/core.py:1249-1308`]
-              - `_bump_semver_version(...)` [`src/git_alias/core.py:1492-1508`]
-              - `_run_release_step(...)` wrappers for sequential internal actions [`src/git_alias/core.py:1519-1537`]
-                - `cmd_chver(...)` [`src/git_alias/core.py:2392-2460`]
-                  - `_parse_semver_tuple(...)`, `get_git_root(...)`, `get_version_rules(...)`, `_determine_canonical_version(...)`, `_collect_version_files(...)`, `_replace_versions_in_text(...)` [`src/git_alias/core.py:2398-2451`]
-                - `_create_release_commit_for_flow(...)` -> `_ensure_commit_ready(...)` -> `_execute_commit(...)` (first release commit with amend/new WIP decision) [`src/git_alias/core.py:1544-1547`]
-                - `cmd_tg(...)`, `cmd_changelog(...)`, `cmd_co(...)`, `cmd_me(...)`, `cmd_de(...)`, `cmd_pt(...)` [`src/git_alias/core.py:1572-1594`, `src/git_alias/core.py:2356-2357`, `src/git_alias/core.py:2496-2527`, `src/git_alias/core.py:2015-2016`, `src/git_alias/core.py:2230-2231`, `src/git_alias/core.py:2043-2044`, `src/git_alias/core.py:2246-2247`]
-                - direct `run_git_cmd(...)` stage/push/amend operations [`src/git_alias/core.py:1570`, `src/git_alias/core.py:1574-1575`, `src/git_alias/core.py:1588`, `src/git_alias/core.py:1591`]
-          - Version/changelog inspection family:
-            - `cmd_ver(...)` -> `get_git_root(...)` -> `get_version_rules(...)` -> `_determine_canonical_version(...)` [`src/git_alias/core.py:2369-2385`]
-            - `cmd_chver(...)` -> `_parse_semver_tuple(...)` + canonical-detection + rewrite/verify loop [`src/git_alias/core.py:2392-2460`]
-            - `cmd_changelog(...)` [`src/git_alias/core.py:2494-2525`]
-              - `is_inside_git_repo(...)` -> `run_git_text(...)` [`src/git_alias/core.py:868-873`, `src/git_alias/core.py:640-655`]
-              - `get_git_root(...)` [`src/git_alias/core.py:2512`]
-              - `generate_changelog_document(...)` [`src/git_alias/core.py:1196-1241`]
-                - `list_tags_sorted_by_date(...)` [`src/git_alias/core.py:978-996`]
-                - `_canonical_origin_base(...)` [`src/git_alias/core.py:1105-1120`]
-                - `_latest_supported_tag_name(...)` / `_should_include_tag(...)` / `_is_supported_release_tag(...)` / `_tag_semver_tuple(...)` [`src/git_alias/core.py:964-970`, `src/git_alias/core.py:955-956`, `src/git_alias/core.py:943-947`, `src/git_alias/core.py:935-936`]
-                - `generate_section_for_range(...)` [`src/git_alias/core.py:1064-1098`]
-                  - `git_log_subjects(...)` -> `run_git_text(...)` [`src/git_alias/core.py:1004-1013`]
-                  - `_extract_release_version(...)` [`src/git_alias/core.py:1049-1053`]
-                  - `categorize_commit(...)` [`src/git_alias/core.py:1020-1042`]
-                - `build_history_section(...)` -> `get_release_page_url(...)` + `get_origin_compare_url(...)` [`src/git_alias/core.py:1156-1187`, `src/git_alias/core.py:1142-1145`, `src/git_alias/core.py:1129-1134`]
-          - Diagnostics/editor and passthrough alias family:
-            - `cmd_str(...)` -> `run_git_text(...)` + `run_git_cmd(...)` per remote [`src/git_alias/core.py:2117-2144`]
-            - `cmd_ed(...)` -> `_to_args(...)` -> `run_editor_command(...)` -> `_editor_base_command(...)` -> `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2071-2079`, `src/git_alias/core.py:372-373`, `src/git_alias/core.py:353-365`, `src/git_alias/core.py:630-631`, `src/git_alias/core.py:585-590`]
-            - `cmd_feall(...)` -> `cmd_fe(...)` -> `run_git_cmd(...)` [`src/git_alias/core.py:2093-2094`, `src/git_alias/core.py:2085-2086`]
-            - `cmd_d(...)` -> `_to_args(...)` -> `run_git_cmd(...)` [`src/git_alias/core.py:2011-2016`]
-            - reset-help aliases `cmd_rs|cmd_rssft|cmd_rsmix|cmd_rshrd|cmd_rsmrg|cmd_rskep` -> `_run_reset_with_help(...)` -> `_to_args(...)` -> `run_git_cmd(...)` [`src/git_alias/core.py:2297-2338`, `src/git_alias/core.py:1612-1617`]
-            - `cmd_ra(...)` -> `_to_args(...)` -> `_current_branch_name(...)` -> `_ensure_commit_ready(...)` -> `run_git_cmd(...)` [`src/git_alias/core.py:1781-1802`]
-            - `cmd_ar(...)` -> `_to_args(...)` -> `get_branch(...)` -> `capture_git_output(...)` -> `_run_checked(...)` + gzip pipeline [`src/git_alias/core.py:1809-1820`, `src/git_alias/core.py:620-622`]
-            - direct passthrough aliases to `run_git_cmd(...)`:
-              - `cmd_br, cmd_bd, cmd_ck, cmd_co, cmd_dcc, cmd_dccc, cmd_de, cmd_di, cmd_diyou, cmd_dime, cmd_dwc, cmd_dwcc, cmd_fe, cmd_lb, cmd_lg, cmd_lh, cmd_ll, cmd_lm, cmd_lt, cmd_me, cmd_pl, cmd_pt, cmd_pu, cmd_rf, cmd_rmloc, cmd_rmstg, cmd_rmunt, cmd_st, cmd_tg, cmd_unstg` [`src/git_alias/core.py:1827-1836`, `src/git_alias/core.py:1843-1844`, `src/git_alias/core.py:2005-2082`, `src/git_alias/core.py:2103`, `src/git_alias/core.py:2169-2380`]
-              - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:610-613`, `src/git_alias/core.py:533-534`, `src/git_alias/core.py:585-590`]
-          - global dispatch exception handling:
-            - `except CommandExecutionError`: `CommandExecutionError._decode_stream(...)` then `sys.exit(code)` [`src/git_alias/core.py:2695-2699`, `src/git_alias/core.py:569-577`]
-- External Boundaries:
-  - subprocess execution (`subprocess.run`, `subprocess.Popen`) via `_run_checked`, `_ref_exists`, `cmd_ar` pipeline (`src/git_alias/core.py:585-590`, `src/git_alias/core.py:1431-1437`, `src/git_alias/core.py:1815-1819`)
-  - git CLI boundary through `run_git_cmd`, `run_git_text`, `capture_git_output` (`src/git_alias/core.py:610-622`, `src/git_alias/core.py:640-688`)
-  - filesystem read/write boundary for config/version/changelog/cache (`src/git_alias/core.py:303-346`, `src/git_alias/core.py:2392-2444`, `src/git_alias/core.py:2524`, `src/git_alias/core.py:193-257`)
-  - network boundary to GitHub Releases API (`urlopen(Request(...))`) (`src/git_alias/core.py:221-233`)
-  - environment/tool boundary (`uv tool install/uninstall`) (`src/git_alias/core.py:1744-1762`)
+
+### `PROC:main`
+
+- **Entrypoint**: `src/git_alias/__main__.py` -> `src/git_alias/core.py:main`
+- **Lifecycle/Trigger**: Ephemeral process triggered by user CLI invocation. Exits after command execution.
+- **Internal Call-Trace Tree**:
+  - `main(argv, check_updates)`: Dispatcher and entrypoint [src/git_alias/core.py]
+    - `get_git_root()`: Resolve repository root [src/git_alias/core.py]
+      - `_run_checked(...)`: Execute git rev-parse [src/git_alias/core.py]
+    - `load_cli_config(root)`: Load .g.conf [src/git_alias/core.py]
+      - `get_config_path(root)`: Resolve config path [src/git_alias/core.py]
+    - `check_for_newer_version(timeout_seconds)`: Check GitHub for updates [src/git_alias/core.py]
+      - `get_cli_version()`: Read local version [src/git_alias/core.py]
+      - `_parse_semver_tuple(text)`: Parse version string [src/git_alias/core.py]
+      - `_normalize_semver_text(text)`: Normalize version string [src/git_alias/core.py]
+      - External Boundary: `urllib.request.urlopen` (HTTP GET https://api.github.com/repos/Ogekuri/G/releases/latest)
+    - `write_default_config(root)`: [src/git_alias/core.py]
+      - `get_config_path(root)`: [src/git_alias/core.py]
+    - `upgrade_self()`: [src/git_alias/core.py]
+    - `remove_self()`: [src/git_alias/core.py]
+    - `print_all_help()`: [src/git_alias/core.py]
+    - `print_command_help(name)`: [src/git_alias/core.py]
+    - `cmd_*(...)`: Command handlers [src/git_alias/core.py]
+      - `cmd_aa(extra)`: Stage all [src/git_alias/core.py]
+        - `run_git_cmd(...)`: Execute git add [src/git_alias/core.py]
+      - `cmd_cm(extra)`: Commit [src/git_alias/core.py]
+        - `_execute_commit(message, ...)`: [src/git_alias/core.py]
+          - `_ensure_commit_ready(...)`: [src/git_alias/core.py]
+            - `has_unstaged_changes(...)`: [src/git_alias/core.py]
+            - `has_staged_changes(...)`: [src/git_alias/core.py]
+          - `run_git_cmd(...)`: Execute git commit [src/git_alias/core.py]
+      - `cmd_major(extra)`: Release major [src/git_alias/core.py]
+        - `_run_release_command('major', ...)`: [src/git_alias/core.py]
+          - `_execute_release_flow('major', ...)`: [src/git_alias/core.py]
+            - `_ensure_release_prerequisites()`: [src/git_alias/core.py]
+              - `get_branch(name)`: [src/git_alias/core.py]
+              - `_local_branch_exists(...)`: [src/git_alias/core.py]
+              - `_remote_branch_exists(...)`: [src/git_alias/core.py]
+              - `has_remote_branch_updates(...)`: [src/git_alias/core.py]
+            - `get_version_rules()`: [src/git_alias/core.py]
+              - `_load_config_rules(...)`: [src/git_alias/core.py]
+            - `_determine_canonical_version(...)`: [src/git_alias/core.py]
+              - `_collect_version_files(...)`: [src/git_alias/core.py]
+            - `_bump_semver_version(...)`: [src/git_alias/core.py]
+            - `_run_release_step(...)`: Execute release steps [src/git_alias/core.py]
+              - `cmd_chver(...)`: Change version [src/git_alias/core.py]
+              - `cmd_tg(...)`: Tag [src/git_alias/core.py]
+              - `cmd_changelog(...)`: Generate changelog [src/git_alias/core.py]
+                - `generate_changelog_document(...)`: [src/git_alias/core.py]
+                  - `list_tags_sorted_by_date(...)`: [src/git_alias/core.py]
+                  - `generate_section_for_range(...)`: [src/git_alias/core.py]
+                    - `git_log_subjects(...)`: [src/git_alias/core.py]
+                    - `categorize_commit(...)`: [src/git_alias/core.py]
+      - `cmd_minor(extra)`: Release minor [src/git_alias/core.py]
+        - `_run_release_command('minor', ...)`: [src/git_alias/core.py]
+      - `cmd_patch(extra)`: Release patch [src/git_alias/core.py]
+        - `_run_release_command('patch', ...)`: [src/git_alias/core.py]
+      - `cmd_wip(extra)`: Work in progress [src/git_alias/core.py]
+        - `_should_amend_existing_commit()`: [src/git_alias/core.py]
+        - `run_git_cmd(...)`: [src/git_alias/core.py]
+      - `cmd_ver(extra)`: Verify versions [src/git_alias/core.py]
+        - `_determine_canonical_version(...)`: [src/git_alias/core.py]
+- **External Boundaries**:
+  - `subprocess.run`: Invoking `git` executable for all operations.
+  - `urllib.request.urlopen`: Fetching latest release info from GitHub API.
+  - Filesystem: Reading/Writing `.g.conf`, `.g_version_check_cache.json`, `CHANGELOG.md`, and source files for version bumping.
+  - `sys.stdout/stderr`: User interaction.
+
+### `PROC:build-release`
+
+- **Entrypoint**: `.github/workflows/release-uvx.yml`
+- **Lifecycle/Trigger**: Triggered by `push` event on tags matching `v*`.
+- **Internal Call-Trace Tree**:
+  - `jobs:build-release`: Main job [.github/workflows/release-uvx.yml]
+    - `steps:checkout`: uses actions/checkout@v4 [.github/workflows/release-uvx.yml]
+    - `steps:setup-python`: uses actions/setup-python@v5 [.github/workflows/release-uvx.yml]
+    - `steps:setup-uv`: uses astral-sh/setup-uv@v3 [.github/workflows/release-uvx.yml]
+    - `steps:install-deps`: run uv pip install [.github/workflows/release-uvx.yml]
+    - `steps:build`: run python -m build [.github/workflows/release-uvx.yml]
+    - `steps:attest`: uses actions/attest-build-provenance@v1 [.github/workflows/release-uvx.yml]
+    - `steps:create-release`: uses softprops/action-gh-release@v2 [.github/workflows/release-uvx.yml]
+- **External Boundaries**:
+  - GitHub Actions Runner Environment.
+  - PyPI (via `uv pip install`).
+  - GitHub API (via actions).
 
 ## Communication Edges
-- EDGE:none
-  - reason: only one execution unit (`PROC:main`) and no explicit thread/process creation in repository-owned runtime code under `src/` and `.github/workflows/`
-  - evidence:
-    - no `threading`/`Thread`/`multiprocessing` constructs in `src/` (`src/git_alias/core.py` search result: none)
-    - workflow file is declarative CI configuration with no repository-internal function/thread definitions (`.github/workflows/release-uvx.yml:1-48`)
+
+- **Edge 1**: `PROC:main` -> `Subprocess (git)`
+  - Direction: Outbound
+  - Mechanism: `subprocess.run` (IPC)
+  - Endpoint: `git` executable in PATH
+  - Payload: Git commands/arguments
+  - Evidence: `src/git_alias/core.py:run_git_cmd`, `src/git_alias/core.py:_run_checked`
+
+- **Edge 2**: `PROC:main` -> `GitHub API`
+  - Direction: Outbound
+  - Mechanism: HTTP/HTTPS
+  - Endpoint: `https://api.github.com/repos/Ogekuri/G/releases/latest`
+  - Payload: JSON response (release info)
+  - Evidence: `src/git_alias/core.py:check_for_newer_version`, `src/git_alias/core.py:GITHUB_LATEST_RELEASE_API`
+
+- **Edge 3**: `PROC:main` -> `Filesystem (Config/Cache)`
+  - Direction: Read/Write
+  - Mechanism: File I/O
+  - Endpoint: `.g.conf`, `.g_version_check_cache.json`
+  - Payload: JSON configuration and cache data
+  - Evidence: `src/git_alias/core.py:load_cli_config`, `src/git_alias/core.py:check_for_newer_version`
+
+- **Edge 4**: `PROC:build-release` -> `GitHub API`
+  - Direction: Outbound
+  - Mechanism: GitHub Actions API
+  - Endpoint: GitHub Release / Attestation APIs
+  - Payload: Build artifacts (`dist/*`), Provenance data
+  - Evidence: `.github/workflows/release-uvx.yml` steps using `actions/attest-build-provenance` and `softprops/action-gh-release`
