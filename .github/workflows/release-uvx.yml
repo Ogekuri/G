@@ -61,7 +61,7 @@ jobs:
              ],
               "label_extractor": [
                {
-                 "pattern": "^(new|implement|fix|change|cover|refactor|docs|style|revert|misc){1}(\\([^)]+\\))?(!)?:\\s+.+$",
+                 "pattern": "^(new|implement|fix|change|cover|refactor|docs|style|revert|misc){1}(\\([^\\)]+\\))?(!)?: ([\\w ])+([\\s\\S]*)",
                  "on_property": "title",
                  "target": "$1"
                }
