@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.32](https://github.com/Ogekuri/G/compare/v0.0.31..v0.0.32) - 2026-02-20
+### 📚  Documentation
+- *(core)* update README.md.
+
 ## [0.0.31](https://github.com/Ogekuri/G/compare/v0.0.30..v0.0.31) - 2026-02-20
 ### ⛰️  Features
 - *(core)* update github workflow.
@@ -225,6 +229,7 @@
 - \[0.0.29\]: https://github.com/Ogekuri/G/releases/tag/v0.0.29
 - \[0.0.30\]: https://github.com/Ogekuri/G/releases/tag/v0.0.30
 - \[0.0.31\]: https://github.com/Ogekuri/G/releases/tag/v0.0.31
+- \[0.0.32\]: https://github.com/Ogekuri/G/releases/tag/v0.0.32
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
@@ -256,3 +261,4 @@
 [0.0.29]: https://github.com/Ogekuri/G/compare/v0.0.28..v0.0.29
 [0.0.30]: https://github.com/Ogekuri/G/compare/v0.0.29..v0.0.30
 [0.0.31]: https://github.com/Ogekuri/G/compare/v0.0.30..v0.0.31
+[0.0.32]: https://github.com/Ogekuri/G/compare/v0.0.31..v0.0.32
