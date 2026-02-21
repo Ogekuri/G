@@ -197,3 +197,42 @@ class VerCommandTest(unittest.TestCase):
                 self.assertIn("Pattern '*.py' matched files:", output)
                 self.assertIn("  module.py", output)
                 self.assertIn("Regex match for module.py: yes.", output)
+
+    def test_cmd_chver_updates_versions_and_reports_success(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            module_path = root / "module.py"
+            readme_path = root / "README.md"
+            module_path.write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+            readme_path.write_text('Current version "1.2.3"\n', encoding="utf-8")
+            self._set_rules(
+                [
+                    {"pattern": "module.py", "regex": r'__version__\s*=\s*"(\d+\.\d+\.\d+)"'},
+                    {"pattern": "README.md", "regex": r'"(\d+\.\d+\.\d+)"'},
+                ]
+            )
+            with mock.patch.object(core, "get_git_root", return_value=root):
+                buffer = io.StringIO()
+                with contextlib.redirect_stdout(buffer):
+                    core.cmd_chver(["1.2.4"])
+                self.assertIn("Upgrade completed: version is now 1.2.4.", buffer.getvalue())
+            self.assertIn('1.2.4', module_path.read_text(encoding="utf-8"))
+            self.assertIn('1.2.4', readme_path.read_text(encoding="utf-8"))
+
+    def test_cmd_chver_builds_version_inventory_once(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "module.py").write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+            self._set_rules(
+                [
+                    {"pattern": "*.py", "regex": r'__version__\s*=\s*"(\d+\.\d+\.\d+)"'},
+                ]
+            )
+            with mock.patch.object(core, "get_git_root", return_value=root):
+                with mock.patch.object(
+                    core,
+                    "_build_version_file_inventory",
+                    wraps=core._build_version_file_inventory,
+                ) as build_inventory:
+                    core.cmd_chver(["1.2.4"])
+                self.assertEqual(build_inventory.call_count, 1)

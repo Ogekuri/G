@@ -1285,19 +1285,44 @@ def generate_changelog_document(repo_root: Path, include_patch: bool) -> str:
 # @param root Input parameter consumed by `_collect_version_files`.
 # @param pattern Input parameter consumed by `_collect_version_files`.
 # @return Result emitted by `_collect_version_files` according to command contract.
-def _collect_version_files(root, pattern):
-    files = []
-    seen = set()
+## @brief Store resolved per-rule context for version discovery and matching.
+# @details Encapsulates immutable artifacts required across detect/update/verify phases:
+#          compiled regex, resolved file list, and pre-rendered relative-path map for stable debug output.
+# @note Complexity: O(1) storage per field; aggregate complexity scales with matched file count per rule.
+@dataclass(frozen=True)
+class VersionRuleContext:
+    pattern: str
+    expression: str
+    compiled_regex: re.Pattern
+    files: List[Path]
+    relative_map: Dict[Path, str]
+
+
+## @brief Normalize a `ver_rules` pattern to the internal pathspec matching form.
+# @details Converts separators to POSIX style, strips leading `./`, and anchors patterns containing `/`
+#          to repository root by prefixing `/` when missing, preserving REQ-017 semantics.
+# @param pattern Input pattern string from configuration.
+# @return Normalized pathspec-compatible pattern string; empty string when input is blank.
+def _normalize_version_rule_pattern(pattern: str) -> str:
     trimmed = (pattern or "").strip()
     if not trimmed:
-        return files
+        return ""
     normalized_pattern = trimmed.replace("\\", "/")
     if normalized_pattern.startswith("./"):
         normalized_pattern = normalized_pattern[2:]
     if "/" in normalized_pattern and not normalized_pattern.startswith("/"):
         normalized_pattern = f"/{normalized_pattern}"
-    # @details Apply pathspec matcher to preserve configured GitIgnore-like semantics.
-    spec = pathspec.PathSpec.from_lines("gitignore", [normalized_pattern])
+    return normalized_pattern
+
+
+## @brief Build a deduplicated repository file inventory for version rule evaluation.
+# @details Executes a single `rglob("*")` traversal from repository root, filters to files only,
+#          applies hardcoded exclusion regexes, normalizes relative paths, and deduplicates by resolved path.
+# @param root Repository root path used as traversal anchor.
+# @return List of tuples `(absolute_path, normalized_relative_path)` used by downstream matchers.
+def _build_version_file_inventory(root: Path) -> List[Tuple[Path, str]]:
+    inventory: List[Tuple[Path, str]] = []
+    seen = set()
     for path in root.rglob("*"):
         if not path.is_file():
             continue
@@ -1305,19 +1330,40 @@ def _collect_version_files(root, pattern):
         if _is_version_path_excluded(relative):
             continue
         normalized_relative = (relative or "").replace("\\", "/").strip()
-        if not normalized_relative:  # skip empty lines
+        if not normalized_relative:
             continue
         if normalized_relative.startswith("./"):
             normalized_relative = normalized_relative[2:]
+        resolved = path.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        inventory.append((path, normalized_relative))
+    return inventory
+
+
+## @brief Execute `_collect_version_files` runtime logic for Git-Alias CLI.
+# @details Executes `_collect_version_files` using deterministic CLI control-flow and explicit error propagation.
+#          Uses precomputed inventory when provided to avoid repeated repository traversals.
+# @param root Input parameter consumed by `_collect_version_files`.
+# @param pattern Input parameter consumed by `_collect_version_files`.
+# @param inventory Optional precomputed `(path, normalized_relative_path)` list.
+# @return Result emitted by `_collect_version_files` according to command contract.
+def _collect_version_files(root, pattern, *, inventory=None):
+    files = []
+    normalized_pattern = _normalize_version_rule_pattern(pattern)
+    if not normalized_pattern:
+        return files
+    # @details Apply pathspec matcher to preserve configured GitIgnore-like semantics.
+    spec = pathspec.PathSpec.from_lines("gitignore", [normalized_pattern])
+    candidates = inventory if inventory is not None else _build_version_file_inventory(root)
+    for path, normalized_relative in candidates:
         matches = spec.match_file(normalized_relative)
         if not matches and normalized_pattern.startswith("/") and not normalized_relative.startswith("/"):
             matches = spec.match_file(f"/{normalized_relative}")
         if matches:
-            resolved = path.resolve()
-            if resolved not in seen:
-                seen.add(resolved)
-                files.append(path)
-    
+            files.append(path)
+
     return files
 
 
@@ -1346,31 +1392,47 @@ def _iter_versions_in_text(text, compiled_regexes):
                 yield match.group(0)
 
 
-## @brief Execute `_determine_canonical_version` runtime logic for Git-Alias CLI.
-# @details Executes `_determine_canonical_version` using deterministic CLI control-flow and explicit error propagation.
-# @param root Input parameter consumed by `_determine_canonical_version`.
-# @param rules Input parameter consumed by `_determine_canonical_version`.
-# @param verbose Input parameter consumed by `_determine_canonical_version`.
-# @param debug Input parameter consumed by `_determine_canonical_version`.
-# @return Result emitted by `_determine_canonical_version` according to command contract.
-def _determine_canonical_version(root: Path, rules, *, verbose: bool = False, debug: bool = False):
-    canonical = None
-    canonical_file = None
+## @brief Read and cache UTF-8 text content for a version-managed file.
+# @details Loads file content with UTF-8 decoding; falls back to `errors="ignore"` on decode failures.
+#          Emits deterministic stderr diagnostics on I/O failure and returns `None` for caller-managed skip logic.
+# @param file_path Absolute path of the file to read.
+# @param text_cache Optional mutable cache keyed by `Path` to avoid duplicate reads across phases.
+# @return File text payload or `None` when file cannot be read.
+def _read_version_file_text(file_path: Path, text_cache: Optional[Dict[Path, str]] = None) -> Optional[str]:
+    if text_cache is not None and file_path in text_cache:
+        return text_cache[file_path]
+    try:
+        text = file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        text = file_path.read_text(encoding="utf-8", errors="ignore")
+    except OSError as exc:
+        print(f"Unable to read {file_path}: {exc}", file=sys.stderr)
+        return None
+    if text_cache is not None:
+        text_cache[file_path] = text
+    return text
+
+
+## @brief Build reusable per-rule contexts for canonical version evaluation workflows.
+# @details Resolves matched files and compiled regex for each `(pattern, regex)` rule exactly once.
+#          Preserves error contracts for unmatched patterns and invalid regex declarations.
+# @param root Repository root path used for relative-path rendering.
+# @param rules Sequence of `(pattern, regex)` tuples.
+# @param inventory Optional precomputed inventory to avoid repeated filesystem traversal.
+# @return Ordered list of `VersionRuleContext` objects aligned to input rule order.
+# @throws VersionDetectionError when a rule matches no files or contains an invalid regex.
+def _prepare_version_rule_contexts(
+    root: Path, rules, *, inventory: Optional[List[Tuple[Path, str]]] = None
+) -> List[VersionRuleContext]:
+    contexts: List[VersionRuleContext] = []
     for pattern, expression in rules:
-        files = _collect_version_files(root, pattern)
-        relative_map = {}
+        files = _collect_version_files(root, pattern, inventory=inventory)
+        relative_map: Dict[Path, str] = {}
         for file_path in files:
             try:
                 relative_map[file_path] = file_path.relative_to(root).as_posix()
             except ValueError:
                 relative_map[file_path] = str(file_path)
-        if debug:
-            print(f"Pattern '{pattern}' matched files:")
-            if files:
-                for file_path in files:
-                    print(f"  {relative_map[file_path]}")
-            else:
-                print("  (none)")
         if not files:
             raise VersionDetectionError(
                 f"No files matched the version rule pattern '{pattern}'."
@@ -1381,19 +1443,56 @@ def _determine_canonical_version(root: Path, rules, *, verbose: bool = False, de
             raise VersionDetectionError(
                 f"Invalid regex '{expression}' for pattern '{pattern}': {exc}"
             )
+        contexts.append(
+            VersionRuleContext(
+                pattern=pattern,
+                expression=expression,
+                compiled_regex=compiled,
+                files=files,
+                relative_map=relative_map,
+            )
+        )
+    return contexts
+
+
+## @brief Execute `_determine_canonical_version` runtime logic for Git-Alias CLI.
+# @details Executes `_determine_canonical_version` using deterministic CLI control-flow and explicit error propagation.
+# @param root Input parameter consumed by `_determine_canonical_version`.
+# @param rules Input parameter consumed by `_determine_canonical_version`.
+# @param verbose Input parameter consumed by `_determine_canonical_version`.
+# @param debug Input parameter consumed by `_determine_canonical_version`.
+# @param contexts Optional precomputed `VersionRuleContext` list for reuse across phases.
+# @param text_cache Optional mutable cache keyed by file path to avoid duplicate reads.
+# @return Result emitted by `_determine_canonical_version` according to command contract.
+def _determine_canonical_version(
+    root: Path,
+    rules,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+    contexts: Optional[List[VersionRuleContext]] = None,
+    text_cache: Optional[Dict[Path, str]] = None,
+):
+    active_contexts = contexts if contexts is not None else _prepare_version_rule_contexts(root, rules)
+    canonical = None
+    canonical_file = None
+    for context in active_contexts:
+        if debug:
+            print(f"Pattern '{context.pattern}' matched files:")
+            if context.files:
+                for file_path in context.files:
+                    print(f"  {context.relative_map[file_path]}")
+            else:
+                print("  (none)")
         matched_in_rule = False
-        for file_path in files:
-            try:
-                text = file_path.read_text(encoding="utf-8")
-            except UnicodeDecodeError:
-                text = file_path.read_text(encoding="utf-8", errors="ignore")
-            except OSError as exc:
-                print(f"Unable to read {file_path}: {exc}", file=sys.stderr)
+        for file_path in context.files:
+            text = _read_version_file_text(file_path, text_cache=text_cache)
+            if text is None:
                 continue
-            versions = list(_iter_versions_in_text(text, [compiled]))
+            versions = list(_iter_versions_in_text(text, [context.compiled_regex]))
             if verbose:
                 match_state = "yes" if versions else "no"
-                print(f"Regex match for {relative_map[file_path]}: {match_state}.")
+                print(f"Regex match for {context.relative_map[file_path]}: {match_state}.")
             if versions:
                 matched_in_rule = True
             for version in versions:
@@ -1406,7 +1505,7 @@ def _determine_canonical_version(root: Path, rules, *, verbose: bool = False, de
                     )
         if not matched_in_rule:
             raise VersionDetectionError(
-                f"No version matches found for rule pattern '{pattern}' with regex '{expression}'."
+                f"No version matches found for rule pattern '{context.pattern}' with regex '{context.expression}'."
             )
     if canonical is None:
         raise VersionDetectionError("No version string matched the configured rule list.")
@@ -2455,7 +2554,15 @@ def cmd_ver(extra):
         print("No version rules configured.", file=sys.stderr)
         sys.exit(1)
     try:
-        canonical = _determine_canonical_version(root, rules, verbose=verbose, debug=debug)
+        inventory = _build_version_file_inventory(root)
+        contexts = _prepare_version_rule_contexts(root, rules, inventory=inventory)
+        canonical = _determine_canonical_version(
+            root,
+            rules,
+            verbose=verbose,
+            debug=debug,
+            contexts=contexts,
+        )
     except VersionDetectionError as exc:
         print(str(exc), file=sys.stderr)
         sys.exit(1)
@@ -2481,8 +2588,16 @@ def cmd_chver(extra):
     if not rules:
         print("No version rules configured.", file=sys.stderr)
         sys.exit(1)
+    text_cache: Dict[Path, str] = {}
     try:
-        current = _determine_canonical_version(root, rules)
+        inventory = _build_version_file_inventory(root)
+        contexts = _prepare_version_rule_contexts(root, rules, inventory=inventory)
+        current = _determine_canonical_version(
+            root,
+            rules,
+            contexts=contexts,
+            text_cache=text_cache,
+        )
     except VersionDetectionError as exc:
         print(f"Unable to determine the current version: {exc}", file=sys.stderr)
         sys.exit(1)
@@ -2495,36 +2610,30 @@ def cmd_chver(extra):
         return
     action = "Upgrade" if target_tuple > current_tuple else "Downgrade"
     replacements = 0
-    for pattern, expression in rules:
-        files = _collect_version_files(root, pattern)
-        if not files:
-            continue
-        try:
-            compiled = re.compile(expression)
-        except re.error as exc:
-            print(f"Ignoring invalid regex '{expression}' for pattern '{pattern}': {exc}", file=sys.stderr)
-            continue
-        for file_path in files:
-            try:
-                text = file_path.read_text(encoding="utf-8")
-            except UnicodeDecodeError:
-                text = file_path.read_text(encoding="utf-8", errors="ignore")
-            except OSError as exc:
-                print(f"Unable to read {file_path}: {exc}", file=sys.stderr)
+    for context in contexts:
+        for file_path in context.files:
+            text = _read_version_file_text(file_path, text_cache=text_cache)
+            if text is None:
                 continue
-            new_text, count = _replace_versions_in_text(text, compiled, requested)
+            new_text, count = _replace_versions_in_text(text, context.compiled_regex, requested)
             if count:
                 try:
                     file_path.write_text(new_text, encoding="utf-8")
                 except OSError as exc:
                     print(f"Unable to write {file_path}: {exc}", file=sys.stderr)
                     sys.exit(1)
+                text_cache[file_path] = new_text
                 replacements += count
     if replacements == 0:
         print("No version entries were updated. Ensure ver_rules match the desired files.", file=sys.stderr)
         sys.exit(1)
     try:
-        confirmed = _determine_canonical_version(root, rules)
+        confirmed = _determine_canonical_version(
+            root,
+            rules,
+            contexts=contexts,
+            text_cache=text_cache,
+        )
     except VersionDetectionError as exc:
         print(f"Fatal error after updating versions: {exc}", file=sys.stderr)
         sys.exit(1)

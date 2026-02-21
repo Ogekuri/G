@@ -146,14 +146,17 @@
           - `print_command_help(...)`
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
-        - `cmd_release(...)`: release commit flow [`src/git_alias/core.py:1900`]
+        - `cmd_release(...)`: release commit flow [`src/git_alias/core.py:2056`]
           - `_to_args(...)`
           - `print_command_help(...)`
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
           - `get_version_rules(...)` -> `_load_config_rules(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
           - `_determine_canonical_version(...)`
-            - `_collect_version_files(...)` -> `_is_version_path_excluded(...)`
+            - `_prepare_version_rule_contexts(...)` -> `_collect_version_files(...)`
+              - `_collect_version_files(...)` -> `_normalize_version_rule_pattern(...)`, `_build_version_file_inventory(...)`
+                - `_is_version_path_excluded(...)`
+            - `_read_version_file_text(...)`
             - `_iter_versions_in_text(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
         - `cmd_new(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1913`]
@@ -221,23 +224,28 @@
         - `cmd_st(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2351`]
         - `cmd_tg(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2359`]
         - `cmd_unstg(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2367`]
-        - `cmd_ver(...)`: version validation flow [`src/git_alias/core.py:2375`]
+        - `cmd_ver(...)`: version validation flow [`src/git_alias/core.py:2545`]
           - `_to_args(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
           - `get_version_rules(...)` -> `_load_config_rules(...)`
-          - `_determine_canonical_version(...)` -> `_collect_version_files(...)`, `_iter_versions_in_text(...)`
-        - `cmd_chver(...)`: version rewrite flow [`src/git_alias/core.py:2398`]
+          - `_build_version_file_inventory(...)` -> `_is_version_path_excluded(...)`
+          - `_prepare_version_rule_contexts(...)` -> `_collect_version_files(...)`, `re.compile(...)`
+          - `_determine_canonical_version(...)` -> `_read_version_file_text(...)`, `_iter_versions_in_text(...)`
+        - `cmd_chver(...)`: version rewrite flow [`src/git_alias/core.py:2576`]
           - `_to_args(...)`
           - `_parse_semver_tuple(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
           - `get_version_rules(...)` -> `_load_config_rules(...)`
-          - `_determine_canonical_version(...)` -> `_collect_version_files(...)`, `_iter_versions_in_text(...)`
-          - `_collect_version_files(...)` -> `_is_version_path_excluded(...)`
+          - `_build_version_file_inventory(...)` -> `_is_version_path_excluded(...)`
+          - `_prepare_version_rule_contexts(...)` -> `_collect_version_files(...)`, `re.compile(...)`
+          - `_determine_canonical_version(...)` -> `_read_version_file_text(...)`, `_iter_versions_in_text(...)`
+          - `_read_version_file_text(...)`
           - `_replace_versions_in_text(...)`
-        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2506`]
+          - `_determine_canonical_version(...)` (verification pass; reuses prepared contexts and cache)
+        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2656`]
           - `_parse_release_flags(...)` -> `_to_args(...)`
           - `_run_release_command(...)`
-            - `_execute_release_flow(...)`
+            - `_execute_release_flow(...)` [`src/git_alias/core.py:1697`]
               - `_ensure_release_prerequisites(...)`
                 - `get_branch(...)` -> `get_config_value(...)`
                 - `_local_branch_exists(...)` -> `_ref_exists(...)`
@@ -250,7 +258,7 @@
                 - `has_staged_changes(...)` -> `_git_status_lines(...)`
               - `get_version_rules(...)` -> `_load_config_rules(...)`
               - `get_git_root(...)` -> `_run_checked(...)`
-              - `_determine_canonical_version(...)` -> `_collect_version_files(...)`, `_iter_versions_in_text(...)`
+              - `_determine_canonical_version(...)` -> `_prepare_version_rule_contexts(...)`, `_read_version_file_text(...)`, `_iter_versions_in_text(...)`
               - `_bump_semver_version(...)` -> `_parse_semver_tuple(...)`
               - `_run_release_step(...)` with internal actions (shared for all levels):
                 - `cmd_chver(...)`
@@ -269,9 +277,9 @@
                 - `cmd_co(...)` (return to work)
                 - `cmd_de(...)`
                 - `cmd_pt(...)`
-        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2515`]
-        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/push steps [`src/git_alias/core.py:2524`]
-        - `cmd_changelog(...)`: changelog generation flow [`src/git_alias/core.py:2536`]
+        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2668`]
+        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/push steps [`src/git_alias/core.py:2680`]
+        - `cmd_changelog(...)`: changelog generation flow [`src/git_alias/core.py:2693`]
           - `print_command_help(...)`
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
