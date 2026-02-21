@@ -127,6 +127,13 @@ class AliasHelpTest(unittest.TestCase):
                     msg=f"{alias} help missing option {flag}",
                 )
 
+    def test_conventional_alias_help_documents_module_prefix(self):
+        aliases = ["new", "fix", "change", "implement", "refactor", "docs", "style", "revert", "misc", "cover"]
+        for alias in aliases:
+            output = self.run_script([alias, "--help"])
+            self.assertIn("<module>: <description>", output, msg=f"{alias} help missing module prefix syntax")
+            self.assertIn("default_module", output, msg=f"{alias} help missing default module fallback")
+
     def test_usage_includes_version_when_no_args(self):
         code, stdout, _ = self.run_script_result([], check=False)
         self.assertNotEqual(code, 0)

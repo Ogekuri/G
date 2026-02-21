@@ -35,6 +35,7 @@ This is a companion script for the <b><a href="https://github.com/Ogekuri/useReq
 - Common aliases for repetitive tasks like `add --all` (`aa`) and more.
 - Acts like a `.gitconfig` [alias] section, providing all standard Git commands with a fallback mechanism.
 - Customizable three-branch workflow: `master`, `develop`, and `work`.
+- Conventional commit aliases support `<module>: <description>` syntax (example: `g new api: add endpoint`) and also accept `<description>` only, using `.g.conf.default_module` (default `core`).
 - Standardized commits with specific commands like: `g new core: foo bar.` Use these commands for common activities such as:
     - `new`: Implement new features.
     - `implement`: Implement features or larger changes.
@@ -47,6 +48,7 @@ This is a companion script for the <b><a href="https://github.com/Ogekuri/useReq
     - `misc`: Miscellaneous tasks.
     - `cover`: Add/adjust tests to improve coverage.
 - Provides `major`, `minor`, and `patch` release commands that auto-generate a `CHANGELOG.md`, create a release commit and an annotated `v<next>` tag, and merge/push branches (`work` -> `develop`, and for `major`/`minor`: `develop` -> `master`). Optional flag: `--include-patch`.
+- Provides `backup` command to run release preflight checks, merge `work` into `develop`, push `develop`, and return to `work`.
 - Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--include-patch`, `--force-write`, `--print-only`, `--disable-history`).
 - Self-upgrading feature.
 
@@ -127,6 +129,8 @@ Some CLI examples:
 - `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
 - `g lg --help`: Shows the help text for the `lg` alias.
 - `g cm "Message"`: Runs `git commit` with the provided message.
+- `g new api: add endpoint`: Creates `new(api): add endpoint`; omit `api:` to use `.g.conf.default_module`.
+- `g backup`: Merges configured `work` into `develop`, pushes `develop`, and checks out back to `work`.
 - `g ver --verbose`: Verifies version consistency with detailed output.
 - `g chver 1.2.3`: Updates the project version to 1.2.3 using `ver_rules`.
 - `g changelog --print-only`: Prints the generated changelog without writing `CHANGELOG.md`.
