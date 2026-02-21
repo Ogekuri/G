@@ -114,7 +114,7 @@ class AliasHelpTest(unittest.TestCase):
 
     def test_help_lists_command_options_when_present(self):
         expected_flags = {
-            "changelog": ["--include-patch", "--force-write", "--print-only"],
+            "changelog": ["--include-patch", "--force-write", "--print-only", "--disable-history"],
             "patch": ["--include-patch"],
             "ver": ["--verbose", "--debug"],
         }

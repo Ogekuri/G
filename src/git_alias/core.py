@@ -381,7 +381,7 @@ HELP_TEXTS = {
     "bd": "Delete a local branch: git bd '<branch>'.",
     "br": "Create a new branch.",
     "chver": "Change the project version to the provided semantic version.",
-    "changelog": "Generate CHANGELOG.md grouped by minor releases. Options: --include-patch, --force-write, --print-only.",
+    "changelog": "Generate CHANGELOG.md grouped by minor releases. Options: --include-patch, --force-write, --print-only, --disable-history.",
     "ck": "Check differences.",
     "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
@@ -1112,32 +1112,57 @@ def _get_remote_name_for_branch(branch_name: str, repo_root: Path) -> str:
 
 
 ## @brief Resolve the normalized HTTPS base URL from the master branch's configured remote.
-# @details Determines the remote name by calling `_get_remote_name_for_branch` with the
-#          master branch from active CONFIG, then fetches the URL via `git remote get-url`.
-#          Parses both SSH (`git@<host>:<owner>/<repo>[.git]`) and HTTPS URL formats.
-#          Returns `None` when the remote URL is absent or the parsed URL is structurally invalid.
-#          All resolution uses local git commands; no network calls are performed.
+# @details Parses both SSH (`git@<host>:<owner>/<repo>[.git]`) and HTTPS
+#          (`https://<host>/<owner>/<repo>[.git]`) formats and extracts `<owner>` and `<repo>`
+#          through deterministic string parsing.
+# @param remote_url Raw git remote URL string.
+# @return Tuple `(owner, repo)` when parsing succeeds; otherwise `None`.
+def _extract_owner_repo(remote_url: str) -> Optional[Tuple[str, str]]:
+    value = (remote_url or "").strip()
+    if not value:
+        return None
+    if value.startswith("git@"):
+        if ":" not in value:
+            return None
+        path_part = value.split(":", 1)[1]
+    else:
+        parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            return None
+        path_part = parsed.path.lstrip("/")
+    path_part = path_part.rstrip("/")
+    if path_part.endswith(".git"):
+        path_part = path_part[:-4]
+    parts = [segment for segment in path_part.split("/") if segment]
+    if len(parts) != 2:
+        return None
+    owner, repo = parts
+    if not owner or not repo:
+        return None
+    return owner, repo
+
+
+## @brief Resolve normalized GitHub URL base from the master-branch configured remote.
+# @details Determines remote name using `_get_remote_name_for_branch` with the configured
+#          master branch, then executes local `git remote get-url <remote>` command.
+#          If command execution fails or URL parsing fails, returns `None`.
+#          On success, always emits `https://github.com/<owner>/<repo>` for changelog templates.
+#          No network operation is performed; all data is derived from local git metadata.
 # @param repo_root Absolute path to the repository root used as CWD for all git commands.
 # @return Normalized HTTPS base URL string (no trailing `.git`), or `None` on failure.
 # @satisfies REQ-043, REQ-046
 def _canonical_origin_base(repo_root: Path) -> Optional[str]:
     master_branch = get_branch("master")
     remote = _get_remote_name_for_branch(master_branch, repo_root)
-    url = run_git_text(["remote", "get-url", remote], cwd=repo_root, check=False).strip()
-    if not url:
+    try:
+        url = run_git_text(["remote", "get-url", remote], cwd=repo_root, check=True).strip()
+    except RuntimeError:
         return None
-    if url.startswith("git@"):
-        host_repo = url.split(":", 1)[1]
-        host = url.split("@", 1)[1].split(":", 1)[0]
-        base = f"https://{host}/" + host_repo
-    else:
-        base = url
-    if base.endswith(".git"):
-        base = base[:-4]
-    parsed = urlparse(base)
-    if not parsed.scheme or not parsed.netloc:
+    owner_repo = _extract_owner_repo(url)
+    if owner_repo is None:
         return None
-    return base
+    owner, repo = owner_repo
+    return f"https://github.com/{owner}/{repo}"
 
 
 ## @brief Execute `get_origin_compare_url` runtime logic for Git-Alias CLI.
@@ -1214,12 +1239,13 @@ def build_history_section(
 #          `# History` contains only the version tags present in the changelog body:
 #          minor tags when `include_patch=False`; minor tags plus the latest patch when
 #          `include_patch=True`. Diff links in `# History` use the same ranges as the
-#          corresponding changelog sections.
+#          corresponding changelog sections. History generation can be disabled by flag.
 # @param repo_root Absolute path to the repository root used as CWD for all git commands.
 # @param include_patch When `True`, prepend the latest patch release section to the document.
+# @param disable_history When `True`, omit `# History` section from output.
 # @return Complete `CHANGELOG.md` string content, terminated with a newline.
-# @satisfies REQ-018, REQ-040, REQ-041, REQ-043, REQ-068
-def generate_changelog_document(repo_root: Path, include_patch: bool) -> str:
+# @satisfies REQ-018, REQ-040, REQ-041, REQ-043, REQ-068, REQ-069, REQ-070
+def generate_changelog_document(repo_root: Path, include_patch: bool, disable_history: bool = False) -> str:
     all_tags = list_tags_sorted_by_date(repo_root)
     origin_base = _canonical_origin_base(repo_root)
     lines: List[str] = ["# Changelog", ""]
@@ -1265,18 +1291,19 @@ def generate_changelog_document(repo_root: Path, include_patch: bool) -> str:
         prev_included = tag.name
     if release_sections:
         lines.extend(reversed(release_sections))
-    history_tags: List[TagInfo] = list(minor_tags)
-    if latest_patch is not None:
-        history_tags = history_tags + [latest_patch]
-    history = build_history_section(
-        repo_root,
-        history_tags,
-        False,
-        include_unreleased_link=False,
-    )
-    if history:
-        lines.append("")
-        lines.append(history)
+    if not disable_history:
+        history_tags: List[TagInfo] = list(minor_tags)
+        if latest_patch is not None:
+            history_tags = history_tags + [latest_patch]
+        history = build_history_section(
+            repo_root,
+            history_tags,
+            False,
+            include_unreleased_link=False,
+        )
+        if history:
+            lines.append("")
+            lines.append(history)
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -2684,17 +2711,19 @@ def cmd_patch(extra):
 
 ## @brief CLI entry-point for the `changelog` subcommand.
 # @details Parses flags, delegates to `generate_changelog_document`, and writes or prints the result.
-#          Accepted flags: `--include-patch`, `--force-write`, `--print-only`, `--help`.
+#          Accepted flags: `--include-patch`, `--force-write`, `--print-only`,
+#          `--disable-history`, `--help`.
 #          Exits with status 2 on argument errors or when not inside a git repository.
 #          Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was not supplied.
 # @param extra Iterable of CLI argument strings following the `changelog` subcommand token.
 # @return None; side-effects: writes `CHANGELOG.md` to disk or prints to stdout.
-# @satisfies REQ-018, REQ-040, REQ-041
+# @satisfies REQ-018, REQ-040, REQ-041, REQ-043
 def cmd_changelog(extra):
     parser = argparse.ArgumentParser(prog="g changelog", add_help=False)
     parser.add_argument("--force-write", dest="force_write", action="store_true")
     parser.add_argument("--include-patch", dest="include_patch", action="store_true")
     parser.add_argument("--print-only", action="store_true")
+    parser.add_argument("--disable-history", dest="disable_history", action="store_true")
     parser.add_argument("--help", action="store_true")
     try:
         args = parser.parse_args(list(extra))
@@ -2708,7 +2737,7 @@ def cmd_changelog(extra):
         print("Error: run g changelog inside a Git repository.", file=sys.stderr)
         sys.exit(2)
     repo_root = get_git_root()
-    content = generate_changelog_document(repo_root, args.include_patch)
+    content = generate_changelog_document(repo_root, args.include_patch, args.disable_history)
     if args.print_only:
         print(content, end="")
         return

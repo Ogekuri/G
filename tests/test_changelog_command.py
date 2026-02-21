@@ -53,7 +53,18 @@ class ChangelogCommandTest(unittest.TestCase):
                 buffer = io.StringIO()
                 with contextlib.redirect_stdout(buffer):
                     core.cmd_changelog(["--include-patch", "--print-only"])
-                gen.assert_called_once_with(repo_root, True)
+                gen.assert_called_once_with(repo_root, True, False)
+
+    def test_disable_history_flag_propagates(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir)
+            with mock.patch.object(core, "is_inside_git_repo", return_value=True), mock.patch.object(
+                core, "get_git_root", return_value=repo_root
+            ), mock.patch.object(core, "generate_changelog_document", return_value="data") as gen:
+                buffer = io.StringIO()
+                with contextlib.redirect_stdout(buffer):
+                    core.cmd_changelog(["--disable-history", "--print-only"])
+                gen.assert_called_once_with(repo_root, False, True)
 
     def test_unknown_flag_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -227,6 +238,17 @@ class ChangelogCommandTest(unittest.TestCase):
             core.generate_changelog_document(repo_root, include_patch=True)
         list_tags_mock.assert_called_once_with(repo_root)
         build_history.assert_called_once_with(repo_root, expected_history, False, include_unreleased_link=False)
+
+    def test_history_section_is_omitted_when_disable_history_true(self):
+        repo_root = Path("/tmp")
+        tags = [core.TagInfo(name="v0.1.0", iso_date="2024-01-01", object_name="a")]
+        with mock.patch.object(core, "list_tags_sorted_by_date", return_value=tags), mock.patch.object(
+            core, "_canonical_origin_base", return_value="https://example.com/repo"
+        ), mock.patch.object(
+            core, "generate_section_for_range", return_value=None
+        ), mock.patch.object(core, "build_history_section", return_value="# History\n") as build_history:
+            core.generate_changelog_document(repo_root, include_patch=False, disable_history=True)
+        build_history.assert_not_called()
 
     def test_history_includes_release_list(self):
         repo_root = Path("/tmp")
@@ -449,4 +471,17 @@ class CanonicalOriginBaseTest(unittest.TestCase):
         with mock.patch.object(core, "run_git_text", side_effect=side_effect):
             result = core._canonical_origin_base(Path("/tmp/repo"))
         # Assert: None when urlparse cannot produce a valid base
+        self.assertIsNone(result)
+
+    def test_returns_none_when_remote_get_url_command_fails(self):
+        calls = {"n": 0}
+
+        def side_effect(args, **kwargs):
+            if calls["n"] == 0:
+                calls["n"] += 1
+                return "origin"
+            raise RuntimeError("fatal: no such remote")
+
+        with mock.patch.object(core, "run_git_text", side_effect=side_effect):
+            result = core._canonical_origin_base(Path("/tmp/repo"))
         self.assertIsNone(result)

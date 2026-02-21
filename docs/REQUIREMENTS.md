@@ -1,7 +1,7 @@
 ---
 title: "Requisiti di Git-Alias CLI"
 description: "Specifiche dei requisiti software"
-date: "2026-02-18"
+date: "2026-02-21"
 author: "Francesco Rolando"
 scope:
   paths:
@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.69
+**Versione**: 0.70
 **Autore**: Francesco Rolando
 **Data**: 2026-02-21
 ## Indice
@@ -106,6 +106,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-21 | 0.67 | patch release command restricted to develop-only branch integration; major/minor retain full develop+master flow |
 | 2026-02-21 | 0.68 | # History section scoped to changelog-body tags only; minor-only without --include-patch; adds latest patch with --include-patch |
 | 2026-02-21 | 0.69 | changelog # History links resolved from master-branch remote URL using only local git commands; added REQ-046 for URL resolver contract |
+| 2026-02-21 | 0.70 | Added `changelog --disable-history`; `# History` default-on with resolver-failure skip; link rendering constrained to deterministic templates from local git data |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -178,11 +179,13 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-017**: Il comando `ver` deve leggere `ver_rules` dal file `.g.conf` come lista di oggetti JSON con campi `pattern` e `regex` (o usare i valori di default), usare la libreria `pathspec` (sintassi GitIgnore) per determinare i file che corrispondono al pattern associato, interpretando i pattern con `/` come ancorati alla root del repository. Per ottenere l'elenco dei file da analizzare, il comando deve utilizzare esclusivamente `rglob()` dalla root del repository senza dipendere dallo stato di tracciamento git, escludendo i percorsi che corrispondono ad espressioni regolari hardcoded per `.git/`, `.vscode/`, `tmp/`, `temp/`, `.cache/`, `.pytest_cache/`, `node_modules/.cache`. Il comando deve quindi applicare ogni regexp solo ai file selezionati dal pattern, raccogliere tutte le versioni trovate e: (a) stampare la versione quando tutte le occorrenze coincidono, oppure (b) terminare con errore indicando i primi due file che presentano versioni differenti, oppure (c) terminare con errore quando una regola non produce alcun match, riportando la stringa della regola che non ha prodotto risultati.
 - **REQ-018**: The `changelog` command MUST generate `CHANGELOG.md` grouping commits by minor releases (semver tags where `patch=0` AND version `>=0.1.0`); MUST include only minor releases by default with all commits between consecutive minor releases (from repository beginning for the first minor); MUST produce an empty changelog body when no minor releases exist; MUST list releases reverse-chronologically (newest first).
 - **REQ-040**: The `changelog` `--include-patch` option MUST prepend the chronologically latest patch release after the last minor release, including all commits from the last minor to that patch; if no minor release exists MUST include only the latest patch with all commits from the beginning.
-- **REQ-041**: The `changelog` command MUST support `--force-write` (overwrite existing file) and `--print-only` (print to stdout, do not write); MUST write to disk only when the file is absent or `--force-write` is specified; command help MUST explicitly list all available options.
+- **REQ-041**: The `changelog` command MUST support `--force-write`, `--print-only`, and `--disable-history`; command help MUST list all available options; disk writes MUST occur only when `CHANGELOG.md` is absent or `--force-write` is provided.
 - **REQ-042**: The `changelog` commit parser MUST recognize types: `new` (Features), `implement` (Implementations), `fix` (Bug Fixes), `change` (Changes), `cover` (Cover Requirements), `refactor` (Refactor), `docs` (Documentation), `style` (Styling), `revert` (Revert), `misc` (Miscellaneous Tasks); MUST ignore `perf`, `test`, `build`, `ci`, `chore`; MUST ignore commits whose subject matches `release: Release version <semver>`; MUST NOT generate an "Other" section; Implementations section header MUST use the 🏗️ icon.
-- **REQ-043**: The `changelog` `# History` section MUST contain only version tags present in the changelog body; MUST be chronologically ordered; MUST include clickable release-page links using template `https://github.com/<OWNER>/<REPO>/releases/tag/<TAG>` and reference-style diff links using template `https://github.com/<OWNER>/<REPO>/compare/<TAG_FROM>..<TAG_TO>`; MUST derive `<OWNER>` and `<REPO>` by parsing the URL of the remote configured for the master branch via REQ-046.
-- **REQ-046**: The `changelog` GitHub URL resolver MUST determine the upstream remote name by querying `git config branch.<master_branch>.remote` (falling back to `origin` when the query returns empty or fails); MUST retrieve the remote URL via `git remote get-url <remote>`; MUST parse SSH format `git@<host>:<owner>/<repo>[.git]` and HTTPS format `https://<host>/<owner>/<repo>[.git]` extracting `<owner>` and `<repo>`; MUST return `None` when the URL is absent or unparseable; MUST NOT perform any network operation.
-- **REQ-068**: Without `--include-patch`, `# History` MUST contain only minor-release tags; with `--include-patch`, `# History` MUST additionally include the latest patch tag with its diff link referencing the last minor or the repository beginning when no minor release exists.
+- **REQ-043**: The `changelog` `# History` section MUST be enabled by default, MUST be skipped when `--disable-history` is provided, and MUST be skipped when owner/repository resolution via REQ-046 fails with command error.
+- **REQ-046**: The `changelog` GitHub URL resolver MUST query `git config branch.<master_branch>.remote` (fallback `origin`) and `git remote get-url <remote>`; MUST parse SSH/HTTPS URL formats into `<owner>` and `<repo>` using shared string-parsing utilities; MUST NOT perform network operations.
+- **REQ-068**: Without `--include-patch`, `# History` MUST contain only minor-release tags present in the changelog body; with `--include-patch`, it MUST additionally include the latest patch tag, using last minor or repository start as diff baseline.
+- **REQ-069**: `# History` release links MUST use template `https://github.com/<OWNER>/<REPO>/releases/tag/<TAG>` and diff links MUST use template `https://github.com/<OWNER>/<REPO>/compare/<TAG_FROM>..<TAG_TO>` generated deterministically from local changelog tags.
+- **REQ-070**: `# History` generation MUST NOT verify remote tag existence and MUST NOT query remote tags; changelog tag and commit collection MUST use only local git commands.
 - **REQ-044**: Each `changelog` commit entry line MUST use format `- <description> *(<scope>)*` when scope is present and `- <description>` when scope is absent; `<description>` is the commit subject text after the `<type>(<scope>): ` prefix.
 - **REQ-019**: L'alias `bd` deve eliminare un branch locale specificato dall'utente utilizzando `git branch -d <branch>`.
 - **REQ-020**: Il sistema deve fornire funzioni di supporto riutilizzabili dagli alias che consentano di verificare (a) la presenza di file o modifiche non ancora aggiunti allo staging, (b) la presenza di file già in staging ma non ancora committati, (c) la disponibilità di aggiornamenti remoti per il branch `develop`, e (d) la disponibilità di aggiornamenti remoti per il branch `master`. Le funzioni per i punti (c) e (d) devono prima sincronizzare i riferimenti remoti (ad esempio con `git remote -v update`) e poi determinare se il branch remoto è in avanti rispetto a quello locale.

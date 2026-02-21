@@ -278,18 +278,19 @@
                 - `cmd_de(...)`
                 - `cmd_pt(...)`
         - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2668`]
-        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/push steps [`src/git_alias/core.py:2680`]
-        - `cmd_changelog(...)`: changelog generation flow [`src/git_alias/core.py:2693`]
+        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/push steps [`src/git_alias/core.py:2707`]
+        - `cmd_changelog(...)`: changelog generation flow with optional `--disable-history` gating [`src/git_alias/core.py:2721`]
           - `print_command_help(...)`
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
-          - `generate_changelog_document(...)` [`src/git_alias/core.py:1198`]
+          - `generate_changelog_document(...)` [`src/git_alias/core.py:1248`]
             - `list_tags_sorted_by_date(...)` -> `run_git_text(...)` -> `_run_checked(...)`
-            - `_canonical_origin_base(...)`: resolves HTTPS base URL from master-branch remote [`src/git_alias/core.py:1124`]
+            - `_canonical_origin_base(...)`: resolves GitHub template base from master-branch remote using local git metadata only [`src/git_alias/core.py:1154`]
               - `get_branch(...)`: reads master branch name from CONFIG [`src/git_alias/core.py:104`]
-              - `_get_remote_name_for_branch(...)`: queries `git config branch.<master>.remote`; falls back to `origin` [`src/git_alias/core.py:1097`]
+              - `_get_remote_name_for_branch(...)`: queries `git config branch.<master>.remote`; falls back to `origin` [`src/git_alias/core.py:1105`]
                 - `run_git_text(...)` -> `_run_checked(...)`
               - `run_git_text(...)` -> `_run_checked(...)`: fetches remote URL via `git remote get-url <remote>` (local only)
+              - `_extract_owner_repo(...)`: parse SSH/HTTPS remote URL into `<owner>/<repo>` components [`src/git_alias/core.py:1120`]
             - `_is_minor_release_tag(...)` [`src/git_alias/core.py:928`]: filter minor releases from all tags
               - `_tag_semver_tuple(...)` -> `_parse_semver_tuple(...)`
             - `_latest_patch_tag_after(...)` [`src/git_alias/core.py:944`]: locate latest patch tag (when `include_patch=True`); result also appended to `history_tags` for `build_history_section`
@@ -298,8 +299,8 @@
               - `git_log_subjects(...)` -> `run_git_text(...)` -> `_run_checked(...)`
               - `_is_release_marker_commit(...)` -> `_extract_release_version(...)`
               - `categorize_commit(...)`
-            - `build_history_section(...)`: receives only changelog-body tags (minor tags; plus latest patch when `include_patch=True`)
-              - `_canonical_origin_base(...)`: same call-tree as above [`src/git_alias/core.py:1124`]
+            - `build_history_section(...)`: receives only changelog-body tags (minor tags; plus latest patch when `include_patch=True`); executed only when `disable_history=False`
+              - `_canonical_origin_base(...)`: same call-tree as above [`src/git_alias/core.py:1154`]
               - `get_release_page_url(...)`
               - `get_origin_compare_url(...)`
 - External Boundaries:
