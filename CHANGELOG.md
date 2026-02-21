@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.0.43](https://github.com/Ogekuri/G/releases/tag/v0.0.43) - 2026-02-21
+## [0.1.0](https://github.com/Ogekuri/G/releases/tag/v0.1.0) - 2026-02-21
 ### ⛰️  Features
 - update github workflow. *(core)*
 - add dwcc and dccc diff aliases [2026-02-20 11:08:34] *(core)*
@@ -22,6 +22,7 @@
 - draft release. *(core)*
 
 ### 🐛  Bug Fixes
+- document module prefix and backup usage [2026-02-21 19:48:24] *(help)*
 - fix workflow. *(core)*
 - fix workflow file. *(core)*
 - fix workflow. *(core)*
@@ -55,6 +56,7 @@
 - minor fix on patch command. *(core)*
 
 ### 🚜  Changes
+- add backup workflow command [2026-02-21 19:39:09] *(backup)*
 - add --disable-history and local history link resolver [2026-02-21 19:18:29] *(changelog)*
 - resolve GitHub URL from master-branch remote using only local git commands [2026-02-21 18:15:15] *(_canonical_origin_base)*
 - scope # History to changelog-body tags only [2026-02-21 17:39:45] *(changelog)*
@@ -85,6 +87,8 @@
 - cache ver/chver file discovery and rule contexts [2026-02-21 19:08:32] *(versioning)*
 
 ### 📚  Documentation
+- Review README.md. *(core)*
+- update README.md. *(core)*
 - review README.md. *(core)*
 - Review README.md. *(core)*
 - update README.md. *(core)*
@@ -116,6 +120,6 @@
 
 # History
 
-- \[0.0.43\]: https://github.com/Ogekuri/G/releases/tag/v0.0.43
+- \[0.1.0\]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 
-[0.0.43]: https://github.com/Ogekuri/G/releases/tag/v0.0.43
+[0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
