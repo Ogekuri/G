@@ -14,7 +14,7 @@ import sys
 import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
@@ -381,7 +381,7 @@ HELP_TEXTS = {
     "bd": "Delete a local branch: git bd '<branch>'.",
     "br": "Create a new branch.",
     "chver": "Change the project version to the provided semantic version.",
-    "changelog": "Generate CHANGELOG.md from conventional commits. Options: --include-unreleased, --force-write, --print-only.",
+    "changelog": "Generate CHANGELOG.md grouped by minor releases. Options: --include-patch, --force-write, --print-only.",
     "ck": "Check differences.",
     "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
@@ -405,8 +405,8 @@ HELP_TEXTS = {
     "ll": "Print latest full commit hash.",
     "lm": "Print all merges.",
     "lt": "Print all tags.",
-    "major": "Release a new major version from the work branch. Options: --include-unreleased.",
-    "minor": "Release a new minor version from the work branch. Options: --include-unreleased.",
+    "major": "Release a new major version from the work branch.",
+    "minor": "Release a new minor version from the work branch.",
     "new": "Conventional commit new(module): description.",
     "implement": "Conventional commit implement(module): description.",
     "refactor": "Conventional commit refactor(module): description.",
@@ -421,7 +421,7 @@ HELP_TEXTS = {
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
-    "patch": "Release a new patch version from the work branch. Options: --include-unreleased.",
+    "patch": "Release a new patch version from the work branch. Options: --include-patch.",
     "ra": "Remove all staged files and return them to the working tree (inverse of aa).",
     "rf": "Print changes on HEAD reference.",
     "rmloc": "Remove changed files from the working tree.",
@@ -918,6 +918,39 @@ def _latest_supported_tag_name(tags: List[TagInfo]) -> Optional[str]:
     return tags[-1].name if tags else None
 
 
+## @brief Predicate: tag is a minor release.
+# @details Returns `True` when `tag_name` is a semver tag where `patch==0` AND `(major>=1 OR minor>=1)`,
+#          i.e. version `>=0.1.0` with no patch component.
+#          Patch releases (`patch>0`) and pre-0.1.0 tags (`0.0.x`) return `False`.
+# @param tag_name Semver tag string, optionally prefixed with `v` (e.g. `v0.1.0`, `0.2.0`).
+# @return `True` iff tag represents a minor release; `False` otherwise.
+# @satisfies REQ-018, REQ-040
+def _is_minor_release_tag(tag_name: str) -> bool:
+    parts = _tag_semver_tuple(tag_name)
+    if parts is None:
+        return False
+    major, minor, patch = parts
+    return patch == 0 and (major >= 1 or minor >= 1)
+
+
+## @brief Locate the chronologically latest patch tag after a given minor release.
+# @details Scans `all_tags` (sorted chronologically, ascending) for tags that are NOT minor releases
+#          and appear after `last_minor` in the list.  When `last_minor` is `None`, scans all tags.
+#          Returns the last qualifying `TagInfo` (most recent), or `None` if no patch exists.
+# @param all_tags  Full list of `TagInfo` sorted by date ascending (from `list_tags_sorted_by_date`).
+# @param last_minor The last minor-release `TagInfo` to anchor the search; `None` means no minor exists.
+# @return Most recent `TagInfo` that is not a minor release and appears after `last_minor`, or `None`.
+# @satisfies REQ-040
+def _latest_patch_tag_after(all_tags: List[TagInfo], last_minor: Optional[TagInfo]) -> Optional[TagInfo]:
+    if last_minor is None:
+        candidates = all_tags
+    else:
+        idx = next((i for i, t in enumerate(all_tags) if t.name == last_minor.name), None)
+        candidates = all_tags[idx + 1:] if idx is not None else []
+    patch_tags = [t for t in candidates if not _is_minor_release_tag(t.name)]
+    return patch_tags[-1] if patch_tags else None
+
+
 ## @brief Execute `list_tags_sorted_by_date` runtime logic for Git-Alias CLI.
 # @details Executes `list_tags_sorted_by_date` using deterministic CLI control-flow and explicit error propagation.
 # @param repo_root Input parameter consumed by `list_tags_sorted_by_date`.
@@ -1147,28 +1180,46 @@ def build_history_section(
     return "\n".join(lines).rstrip() + "\n"
 
 
-## @brief Execute `generate_changelog_document` runtime logic for Git-Alias CLI.
-# @details Executes `generate_changelog_document` using deterministic CLI control-flow and explicit error propagation.
-# @param repo_root Input parameter consumed by `generate_changelog_document`.
-# @param include_unreleased Input parameter consumed by `generate_changelog_document`.
-# @return Result emitted by `generate_changelog_document` according to command contract.
-def generate_changelog_document(repo_root: Path, include_unreleased: bool) -> str:
-    tags = list_tags_sorted_by_date(repo_root)
+## @brief Generate the full CHANGELOG.md document from repository tags and commits.
+# @details Groups commits by minor release (semver where `patch=0` AND version `>=0.1.0`).
+#          By default only minor releases appear; the document body is empty when none exist.
+#          With `include_patch=True`, prepends the latest patch release after the last minor
+#          (or the latest patch overall when no minor exists) including all commits in that range.
+#          Releases are ordered reverse-chronologically in the output.
+# @param repo_root Absolute path to the repository root used as CWD for all git commands.
+# @param include_patch When `True`, prepend the latest patch release section to the document.
+# @return Complete `CHANGELOG.md` string content, terminated with a newline.
+# @satisfies REQ-018, REQ-040, REQ-041, REQ-043
+def generate_changelog_document(repo_root: Path, include_patch: bool) -> str:
+    all_tags = list_tags_sorted_by_date(repo_root)
     history_tags = list_tags_sorted_by_date(repo_root, merged_ref="HEAD")
     origin_base = _canonical_origin_base(repo_root)
     lines: List[str] = ["# Changelog", ""]
     release_sections: List[str] = []
-    baseline_tag = _latest_supported_tag_name(tags)
-    has_unreleased = False
-    if include_unreleased and baseline_tag:
-        rev_range = f"{baseline_tag}..HEAD"
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        section = generate_section_for_range(repo_root, "Unreleased", today, rev_range)
-        if section:
-            lines.append(section)
-            has_unreleased = True
+    minor_tags = [t for t in all_tags if _is_minor_release_tag(t.name)]
+    last_minor: Optional[TagInfo] = minor_tags[-1] if minor_tags else None
+    if include_patch:
+        latest_patch = _latest_patch_tag_after(all_tags, last_minor)
+        if latest_patch:
+            rev_range = (
+                f"{last_minor.name}..{latest_patch.name}" if last_minor else latest_patch.name
+            )
+            display = latest_patch.name.lstrip("v")
+            compare_url = get_origin_compare_url(
+                origin_base, last_minor.name if last_minor else None, latest_patch.name
+            )
+            title = f"[{display}]({compare_url})" if compare_url else display
+            section = generate_section_for_range(
+                repo_root,
+                title,
+                latest_patch.iso_date,
+                rev_range,
+                expected_version=display,
+            )
+            if section:
+                lines.append(section)
     prev_included: Optional[str] = None
-    for tag in tags:
+    for tag in minor_tags:
         rev_range = tag.name if prev_included is None else f"{prev_included}..{tag.name}"
         display = tag.name.lstrip("v")
         compare_url = get_origin_compare_url(origin_base, prev_included, tag.name)
@@ -1188,8 +1239,8 @@ def generate_changelog_document(repo_root: Path, include_unreleased: bool) -> st
     history = build_history_section(
         repo_root,
         history_tags,
-        include_unreleased,
-        include_unreleased_link=has_unreleased,
+        False,
+        include_unreleased_link=False,
     )
     if history:
         lines.append("")
@@ -1516,8 +1567,12 @@ def _execute_release_flow(level, changelog_args=None):
     target_version = _bump_semver_version(current_version, level)
     release_message = f"release: Release version {target_version}"
     changelog_flags = ["--force-write"]
+    if level == "patch" and "--include-patch" not in changelog_flags:
+        changelog_flags.append("--include-patch")
     if changelog_args:
-        changelog_flags.extend(changelog_args)
+        for arg in changelog_args:
+            if arg not in changelog_flags:
+                changelog_flags.append(arg)
 
     print()
     _run_release_step(level, "update versions", lambda: cmd_chver([target_version]))
@@ -1604,11 +1659,11 @@ def _parse_release_flags(extra, alias):
     args = _to_args(extra)
     if not args:
         return []
-    allowed = {"--include-unreleased"}
+    allowed = {"--include-patch"}
     unknown = [arg for arg in args if arg not in allowed]
     if unknown:
         joined = ", ".join(unknown)
-        print(f"git {alias} accepts only --include-unreleased (got {joined}).", file=sys.stderr)
+        print(f"git {alias} accepts only --include-patch (got {joined}).", file=sys.stderr)
         sys.exit(1)
     deduped = []
     seen = set()
@@ -2470,14 +2525,18 @@ def cmd_patch(extra):
     _run_release_command("patch", changelog_args=changelog_args)
 
 
-## @brief Execute `cmd_changelog` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_changelog` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_changelog`.
-# @return Result emitted by `cmd_changelog` according to command contract.
+## @brief CLI entry-point for the `changelog` subcommand.
+# @details Parses flags, delegates to `generate_changelog_document`, and writes or prints the result.
+#          Accepted flags: `--include-patch`, `--force-write`, `--print-only`, `--help`.
+#          Exits with status 2 on argument errors or when not inside a git repository.
+#          Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was not supplied.
+# @param extra Iterable of CLI argument strings following the `changelog` subcommand token.
+# @return None; side-effects: writes `CHANGELOG.md` to disk or prints to stdout.
+# @satisfies REQ-018, REQ-040, REQ-041
 def cmd_changelog(extra):
     parser = argparse.ArgumentParser(prog="g changelog", add_help=False)
     parser.add_argument("--force-write", dest="force_write", action="store_true")
-    parser.add_argument("--include-unreleased", action="store_true")
+    parser.add_argument("--include-patch", dest="include_patch", action="store_true")
     parser.add_argument("--print-only", action="store_true")
     parser.add_argument("--help", action="store_true")
     try:
@@ -2492,7 +2551,7 @@ def cmd_changelog(extra):
         print("Error: run g changelog inside a Git repository.", file=sys.stderr)
         sys.exit(2)
     repo_root = get_git_root()
-    content = generate_changelog_document(repo_root, args.include_unreleased)
+    content = generate_changelog_document(repo_root, args.include_patch)
     if args.print_only:
         print(content, end="")
         return

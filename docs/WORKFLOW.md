@@ -234,7 +234,7 @@
           - `_determine_canonical_version(...)` -> `_collect_version_files(...)`, `_iter_versions_in_text(...)`
           - `_collect_version_files(...)` -> `_is_version_path_excluded(...)`
           - `_replace_versions_in_text(...)`
-        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2487`]
+        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2505`]
           - `_parse_release_flags(...)` -> `_to_args(...)`
           - `_run_release_command(...)`
             - `_execute_release_flow(...)`
@@ -262,23 +262,25 @@
                 - `cmd_me(...)`
                 - `cmd_de(...)`
                 - `cmd_pt(...)`
-        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2496`]
-        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2505`]
-        - `cmd_changelog(...)`: changelog generation flow [`src/git_alias/core.py:2514`]
+        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2514`]
+        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2523`]
+        - `cmd_changelog(...)`: changelog generation flow [`src/git_alias/core.py:2536`]
           - `print_command_help(...)`
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
-          - `generate_changelog_document(...)`
+          - `generate_changelog_document(...)` [`src/git_alias/core.py:1193`]
             - `list_tags_sorted_by_date(...)` -> `run_git_text(...)` -> `_run_checked(...)`
             - `_canonical_origin_base(...)` -> `run_git_text(...)` -> `_run_checked(...)`
-            - `_latest_supported_tag_name(...)`
+            - `_is_minor_release_tag(...)` [`src/git_alias/core.py:928`]: filter minor releases from all tags
+              - `_tag_semver_tuple(...)` -> `_parse_semver_tuple(...)`
+            - `_latest_patch_tag_after(...)` [`src/git_alias/core.py:944`]: locate latest patch tag (when `include_patch=True`)
+              - `_is_minor_release_tag(...)`
             - `generate_section_for_range(...)`
               - `git_log_subjects(...)` -> `run_git_text(...)` -> `_run_checked(...)`
               - `_is_release_marker_commit(...)` -> `_extract_release_version(...)`
               - `categorize_commit(...)`
             - `build_history_section(...)`
               - `_canonical_origin_base(...)` -> `run_git_text(...)` -> `_run_checked(...)`
-              - `_latest_supported_tag_name(...)`
               - `get_release_page_url(...)`
               - `get_origin_compare_url(...)`
 - External Boundaries:

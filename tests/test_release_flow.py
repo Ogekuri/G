@@ -54,7 +54,8 @@ class ReleaseFlowTest(unittest.TestCase):
                 core._execute_release_flow("minor")
         self.assertTrue(buffer.getvalue().startswith("\n"))
 
-    def test_release_flow_passes_changelog_flags(self):
+    def test_patch_release_auto_includes_patch_flag(self):
+        # patch level must automatically add --include-patch to changelog flags
         def run_step(_level, step_name, action):
             if step_name == "regenerate changelog":
                 action()
@@ -69,25 +70,58 @@ class ReleaseFlowTest(unittest.TestCase):
         ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
             core, "_run_release_step", side_effect=run_step
         ), mock.patch.object(core, "cmd_changelog") as changelog:
-            core._execute_release_flow("patch", changelog_args=["--include-unreleased"])
-        changelog.assert_called_once_with(["--force-write", "--include-unreleased"])
+            core._execute_release_flow("patch")
+        changelog.assert_called_once_with(["--force-write", "--include-patch"])
 
-    def test_release_commands_accept_changelog_flags(self):
-        with mock.patch.object(core, "_run_release_command") as run_release:
-            core.cmd_major(["--include-unreleased"])
-        run_release.assert_called_once_with("major", changelog_args=["--include-unreleased"])
+    def test_release_flow_passes_explicit_include_patch_flag(self):
+        # user-supplied --include-patch is forwarded without duplication
+        def run_step(_level, step_name, action):
+            if step_name == "regenerate changelog":
+                action()
+            return None
 
-    def test_patch_accepts_include_unreleased_flag(self):
+        with mock.patch.object(
+            core,
+            "_ensure_release_prerequisites",
+            return_value={"master": "master", "develop": "develop", "work": "work"},
+        ), mock.patch.object(core, "get_version_rules", return_value=[("README.md", "x")]), mock.patch.object(
+            core, "_determine_canonical_version", return_value="1.2.3"
+        ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
+            core, "_run_release_step", side_effect=run_step
+        ), mock.patch.object(core, "cmd_changelog") as changelog:
+            core._execute_release_flow("patch", changelog_args=["--include-patch"])
+        changelog.assert_called_once_with(["--force-write", "--include-patch"])
+
+    def test_minor_release_does_not_auto_include_patch_flag(self):
+        # minor level must NOT automatically add --include-patch
+        def run_step(_level, step_name, action):
+            if step_name == "regenerate changelog":
+                action()
+            return None
+
+        with mock.patch.object(
+            core,
+            "_ensure_release_prerequisites",
+            return_value={"master": "master", "develop": "develop", "work": "work"},
+        ), mock.patch.object(core, "get_version_rules", return_value=[("README.md", "x")]), mock.patch.object(
+            core, "_determine_canonical_version", return_value="1.2.0"
+        ), mock.patch.object(core, "_bump_semver_version", return_value="1.3.0"), mock.patch.object(
+            core, "_run_release_step", side_effect=run_step
+        ), mock.patch.object(core, "cmd_changelog") as changelog:
+            core._execute_release_flow("minor")
+        changelog.assert_called_once_with(["--force-write"])
+
+    def test_release_commands_accept_include_patch_flag(self):
         with mock.patch.object(core, "_run_release_command") as run_release:
-            core.cmd_patch(["--include-unreleased"])
-        run_release.assert_called_once_with("patch", changelog_args=["--include-unreleased"])
+            core.cmd_patch(["--include-patch"])
+        run_release.assert_called_once_with("patch", changelog_args=["--include-patch"])
 
     def test_release_commands_reject_unknown_flags(self):
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
             with self.assertRaises(SystemExit):
                 core.cmd_patch(["--unexpected"])
-        self.assertIn("accepts only --include-unreleased", err.getvalue())
+        self.assertIn("accepts only --include-patch", err.getvalue())
 
     def test_create_release_commit_for_flow_uses_release_amend_strategy(self):
         with mock.patch.object(core, "_ensure_commit_ready"), mock.patch.object(core, "_execute_commit") as execute_commit:
