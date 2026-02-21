@@ -92,7 +92,7 @@ class ReleaseFlowTest(unittest.TestCase):
     def test_create_release_commit_for_flow_uses_release_amend_strategy(self):
         with mock.patch.object(core, "_ensure_commit_ready"), mock.patch.object(core, "_execute_commit") as execute_commit:
             core._create_release_commit_for_flow("2.0.0")
-        execute_commit.assert_called_once_with("release version: 2.0.0", "release")
+        execute_commit.assert_called_once_with("release: Release version 2.0.0", "release")
 
     def test_release_flow_uses_internal_release_commit_builder(self):
         def run_step(_level, step_name, action):

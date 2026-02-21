@@ -1026,10 +1026,22 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
 # @param subject Input parameter consumed by `_extract_release_version`.
 # @return Result emitted by `_extract_release_version` according to command contract.
 def _extract_release_version(subject: str) -> Optional[str]:
-    match = re.search(r"release version:\s+(\d+\.\d+\.\d+)", subject, re.IGNORECASE)
+    match = re.match(
+        r"\s*(?:release version:\s+|release:\s+release version\s+)(\d+\.\d+\.\d+)\s*$",
+        subject,
+        re.IGNORECASE,
+    )
     if not match:
         return None
     return match.group(1)
+
+
+## @brief Execute `_is_release_marker_commit` runtime logic for Git-Alias CLI.
+# @details Executes `_is_release_marker_commit` using deterministic CLI control-flow and explicit error propagation.
+# @param subject Input parameter consumed by `_is_release_marker_commit`.
+# @return Result emitted by `_is_release_marker_commit` according to command contract.
+def _is_release_marker_commit(subject: str) -> bool:
+    return _extract_release_version(subject) is not None
 
 
 ## @brief Execute `generate_section_for_range` runtime logic for Git-Alias CLI.
@@ -1044,6 +1056,8 @@ def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_ran
     subjects = git_log_subjects(repo_root, rev_range)
     buckets: Dict[str, List[str]] = defaultdict(list)
     for subj in subjects:
+        if _is_release_marker_commit(subj):
+            continue
         release_version = _extract_release_version(subj)
         if expected_version and release_version and release_version != expected_version:
             continue
@@ -1520,7 +1534,7 @@ def _run_release_step(level, step_name, action):
 # @return Result emitted by `_create_release_commit_for_flow` according to command contract.
 def _create_release_commit_for_flow(target_version):
     _ensure_commit_ready("release")
-    message = f"release version: {target_version}"
+    message = f"release: Release version {target_version}"
     return _execute_commit(message, "release")
 
 
@@ -1537,7 +1551,7 @@ def _execute_release_flow(level, changelog_args=None):
     root = get_git_root()
     current_version = _determine_canonical_version(root, rules)
     target_version = _bump_semver_version(current_version, level)
-    release_message = f"release version: {target_version}"
+    release_message = f"release: Release version {target_version}"
     changelog_flags = ["--force-write"]
     if changelog_args:
         changelog_flags.extend(changelog_args)
@@ -1902,7 +1916,7 @@ def cmd_release(extra):
     except VersionDetectionError as exc:
         print(str(exc), file=sys.stderr)
         sys.exit(1)
-    message = f"release version: {version}"
+    message = f"release: Release version {version}"
     return _execute_commit(message, "release")
 
 

@@ -261,3 +261,18 @@ class ChangelogCommandTest(unittest.TestCase):
             section = core.generate_section_for_range(Path("/tmp"), "v1.2.3", "2026-02-18", "v1.2.2..v1.2.3")
         self.assertIsNotNone(section)
         self.assertIn("### 🏗️  Implementations", section)
+
+    def test_extract_release_version_accepts_new_release_marker(self):
+        self.assertEqual(core._extract_release_version("release: Release version 1.2.3"), "1.2.3")
+
+    def test_extract_release_version_keeps_legacy_release_marker(self):
+        self.assertEqual(core._extract_release_version("release version: 1.2.3"), "1.2.3")
+
+    def test_generate_section_ignores_release_marker_commits(self):
+        with mock.patch.object(
+            core,
+            "git_log_subjects",
+            return_value=["release: Release version 1.2.3"],
+        ):
+            section = core.generate_section_for_range(Path("/tmp"), "v1.2.3", "2026-02-18", "v1.2.2..v1.2.3")
+        self.assertIsNone(section)

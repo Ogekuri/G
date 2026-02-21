@@ -74,7 +74,7 @@
 ### PROC:main
 - Entrypoint(s):
   - `git_alias.__main__::<module_guard>`: module entrypoint forwarding process exit code [`src/git_alias/__main__.py:10-11`]
-  - `main(argv=None, *, check_updates=True)`: primary CLI dispatcher [`src/git_alias/core.py:2657-2707`]
+  - `main(argv=None, *, check_updates=True)`: primary CLI dispatcher [`src/git_alias/core.py:2671-2721`]
 - Lifecycle/trigger:
   - Start: OS invokes Python module entrypoint (`python -m git_alias`) or console entrypoint calling `main(...)`.
   - Stop: returns from `main(...)` for non-error flows or terminates via `sys.exit(...)` on validation/command failures.
@@ -82,7 +82,7 @@
   - Threads: no explicit threads detected in `src/` (`threading`/`Thread` creation absent).
 - Internal Call-Trace Tree:
   - `__main__::<module_guard>(...)`: module execution bridge [`src/git_alias/__main__.py:10-11`]
-    - `main(...)`: CLI dispatch root [`src/git_alias/core.py:2657`]
+    - `main(...)`: CLI dispatch root [`src/git_alias/core.py:2671`]
       - `get_git_root(...)`: resolve repository root path [`src/git_alias/core.py:275`]
         - `_run_checked(...)`: subprocess execution wrapper [`src/git_alias/core.py:588`]
       - `load_cli_config(...)`: hydrate runtime config map from `.g.conf` [`src/git_alias/core.py:304`]
@@ -104,7 +104,7 @@
       - `run_git_cmd(...)`: fallback path when command not registered in `COMMANDS` [`src/git_alias/core.py:613`]
         - `_to_args(...)`: normalize optional arg list [`src/git_alias/core.py:536`]
         - `_run_checked(...)`: spawn `git` process [`src/git_alias/core.py:588`]
-      - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py:2535-2600`, `src/git_alias/core.py:2702`]
+      - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py:2549-2614`, `src/git_alias/core.py:2716`]
         - `cmd_aa(...)`: stage all changed files [`src/git_alias/core.py:1758`]
           - `_git_status_lines(...)` -> `_run_checked(...)`
           - `has_unstaged_changes(...)` -> `_git_status_lines(...)`
@@ -146,7 +146,7 @@
           - `print_command_help(...)`
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
-        - `cmd_release(...)`: release commit flow [`src/git_alias/core.py:1886`]
+        - `cmd_release(...)`: release commit flow [`src/git_alias/core.py:1900`]
           - `_to_args(...)`
           - `print_command_help(...)`
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
@@ -234,7 +234,7 @@
           - `_determine_canonical_version(...)` -> `_collect_version_files(...)`, `_iter_versions_in_text(...)`
           - `_collect_version_files(...)` -> `_is_version_path_excluded(...)`
           - `_replace_versions_in_text(...)`
-        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2473`]
+        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2487`]
           - `_parse_release_flags(...)` -> `_to_args(...)`
           - `_run_release_command(...)`
             - `_execute_release_flow(...)`
@@ -262,9 +262,9 @@
                 - `cmd_me(...)`
                 - `cmd_de(...)`
                 - `cmd_pt(...)`
-        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2482`]
-        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2491`]
-        - `cmd_changelog(...)`: changelog generation flow [`src/git_alias/core.py:2500`]
+        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2496`]
+        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2505`]
+        - `cmd_changelog(...)`: changelog generation flow [`src/git_alias/core.py:2514`]
           - `print_command_help(...)`
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
@@ -275,7 +275,7 @@
             - `_should_include_tag(...)` -> `_is_supported_release_tag(...)`
             - `generate_section_for_range(...)`
               - `git_log_subjects(...)` -> `run_git_text(...)` -> `_run_checked(...)`
-              - `_extract_release_version(...)`
+              - `_is_release_marker_commit(...)` -> `_extract_release_version(...)`
               - `categorize_commit(...)`
             - `build_history_section(...)`
               - `_canonical_origin_base(...)` -> `run_git_text(...)` -> `_run_checked(...)`
