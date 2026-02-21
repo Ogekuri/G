@@ -1,7 +1,3 @@
-🚧 **DRAFT:** Preliminary Version 📝 - Work in Progress 🏗️ 🚧
-
-⚠️ **IMPORTANT NOTICE**: Created with **[useReq/req](https://github.com/Ogekuri/useReq)** 🤖✨ ⚠️
-
 # G/Git-Alias CLI (0.0.42)
 
 <p align="center">
@@ -23,6 +19,13 @@ This is a companion script for the <b><a href="https://github.com/Ogekuri/useReq
   <a href="#feature-highlights">Feature Highlights</a> |
   <a href="#upgrading-or-removing">Upgrading or Removing</a> |
   <a href="#cli-examples">CLI Examples</a>
+<p>
+
+<p align="center">
+<br>
+🚧 <strong>DRAFT:</strong>Preliminary Version 📝 - Work in Progress 🏗️ 🚧<br>
+⚠️ <strong>IMPORTANT NOTICE</strong>: Created with <a href="https://github.com/Ogekuri/useReq"><strong>useReq/req</strong></a> 🤖✨ ⚠️<br>
+<br>
 <p>
 
 
