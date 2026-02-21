@@ -346,3 +346,107 @@ class LatestPatchTagAfterTest(unittest.TestCase):
 
     def test_returns_none_when_all_tags_empty(self):
         self.assertIsNone(core._latest_patch_tag_after([], None))
+
+
+class GetRemoteNameForBranchTest(unittest.TestCase):
+    """Tests for _get_remote_name_for_branch (REQ-046)."""
+
+    def setUp(self):
+        core.CONFIG.update(core.DEFAULT_CONFIG)
+
+    def test_returns_configured_remote_when_present(self):
+        # Arrange: git config returns a non-empty remote name
+        with mock.patch.object(core, "run_git_text", return_value="upstream\n"):
+            result = core._get_remote_name_for_branch("master", Path("/tmp/repo"))
+        # Assert: configured name is returned verbatim
+        self.assertEqual(result, "upstream")
+
+    def test_falls_back_to_origin_when_config_empty(self):
+        # Arrange: git config returns empty string (key not set)
+        with mock.patch.object(core, "run_git_text", return_value=""):
+            result = core._get_remote_name_for_branch("master", Path("/tmp/repo"))
+        # Assert: fallback is "origin"
+        self.assertEqual(result, "origin")
+
+    def test_falls_back_to_origin_when_config_whitespace_only(self):
+        # Arrange: git config returns whitespace only
+        with mock.patch.object(core, "run_git_text", return_value="   \n"):
+            result = core._get_remote_name_for_branch("master", Path("/tmp/repo"))
+        # Assert: stripped whitespace treated as empty → fallback
+        self.assertEqual(result, "origin")
+
+    def test_passes_correct_git_config_key(self):
+        # Arrange: capture the args passed to run_git_text
+        calls = []
+        def capture(args, **kwargs):
+            calls.append(args)
+            return "origin"
+        with mock.patch.object(core, "run_git_text", side_effect=capture):
+            core._get_remote_name_for_branch("develop", Path("/tmp/repo"))
+        # Assert: correct branch-scoped config key is queried
+        self.assertEqual(calls[0], ["config", "--get", "branch.develop.remote"])
+
+
+class CanonicalOriginBaseTest(unittest.TestCase):
+    """Tests for _canonical_origin_base using master-branch remote (REQ-043, REQ-046)."""
+
+    def setUp(self):
+        core.CONFIG.update(core.DEFAULT_CONFIG)
+
+    def _make_run_git_text(self, config_remote, remote_url):
+        """Return a side_effect function that returns config_remote on first call and remote_url on second."""
+        responses = [config_remote, remote_url]
+        call_count = {"n": 0}
+
+        def fake(args, **kwargs):
+            idx = call_count["n"]
+            call_count["n"] += 1
+            return responses[idx] if idx < len(responses) else ""
+
+        return fake
+
+    def test_resolves_ssh_url_using_master_remote(self):
+        # Arrange: master remote is "upstream", URL is SSH
+        side_effect = self._make_run_git_text("upstream", "git@github.com:Ogekuri/html2tree.git")
+        with mock.patch.object(core, "run_git_text", side_effect=side_effect):
+            result = core._canonical_origin_base(Path("/tmp/repo"))
+        # Assert: normalized HTTPS URL without .git
+        self.assertEqual(result, "https://github.com/Ogekuri/html2tree")
+
+    def test_resolves_https_url_using_master_remote(self):
+        # Arrange: git config returns empty → falls back to "origin"; URL is HTTPS with .git
+        side_effect = self._make_run_git_text("", "https://github.com/Ogekuri/G.git")
+        with mock.patch.object(core, "run_git_text", side_effect=side_effect):
+            result = core._canonical_origin_base(Path("/tmp/repo"))
+        # Assert: .git stripped, HTTPS base returned
+        self.assertEqual(result, "https://github.com/Ogekuri/G")
+
+    def test_returns_none_when_remote_url_empty(self):
+        # Arrange: config returns a remote but get-url returns empty
+        side_effect = self._make_run_git_text("origin", "")
+        with mock.patch.object(core, "run_git_text", side_effect=side_effect):
+            result = core._canonical_origin_base(Path("/tmp/repo"))
+        # Assert: None when URL cannot be resolved
+        self.assertIsNone(result)
+
+    def test_uses_master_branch_from_config(self):
+        # Arrange: CONFIG has a custom master branch name
+        core.CONFIG["master"] = "main"
+        captured_args = []
+
+        def capture(args, **kwargs):
+            captured_args.append(list(args))
+            return ""
+
+        with mock.patch.object(core, "run_git_text", side_effect=capture):
+            core._canonical_origin_base(Path("/tmp/repo"))
+        # Assert: git config query uses the configured master branch name
+        self.assertIn(["config", "--get", "branch.main.remote"], captured_args)
+
+    def test_returns_none_for_invalid_url_structure(self):
+        # Arrange: URL passes basic checks but lacks valid scheme/netloc after parsing
+        side_effect = self._make_run_git_text("origin", "not-a-valid-url")
+        with mock.patch.object(core, "run_git_text", side_effect=side_effect):
+            result = core._canonical_origin_base(Path("/tmp/repo"))
+        # Assert: None when urlparse cannot produce a valid base
+        self.assertIsNone(result)

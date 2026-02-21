@@ -1094,12 +1094,36 @@ def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_ran
     return "\n".join(lines).rstrip() + "\n"
 
 
-## @brief Execute `_canonical_origin_base` runtime logic for Git-Alias CLI.
-# @details Executes `_canonical_origin_base` using deterministic CLI control-flow and explicit error propagation.
-# @param repo_root Input parameter consumed by `_canonical_origin_base`.
-# @return Result emitted by `_canonical_origin_base` according to command contract.
+## @brief Resolve the git remote name configured for a given branch.
+# @details Queries `git config branch.<branch_name>.remote` via a local git command.
+#          Returns `origin` as fallback when the config key is absent or the command fails.
+#          No network operations are performed.
+# @param branch_name Local branch name whose configured remote is requested (e.g. `"master"`).
+# @param repo_root Absolute path used as CWD for the git config query.
+# @return Remote name string; never empty (falls back to `"origin"`).
+# @satisfies REQ-046
+def _get_remote_name_for_branch(branch_name: str, repo_root: Path) -> str:
+    remote = run_git_text(
+        ["config", "--get", f"branch.{branch_name}.remote"],
+        cwd=repo_root,
+        check=False,
+    ).strip()
+    return remote if remote else "origin"
+
+
+## @brief Resolve the normalized HTTPS base URL from the master branch's configured remote.
+# @details Determines the remote name by calling `_get_remote_name_for_branch` with the
+#          master branch from active CONFIG, then fetches the URL via `git remote get-url`.
+#          Parses both SSH (`git@<host>:<owner>/<repo>[.git]`) and HTTPS URL formats.
+#          Returns `None` when the remote URL is absent or the parsed URL is structurally invalid.
+#          All resolution uses local git commands; no network calls are performed.
+# @param repo_root Absolute path to the repository root used as CWD for all git commands.
+# @return Normalized HTTPS base URL string (no trailing `.git`), or `None` on failure.
+# @satisfies REQ-043, REQ-046
 def _canonical_origin_base(repo_root: Path) -> Optional[str]:
-    url = run_git_text(["remote", "get-url", "origin"], cwd=repo_root, check=False).strip()
+    master_branch = get_branch("master")
+    remote = _get_remote_name_for_branch(master_branch, repo_root)
+    url = run_git_text(["remote", "get-url", remote], cwd=repo_root, check=False).strip()
     if not url:
         return None
     if url.startswith("git@"):

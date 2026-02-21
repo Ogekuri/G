@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.68
+**Versione**: 0.69
 **Autore**: Francesco Rolando
 **Data**: 2026-02-21
 ## Indice
@@ -105,6 +105,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-21 | 0.66 | Changelog entry line format: scope indicator moved from prefix to suffix position |
 | 2026-02-21 | 0.67 | patch release command restricted to develop-only branch integration; major/minor retain full develop+master flow |
 | 2026-02-21 | 0.68 | # History section scoped to changelog-body tags only; minor-only without --include-patch; adds latest patch with --include-patch |
+| 2026-02-21 | 0.69 | changelog # History links resolved from master-branch remote URL using only local git commands; added REQ-046 for URL resolver contract |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -179,7 +180,8 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-040**: The `changelog` `--include-patch` option MUST prepend the chronologically latest patch release after the last minor release, including all commits from the last minor to that patch; if no minor release exists MUST include only the latest patch with all commits from the beginning.
 - **REQ-041**: The `changelog` command MUST support `--force-write` (overwrite existing file) and `--print-only` (print to stdout, do not write); MUST write to disk only when the file is absent or `--force-write` is specified; command help MUST explicitly list all available options.
 - **REQ-042**: The `changelog` commit parser MUST recognize types: `new` (Features), `implement` (Implementations), `fix` (Bug Fixes), `change` (Changes), `cover` (Cover Requirements), `refactor` (Refactor), `docs` (Documentation), `style` (Styling), `revert` (Revert), `misc` (Miscellaneous Tasks); MUST ignore `perf`, `test`, `build`, `ci`, `chore`; MUST ignore commits whose subject matches `release: Release version <semver>`; MUST NOT generate an "Other" section; Implementations section header MUST use the 🏗️ icon.
-- **REQ-043**: The `changelog` `# History` section MUST contain only version tags present in the changelog body; MUST be chronologically ordered; MUST include clickable release-page links and reference-style diff links using the same version ranges as the corresponding changelog sections.
+- **REQ-043**: The `changelog` `# History` section MUST contain only version tags present in the changelog body; MUST be chronologically ordered; MUST include clickable release-page links using template `https://github.com/<OWNER>/<REPO>/releases/tag/<TAG>` and reference-style diff links using template `https://github.com/<OWNER>/<REPO>/compare/<TAG_FROM>..<TAG_TO>`; MUST derive `<OWNER>` and `<REPO>` by parsing the URL of the remote configured for the master branch via REQ-046.
+- **REQ-046**: The `changelog` GitHub URL resolver MUST determine the upstream remote name by querying `git config branch.<master_branch>.remote` (falling back to `origin` when the query returns empty or fails); MUST retrieve the remote URL via `git remote get-url <remote>`; MUST parse SSH format `git@<host>:<owner>/<repo>[.git]` and HTTPS format `https://<host>/<owner>/<repo>[.git]` extracting `<owner>` and `<repo>`; MUST return `None` when the URL is absent or unparseable; MUST NOT perform any network operation.
 - **REQ-068**: Without `--include-patch`, `# History` MUST contain only minor-release tags; with `--include-patch`, `# History` MUST additionally include the latest patch tag with its diff link referencing the last minor or the repository beginning when no minor release exists.
 - **REQ-044**: Each `changelog` commit entry line MUST use format `- <description> *(<scope>)*` when scope is present and `- <description>` when scope is absent; `<description>` is the commit subject text after the `<type>(<scope>): ` prefix.
 - **REQ-019**: L'alias `bd` deve eliminare un branch locale specificato dall'utente utilizzando `git branch -d <branch>`.
