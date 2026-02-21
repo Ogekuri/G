@@ -189,24 +189,44 @@ class ChangelogCommandTest(unittest.TestCase):
         self.assertEqual(sections[0], "sec-v0.1.0..v0.1.2", "patch section must be first")
         self.assertIn("sec-v0.1.0", sections, "minor section must also appear")
 
-    def test_history_uses_tags_merged_into_head(self):
+    def test_history_section_contains_only_minor_tags_without_include_patch(self):
         repo_root = Path("/tmp")
-        tags = [core.TagInfo(name="v1.0.0", iso_date="2024-01-01", object_name="a")]
-        history_tags = [core.TagInfo(name="v1.1.0", iso_date="2024-02-01", object_name="b")]
-
-        def list_tags(root, merged_ref=None):
-            self.assertEqual(root, repo_root)
-            if merged_ref == "HEAD":
-                return history_tags
-            return tags
-
-        with mock.patch.object(core, "list_tags_sorted_by_date", side_effect=list_tags), mock.patch.object(
+        all_tags = [
+            core.TagInfo(name="v0.0.1", iso_date="2024-01-01", object_name="a"),
+            core.TagInfo(name="v0.1.0", iso_date="2024-02-01", object_name="b"),
+            core.TagInfo(name="v0.2.0", iso_date="2024-03-01", object_name="c"),
+        ]
+        expected_history = [
+            core.TagInfo(name="v0.1.0", iso_date="2024-02-01", object_name="b"),
+            core.TagInfo(name="v0.2.0", iso_date="2024-03-01", object_name="c"),
+        ]
+        with mock.patch.object(core, "list_tags_sorted_by_date", return_value=all_tags) as list_tags_mock, mock.patch.object(
             core, "_canonical_origin_base", return_value="https://example.com/repo"
         ), mock.patch.object(
             core, "generate_section_for_range", return_value=None
         ), mock.patch.object(core, "build_history_section", return_value="# History\n") as build_history:
             core.generate_changelog_document(repo_root, include_patch=False)
-        build_history.assert_called_once_with(repo_root, history_tags, False, include_unreleased_link=False)
+        list_tags_mock.assert_called_once_with(repo_root)
+        build_history.assert_called_once_with(repo_root, expected_history, False, include_unreleased_link=False)
+
+    def test_history_section_includes_patch_tag_when_include_patch(self):
+        repo_root = Path("/tmp")
+        all_tags = [
+            core.TagInfo(name="v0.1.0", iso_date="2024-01-01", object_name="a"),
+            core.TagInfo(name="v0.1.1", iso_date="2024-02-01", object_name="b"),
+        ]
+        expected_history = [
+            core.TagInfo(name="v0.1.0", iso_date="2024-01-01", object_name="a"),
+            core.TagInfo(name="v0.1.1", iso_date="2024-02-01", object_name="b"),
+        ]
+        with mock.patch.object(core, "list_tags_sorted_by_date", return_value=all_tags) as list_tags_mock, mock.patch.object(
+            core, "_canonical_origin_base", return_value="https://example.com/repo"
+        ), mock.patch.object(
+            core, "generate_section_for_range", return_value=None
+        ), mock.patch.object(core, "build_history_section", return_value="# History\n") as build_history:
+            core.generate_changelog_document(repo_root, include_patch=True)
+        list_tags_mock.assert_called_once_with(repo_root)
+        build_history.assert_called_once_with(repo_root, expected_history, False, include_unreleased_link=False)
 
     def test_history_includes_release_list(self):
         repo_root = Path("/tmp")

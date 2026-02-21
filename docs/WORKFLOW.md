@@ -275,18 +275,18 @@
           - `print_command_help(...)`
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
-          - `generate_changelog_document(...)` [`src/git_alias/core.py:1193`]
+          - `generate_changelog_document(...)` [`src/git_alias/core.py:1198`]
             - `list_tags_sorted_by_date(...)` -> `run_git_text(...)` -> `_run_checked(...)`
             - `_canonical_origin_base(...)` -> `run_git_text(...)` -> `_run_checked(...)`
             - `_is_minor_release_tag(...)` [`src/git_alias/core.py:928`]: filter minor releases from all tags
               - `_tag_semver_tuple(...)` -> `_parse_semver_tuple(...)`
-            - `_latest_patch_tag_after(...)` [`src/git_alias/core.py:944`]: locate latest patch tag (when `include_patch=True`)
+            - `_latest_patch_tag_after(...)` [`src/git_alias/core.py:944`]: locate latest patch tag (when `include_patch=True`); result also appended to `history_tags` for `build_history_section`
               - `_is_minor_release_tag(...)`
             - `generate_section_for_range(...)`
               - `git_log_subjects(...)` -> `run_git_text(...)` -> `_run_checked(...)`
               - `_is_release_marker_commit(...)` -> `_extract_release_version(...)`
               - `categorize_commit(...)`
-            - `build_history_section(...)`
+            - `build_history_section(...)`: receives only changelog-body tags (minor tags; plus latest patch when `include_patch=True`)
               - `_canonical_origin_base(...)` -> `run_git_text(...)` -> `_run_checked(...)`
               - `get_release_page_url(...)`
               - `get_origin_compare_url(...)`

@@ -1187,18 +1187,22 @@ def build_history_section(
 #          With `include_patch=True`, prepends the latest patch release after the last minor
 #          (or the latest patch overall when no minor exists) including all commits in that range.
 #          Releases are ordered reverse-chronologically in the output.
+#          `# History` contains only the version tags present in the changelog body:
+#          minor tags when `include_patch=False`; minor tags plus the latest patch when
+#          `include_patch=True`. Diff links in `# History` use the same ranges as the
+#          corresponding changelog sections.
 # @param repo_root Absolute path to the repository root used as CWD for all git commands.
 # @param include_patch When `True`, prepend the latest patch release section to the document.
 # @return Complete `CHANGELOG.md` string content, terminated with a newline.
-# @satisfies REQ-018, REQ-040, REQ-041, REQ-043
+# @satisfies REQ-018, REQ-040, REQ-041, REQ-043, REQ-068
 def generate_changelog_document(repo_root: Path, include_patch: bool) -> str:
     all_tags = list_tags_sorted_by_date(repo_root)
-    history_tags = list_tags_sorted_by_date(repo_root, merged_ref="HEAD")
     origin_base = _canonical_origin_base(repo_root)
     lines: List[str] = ["# Changelog", ""]
     release_sections: List[str] = []
     minor_tags = [t for t in all_tags if _is_minor_release_tag(t.name)]
     last_minor: Optional[TagInfo] = minor_tags[-1] if minor_tags else None
+    latest_patch: Optional[TagInfo] = None
     if include_patch:
         latest_patch = _latest_patch_tag_after(all_tags, last_minor)
         if latest_patch:
@@ -1237,6 +1241,9 @@ def generate_changelog_document(repo_root: Path, include_patch: bool) -> str:
         prev_included = tag.name
     if release_sections:
         lines.extend(reversed(release_sections))
+    history_tags: List[TagInfo] = list(minor_tags)
+    if latest_patch is not None:
+        history_tags = history_tags + [latest_patch]
     history = build_history_section(
         repo_root,
         history_tags,
