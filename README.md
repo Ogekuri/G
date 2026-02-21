@@ -1,7 +1,7 @@
 # G/Git-Alias CLI (0.0.43)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/license-GPL--3.0-491?style=flat-square" alt="License: GPL-3.0">
   <img src="https://img.shields.io/badge/platform-Linux-6A7EC2?style=flat-square&logo=terminal&logoColor=white" alt="Platforms">
   <img src="https://img.shields.io/badge/docs-live-b31b1b" alt="Docs">
@@ -17,34 +17,37 @@ This is a companion script for the <b><a href="https://github.com/Ogekuri/useReq
 <p align="center">
   <a href="#quick-start">Quick Start</a> |
   <a href="#feature-highlights">Feature Highlights</a> |
-  <a href="#upgrading-or-removing">Upgrading or Removing</a> |
+  <a href="#management-commands">Upgrading or Removing</a> |
   <a href="#cli-examples">CLI Examples</a>
-<p>
+</p>
 
 <p align="center">
 <br>
-🚧 <strong>DRAFT:</strong>Preliminary Version 📝 - Work in Progress 🏗️ 🚧<br>
+🚧 <strong>DRAFT:</strong> Preliminary Version 📝 - Work in Progress 🏗️ 🚧<br>
 ⚠️ <strong>IMPORTANT NOTICE</strong>: Created with <a href="https://github.com/Ogekuri/useReq"><strong>useReq/req</strong></a> 🤖✨ ⚠️<br>
 <br>
-<p>
+</p>
 
 
 ## Feature Highlights
-- Support [Conventional Commit Standards](https://www.conventionalcommits.org/en/v1.0.0/) compatible with [release-changelog-builder-action](https://github.com/mikepenz/release-changelog-builder-action).
+- Supports [Conventional Commit Standards](https://www.conventionalcommits.org/en/v1.0.0/) compatible with [release-changelog-builder-action](https://github.com/mikepenz/release-changelog-builder-action).
 - Auto-amending `wip` command for day-to-day "work in progress" commits.
 - Common aliases for repetitive tasks like `add --all` (`aa`) and more.
 - Acts like a `.gitconfig` [alias] section, providing all standard Git commands with a fallback mechanism.
 - Customizable three-branch workflow: `master`, `develop`, and `work`.
-- Standardized commits with specific commands like: `new(core): foo bar..`. Use these commands for common activities such as:
+- Standardized commits with specific commands like: `g new core: foo bar.` Use these commands for common activities such as:
     - `new`: Implement new features.
+    - `implement`: Implement features or larger changes.
+    - `refactor`: Refactor existing code without changing behavior.
     - `fix`: Bug fixes.
     - `change`: Software changes.
     - `docs`: Add/modify documentation.
     - `style`: Styling modifications.
     - `revert`: Revert changes.
     - `misc`: Miscellaneous tasks.
-- Provides `major`, `minor`, and `patch` commands that auto-generate a `CHANGELOG.md`, create a new tag and commit, and release a new `x.y.z` version on the `master` branch.
-- Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--force-write`, `--include-unreleased`, `--print-only`).
+    - `cover`: Add/adjust tests to improve coverage.
+- Provides `major`, `minor`, and `patch` release commands that auto-generate a `CHANGELOG.md`, create a release commit and an annotated `v<next>` tag, and merge/push branches (`work` -> `develop`, and for `major`/`minor`: `develop` -> `master`). Optional flag: `--include-patch`.
+- Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--include-patch`, `--force-write`, `--print-only`, `--disable-history`).
 - Self-upgrading feature.
 
 ## Quick Start
@@ -64,7 +67,7 @@ This is a companion script for the <b><a href="https://github.com/Ogekuri/useReq
 
   - Run Directly from the Repository
   ```bash
-  uvx --from git+https://github.com/Ogekuri/G.git git-alias <alias> [args...]
+  uvx --from git+https://github.com/Ogekuri/G.git git-alias <command> [args...]
   ```
 
 
@@ -94,7 +97,7 @@ g wip
 
 ```bash
 g aa
-g new(core): foo bar
+g new core: foo bar
 ```
 
 ### Release a New Version (with all changes committed)
@@ -113,15 +116,15 @@ Upgrade or remove the Git-Alias CLI:
 
 - `g --upgrade` / `git-alias --upgrade`: Upgrades the tool to the latest version from the GitHub repository.
 - `g --remove` / `git-alias --remove`: Uninstalls the tool.
-- `g --ver` / `g --version` / `git-alias --version`: Prints the CLI version.
-- `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <alias>` for a single command.
+- `g --ver` / `g --version` / `git-alias --ver` / `git-alias --version`: Prints the CLI version.
+- `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
 
 
 ## CLI Examples
 
 Some CLI examples:
 
-- `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <alias>` for a single command.
+- `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
 - `g lg --help`: Shows the help text for the `lg` alias.
 - `g cm "Message"`: Runs `git commit` with the provided message.
 - `g ver --verbose`: Verifies version consistency with detailed output.
