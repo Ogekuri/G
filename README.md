@@ -44,7 +44,7 @@ This is a companion script for the <b><a href="https://github.com/Ogekuri/useReq
     - `revert`: Revert changes.
     - `misc`: Miscellaneous tasks.
 - Provides `major`, `minor`, and `patch` commands that auto-generate a `CHANGELOG.md`, create a new tag and commit, and release a new `x.y.z` version on the `master` branch.
-- Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--force-write`, `--include-unreleased`, `--include-draft`, `--print-only`).
+- Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--force-write`, `--include-unreleased`, `--print-only`).
 - Self-upgrading feature.
 
 ## Quick Start

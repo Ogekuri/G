@@ -271,16 +271,14 @@
           - `generate_changelog_document(...)`
             - `list_tags_sorted_by_date(...)` -> `run_git_text(...)` -> `_run_checked(...)`
             - `_canonical_origin_base(...)` -> `run_git_text(...)` -> `_run_checked(...)`
-            - `_latest_supported_tag_name(...)` -> `_is_supported_release_tag(...)` -> `_tag_semver_tuple(...)` -> `_parse_semver_tuple(...)`
-            - `_should_include_tag(...)` -> `_is_supported_release_tag(...)`
+            - `_latest_supported_tag_name(...)`
             - `generate_section_for_range(...)`
               - `git_log_subjects(...)` -> `run_git_text(...)` -> `_run_checked(...)`
               - `_is_release_marker_commit(...)` -> `_extract_release_version(...)`
               - `categorize_commit(...)`
             - `build_history_section(...)`
               - `_canonical_origin_base(...)` -> `run_git_text(...)` -> `_run_checked(...)`
-              - `_should_include_tag(...)` -> `_is_supported_release_tag(...)`
-              - `_latest_supported_tag_name(...)` -> `_is_supported_release_tag(...)`
+              - `_latest_supported_tag_name(...)`
               - `get_release_page_url(...)`
               - `get_origin_compare_url(...)`
 - External Boundaries:

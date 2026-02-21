@@ -114,10 +114,10 @@ class AliasHelpTest(unittest.TestCase):
 
     def test_help_lists_command_options_when_present(self):
         expected_flags = {
-            "changelog": ["--include-unreleased", "--include-draft", "--force-write", "--print-only"],
-            "major": ["--include-unreleased", "--include-draft"],
-            "minor": ["--include-unreleased", "--include-draft"],
-            "patch": ["--include-unreleased", "--include-draft"],
+            "changelog": ["--include-unreleased", "--force-write", "--print-only"],
+            "major": ["--include-unreleased"],
+            "minor": ["--include-unreleased"],
+            "patch": ["--include-unreleased"],
             "ver": ["--verbose", "--debug"],
         }
         for alias, flags in expected_flags.items():

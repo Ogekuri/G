@@ -69,25 +69,25 @@ class ReleaseFlowTest(unittest.TestCase):
         ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
             core, "_run_release_step", side_effect=run_step
         ), mock.patch.object(core, "cmd_changelog") as changelog:
-            core._execute_release_flow("patch", changelog_args=["--include-unreleased", "--include-draft"])
-        changelog.assert_called_once_with(["--force-write", "--include-unreleased", "--include-draft"])
+            core._execute_release_flow("patch", changelog_args=["--include-unreleased"])
+        changelog.assert_called_once_with(["--force-write", "--include-unreleased"])
 
     def test_release_commands_accept_changelog_flags(self):
         with mock.patch.object(core, "_run_release_command") as run_release:
-            core.cmd_major(["--include-unreleased", "--include-draft"])
-        run_release.assert_called_once_with("major", changelog_args=["--include-unreleased", "--include-draft"])
+            core.cmd_major(["--include-unreleased"])
+        run_release.assert_called_once_with("major", changelog_args=["--include-unreleased"])
 
-    def test_patch_accepts_include_draft_flag(self):
+    def test_patch_accepts_include_unreleased_flag(self):
         with mock.patch.object(core, "_run_release_command") as run_release:
-            core.cmd_patch(["--include-draft"])
-        run_release.assert_called_once_with("patch", changelog_args=["--include-draft"])
+            core.cmd_patch(["--include-unreleased"])
+        run_release.assert_called_once_with("patch", changelog_args=["--include-unreleased"])
 
     def test_release_commands_reject_unknown_flags(self):
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
             with self.assertRaises(SystemExit):
                 core.cmd_patch(["--unexpected"])
-        self.assertIn("accepts only --include-unreleased and --include-draft", err.getvalue())
+        self.assertIn("accepts only --include-unreleased", err.getvalue())
 
     def test_create_release_commit_for_flow_uses_release_amend_strategy(self):
         with mock.patch.object(core, "_ensure_commit_ready"), mock.patch.object(core, "_execute_commit") as execute_commit:

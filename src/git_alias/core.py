@@ -381,7 +381,7 @@ HELP_TEXTS = {
     "bd": "Delete a local branch: git bd '<branch>'.",
     "br": "Create a new branch.",
     "chver": "Change the project version to the provided semantic version.",
-    "changelog": "Generate CHANGELOG.md from conventional commits. Options: --include-unreleased, --include-draft, --force-write, --print-only.",
+    "changelog": "Generate CHANGELOG.md from conventional commits. Options: --include-unreleased, --force-write, --print-only.",
     "ck": "Check differences.",
     "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
@@ -405,8 +405,8 @@ HELP_TEXTS = {
     "ll": "Print latest full commit hash.",
     "lm": "Print all merges.",
     "lt": "Print all tags.",
-    "major": "Release a new major version from the work branch. Options: --include-unreleased, --include-draft.",
-    "minor": "Release a new minor version from the work branch. Options: --include-unreleased, --include-draft.",
+    "major": "Release a new major version from the work branch. Options: --include-unreleased.",
+    "minor": "Release a new minor version from the work branch. Options: --include-unreleased.",
     "new": "Conventional commit new(module): description.",
     "implement": "Conventional commit implement(module): description.",
     "refactor": "Conventional commit refactor(module): description.",
@@ -421,7 +421,7 @@ HELP_TEXTS = {
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
-    "patch": "Release a new patch version from the work branch. Options: --include-unreleased, --include-draft.",
+    "patch": "Release a new patch version from the work branch. Options: --include-unreleased.",
     "ra": "Remove all staged files and return them to the working tree (inverse of aa).",
     "rf": "Print changes on HEAD reference.",
     "rmloc": "Remove changed files from the working tree.",
@@ -902,11 +902,6 @@ SECTION_EMOJI = {
     "Cover Requirements": "🎯",
 }
 
-## @brief Constant `MIN_SUPPORTED_HISTORY_VERSION` used by CLI runtime paths and policies.
-
-MIN_SUPPORTED_HISTORY_VERSION = (0, 1, 0)
-
-
 ## @brief Execute `_tag_semver_tuple` runtime logic for Git-Alias CLI.
 # @details Executes `_tag_semver_tuple` using deterministic CLI control-flow and explicit error propagation.
 # @param tag_name Input parameter consumed by `_tag_semver_tuple`.
@@ -915,38 +910,12 @@ def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[int, int, int]]:
     return _parse_semver_tuple(tag_name.lstrip("v"))
 
 
-## @brief Execute `_is_supported_release_tag` runtime logic for Git-Alias CLI.
-# @details Executes `_is_supported_release_tag` using deterministic CLI control-flow and explicit error propagation.
-# @param tag_name Input parameter consumed by `_is_supported_release_tag`.
-# @return Result emitted by `_is_supported_release_tag` according to command contract.
-def _is_supported_release_tag(tag_name: str) -> bool:
-    semver = _tag_semver_tuple(tag_name)
-    if semver is None:
-        return True
-    return semver >= MIN_SUPPORTED_HISTORY_VERSION
-
-
-## @brief Execute `_should_include_tag` runtime logic for Git-Alias CLI.
-# @details Executes `_should_include_tag` using deterministic CLI control-flow and explicit error propagation.
-# @param tag_name Input parameter consumed by `_should_include_tag`.
-# @param include_draft Input parameter consumed by `_should_include_tag`.
-# @return Result emitted by `_should_include_tag` according to command contract.
-def _should_include_tag(tag_name: str, include_draft: bool) -> bool:
-    return include_draft or _is_supported_release_tag(tag_name)
-
-
 ## @brief Execute `_latest_supported_tag_name` runtime logic for Git-Alias CLI.
 # @details Executes `_latest_supported_tag_name` using deterministic CLI control-flow and explicit error propagation.
 # @param tags Input parameter consumed by `_latest_supported_tag_name`.
-# @param include_draft Input parameter consumed by `_latest_supported_tag_name`.
 # @return Result emitted by `_latest_supported_tag_name` according to command contract.
-def _latest_supported_tag_name(tags: List[TagInfo], include_draft: bool) -> Optional[str]:
-    if include_draft:
-        return tags[-1].name if tags else None
-    for tag in reversed(tags):
-        if _is_supported_release_tag(tag.name):
-            return tag.name
-    return None
+def _latest_supported_tag_name(tags: List[TagInfo]) -> Optional[str]:
+    return tags[-1].name if tags else None
 
 
 ## @brief Execute `list_tags_sorted_by_date` runtime logic for Git-Alias CLI.
@@ -1143,21 +1112,19 @@ def get_release_page_url(base_url: Optional[str], tag: str) -> Optional[str]:
 # @param repo_root Input parameter consumed by `build_history_section`.
 # @param tags Input parameter consumed by `build_history_section`.
 # @param include_unreleased Input parameter consumed by `build_history_section`.
-# @param include_draft Input parameter consumed by `build_history_section`.
 # @param include_unreleased_link Input parameter consumed by `build_history_section`.
 # @return Result emitted by `build_history_section` according to command contract.
 def build_history_section(
     repo_root: Path,
     tags: List[TagInfo],
     include_unreleased: bool,
-    include_draft: bool = False,
     include_unreleased_link: bool = True,
 ) -> Optional[str]:
     base = _canonical_origin_base(repo_root)
     if not base:
         return None
     lines = ["# History"]
-    visible_tags = [tag for tag in tags if _should_include_tag(tag.name, include_draft)]
+    visible_tags = tags
     if visible_tags:
         lines.append("")
         for tag in visible_tags:
@@ -1172,7 +1139,7 @@ def build_history_section(
             lines.append(f"[{tag.name.lstrip('v')}]: {compare}")
         prev = tag.name
     if include_unreleased and include_unreleased_link:
-        baseline = _latest_supported_tag_name(tags, include_draft)
+        baseline = _latest_supported_tag_name(tags)
         if baseline:
             compare = get_origin_compare_url(base, baseline, "HEAD")
             if compare:
@@ -1184,48 +1151,44 @@ def build_history_section(
 # @details Executes `generate_changelog_document` using deterministic CLI control-flow and explicit error propagation.
 # @param repo_root Input parameter consumed by `generate_changelog_document`.
 # @param include_unreleased Input parameter consumed by `generate_changelog_document`.
-# @param include_draft Input parameter consumed by `generate_changelog_document`.
 # @return Result emitted by `generate_changelog_document` according to command contract.
-def generate_changelog_document(repo_root: Path, include_unreleased: bool, include_draft: bool = False) -> str:
+def generate_changelog_document(repo_root: Path, include_unreleased: bool) -> str:
     tags = list_tags_sorted_by_date(repo_root)
     history_tags = list_tags_sorted_by_date(repo_root, merged_ref="HEAD")
     origin_base = _canonical_origin_base(repo_root)
     lines: List[str] = ["# Changelog", ""]
     release_sections: List[str] = []
-    baseline_tag = _latest_supported_tag_name(tags, include_draft)
+    baseline_tag = _latest_supported_tag_name(tags)
     has_unreleased = False
-    if include_unreleased:
-        if baseline_tag or include_draft:
-            rev_range = f"{baseline_tag}..HEAD" if baseline_tag else "HEAD"
-            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-            section = generate_section_for_range(repo_root, "Unreleased", today, rev_range)
-            if section:
-                lines.append(section)
-                has_unreleased = True
+    if include_unreleased and baseline_tag:
+        rev_range = f"{baseline_tag}..HEAD"
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        section = generate_section_for_range(repo_root, "Unreleased", today, rev_range)
+        if section:
+            lines.append(section)
+            has_unreleased = True
     prev_included: Optional[str] = None
     for tag in tags:
-        if _should_include_tag(tag.name, include_draft):
-            rev_range = tag.name if prev_included is None else f"{prev_included}..{tag.name}"
-            display = tag.name.lstrip("v")
-            compare_url = get_origin_compare_url(origin_base, prev_included, tag.name)
-            title = f"[{display}]({compare_url})" if compare_url else display
-            section = generate_section_for_range(
-                repo_root,
-                title,
-                tag.iso_date,
-                rev_range,
-                expected_version=display,
-            )
-            if section:
-                release_sections.append(section)
-            prev_included = tag.name
+        rev_range = tag.name if prev_included is None else f"{prev_included}..{tag.name}"
+        display = tag.name.lstrip("v")
+        compare_url = get_origin_compare_url(origin_base, prev_included, tag.name)
+        title = f"[{display}]({compare_url})" if compare_url else display
+        section = generate_section_for_range(
+            repo_root,
+            title,
+            tag.iso_date,
+            rev_range,
+            expected_version=display,
+        )
+        if section:
+            release_sections.append(section)
+        prev_included = tag.name
     if release_sections:
         lines.extend(reversed(release_sections))
     history = build_history_section(
         repo_root,
         history_tags,
         include_unreleased,
-        include_draft,
         include_unreleased_link=has_unreleased,
     )
     if history:
@@ -1641,11 +1604,11 @@ def _parse_release_flags(extra, alias):
     args = _to_args(extra)
     if not args:
         return []
-    allowed = {"--include-unreleased", "--include-draft"}
+    allowed = {"--include-unreleased"}
     unknown = [arg for arg in args if arg not in allowed]
     if unknown:
         joined = ", ".join(unknown)
-        print(f"git {alias} accepts only --include-unreleased and --include-draft (got {joined}).", file=sys.stderr)
+        print(f"git {alias} accepts only --include-unreleased (got {joined}).", file=sys.stderr)
         sys.exit(1)
     deduped = []
     seen = set()
@@ -2515,7 +2478,6 @@ def cmd_changelog(extra):
     parser = argparse.ArgumentParser(prog="g changelog", add_help=False)
     parser.add_argument("--force-write", dest="force_write", action="store_true")
     parser.add_argument("--include-unreleased", action="store_true")
-    parser.add_argument("--include-draft", action="store_true")
     parser.add_argument("--print-only", action="store_true")
     parser.add_argument("--help", action="store_true")
     try:
@@ -2530,7 +2492,7 @@ def cmd_changelog(extra):
         print("Error: run g changelog inside a Git repository.", file=sys.stderr)
         sys.exit(2)
     repo_root = get_git_root()
-    content = generate_changelog_document(repo_root, args.include_unreleased, args.include_draft)
+    content = generate_changelog_document(repo_root, args.include_unreleased)
     if args.print_only:
         print(content, end="")
         return
