@@ -995,9 +995,10 @@ def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]:
 
 
 ## @brief Execute `categorize_commit` runtime logic for Git-Alias CLI.
-# @details Executes `categorize_commit` using deterministic CLI control-flow and explicit error propagation.
-# @param subject Input parameter consumed by `categorize_commit`.
-# @return Result emitted by `categorize_commit` according to command contract.
+# @details Parses a conventional commit subject line and maps it to a changelog section and formatted entry line.
+# Entry line format: `- <description> *(<scope>)*` when scope is present; `- <description>` otherwise.
+# @param subject Conventional commit subject string (e.g. `type(scope): description`).
+# @return Tuple `(section, line)`: `section` is the changelog section name or `None` if type is unmapped or ignored; `line` is the formatted entry string or `""` when section is `None`.
 def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
     match = _CONVENTIONAL_RE.match(subject.strip())
     if not match:
@@ -1005,8 +1006,8 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
     ctype = match.group("type").lower()
     scope = match.group("scope")
     desc = match.group("desc").strip()
-    scope_text = f"*({scope})* " if scope else ""
-    line = f"- {scope_text}{desc}"
+    scope_text = f" *({scope})*" if scope else ""
+    line = f"- {desc}{scope_text}"
     mapping = {
         "new": "Features",
         "implement": "Implementations",

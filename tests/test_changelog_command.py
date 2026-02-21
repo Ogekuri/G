@@ -251,7 +251,7 @@ class ChangelogCommandTest(unittest.TestCase):
     def test_categorize_commit_maps_implement_type(self):
         section, line = core.categorize_commit("implement(core): Add implementation command")
         self.assertEqual(section, "Implementations")
-        self.assertEqual(line, "- *(core)* Add implementation command")
+        self.assertEqual(line, "- Add implementation command *(core)*")
 
     def test_generate_section_renders_implementations_header_with_icon(self):
         with mock.patch.object(

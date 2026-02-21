@@ -13,10 +13,9 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.65
+**Versione**: 0.66
 **Autore**: Francesco Rolando
 **Data**: 2026-02-21
-
 ## Indice
 - [Requisiti di Git-Alias CLI](#requisiti-di-git-alias-cli)
   - [Indice](#indice)
@@ -103,6 +102,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-20 | 0.63 | Added diff aliases `dwcc` and `dccc` for comparisons against `HEAD~1` and `HEAD~2` |
 | 2026-02-21 | 0.64 | Rimosso il flag `--include-draft`; changelog e release includono sempre tutta la history senza filtri draft |
 | 2026-02-21 | 0.65 | Refactored `changelog` command to group by minor releases only; replaced `--include-unreleased` with `--include-patch`; updated `patch` release command to auto-forward `--include-patch` |
+| 2026-02-21 | 0.66 | Changelog entry line format: scope indicator moved from prefix to suffix position |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -178,6 +178,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-041**: The `changelog` command MUST support `--force-write` (overwrite existing file) and `--print-only` (print to stdout, do not write); MUST write to disk only when the file is absent or `--force-write` is specified; command help MUST explicitly list all available options.
 - **REQ-042**: The `changelog` commit parser MUST recognize types: `new` (Features), `implement` (Implementations), `fix` (Bug Fixes), `change` (Changes), `cover` (Cover Requirements), `refactor` (Refactor), `docs` (Documentation), `style` (Styling), `revert` (Revert), `misc` (Miscellaneous Tasks); MUST ignore `perf`, `test`, `build`, `ci`, `chore`; MUST ignore commits whose subject matches `release: Release version <semver>`; MUST NOT generate an "Other" section; Implementations section header MUST use the 🏗️ icon.
 - **REQ-043**: The `changelog` `# History` section MUST be chronologically ordered and MUST include a bulleted list of clickable release-page links for every detected tag before the reference-style link definitions.
+- **REQ-044**: Each `changelog` commit entry line MUST use format `- <description> *(<scope>)*` when scope is present and `- <description>` when scope is absent; `<description>` is the commit subject text after the `<type>(<scope>): ` prefix.
 - **REQ-019**: L'alias `bd` deve eliminare un branch locale specificato dall'utente utilizzando `git branch -d <branch>`.
 - **REQ-020**: Il sistema deve fornire funzioni di supporto riutilizzabili dagli alias che consentano di verificare (a) la presenza di file o modifiche non ancora aggiunti allo staging, (b) la presenza di file già in staging ma non ancora committati, (c) la disponibilità di aggiornamenti remoti per il branch `develop`, e (d) la disponibilità di aggiornamenti remoti per il branch `master`. Le funzioni per i punti (c) e (d) devono prima sincronizzare i riferimenti remoti (ad esempio con `git remote -v update`) e poi determinare se il branch remoto è in avanti rispetto a quello locale.
 - **REQ-021**: L'alias `wip` deve eseguire un commit "work in progress" riutilizzando le stesse funzioni di verifica dell'alias `cm`, generando automaticamente un messaggio fisso `wip: work in progress.` e, come `cm`, deve rilevare se l'ultimo commit è una WIP non ancora presente su `develop`: in tal caso deve aggiornare il commit esistente con `git commit --amend` e stampare l'azione; altrimenti deve creare un nuovo commit e segnalarlo.
