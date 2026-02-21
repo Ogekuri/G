@@ -234,7 +234,7 @@
           - `_determine_canonical_version(...)` -> `_collect_version_files(...)`, `_iter_versions_in_text(...)`
           - `_collect_version_files(...)` -> `_is_version_path_excluded(...)`
           - `_replace_versions_in_text(...)`
-        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2505`]
+        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2506`]
           - `_parse_release_flags(...)` -> `_to_args(...)`
           - `_run_release_command(...)`
             - `_execute_release_flow(...)`
@@ -252,18 +252,25 @@
               - `get_git_root(...)` -> `_run_checked(...)`
               - `_determine_canonical_version(...)` -> `_collect_version_files(...)`, `_iter_versions_in_text(...)`
               - `_bump_semver_version(...)` -> `_parse_semver_tuple(...)`
-              - `_run_release_step(...)` with internal actions:
+              - `_run_release_step(...)` with internal actions (shared for all levels):
                 - `cmd_chver(...)`
                 - `run_git_cmd(...)`
                 - `_create_release_commit_for_flow(...)` -> `_ensure_commit_ready(...)`, `_execute_commit(...)`
                 - `cmd_tg(...)`
                 - `cmd_changelog(...)`
-                - `cmd_co(...)`
-                - `cmd_me(...)`
+                - `cmd_co(...)` (checkout develop)
+                - `cmd_me(...)` (merge work into develop)
+                - `run_git_cmd(...)` (push develop)
+              - `_run_release_step(...)` conditional on `level != "patch"` (major/minor only):
+                - `cmd_co(...)` (checkout master)
+                - `cmd_me(...)` (merge develop into master)
+                - `run_git_cmd(...)` (push master)
+              - `_run_release_step(...)` shared post-integration steps:
+                - `cmd_co(...)` (return to work)
                 - `cmd_de(...)`
                 - `cmd_pt(...)`
-        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2514`]
-        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2523`]
+        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2515`]
+        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/push steps [`src/git_alias/core.py:2524`]
         - `cmd_changelog(...)`: changelog generation flow [`src/git_alias/core.py:2536`]
           - `print_command_help(...)`
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`

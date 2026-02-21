@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.66
+**Versione**: 0.67
 **Autore**: Francesco Rolando
 **Data**: 2026-02-21
 ## Indice
@@ -103,6 +103,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-21 | 0.64 | Rimosso il flag `--include-draft`; changelog e release includono sempre tutta la history senza filtri draft |
 | 2026-02-21 | 0.65 | Refactored `changelog` command to group by minor releases only; replaced `--include-unreleased` with `--include-patch`; updated `patch` release command to auto-forward `--include-patch` |
 | 2026-02-21 | 0.66 | Changelog entry line format: scope indicator moved from prefix to suffix position |
+| 2026-02-21 | 0.67 | patch release command restricted to develop-only branch integration; major/minor retain full develop+master flow |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -200,6 +201,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-037**: Visual diff aliases MUST execute fixed `git difftool -d` mappings: `dwc` MUST execute `git difftool -d HEAD` (working tree vs latest commit), `dcc` MUST execute `git difftool -d HEAD~1 HEAD` (penultimate vs latest commit), and `d` MUST require exactly two positional git refs (`<ref_a> <ref_b>`) and execute `git difftool -d <ref_a> <ref_b>` forwarding git errors without additional transformations.
 - **REQ-038**: The visual diff aliases MUST include `dwcc` mapped to `git difftool -d HEAD~1` (working tree vs penultimate commit) and `dccc` mapped to `git difftool -d HEAD~2 HEAD` (third-last vs last commit), and both aliases MUST expose explicit help text in global and per-command help outputs.
 - **REQ-039**: Every command `<command>` present in the CLI command dispatch map MUST be implemented by a Python function named exactly `cmd_<command>`, and the dispatch entry for `<command>` MUST reference that exact function symbol.
+- **REQ-045**: The `patch` command MUST merge and push to configured `develop` only and MUST NOT merge to or push `master`; the `major` and `minor` commands MUST merge and push to both `develop` and `master` in order.
 
 ### 3.3 Struttura File Progetto
 ```

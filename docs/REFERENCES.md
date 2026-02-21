@@ -31,7 +31,7 @@ import sys
 
 ---
 
-# core.py | Python | 2743L | 169 symbols | 16 imports | 681 comments
+# core.py | Python | 2759L | 169 symbols | 16 imports | 696 comments
 > Path: `src/git_alias/core.py`
 
 ## Imports
@@ -304,247 +304,247 @@ from urllib.request import Request, urlopen
 ### fn `def _create_release_commit_for_flow(target_version)` `priv` (L1550-1555)
 - Return: Result emitted by `_create_release_commit_for_flow` according to command contract.
 
-### fn `def _execute_release_flow(level, changelog_args=None)` `priv` (L1561-1607)
-- Return: Result emitted by `_execute_release_flow` according to command contract.
+### fn `def _execute_release_flow(level, changelog_args=None)` `priv` (L1567-1614)
+- Sa: tisfies REQ-026, REQ-045
 
-### fn `def _run_release_command(level, changelog_args=None)` `priv` (L1613-1628)
+### fn `def _run_release_command(level, changelog_args=None)` `priv` (L1620-1635)
 - Return: Result emitted by `_run_release_command` according to command contract.
 
-### fn `def _run_reset_with_help(base_args, extra)` `priv` (L1634-1641)
+### fn `def _run_reset_with_help(base_args, extra)` `priv` (L1641-1648)
 - Return: Result emitted by `_run_reset_with_help` according to command contract.
 
-### fn `def _reject_extra_arguments(extra, alias)` `priv` (L1647-1653)
+### fn `def _reject_extra_arguments(extra, alias)` `priv` (L1654-1660)
 - Return: Result emitted by `_reject_extra_arguments` according to command contract.
 
-### fn `def _parse_release_flags(extra, alias)` `priv` (L1659-1677)
+### fn `def _parse_release_flags(extra, alias)` `priv` (L1666-1684)
 - Return: Result emitted by `_parse_release_flags` according to command contract.
 
-### fn `def _prepare_commit_message(extra, alias)` `priv` (L1683-1693)
+### fn `def _prepare_commit_message(extra, alias)` `priv` (L1690-1700)
 - Return: Result emitted by `_prepare_commit_message` according to command contract.
 
-### fn `def _build_conventional_message(kind: str, extra, alias: str) -> str` `priv` (L1700-1714)
+### fn `def _build_conventional_message(kind: str, extra, alias: str) -> str` `priv` (L1707-1721)
 - Return: Result emitted by `_build_conventional_message` according to command contract.
 
-### fn `def _run_conventional_commit(kind: str, alias: str, extra)` `priv` (L1721-1726)
+### fn `def _run_conventional_commit(kind: str, alias: str, extra)` `priv` (L1728-1733)
 - Return: Result emitted by `_run_conventional_commit` according to command contract.
 
-### fn `def _execute_commit(message, alias, allow_amend=True)` `priv` (L1733-1762)
+### fn `def _execute_commit(message, alias, allow_amend=True)` `priv` (L1740-1769)
 - Return: Result emitted by `_execute_commit` according to command contract.
 
-### fn `def upgrade_self()` (L1766-1779)
+### fn `def upgrade_self()` (L1773-1786)
 - Return: Result emitted by `upgrade_self` according to command contract.
 
-### fn `def remove_self()` (L1783-1786)
+### fn `def remove_self()` (L1790-1793)
 - Return: Result emitted by `remove_self` according to command contract.
 
-### fn `def cmd_aa(extra)` (L1791-1798)
+### fn `def cmd_aa(extra)` (L1798-1805)
 - Return: Result emitted by `cmd_aa` according to command contract.
 
-### fn `def cmd_ra(extra)` (L1803-1826)
+### fn `def cmd_ra(extra)` (L1810-1833)
 - Return: Result emitted by `cmd_ra` according to command contract.
 
-### fn `def cmd_ar(extra)` (L1831-1845)
+### fn `def cmd_ar(extra)` (L1838-1852)
 - Return: Result emitted by `cmd_ar` according to command contract.
 
-### fn `def cmd_br(extra)` (L1850-1853)
+### fn `def cmd_br(extra)` (L1857-1860)
 - Return: Result emitted by `cmd_br` according to command contract.
 
-### fn `def cmd_bd(extra)` (L1858-1861)
+### fn `def cmd_bd(extra)` (L1865-1868)
 - Return: Result emitted by `cmd_bd` according to command contract.
 
-### fn `def cmd_ck(extra)` (L1866-1869)
+### fn `def cmd_ck(extra)` (L1873-1876)
 - Return: Result emitted by `cmd_ck` according to command contract.
 
-### fn `def _ensure_commit_ready(alias)` `priv` (L1874-1887)
+### fn `def _ensure_commit_ready(alias)` `priv` (L1881-1894)
 - Return: Result emitted by `_ensure_commit_ready` according to command contract.
 
-### fn `def cmd_cm(extra)` (L1892-1897)
+### fn `def cmd_cm(extra)` (L1899-1904)
 - Return: Result emitted by `cmd_cm` according to command contract.
 
-### fn `def cmd_wip(extra)` (L1902-1914)
+### fn `def cmd_wip(extra)` (L1909-1921)
 - Return: Result emitted by `cmd_wip` according to command contract.
 
-### fn `def cmd_release(extra)` (L1919-1941)
+### fn `def cmd_release(extra)` (L1926-1948)
 - Return: Result emitted by `cmd_release` according to command contract.
 
-### fn `def cmd_new(extra)` (L1946-1949)
+### fn `def cmd_new(extra)` (L1953-1956)
 - Return: Result emitted by `cmd_new` according to command contract.
 
-### fn `def cmd_refactor(extra)` (L1954-1957)
+### fn `def cmd_refactor(extra)` (L1961-1964)
 - Return: Result emitted by `cmd_refactor` according to command contract.
 
-### fn `def cmd_fix(extra)` (L1962-1965)
+### fn `def cmd_fix(extra)` (L1969-1972)
 - Return: Result emitted by `cmd_fix` according to command contract.
 
-### fn `def cmd_change(extra)` (L1970-1973)
+### fn `def cmd_change(extra)` (L1977-1980)
 - Return: Result emitted by `cmd_change` according to command contract.
 
-### fn `def cmd_implement(extra)` (L1978-1981)
+### fn `def cmd_implement(extra)` (L1985-1988)
 - Return: Result emitted by `cmd_implement` according to command contract.
 
-### fn `def cmd_docs(extra)` (L1986-1989)
+### fn `def cmd_docs(extra)` (L1993-1996)
 - Return: Result emitted by `cmd_docs` according to command contract.
 
-### fn `def cmd_style(extra)` (L1994-1997)
+### fn `def cmd_style(extra)` (L2001-2004)
 - Return: Result emitted by `cmd_style` according to command contract.
 
-### fn `def cmd_revert(extra)` (L2002-2005)
+### fn `def cmd_revert(extra)` (L2009-2012)
 - Return: Result emitted by `cmd_revert` according to command contract.
 
-### fn `def cmd_misc(extra)` (L2010-2013)
+### fn `def cmd_misc(extra)` (L2017-2020)
 - Return: Result emitted by `cmd_misc` according to command contract.
 
-### fn `def cmd_cover(extra)` (L2018-2021)
+### fn `def cmd_cover(extra)` (L2025-2028)
 - Return: Result emitted by `cmd_cover` according to command contract.
 
-### fn `def cmd_co(extra)` (L2026-2029)
+### fn `def cmd_co(extra)` (L2033-2036)
 - Return: Result emitted by `cmd_co` according to command contract.
 
-### fn `def cmd_d(extra)` (L2034-2041)
+### fn `def cmd_d(extra)` (L2041-2048)
 - Return: Result emitted by `cmd_d` according to command contract.
 
-### fn `def cmd_dcc(extra)` (L2046-2049)
+### fn `def cmd_dcc(extra)` (L2053-2056)
 - Return: Result emitted by `cmd_dcc` according to command contract.
 
-### fn `def cmd_dccc(extra)` (L2054-2057)
+### fn `def cmd_dccc(extra)` (L2061-2064)
 - Return: Result emitted by `cmd_dccc` according to command contract.
 
-### fn `def cmd_de(extra)` (L2062-2065)
+### fn `def cmd_de(extra)` (L2069-2072)
 - Return: Result emitted by `cmd_de` according to command contract.
 
-### fn `def cmd_di(extra)` (L2070-2073)
+### fn `def cmd_di(extra)` (L2077-2080)
 - Return: Result emitted by `cmd_di` according to command contract.
 
-### fn `def cmd_diyou(extra)` (L2078-2081)
+### fn `def cmd_diyou(extra)` (L2085-2088)
 - Return: Result emitted by `cmd_diyou` according to command contract.
 
-### fn `def cmd_dime(extra)` (L2086-2089)
+### fn `def cmd_dime(extra)` (L2093-2096)
 - Return: Result emitted by `cmd_dime` according to command contract.
 
-### fn `def cmd_dwc(extra)` (L2094-2097)
+### fn `def cmd_dwc(extra)` (L2101-2104)
 - Return: Result emitted by `cmd_dwc` according to command contract.
 
-### fn `def cmd_dwcc(extra)` (L2102-2105)
+### fn `def cmd_dwcc(extra)` (L2109-2112)
 - Return: Result emitted by `cmd_dwcc` according to command contract.
 
-### fn `def cmd_ed(extra)` (L2110-2119)
+### fn `def cmd_ed(extra)` (L2117-2126)
 - Return: Result emitted by `cmd_ed` according to command contract.
 
-### fn `def cmd_fe(extra)` (L2124-2127)
+### fn `def cmd_fe(extra)` (L2131-2134)
 - Return: Result emitted by `cmd_fe` according to command contract.
 
-### fn `def cmd_feall(extra)` (L2132-2135)
+### fn `def cmd_feall(extra)` (L2139-2142)
 - Return: Result emitted by `cmd_feall` according to command contract.
 
-### fn `def cmd_gp(extra)` (L2140-2143)
+### fn `def cmd_gp(extra)` (L2147-2150)
 - Return: Result emitted by `cmd_gp` according to command contract.
 
-### fn `def cmd_gr(extra)` (L2148-2151)
+### fn `def cmd_gr(extra)` (L2155-2158)
 - Return: Result emitted by `cmd_gr` according to command contract.
 
-### fn `def cmd_str(extra)` (L2156-2185)
+### fn `def cmd_str(extra)` (L2163-2192)
 - Details: Query git remotes with transport metadata. Deduplicate remote names from `git remote -v` rows. Print normalized remote name inventory. Print detailed status for each unique remote.
 - Return: Result emitted by `cmd_str` according to command contract.
 
-### fn `def cmd_lb(extra)` (L2190-2193)
+### fn `def cmd_lb(extra)` (L2197-2200)
 - Return: Result emitted by `cmd_lb` according to command contract.
 
-### fn `def cmd_lg(extra)` (L2198-2211)
+### fn `def cmd_lg(extra)` (L2205-2218)
 - Return: Result emitted by `cmd_lg` according to command contract.
 
-### fn `def cmd_lh(extra)` (L2216-2219)
+### fn `def cmd_lh(extra)` (L2223-2226)
 - Return: Result emitted by `cmd_lh` according to command contract.
 
-### fn `def cmd_ll(extra)` (L2224-2236)
+### fn `def cmd_ll(extra)` (L2231-2243)
 - Return: Result emitted by `cmd_ll` according to command contract.
 
-### fn `def cmd_lm(extra)` (L2241-2244)
+### fn `def cmd_lm(extra)` (L2248-2251)
 - Return: Result emitted by `cmd_lm` according to command contract.
 
-### fn `def cmd_lt(extra)` (L2249-2252)
+### fn `def cmd_lt(extra)` (L2256-2259)
 - Return: Result emitted by `cmd_lt` according to command contract.
 
-### fn `def cmd_me(extra)` (L2257-2260)
+### fn `def cmd_me(extra)` (L2264-2267)
 - Return: Result emitted by `cmd_me` according to command contract.
 
-### fn `def cmd_pl(extra)` (L2265-2268)
+### fn `def cmd_pl(extra)` (L2272-2275)
 - Return: Result emitted by `cmd_pl` according to command contract.
 
-### fn `def cmd_pt(extra)` (L2273-2276)
+### fn `def cmd_pt(extra)` (L2280-2283)
 - Return: Result emitted by `cmd_pt` according to command contract.
 
-### fn `def cmd_pu(extra)` (L2281-2284)
+### fn `def cmd_pu(extra)` (L2288-2291)
 - Return: Result emitted by `cmd_pu` according to command contract.
 
-### fn `def cmd_rf(extra)` (L2289-2292)
+### fn `def cmd_rf(extra)` (L2296-2299)
 - Return: Result emitted by `cmd_rf` according to command contract.
 
-### fn `def cmd_rmtg(extra)` (L2297-2307)
+### fn `def cmd_rmtg(extra)` (L2304-2314)
 - Return: Result emitted by `cmd_rmtg` according to command contract.
 
-### fn `def cmd_rmloc(extra)` (L2312-2315)
+### fn `def cmd_rmloc(extra)` (L2319-2322)
 - Return: Result emitted by `cmd_rmloc` according to command contract.
 
-### fn `def cmd_rmstg(extra)` (L2320-2323)
+### fn `def cmd_rmstg(extra)` (L2327-2330)
 - Return: Result emitted by `cmd_rmstg` according to command contract.
 
-### fn `def cmd_rmunt(extra)` (L2328-2331)
+### fn `def cmd_rmunt(extra)` (L2335-2338)
 - Return: Result emitted by `cmd_rmunt` according to command contract.
 
-### fn `def cmd_rs(extra)` (L2336-2339)
+### fn `def cmd_rs(extra)` (L2343-2346)
 - Return: Result emitted by `cmd_rs` according to command contract.
 
-### fn `def cmd_rssft(extra)` (L2344-2347)
+### fn `def cmd_rssft(extra)` (L2351-2354)
 - Return: Result emitted by `cmd_rssft` according to command contract.
 
-### fn `def cmd_rsmix(extra)` (L2352-2355)
+### fn `def cmd_rsmix(extra)` (L2359-2362)
 - Return: Result emitted by `cmd_rsmix` according to command contract.
 
-### fn `def cmd_rshrd(extra)` (L2360-2363)
+### fn `def cmd_rshrd(extra)` (L2367-2370)
 - Return: Result emitted by `cmd_rshrd` according to command contract.
 
-### fn `def cmd_rsmrg(extra)` (L2368-2371)
+### fn `def cmd_rsmrg(extra)` (L2375-2378)
 - Return: Result emitted by `cmd_rsmrg` according to command contract.
 
-### fn `def cmd_rskep(extra)` (L2376-2379)
+### fn `def cmd_rskep(extra)` (L2383-2386)
 - Return: Result emitted by `cmd_rskep` according to command contract.
 
-### fn `def cmd_st(extra)` (L2384-2387)
+### fn `def cmd_st(extra)` (L2391-2394)
 - Return: Result emitted by `cmd_st` according to command contract.
 
-### fn `def cmd_tg(extra)` (L2392-2395)
+### fn `def cmd_tg(extra)` (L2399-2402)
 - Return: Result emitted by `cmd_tg` according to command contract.
 
-### fn `def cmd_unstg(extra)` (L2400-2403)
+### fn `def cmd_unstg(extra)` (L2407-2410)
 - Return: Result emitted by `cmd_unstg` according to command contract.
 
-### fn `def cmd_ver(extra)` (L2408-2426)
+### fn `def cmd_ver(extra)` (L2415-2433)
 - Return: Result emitted by `cmd_ver` according to command contract.
 
-### fn `def cmd_chver(extra)` (L2431-2501)
+### fn `def cmd_chver(extra)` (L2438-2508)
 - Return: Result emitted by `cmd_chver` according to command contract.
 
-### fn `def cmd_major(extra)` (L2506-2510)
-- Return: Result emitted by `cmd_major` according to command contract.
+### fn `def cmd_major(extra)` (L2516-2520)
+- Sa: tisfies REQ-026, REQ-045
 
-### fn `def cmd_minor(extra)` (L2515-2519)
-- Return: Result emitted by `cmd_minor` according to command contract.
+### fn `def cmd_minor(extra)` (L2528-2532)
+- Sa: tisfies REQ-026, REQ-045
 
-### fn `def cmd_patch(extra)` (L2524-2528)
-- Return: Result emitted by `cmd_patch` according to command contract.
+### fn `def cmd_patch(extra)` (L2540-2544)
+- Sa: tisfies REQ-026, REQ-045
 
-### fn `def cmd_changelog(extra)` (L2537-2568)
+### fn `def cmd_changelog(extra)` (L2553-2584)
 - Sa: tisfies REQ-018, REQ-040, REQ-041
 
-- var `COMMANDS = {` (L2571)
+- var `COMMANDS = {` (L2587)
 - Brief: Constant `COMMANDS` used by CLI runtime paths and policies.
-### fn `def print_command_help(name, width=None)` (L2643-2649)
+### fn `def print_command_help(name, width=None)` (L2659-2665)
 - Return: Result emitted by `print_command_help` according to command contract.
 
-### fn `def print_all_help()` (L2653-2687)
+### fn `def print_all_help()` (L2669-2703)
 - Return: Result emitted by `print_all_help` according to command contract.
 
-### fn `def main(argv=None, *, check_updates: bool = True)` (L2693-2743)
+### fn `def main(argv=None, *, check_updates: bool = True)` (L2709-2759)
 - Return: Result emitted by `main` according to command contract.
 
 ## Symbol Index
@@ -638,85 +638,85 @@ from urllib.request import Request, urlopen
 |`_bump_semver_version`|fn|priv|1500-1518|def _bump_semver_version(current_version, level)|
 |`_run_release_step`|fn|priv|1525-1545|def _run_release_step(level, step_name, action)|
 |`_create_release_commit_for_flow`|fn|priv|1550-1555|def _create_release_commit_for_flow(target_version)|
-|`_execute_release_flow`|fn|priv|1561-1607|def _execute_release_flow(level, changelog_args=None)|
-|`_run_release_command`|fn|priv|1613-1628|def _run_release_command(level, changelog_args=None)|
-|`_run_reset_with_help`|fn|priv|1634-1641|def _run_reset_with_help(base_args, extra)|
-|`_reject_extra_arguments`|fn|priv|1647-1653|def _reject_extra_arguments(extra, alias)|
-|`_parse_release_flags`|fn|priv|1659-1677|def _parse_release_flags(extra, alias)|
-|`_prepare_commit_message`|fn|priv|1683-1693|def _prepare_commit_message(extra, alias)|
-|`_build_conventional_message`|fn|priv|1700-1714|def _build_conventional_message(kind: str, extra, alias: ...|
-|`_run_conventional_commit`|fn|priv|1721-1726|def _run_conventional_commit(kind: str, alias: str, extra)|
-|`_execute_commit`|fn|priv|1733-1762|def _execute_commit(message, alias, allow_amend=True)|
-|`upgrade_self`|fn|pub|1766-1779|def upgrade_self()|
-|`remove_self`|fn|pub|1783-1786|def remove_self()|
-|`cmd_aa`|fn|pub|1791-1798|def cmd_aa(extra)|
-|`cmd_ra`|fn|pub|1803-1826|def cmd_ra(extra)|
-|`cmd_ar`|fn|pub|1831-1845|def cmd_ar(extra)|
-|`cmd_br`|fn|pub|1850-1853|def cmd_br(extra)|
-|`cmd_bd`|fn|pub|1858-1861|def cmd_bd(extra)|
-|`cmd_ck`|fn|pub|1866-1869|def cmd_ck(extra)|
-|`_ensure_commit_ready`|fn|priv|1874-1887|def _ensure_commit_ready(alias)|
-|`cmd_cm`|fn|pub|1892-1897|def cmd_cm(extra)|
-|`cmd_wip`|fn|pub|1902-1914|def cmd_wip(extra)|
-|`cmd_release`|fn|pub|1919-1941|def cmd_release(extra)|
-|`cmd_new`|fn|pub|1946-1949|def cmd_new(extra)|
-|`cmd_refactor`|fn|pub|1954-1957|def cmd_refactor(extra)|
-|`cmd_fix`|fn|pub|1962-1965|def cmd_fix(extra)|
-|`cmd_change`|fn|pub|1970-1973|def cmd_change(extra)|
-|`cmd_implement`|fn|pub|1978-1981|def cmd_implement(extra)|
-|`cmd_docs`|fn|pub|1986-1989|def cmd_docs(extra)|
-|`cmd_style`|fn|pub|1994-1997|def cmd_style(extra)|
-|`cmd_revert`|fn|pub|2002-2005|def cmd_revert(extra)|
-|`cmd_misc`|fn|pub|2010-2013|def cmd_misc(extra)|
-|`cmd_cover`|fn|pub|2018-2021|def cmd_cover(extra)|
-|`cmd_co`|fn|pub|2026-2029|def cmd_co(extra)|
-|`cmd_d`|fn|pub|2034-2041|def cmd_d(extra)|
-|`cmd_dcc`|fn|pub|2046-2049|def cmd_dcc(extra)|
-|`cmd_dccc`|fn|pub|2054-2057|def cmd_dccc(extra)|
-|`cmd_de`|fn|pub|2062-2065|def cmd_de(extra)|
-|`cmd_di`|fn|pub|2070-2073|def cmd_di(extra)|
-|`cmd_diyou`|fn|pub|2078-2081|def cmd_diyou(extra)|
-|`cmd_dime`|fn|pub|2086-2089|def cmd_dime(extra)|
-|`cmd_dwc`|fn|pub|2094-2097|def cmd_dwc(extra)|
-|`cmd_dwcc`|fn|pub|2102-2105|def cmd_dwcc(extra)|
-|`cmd_ed`|fn|pub|2110-2119|def cmd_ed(extra)|
-|`cmd_fe`|fn|pub|2124-2127|def cmd_fe(extra)|
-|`cmd_feall`|fn|pub|2132-2135|def cmd_feall(extra)|
-|`cmd_gp`|fn|pub|2140-2143|def cmd_gp(extra)|
-|`cmd_gr`|fn|pub|2148-2151|def cmd_gr(extra)|
-|`cmd_str`|fn|pub|2156-2185|def cmd_str(extra)|
-|`cmd_lb`|fn|pub|2190-2193|def cmd_lb(extra)|
-|`cmd_lg`|fn|pub|2198-2211|def cmd_lg(extra)|
-|`cmd_lh`|fn|pub|2216-2219|def cmd_lh(extra)|
-|`cmd_ll`|fn|pub|2224-2236|def cmd_ll(extra)|
-|`cmd_lm`|fn|pub|2241-2244|def cmd_lm(extra)|
-|`cmd_lt`|fn|pub|2249-2252|def cmd_lt(extra)|
-|`cmd_me`|fn|pub|2257-2260|def cmd_me(extra)|
-|`cmd_pl`|fn|pub|2265-2268|def cmd_pl(extra)|
-|`cmd_pt`|fn|pub|2273-2276|def cmd_pt(extra)|
-|`cmd_pu`|fn|pub|2281-2284|def cmd_pu(extra)|
-|`cmd_rf`|fn|pub|2289-2292|def cmd_rf(extra)|
-|`cmd_rmtg`|fn|pub|2297-2307|def cmd_rmtg(extra)|
-|`cmd_rmloc`|fn|pub|2312-2315|def cmd_rmloc(extra)|
-|`cmd_rmstg`|fn|pub|2320-2323|def cmd_rmstg(extra)|
-|`cmd_rmunt`|fn|pub|2328-2331|def cmd_rmunt(extra)|
-|`cmd_rs`|fn|pub|2336-2339|def cmd_rs(extra)|
-|`cmd_rssft`|fn|pub|2344-2347|def cmd_rssft(extra)|
-|`cmd_rsmix`|fn|pub|2352-2355|def cmd_rsmix(extra)|
-|`cmd_rshrd`|fn|pub|2360-2363|def cmd_rshrd(extra)|
-|`cmd_rsmrg`|fn|pub|2368-2371|def cmd_rsmrg(extra)|
-|`cmd_rskep`|fn|pub|2376-2379|def cmd_rskep(extra)|
-|`cmd_st`|fn|pub|2384-2387|def cmd_st(extra)|
-|`cmd_tg`|fn|pub|2392-2395|def cmd_tg(extra)|
-|`cmd_unstg`|fn|pub|2400-2403|def cmd_unstg(extra)|
-|`cmd_ver`|fn|pub|2408-2426|def cmd_ver(extra)|
-|`cmd_chver`|fn|pub|2431-2501|def cmd_chver(extra)|
-|`cmd_major`|fn|pub|2506-2510|def cmd_major(extra)|
-|`cmd_minor`|fn|pub|2515-2519|def cmd_minor(extra)|
-|`cmd_patch`|fn|pub|2524-2528|def cmd_patch(extra)|
-|`cmd_changelog`|fn|pub|2537-2568|def cmd_changelog(extra)|
-|`COMMANDS`|var|pub|2571||
-|`print_command_help`|fn|pub|2643-2649|def print_command_help(name, width=None)|
-|`print_all_help`|fn|pub|2653-2687|def print_all_help()|
-|`main`|fn|pub|2693-2743|def main(argv=None, *, check_updates: bool = True)|
+|`_execute_release_flow`|fn|priv|1567-1614|def _execute_release_flow(level, changelog_args=None)|
+|`_run_release_command`|fn|priv|1620-1635|def _run_release_command(level, changelog_args=None)|
+|`_run_reset_with_help`|fn|priv|1641-1648|def _run_reset_with_help(base_args, extra)|
+|`_reject_extra_arguments`|fn|priv|1654-1660|def _reject_extra_arguments(extra, alias)|
+|`_parse_release_flags`|fn|priv|1666-1684|def _parse_release_flags(extra, alias)|
+|`_prepare_commit_message`|fn|priv|1690-1700|def _prepare_commit_message(extra, alias)|
+|`_build_conventional_message`|fn|priv|1707-1721|def _build_conventional_message(kind: str, extra, alias: ...|
+|`_run_conventional_commit`|fn|priv|1728-1733|def _run_conventional_commit(kind: str, alias: str, extra)|
+|`_execute_commit`|fn|priv|1740-1769|def _execute_commit(message, alias, allow_amend=True)|
+|`upgrade_self`|fn|pub|1773-1786|def upgrade_self()|
+|`remove_self`|fn|pub|1790-1793|def remove_self()|
+|`cmd_aa`|fn|pub|1798-1805|def cmd_aa(extra)|
+|`cmd_ra`|fn|pub|1810-1833|def cmd_ra(extra)|
+|`cmd_ar`|fn|pub|1838-1852|def cmd_ar(extra)|
+|`cmd_br`|fn|pub|1857-1860|def cmd_br(extra)|
+|`cmd_bd`|fn|pub|1865-1868|def cmd_bd(extra)|
+|`cmd_ck`|fn|pub|1873-1876|def cmd_ck(extra)|
+|`_ensure_commit_ready`|fn|priv|1881-1894|def _ensure_commit_ready(alias)|
+|`cmd_cm`|fn|pub|1899-1904|def cmd_cm(extra)|
+|`cmd_wip`|fn|pub|1909-1921|def cmd_wip(extra)|
+|`cmd_release`|fn|pub|1926-1948|def cmd_release(extra)|
+|`cmd_new`|fn|pub|1953-1956|def cmd_new(extra)|
+|`cmd_refactor`|fn|pub|1961-1964|def cmd_refactor(extra)|
+|`cmd_fix`|fn|pub|1969-1972|def cmd_fix(extra)|
+|`cmd_change`|fn|pub|1977-1980|def cmd_change(extra)|
+|`cmd_implement`|fn|pub|1985-1988|def cmd_implement(extra)|
+|`cmd_docs`|fn|pub|1993-1996|def cmd_docs(extra)|
+|`cmd_style`|fn|pub|2001-2004|def cmd_style(extra)|
+|`cmd_revert`|fn|pub|2009-2012|def cmd_revert(extra)|
+|`cmd_misc`|fn|pub|2017-2020|def cmd_misc(extra)|
+|`cmd_cover`|fn|pub|2025-2028|def cmd_cover(extra)|
+|`cmd_co`|fn|pub|2033-2036|def cmd_co(extra)|
+|`cmd_d`|fn|pub|2041-2048|def cmd_d(extra)|
+|`cmd_dcc`|fn|pub|2053-2056|def cmd_dcc(extra)|
+|`cmd_dccc`|fn|pub|2061-2064|def cmd_dccc(extra)|
+|`cmd_de`|fn|pub|2069-2072|def cmd_de(extra)|
+|`cmd_di`|fn|pub|2077-2080|def cmd_di(extra)|
+|`cmd_diyou`|fn|pub|2085-2088|def cmd_diyou(extra)|
+|`cmd_dime`|fn|pub|2093-2096|def cmd_dime(extra)|
+|`cmd_dwc`|fn|pub|2101-2104|def cmd_dwc(extra)|
+|`cmd_dwcc`|fn|pub|2109-2112|def cmd_dwcc(extra)|
+|`cmd_ed`|fn|pub|2117-2126|def cmd_ed(extra)|
+|`cmd_fe`|fn|pub|2131-2134|def cmd_fe(extra)|
+|`cmd_feall`|fn|pub|2139-2142|def cmd_feall(extra)|
+|`cmd_gp`|fn|pub|2147-2150|def cmd_gp(extra)|
+|`cmd_gr`|fn|pub|2155-2158|def cmd_gr(extra)|
+|`cmd_str`|fn|pub|2163-2192|def cmd_str(extra)|
+|`cmd_lb`|fn|pub|2197-2200|def cmd_lb(extra)|
+|`cmd_lg`|fn|pub|2205-2218|def cmd_lg(extra)|
+|`cmd_lh`|fn|pub|2223-2226|def cmd_lh(extra)|
+|`cmd_ll`|fn|pub|2231-2243|def cmd_ll(extra)|
+|`cmd_lm`|fn|pub|2248-2251|def cmd_lm(extra)|
+|`cmd_lt`|fn|pub|2256-2259|def cmd_lt(extra)|
+|`cmd_me`|fn|pub|2264-2267|def cmd_me(extra)|
+|`cmd_pl`|fn|pub|2272-2275|def cmd_pl(extra)|
+|`cmd_pt`|fn|pub|2280-2283|def cmd_pt(extra)|
+|`cmd_pu`|fn|pub|2288-2291|def cmd_pu(extra)|
+|`cmd_rf`|fn|pub|2296-2299|def cmd_rf(extra)|
+|`cmd_rmtg`|fn|pub|2304-2314|def cmd_rmtg(extra)|
+|`cmd_rmloc`|fn|pub|2319-2322|def cmd_rmloc(extra)|
+|`cmd_rmstg`|fn|pub|2327-2330|def cmd_rmstg(extra)|
+|`cmd_rmunt`|fn|pub|2335-2338|def cmd_rmunt(extra)|
+|`cmd_rs`|fn|pub|2343-2346|def cmd_rs(extra)|
+|`cmd_rssft`|fn|pub|2351-2354|def cmd_rssft(extra)|
+|`cmd_rsmix`|fn|pub|2359-2362|def cmd_rsmix(extra)|
+|`cmd_rshrd`|fn|pub|2367-2370|def cmd_rshrd(extra)|
+|`cmd_rsmrg`|fn|pub|2375-2378|def cmd_rsmrg(extra)|
+|`cmd_rskep`|fn|pub|2383-2386|def cmd_rskep(extra)|
+|`cmd_st`|fn|pub|2391-2394|def cmd_st(extra)|
+|`cmd_tg`|fn|pub|2399-2402|def cmd_tg(extra)|
+|`cmd_unstg`|fn|pub|2407-2410|def cmd_unstg(extra)|
+|`cmd_ver`|fn|pub|2415-2433|def cmd_ver(extra)|
+|`cmd_chver`|fn|pub|2438-2508|def cmd_chver(extra)|
+|`cmd_major`|fn|pub|2516-2520|def cmd_major(extra)|
+|`cmd_minor`|fn|pub|2528-2532|def cmd_minor(extra)|
+|`cmd_patch`|fn|pub|2540-2544|def cmd_patch(extra)|
+|`cmd_changelog`|fn|pub|2553-2584|def cmd_changelog(extra)|
+|`COMMANDS`|var|pub|2587||
+|`print_command_help`|fn|pub|2659-2665|def print_command_help(name, width=None)|
+|`print_all_help`|fn|pub|2669-2703|def print_all_help()|
+|`main`|fn|pub|2709-2759|def main(argv=None, *, check_updates: bool = True)|
 

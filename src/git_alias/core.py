@@ -405,8 +405,8 @@ HELP_TEXTS = {
     "ll": "Print latest full commit hash.",
     "lm": "Print all merges.",
     "lt": "Print all tags.",
-    "major": "Release a new major version from the work branch.",
-    "minor": "Release a new minor version from the work branch.",
+    "major": "Release a new major version from the work branch. Options: --include-patch.",
+    "minor": "Release a new minor version from the work branch. Options: --include-patch.",
     "new": "Conventional commit new(module): description.",
     "implement": "Conventional commit implement(module): description.",
     "refactor": "Conventional commit refactor(module): description.",
@@ -1554,10 +1554,16 @@ def _create_release_commit_for_flow(target_version):
 
 
 ## @brief Execute `_execute_release_flow` runtime logic for Git-Alias CLI.
-# @details Executes `_execute_release_flow` using deterministic CLI control-flow and explicit error propagation.
-# @param level Input parameter consumed by `_execute_release_flow`.
-# @param changelog_args Input parameter consumed by `_execute_release_flow`.
-# @return Result emitted by `_execute_release_flow` according to command contract.
+# @details Orchestrates the full release pipeline for `major`, `minor`, and `patch` levels.
+#          Branch integration is level-dependent (REQ-045):
+#          - `patch`: merges `work` into `develop` and pushes `develop` only; skips `master`.
+#          - `major`/`minor`: merges `work` into `develop`, pushes `develop`, then merges
+#            `develop` into `master` and pushes `master`.
+#          Changelog flags always include `--force-write`; `patch` auto-adds `--include-patch`.
+# @param level Release level string: `"major"`, `"minor"`, or `"patch"`.
+# @param changelog_args Optional list of extra changelog flags forwarded alongside `--force-write`.
+# @return None; raises `ReleaseError` or `VersionDetectionError` on failure.
+# @satisfies REQ-026, REQ-045
 def _execute_release_flow(level, changelog_args=None):
     branches = _ensure_release_prerequisites()
     rules = get_version_rules()
@@ -1596,9 +1602,10 @@ def _execute_release_flow(level, changelog_args=None):
     _run_release_step(level, "checkout develop", lambda: cmd_co([develop_branch]))
     _run_release_step(level, "merge work into develop", lambda: cmd_me([work_branch]))
     _run_release_step(level, "push develop", lambda: run_git_cmd(["push", "origin", develop_branch]))
-    _run_release_step(level, "checkout master", lambda: cmd_co([master_branch]))
-    _run_release_step(level, "merge develop into master", lambda: cmd_me([develop_branch]))
-    _run_release_step(level, "push master", lambda: run_git_cmd(["push", "origin", master_branch]))
+    if level != "patch":
+        _run_release_step(level, "checkout master", lambda: cmd_co([master_branch]))
+        _run_release_step(level, "merge develop into master", lambda: cmd_me([develop_branch]))
+        _run_release_step(level, "push master", lambda: run_git_cmd(["push", "origin", master_branch]))
     _run_release_step(level, "return to work", lambda: cmd_co([work_branch]))
     _run_release_step(level, "show release details", lambda: cmd_de([]))
     _run_release_step(level, "push tags", lambda: cmd_pt([]))
@@ -2499,28 +2506,37 @@ def cmd_chver(extra):
     print(f"{action} completed: version is now {confirmed}.")
 
 
-## @brief Execute `cmd_major` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_major` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_major`.
-# @return Result emitted by `cmd_major` according to command contract.
+## @brief CLI entry-point for the `major` release subcommand.
+# @details Increments the major semver index (resets minor and patch to 0), merges and pushes
+#          to both configured `develop` and `master` branches, tags the release, and regenerates
+#          the changelog. Accepts optional `--include-patch` flag forwarded to changelog.
+# @param extra Iterable of CLI argument strings; accepted flag: `--include-patch`.
+# @return None; delegates to `_run_release_command("major", ...)`.
+# @satisfies REQ-026, REQ-045
 def cmd_major(extra):
     changelog_args = _parse_release_flags(extra, "major")
     _run_release_command("major", changelog_args=changelog_args)
 
 
-## @brief Execute `cmd_minor` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_minor` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_minor`.
-# @return Result emitted by `cmd_minor` according to command contract.
+## @brief CLI entry-point for the `minor` release subcommand.
+# @details Increments the minor semver index (resets patch to 0), merges and pushes to both
+#          configured `develop` and `master` branches, tags the release, and regenerates the
+#          changelog. Accepts optional `--include-patch` flag forwarded to changelog.
+# @param extra Iterable of CLI argument strings; accepted flag: `--include-patch`.
+# @return None; delegates to `_run_release_command("minor", ...)`.
+# @satisfies REQ-026, REQ-045
 def cmd_minor(extra):
     changelog_args = _parse_release_flags(extra, "minor")
     _run_release_command("minor", changelog_args=changelog_args)
 
 
-## @brief Execute `cmd_patch` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_patch` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_patch`.
-# @return Result emitted by `cmd_patch` according to command contract.
+## @brief CLI entry-point for the `patch` release subcommand.
+# @details Increments the patch semver index, merges and pushes to configured `develop` only
+#          (MUST NOT merge or push to `master`), tags the release, and regenerates the changelog
+#          with `--include-patch` automatically included even when not supplied by the user.
+# @param extra Iterable of CLI argument strings; accepted flag: `--include-patch`.
+# @return None; delegates to `_run_release_command("patch", ...)`.
+# @satisfies REQ-026, REQ-045
 def cmd_patch(extra):
     changelog_args = _parse_release_flags(extra, "patch")
     _run_release_command("patch", changelog_args=changelog_args)

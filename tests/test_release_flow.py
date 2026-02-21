@@ -123,6 +123,72 @@ class ReleaseFlowTest(unittest.TestCase):
                 core.cmd_patch(["--unexpected"])
         self.assertIn("accepts only --include-patch", err.getvalue())
 
+    def test_patch_release_skips_master_steps(self):
+        # patch level MUST NOT execute checkout master / merge develop into master / push master
+        steps = []
+
+        def record_step(level, step_name, action):
+            steps.append(step_name)
+
+        with mock.patch.object(
+            core,
+            "_ensure_release_prerequisites",
+            return_value={"master": "master", "develop": "develop", "work": "work"},
+        ), mock.patch.object(core, "get_version_rules", return_value=[("README.md", "x")]), mock.patch.object(
+            core, "_determine_canonical_version", return_value="1.2.3"
+        ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
+            core, "_run_release_step", side_effect=record_step
+        ):
+            core._execute_release_flow("patch")
+
+        self.assertNotIn("checkout master", steps)
+        self.assertNotIn("merge develop into master", steps)
+        self.assertNotIn("push master", steps)
+
+    def test_major_release_includes_master_steps(self):
+        # major level MUST execute checkout master / merge develop into master / push master
+        steps = []
+
+        def record_step(level, step_name, action):
+            steps.append(step_name)
+
+        with mock.patch.object(
+            core,
+            "_ensure_release_prerequisites",
+            return_value={"master": "master", "develop": "develop", "work": "work"},
+        ), mock.patch.object(core, "get_version_rules", return_value=[("README.md", "x")]), mock.patch.object(
+            core, "_determine_canonical_version", return_value="1.2.0"
+        ), mock.patch.object(core, "_bump_semver_version", return_value="2.0.0"), mock.patch.object(
+            core, "_run_release_step", side_effect=record_step
+        ):
+            core._execute_release_flow("major")
+
+        self.assertIn("checkout master", steps)
+        self.assertIn("merge develop into master", steps)
+        self.assertIn("push master", steps)
+
+    def test_minor_release_includes_master_steps(self):
+        # minor level MUST execute checkout master / merge develop into master / push master
+        steps = []
+
+        def record_step(level, step_name, action):
+            steps.append(step_name)
+
+        with mock.patch.object(
+            core,
+            "_ensure_release_prerequisites",
+            return_value={"master": "master", "develop": "develop", "work": "work"},
+        ), mock.patch.object(core, "get_version_rules", return_value=[("README.md", "x")]), mock.patch.object(
+            core, "_determine_canonical_version", return_value="1.2.0"
+        ), mock.patch.object(core, "_bump_semver_version", return_value="1.3.0"), mock.patch.object(
+            core, "_run_release_step", side_effect=record_step
+        ):
+            core._execute_release_flow("minor")
+
+        self.assertIn("checkout master", steps)
+        self.assertIn("merge develop into master", steps)
+        self.assertIn("push master", steps)
+
     def test_create_release_commit_for_flow_uses_release_amend_strategy(self):
         with mock.patch.object(core, "_ensure_commit_ready"), mock.patch.object(core, "_execute_commit") as execute_commit:
             core._create_release_commit_for_flow("2.0.0")
