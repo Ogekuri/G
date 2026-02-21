@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.42](https://github.com/Ogekuri/G/compare/v0.0.41..v0.0.42) - 2026-02-21
+### 🚜  Changes
+- *(core)* update release marker commit format [2026-02-21 11:25:21]
+
+### 📚  Documentation
+- *(core)* Review README.md.
+
 ## [0.0.41](https://github.com/Ogekuri/G/compare/v0.0.40..v0.0.41) - 2026-02-20
 ### 🐛  Bug Fixes
 - *(core)* workflow fix.
@@ -222,6 +229,7 @@
 ## [0.0.2](https://github.com/Ogekuri/G/compare/v0.0.1..v0.0.2) - 2025-12-18
 ### ⛰️  Features
 - *(core)* release version: 0.0.2
+- *(core)* release version: 0.0.1
 
 ### 🐛  Bug Fixes
 - *(core)* fix test according new code.
@@ -275,6 +283,7 @@
 - \[0.0.39\]: https://github.com/Ogekuri/G/releases/tag/v0.0.39
 - \[0.0.40\]: https://github.com/Ogekuri/G/releases/tag/v0.0.40
 - \[0.0.41\]: https://github.com/Ogekuri/G/releases/tag/v0.0.41
+- \[0.0.42\]: https://github.com/Ogekuri/G/releases/tag/v0.0.42
 
 [0.0.2]: https://github.com/Ogekuri/G/releases/tag/v0.0.2
 [0.0.3]: https://github.com/Ogekuri/G/compare/v0.0.2..v0.0.3
@@ -316,3 +325,4 @@
 [0.0.39]: https://github.com/Ogekuri/G/compare/v0.0.38..v0.0.39
 [0.0.40]: https://github.com/Ogekuri/G/compare/v0.0.39..v0.0.40
 [0.0.41]: https://github.com/Ogekuri/G/compare/v0.0.40..v0.0.41
+[0.0.42]: https://github.com/Ogekuri/G/compare/v0.0.41..v0.0.42
