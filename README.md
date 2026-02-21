@@ -1,6 +1,6 @@
 🚧 **DRAFT:** Preliminary Version 📝 - Work in Progress 🏗️ 🚧
 
-⚠️ **IMPORTANT NOTICE**: Created with **[useReq](https://github.com/Ogekuri/useReq)** 🤖✨ ⚠️
+⚠️ **IMPORTANT NOTICE**: Created with **[useReq/req](https://github.com/Ogekuri/useReq)** 🤖✨ ⚠️
 
 # G/Git-Alias CLI (0.0.41)
 
@@ -15,7 +15,7 @@
 <p align="center">
 <strong>Git-Alias CLI provides a command-line interface to replicate the Git aliases defined in this package.</strong><br>
 This allows them to be run both as a Python package (installed as <b>g</b> or <b>git-alias</b>) and directly using <b>uvx</b>.<br>
-This is a companion script for <b><a href="[#quick-start](https://github.com/Ogekuri/useReq)">useReq</a></b> app.
+This is a companion script for the <b><a href="https://github.com/Ogekuri/useReq">useReq</a></b> app.
 </p>
 
 <p align="center">
@@ -27,6 +27,7 @@ This is a companion script for <b><a href="[#quick-start](https://github.com/Oge
 
 
 ## Feature Highlights
+- Support [Conventional Commit Standards](https://www.conventionalcommits.org/en/v1.0.0/) compatible with [release-changelog-builder-action](https://github.com/mikepenz/release-changelog-builder-action).
 - Auto-amending `wip` command for day-to-day "work in progress" commits.
 - Common aliases for repetitive tasks like `add --all` (`aa`) and more.
 - Acts like a `.gitconfig` [alias] section, providing all standard Git commands with a fallback mechanism.
@@ -40,7 +41,7 @@ This is a companion script for <b><a href="[#quick-start](https://github.com/Oge
     - `revert`: Revert changes.
     - `misc`: Miscellaneous tasks.
 - Provides `major`, `minor`, and `patch` commands that auto-generate a `CHANGELOG.md`, create a new tag and commit, and release a new `x.y.z` version on the `master` branch.
-- Automatically bumps the release version number in the source code.
+- Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--force-write`, `--include-unreleased`, `--include-draft`, `--print-only`).
 - Self-upgrading feature.
 
 ## Quick Start
@@ -73,8 +74,8 @@ g --write-config
 
 ### Edit the `.g.conf` Configuration File
 
-- Customize your `.g.conf` file with your `master`, `develop`, and `work` branch names.
-- Add the necessary information to manage the auto-bumping feature.
+- Customize your `.g.conf` JSON file with `master`, `develop`, `work`, `editor`, and `default_module` values.
+- Configure `ver_rules` (pattern/regex pairs) to define which files `g ver`, `g chver`, and release commands read/update for version consistency.
 
 
 ### Work-in-Progress Commits
@@ -101,21 +102,25 @@ When your `work` branch is fully committed, release a new version with:
 g minor
 ```
 
-A new tag "v**X**.**Y+1**.**0**" will be automatically created, and the version number in the source code will be bumped.
+The command must run from the `work` branch with a clean working tree; it bumps versions per `ver_rules`, creates/retags an annotated `v<next>` tag, regenerates `CHANGELOG.md`, merges `work` -> `develop` -> `master`, and pushes branches and tags to `origin`.
 
-## Upgrading or Removing
+## Management Commands
 
 Upgrade or remove the Git-Alias CLI:
 
 - `g --upgrade` / `git-alias --upgrade`: Upgrades the tool to the latest version from the GitHub repository.
 - `g --remove` / `git-alias --remove`: Uninstalls the tool.
+- `g --ver` / `g --version` / `git-alias --version`: Prints the CLI version.
+- `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <alias>` for a single command.
 
 
 ## CLI Examples
 
 Some CLI examples:
 
-- `git-alias --help`: Prints an alphabetized list of aliases.
+- `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <alias>` for a single command.
 - `g lg --help`: Shows the help text for the `lg` alias.
 - `g cm "Message"`: Runs `git commit` with the provided message.
-
+- `g ver --verbose`: Verifies version consistency with detailed output.
+- `g chver 1.2.3`: Updates the project version to 1.2.3 using `ver_rules`.
+- `g changelog --print-only`: Prints the generated changelog without writing `CHANGELOG.md`.
