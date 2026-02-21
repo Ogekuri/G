@@ -52,6 +52,7 @@ This is a companion script for the <b><a href="https://github.com/Ogekuri/useReq
 - Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--include-patch`, `--force-write`, `--print-only`, `--disable-history`).
 - Self-upgrading feature.
 
+
 ## Quick Start
 
 ### Prerequisites
@@ -111,6 +112,7 @@ g minor
 ```
 
 The command must run from the `work` branch with a clean working tree; it bumps versions per `ver_rules`, creates/retags an annotated `v<next>` tag, regenerates `CHANGELOG.md`, merges `work` -> `develop` -> `master`, and pushes branches and tags to `origin`.
+
 
 ## Management Commands
 
