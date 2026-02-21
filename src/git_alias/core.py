@@ -380,6 +380,7 @@ HELP_TEXTS = {
     "ar": "Archive the configured master branch as zip file. Use tag as filename.",
     "bd": "Delete a local branch: git bd '<branch>'.",
     "br": "Create a new branch.",
+    "backup": "Merge configured work into develop and push develop to origin (shared release preflight checks).",
     "chver": "Change the project version to the provided semantic version.",
     "changelog": "Generate CHANGELOG.md grouped by minor releases. Options: --include-patch, --force-write, --print-only, --disable-history.",
     "ck": "Check differences.",
@@ -1769,6 +1770,29 @@ def _execute_release_flow(level, changelog_args=None):
     print(f"Release {target_version} completed successfully.")
 
 
+## @brief Execute `_execute_backup_flow` runtime logic for Git-Alias CLI.
+# @details Executes the `backup` workflow by reusing the release preflight checks, then
+#          fast-forward merges configured `work` into configured `develop`, pushes `develop`
+#          to its configured remote tracking branch, checks out back to `work`, and prints
+#          an explicit success confirmation.
+# @return None; raises `ReleaseError` on preflight or workflow failure.
+# @satisfies REQ-047, REQ-048, REQ-049
+def _execute_backup_flow():
+    branches = _ensure_release_prerequisites()
+    work_branch = branches["work"]
+    develop_branch = branches["develop"]
+
+    level = "backup"
+    print()
+    _run_release_step(level, "checkout develop", lambda: cmd_co([develop_branch]))
+    _run_release_step(level, "merge work into develop", lambda: cmd_me([work_branch]))
+    _run_release_step(level, "push develop", lambda: run_git_cmd(["push", "origin", develop_branch]))
+    _run_release_step(level, "return to work", lambda: cmd_co([work_branch]))
+    print(
+        f"Backup completed successfully: all local '{work_branch}' changes were merged and pushed to remote '{develop_branch}'."
+    )
+
+
 ## @brief Execute `_run_release_command` runtime logic for Git-Alias CLI.
 # @details Executes `_run_release_command` using deterministic CLI control-flow and explicit error propagation.
 # @param level Input parameter consumed by `_run_release_command`.
@@ -1788,6 +1812,18 @@ def _run_release_command(level, changelog_args=None):
         if err_text:
             print(err_text, file=sys.stderr)
         sys.exit(exc.returncode or 1)
+
+
+## @brief Execute `_run_backup_command` runtime logic for Git-Alias CLI.
+# @details Runs the `backup` workflow with the same error propagation strategy used by release commands.
+# @return None; exits with status 1 on `ReleaseError`.
+# @satisfies REQ-047, REQ-048, REQ-049
+def _run_backup_command():
+    try:
+        _execute_backup_flow()
+    except ReleaseError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
 
 
 ## @brief Execute `_run_reset_with_help` runtime logic for Git-Alias CLI.
@@ -2709,6 +2745,24 @@ def cmd_patch(extra):
     _run_release_command("patch", changelog_args=changelog_args)
 
 
+## @brief CLI entry-point for the `backup` workflow subcommand.
+# @details Runs the same preflight checks used by `major`/`minor`/`patch`, then integrates the
+#          configured `work` branch into the configured `develop` branch and pushes `develop`
+#          to its remote tracking branch before returning to `work`.
+# @param extra Iterable of CLI argument strings; accepted token: `--help` only.
+# @return None; delegates to `_run_backup_command()`.
+# @satisfies REQ-047, REQ-048, REQ-049
+def cmd_backup(extra):
+    args = _to_args(extra)
+    if args == ["--help"]:
+        print_command_help("backup")
+        return
+    if args:
+        print("git backup does not accept positional arguments.", file=sys.stderr)
+        sys.exit(1)
+    _run_backup_command()
+
+
 ## @brief CLI entry-point for the `changelog` subcommand.
 # @details Parses flags, delegates to `generate_changelog_document`, and writes or prints the result.
 #          Accepted flags: `--include-patch`, `--force-write`, `--print-only`,
@@ -2756,6 +2810,7 @@ def cmd_changelog(extra):
 COMMANDS = {
     "aa": cmd_aa,
     "ar": cmd_ar,
+    "backup": cmd_backup,
     "bd": cmd_bd,
     "br": cmd_br,
     "chver": cmd_chver,

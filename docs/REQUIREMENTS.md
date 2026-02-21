@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.70
+**Versione**: 0.71
 **Autore**: Francesco Rolando
 **Data**: 2026-02-21
 ## Indice
@@ -107,6 +107,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-21 | 0.68 | # History section scoped to changelog-body tags only; minor-only without --include-patch; adds latest patch with --include-patch |
 | 2026-02-21 | 0.69 | changelog # History links resolved from master-branch remote URL using only local git commands; added REQ-046 for URL resolver contract |
 | 2026-02-21 | 0.70 | Added `changelog --disable-history`; `# History` default-on with resolver-failure skip; link rendering constrained to deterministic templates from local git data |
+| 2026-02-21 | 0.71 | Added `backup` command to merge `work` into `develop` with the same preflight checks and error handling used by release workflows |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -169,7 +170,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-007**: Gli alias di fetch/pull/push devono eseguire le varianti generiche per il ramo corrente (`fe`, `feall`, `pl`, `pt`, `pu`), senza scorciatoie dedicate ai rami configurati.
 - **REQ-008**: Gli alias di ispezione devono fornire viste su branch, log e stato (`br`, `lb`, `ck`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`, `str`, `dwc`, `dcc`, `d`).
 - **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
-- **REQ-010**: Il sistema deve limitare i workflow di rilascio agli alias dedicati documentati (attualmente `major`, `minor`, `patch`) e non deve introdurre ulteriori scorciatoie automatiche oltre a quelli descritti.
+- **REQ-010**: The system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.
 - **REQ-011**: Gli alias di reset e pulizia devono applicare le modalità di reset (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`) e le pulizie dello working tree (`rmloc`, `rmstg`, `rmunt`). I comandi di reset (`rs*`) devono stampare il testo di help dedicato quando invocati con `--help`, senza dipendere da alias separati.
 - **REQ-012**: Gli alias di tagging e archiviazione devono gestire la creazione di tag annotati (`tg`), la rimozione locale/remota (`rmtg`), la visualizzazione (`lt`) e l'archiviazione del ramo `master` in tar.gz (`ar`).
 - **REQ-013**: L'alias `ed` deve consentire l'apertura di file arbitrari usando il comando definito dal parametro `editor` nel file `.g.conf` (default `edit`), segnalando errore se non viene passato alcun percorso.
@@ -209,6 +210,9 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-038**: The visual diff aliases MUST include `dwcc` mapped to `git difftool -d HEAD~1` (working tree vs penultimate commit) and `dccc` mapped to `git difftool -d HEAD~2 HEAD` (third-last vs last commit), and both aliases MUST expose explicit help text in global and per-command help outputs.
 - **REQ-039**: Every command `<command>` present in the CLI command dispatch map MUST be implemented by a Python function named exactly `cmd_<command>`, and the dispatch entry for `<command>` MUST reference that exact function symbol.
 - **REQ-045**: The `patch` command MUST merge and push to configured `develop` only and MUST NOT merge to or push `master`; the `major` and `minor` commands MUST merge and push to both `develop` and `master` in order.
+- **REQ-047**: The `backup` command MUST enforce the same preflight checks and error reporting used by the `major`/`minor`/`patch` workflows, including: current branch equals configured `work`, clean working tree, empty index, and remote-update checks for configured `develop` and `master`.
+- **REQ-048**: The `backup` command MUST merge the configured local `work` branch into the configured local `develop` branch, and MUST push the updated `develop` branch to its configured remote tracking branch.
+- **REQ-049**: On success, the `backup` command MUST checkout back to configured `work` and MUST print a success message stating that all local `work` changes were merged and pushed to the configured remote `develop`.
 
 ### 3.3 Struttura File Progetto
 ```

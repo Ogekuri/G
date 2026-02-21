@@ -218,7 +218,7 @@
         - `cmd_rshrd(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py:2327`]
         - `cmd_rsmrg(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py:2335`]
         - `cmd_rskep(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py:2343`]
-        - `_run_reset_with_help(...)`: reset helper [`src/git_alias/core.py:1601`]
+        - `_run_reset_with_help(...)`: reset helper [`src/git_alias/core.py:1834`]
           - `_to_args(...)`
           - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`
         - `cmd_st(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2351`]
@@ -242,10 +242,10 @@
           - `_read_version_file_text(...)`
           - `_replace_versions_in_text(...)`
           - `_determine_canonical_version(...)` (verification pass; reuses prepared contexts and cache)
-        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2656`]
+        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2719`]
           - `_parse_release_flags(...)` -> `_to_args(...)`
           - `_run_release_command(...)`
-            - `_execute_release_flow(...)` [`src/git_alias/core.py:1697`]
+            - `_execute_release_flow(...)` [`src/git_alias/core.py:1725`]
               - `_ensure_release_prerequisites(...)`
                 - `get_branch(...)` -> `get_config_value(...)`
                 - `_local_branch_exists(...)` -> `_ref_exists(...)`
@@ -277,9 +277,18 @@
                 - `cmd_co(...)` (return to work)
                 - `cmd_de(...)`
                 - `cmd_pt(...)`
-        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2668`]
-        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/push steps [`src/git_alias/core.py:2707`]
-        - `cmd_changelog(...)`: changelog generation flow with optional `--disable-history` gating [`src/git_alias/core.py:2721`]
+        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2731`]
+        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/push steps [`src/git_alias/core.py:2743`]
+        - `cmd_backup(...)`: backup workflow entry [`src/git_alias/core.py:2755`]
+          - `_run_backup_command(...)` [`src/git_alias/core.py:1821`]
+            - `_execute_backup_flow(...)`: merge/push work->develop, then return to work [`src/git_alias/core.py:1780`]
+              - `_ensure_release_prerequisites(...)`: shared release preflight checks and error contracts
+              - `_run_release_step(...)` shared step wrapper:
+                - `cmd_co(...)` (checkout develop)
+                - `cmd_me(...)` (merge work into develop)
+                - `run_git_cmd(...)` (push develop)
+                - `cmd_co(...)` (return to work)
+        - `cmd_changelog(...)`: changelog generation flow with optional `--disable-history` gating [`src/git_alias/core.py:2775`]
           - `print_command_help(...)`
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
