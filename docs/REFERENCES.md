@@ -383,8 +383,8 @@ then returns extracted type/scope/breaking/description fields for changelog rend
 ### fn `def _format_changelog_description(desc: str) -> str` `priv` (L1027-1037)
 - Brief: Execute `_format_changelog_description` runtime logic for Git-Alias CLI.
 - Details: Normalizes a commit description for markdown list rendering.
-Multiline descriptions are preserved with four-space indentation on continuation lines
-to keep markdown list-item alignment deterministic.
+Multiline descriptions are preserved line-by-line without injecting continuation
+indentation, preventing accidental nested-list rendering in output markdown.
 - Param: desc Parsed commit description.
 - Return: Markdown-ready description text.
 

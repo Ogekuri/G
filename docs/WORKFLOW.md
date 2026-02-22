@@ -319,7 +319,7 @@
               - `_is_release_marker_commit(...)` -> `_extract_release_version(...)`
               - `categorize_commit(...)`
                 - `parse_conventional_commit(...)`
-                - `_format_changelog_description(...)`: emits four-space continuation indentation for stable markdown list-item alignment
+                - `_format_changelog_description(...)`: preserves multiline descriptions without injecting continuation indentation to avoid unintended nested-list rendering
             - `build_history_section(...)`: receives only changelog-body tags (minor tags; plus latest patch when `include_patch=True`); executed only when `disable_history=False`
               - `_canonical_origin_base(...)`: same call-tree as above [`src/git_alias/core.py:1192`]
               - `get_release_page_url(...)`
