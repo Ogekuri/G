@@ -331,12 +331,14 @@ class ChangelogCommandTest(unittest.TestCase):
     def test_categorize_commit_formats_multiline_with_blank_line(self):
         section, line = core.categorize_commit("change(core): first line\n\nCo-authored-by: Copilot <x@y.z>")
         self.assertEqual(section, "Changes")
-        self.assertEqual(line, "- first line Co-authored-by: Copilot <x@y.z> *(core)*")
+        self.assertEqual(line, "- first line *(core)*")
 
     def test_categorize_commit_flattens_crlf_and_blank_lines(self):
-        section, line = core.categorize_commit("change(core): first line\r\n\r\nsecond line")
+        section, line = core.categorize_commit(
+            "change(core): first line\r\n\r\nCo-authored-by: Copilot <x@y.z>\r\nthird line"
+        )
         self.assertEqual(section, "Changes")
-        self.assertEqual(line, "- first line second line *(core)*")
+        self.assertEqual(line, "- first line third line *(core)*")
 
     def test_git_log_subjects_reads_full_commit_messages(self):
         payload = "fix(core)!: first line\n\nsecond line" + core.RECORD

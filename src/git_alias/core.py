@@ -1020,13 +1020,14 @@ def parse_conventional_commit(message: str) -> Optional[Tuple[str, Optional[str]
 
 ## @brief Execute `_format_changelog_description` runtime logic for Git-Alias CLI.
 # @details Normalizes a commit description for markdown list rendering.
-#          Removes empty lines and flattens CR/LF-separated lines into a single space-delimited
-#          description to keep each changelog bullet entry on one markdown line.
+#          Removes `Co-authored-by:` trailer lines, drops empty lines, and flattens CR/LF-separated
+#          lines into a single space-delimited description to keep each changelog bullet on one line.
 # @param desc Parsed commit description.
 # @return Markdown-ready description text.
 def _format_changelog_description(desc: str) -> str:
     lines = [line.strip() for line in desc.strip().splitlines()]
-    non_empty_lines = [line for line in lines if line]
+    filtered_lines = [line for line in lines if not re.match(r"^Co-authored-by:.*$", line)]
+    non_empty_lines = [line for line in filtered_lines if line]
     if not non_empty_lines:
         return ""
     return " ".join(non_empty_lines)
