@@ -12,7 +12,6 @@ permissions:
 
 jobs:
   build-release:
-    if: ${{ github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -23,10 +22,12 @@ jobs:
 
       - name: Check if tag is on master
         run: |
-          # Controlla se il tag (GITHUB_REF) è contenuto nel branch master
+          # Usiamo l'hash del commit (GITHUB_SHA) per evitare problemi di nomi di tag simili
           git fetch origin master
-          if ! git branch -r --contains ${{ github.ref }} | grep -q "origin/master"; then
-            echo "Tag ${{ github.ref }} is not on master branch. Aborting release."
+          if git branch -r --contains ${GITHUB_SHA} | grep -q "origin/master"; then
+            echo "✅ Tag ${{ github.ref }} is on master branch. Proceeding with release."
+          else
+            echo "❌ Tag ${{ github.ref }} is not on master branch. Aborting release."
             exit 1
           fi
 
