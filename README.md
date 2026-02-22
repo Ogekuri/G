@@ -55,6 +55,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
   | major | work -> develop -> master | Minor versions only |
 
 - Provides `backup` command to run release preflight checks, merge `work` into `develop`, push `develop`, and return to `work`.
+- Provides worktree aliases: `wt` (`git worktree list`), `wtl` (`git worktree list ...`), `wtp` (`git worktree prune ...`), and `wtr` (`git worktree remove ...`) with full argument passthrough.
 - Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--include-patch`, `--force-write`, `--print-only`, `--disable-history`).
 - Self-upgrading feature.
 
@@ -144,6 +145,8 @@ Some CLI examples:
 - `g cm "Message"`: Runs `git commit` with the provided message.
 - `g new api: add endpoint`: Creates `new(api): add endpoint`; omit `api:` to use `.g.conf.default_module`.
 - `g backup`: Merges configured `work` into `develop`, pushes `develop`, and checks out back to `work`.
+- `g wt`: Runs `git worktree list`.
+- `g wtr -f ../repo-worktree`: Runs `git worktree remove -f ../repo-worktree`.
 - `g ver --verbose`: Verifies version consistency with detailed output.
 - `g chver 1.2.3`: Updates the project version to 1.2.3 using `ver_rules`.
 - `g changelog --print-only`: Prints the generated changelog without writing `CHANGELOG.md`.

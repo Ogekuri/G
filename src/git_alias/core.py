@@ -438,6 +438,10 @@ HELP_TEXTS = {
     "st": "Print current GIT status.",
     "tg": "Create a new annotate tag. Syntax: git tg <description> <tag>.",
     "unstg": "Un-stage a file from commit: git unstg '<filename>'. Unstage all files with: git unstg *.",
+    "wt": "List worktrees. Syntax: git wt [<git worktree list args>].",
+    "wtl": "List worktrees with optional verbosity/porcelain flags. Syntax: git wtl [-v|--porcelain [-z]] [args].",
+    "wtp": "Prune stale worktree metadata. Syntax: git wtp [-n] [-v] [--expire <expire>] [args].",
+    "wtr": "Remove a worktree. Syntax: git wtr [-f] <worktree> [args].",
     "wip": "Commit work in progress with an automatic message and the same checks as cm.",
     "ver": "Verify version consistency across configured files. Options: --verbose, --debug.",
     "str": "Display all unique remotes and show detailed status for each.",
@@ -2669,6 +2673,38 @@ def cmd_unstg(extra):
     return run_git_cmd(["reset", "--mixed", "--"], extra)
 
 
+## @brief Execute `cmd_wt` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_wt` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_wt`.
+# @return Result emitted by `cmd_wt` according to command contract.
+def cmd_wt(extra):
+    return run_git_cmd(["worktree", "list"], extra)
+
+
+## @brief Execute `cmd_wtl` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_wtl` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_wtl`.
+# @return Result emitted by `cmd_wtl` according to command contract.
+def cmd_wtl(extra):
+    return run_git_cmd(["worktree", "list"], extra)
+
+
+## @brief Execute `cmd_wtp` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_wtp` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_wtp`.
+# @return Result emitted by `cmd_wtp` according to command contract.
+def cmd_wtp(extra):
+    return run_git_cmd(["worktree", "prune"], extra)
+
+
+## @brief Execute `cmd_wtr` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_wtr` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_wtr`.
+# @return Result emitted by `cmd_wtr` according to command contract.
+def cmd_wtr(extra):
+    return run_git_cmd(["worktree", "remove"], extra)
+
+
 ## @brief Execute `cmd_ver` runtime logic for Git-Alias CLI.
 # @details Executes `cmd_ver` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_ver`.
@@ -2941,6 +2977,10 @@ COMMANDS = {
     "st": cmd_st,
     "tg": cmd_tg,
     "unstg": cmd_unstg,
+    "wt": cmd_wt,
+    "wtl": cmd_wtl,
+    "wtp": cmd_wtp,
+    "wtr": cmd_wtr,
     "wip": cmd_wip,
     "ver": cmd_ver,
     "style": cmd_style,

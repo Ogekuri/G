@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.75
+**Versione**: 0.76
 **Autore**: Francesco Rolando
 **Data**: 2026-02-22
 ## Indice
@@ -112,6 +112,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-22 | 0.73 | Updated release push contract for `patch`/`minor`/`major` to require branch push with `--tags` |
 | 2026-02-22 | 0.74 | Updated `lt` command contract to print containing branches for each tag |
 | 2026-02-22 | 0.75 | Updated changelog conventional-commit parsing to support breaking markers and multiline descriptions |
+| 2026-02-22 | 0.76 | Added worktree aliases `wt`, `wtl`, `wtp`, and `wtr` with full git-argument passthrough |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -220,6 +221,10 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-048**: The `backup` command MUST merge the configured local `work` branch into the configured local `develop` branch, and MUST push the updated `develop` branch to its configured remote tracking branch.
 - **REQ-049**: On success, the `backup` command MUST checkout back to configured `work` and MUST print a success message stating that all local `work` changes were merged and pushed to the configured remote `develop`.
 - **REQ-071**: When a CLI command is added, modified, or removed in the dispatch map, `README.md` MUST be updated for user-facing usage changes; internal logic-only refactors with unchanged command behavior MUST NOT require README updates.
+- **REQ-074**: The alias `wt` MUST execute `git worktree list`, and `wtl` MUST execute `git worktree list` while forwarding all provided arguments unchanged.
+- **REQ-075**: The alias `wtl` MUST accept and forward `-v`, `--porcelain`, and `-z` options as native `git worktree list` arguments without CLI-side transformation.
+- **REQ-076**: The alias `wtp` MUST execute `git worktree prune` and MUST forward `-n`, `-v`, `--expire <expire>`, and additional git-compatible arguments unchanged.
+- **REQ-077**: The alias `wtr` MUST execute `git worktree remove` and MUST forward `-f`, required `<worktree>`, and additional git-compatible arguments unchanged.
 
 ### 3.3 Struttura File Progetto
 ```
