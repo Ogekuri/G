@@ -876,8 +876,8 @@ RECORD = "\x1e"
 
 _CONVENTIONAL_RE = re.compile(
     r"^(?P<type>new|fix|change|implement|refactor|docs|style|revert|misc|cover)"
-    r"(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?:\s+(?P<desc>.+)$",
-    re.IGNORECASE,
+    r"(?:\((?P<scope>[^)\r\n]+)\))?(?P<breaking>!)?:\s+(?P<desc>.+)$",
+    re.IGNORECASE | re.DOTALL,
 )
 ## @brief Constant `_MODULE_PREFIX_RE` used by CLI runtime paths and policies.
 
@@ -980,11 +980,12 @@ def list_tags_sorted_by_date(repo_root: Path, merged_ref: Optional[str] = None) 
 
 ## @brief Execute `git_log_subjects` runtime logic for Git-Alias CLI.
 # @details Executes `git_log_subjects` using deterministic CLI control-flow and explicit error propagation.
+#          Reads full commit messages (subject + body) to preserve multiline conventional descriptions.
 # @param repo_root Input parameter consumed by `git_log_subjects`.
 # @param rev_range Input parameter consumed by `git_log_subjects`.
 # @return Result emitted by `git_log_subjects` according to command contract.
 def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]:
-    fmt = f"%s{RECORD}"
+    fmt = f"%B{RECORD}"
     out = run_git_text(
         ["log", "--no-merges", f"--pretty=format:{fmt}", rev_range],
         cwd=repo_root,
@@ -995,20 +996,56 @@ def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]:
     return [x.strip() for x in out.split(RECORD) if x.strip()]
 
 
-## @brief Execute `categorize_commit` runtime logic for Git-Alias CLI.
-# @details Parses a conventional commit subject line and maps it to a changelog section and formatted entry line.
-# Entry line format: `- <description> *(<scope>)*` when scope is present; `- <description>` otherwise.
-# @param subject Conventional commit subject string (e.g. `type(scope): description`).
-# @return Tuple `(section, line)`: `section` is the changelog section name or `None` if type is unmapped or ignored; `line` is the formatted entry string or `""` when section is `None`.
-def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
-    match = _CONVENTIONAL_RE.match(subject.strip())
+## @brief Execute `parse_conventional_commit` runtime logic for Git-Alias CLI.
+# @details Parses a conventional-commit header with optional scope and optional breaking marker (`!`),
+#          then returns extracted type/scope/breaking/description fields for changelog rendering.
+# @param message Raw commit message text (subject and optional body).
+# @return Tuple `(type, scope, breaking, description)` when message is parseable; otherwise `None`.
+def parse_conventional_commit(message: str) -> Optional[Tuple[str, Optional[str], bool, str]]:
+    match = _CONVENTIONAL_RE.match(message.strip())
     if not match:
-        return (None, "")
+        return None
     ctype = match.group("type").lower()
     scope = match.group("scope")
+    breaking = bool(match.group("breaking"))
     desc = match.group("desc").strip()
+    if not desc:
+        return None
+    return (ctype, scope, breaking, desc)
+
+
+## @brief Execute `_format_changelog_description` runtime logic for Git-Alias CLI.
+# @details Normalizes a commit description for markdown list rendering.
+#          Multiline descriptions are preserved with two-space indentation on continuation lines.
+# @param desc Parsed commit description.
+# @return Markdown-ready description text.
+def _format_changelog_description(desc: str) -> str:
+    lines = [line.strip() for line in desc.strip().splitlines()]
+    if not lines:
+        return ""
+    head = lines[0]
+    if len(lines) == 1:
+        return head
+    tail = "\n".join(f"  {line}" if line else "  " for line in lines[1:])
+    return f"{head}\n{tail}"
+
+
+## @brief Execute `categorize_commit` runtime logic for Git-Alias CLI.
+# @details Parses a conventional commit message and maps it to a changelog section and formatted entry line.
+#          Entry format: `- <description> *(<scope>)*` when scope is present; `- <description>` otherwise.
+#          When the breaking marker is present, description is prefixed with `BREAKING CHANGE: `.
+# @param subject Conventional commit message string.
+# @return Tuple `(section, line)`: `section` is the changelog section name or `None` if type is unmapped or ignored; `line` is the formatted entry string or `""` when section is `None`.
+def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
+    parsed = parse_conventional_commit(subject)
+    if not parsed:
+        return (None, "")
+    ctype, scope, breaking, desc = parsed
+    desc_text = _format_changelog_description(desc)
+    if breaking:
+        desc_text = f"BREAKING CHANGE: {desc_text}"
     scope_text = f" *({scope})*" if scope else ""
-    line = f"- {desc}{scope_text}"
+    line = f"- {desc_text}{scope_text}"
     mapping = {
         "new": "Features",
         "implement": "Implementations",

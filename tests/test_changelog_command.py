@@ -295,6 +295,50 @@ class ChangelogCommandTest(unittest.TestCase):
         self.assertEqual(section, "Implementations")
         self.assertEqual(line, "- Add implementation command *(core)*")
 
+    def test_parse_conventional_commit_accepts_all_requested_prefix_variants(self):
+        types = ["change", "cover", "docs", "fix", "implement", "misc", "new", "refactor", "revert", "style"]
+        for ctype in types:
+            for module in [None, "core"]:
+                for breaking in [False, True]:
+                    header = ctype
+                    if module:
+                        header += f"({module})"
+                    if breaking:
+                        header += "!"
+                    parsed = core.parse_conventional_commit(f"{header}: description")
+                    with self.subTest(header=header):
+                        self.assertIsNotNone(parsed)
+                        parsed_type, parsed_module, parsed_breaking, parsed_desc = parsed
+                        self.assertEqual(parsed_type, ctype)
+                        self.assertEqual(parsed_module, module)
+                        self.assertEqual(parsed_breaking, breaking)
+                        self.assertEqual(parsed_desc, "description")
+
+    def test_parse_conventional_commit_extracts_multiline_description(self):
+        parsed = core.parse_conventional_commit("fix(core)!: first line\nsecond line")
+        self.assertEqual(parsed, ("fix", "core", True, "first line\nsecond line"))
+
+    def test_categorize_commit_formats_breaking_change_with_scope(self):
+        section, line = core.categorize_commit("fix(core)!: first line")
+        self.assertEqual(section, "Bug Fixes")
+        self.assertEqual(line, "- BREAKING CHANGE: first line *(core)*")
+
+    def test_categorize_commit_formats_multiline_description(self):
+        section, line = core.categorize_commit("change(core)!: first line\nsecond line")
+        self.assertEqual(section, "Changes")
+        self.assertEqual(line, "- BREAKING CHANGE: first line\n  second line *(core)*")
+
+    def test_git_log_subjects_reads_full_commit_messages(self):
+        payload = "fix(core)!: first line\n\nsecond line" + core.RECORD
+        with mock.patch.object(core, "run_git_text", return_value=payload) as run_git_text:
+            messages = core.git_log_subjects(Path("/tmp"), "v1.0.0..v1.1.0")
+        self.assertEqual(messages, ["fix(core)!: first line\n\nsecond line"])
+        run_git_text.assert_called_once_with(
+            ["log", "--no-merges", f"--pretty=format:%B{core.RECORD}", "v1.0.0..v1.1.0"],
+            cwd=Path("/tmp"),
+            check=False,
+        )
+
     def test_generate_section_renders_implementations_header_with_icon(self):
         with mock.patch.object(
             core,
