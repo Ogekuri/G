@@ -1718,6 +1718,10 @@ def _create_release_commit_for_flow(target_version):
 #          - `major`/`minor`: merges `work` into `develop`, pushes `develop`, then merges
 #            `develop` into `master` and pushes `master`.
 #          Changelog flags always include `--force-write`; `patch` auto-adds `--include-patch`.
+#          A temporary local `v<target>` tag is created on `work` only to generate changelog and
+#          deleted immediately after changelog generation. The definitive `v<target>` tag is then
+#          created on `develop` (`patch`) or `master` (`major`/`minor`) immediately before push
+#          with `--tags`.
 # @param level Release level string: `"major"`, `"minor"`, or `"patch"`.
 # @param changelog_args Optional list of extra changelog flags forwarded alongside `--force-write`.
 # @return None; raises `ReleaseError` or `VersionDetectionError` on failure.
@@ -1731,6 +1735,7 @@ def _execute_release_flow(level, changelog_args=None):
     current_version = _determine_canonical_version(root, rules)
     target_version = _bump_semver_version(current_version, level)
     release_message = f"release: Release version {target_version}"
+    release_tag = f"v{target_version}"
     changelog_flags = ["--force-write"]
     if level == "patch" and "--include-patch" not in changelog_flags:
         changelog_flags.append("--include-patch")
@@ -1743,15 +1748,11 @@ def _execute_release_flow(level, changelog_args=None):
     _run_release_step(level, "update versions", lambda: cmd_chver([target_version]))
     _run_release_step(level, "stage files", lambda: run_git_cmd(["add", "--all"]))
     _run_release_step(level, "create release commit", lambda: _create_release_commit_for_flow(target_version))
-    _run_release_step(level, "tag release", lambda: cmd_tg([release_message, f"v{target_version}"]))
+    _run_release_step(level, "create temporary changelog tag", lambda: cmd_tg([release_message, release_tag]))
     _run_release_step(level, "regenerate changelog", lambda: cmd_changelog(changelog_flags))
+    _run_release_step(level, "delete temporary changelog tag", lambda: run_git_cmd(["tag", "--delete", release_tag]))
     _run_release_step(level, "stage changelog", lambda: run_git_cmd(["add", "CHANGELOG.md"]))
     _run_release_step(level, "amend release commit", lambda: run_git_cmd(["commit", "--amend", "--no-edit"]))
-    _run_release_step(
-        level,
-        "retag release",
-        lambda: run_git_cmd(["tag", "--force", "-a", f"v{target_version}", "-m", release_message]),
-    )
 
     work_branch = branches["work"]
     develop_branch = branches["develop"]
@@ -1759,14 +1760,17 @@ def _execute_release_flow(level, changelog_args=None):
 
     _run_release_step(level, "checkout develop", lambda: cmd_co([develop_branch]))
     _run_release_step(level, "merge work into develop", lambda: cmd_me([work_branch]))
-    _run_release_step(level, "push develop", lambda: run_git_cmd(["push", "origin", develop_branch]))
-    if level != "patch":
+    if level == "patch":
+        _run_release_step(level, "tag release on develop", lambda: cmd_tg([release_message, release_tag]))
+        _run_release_step(level, "push develop with tags", lambda: run_git_cmd(["push", "origin", develop_branch, "--tags"]))
+    else:
+        _run_release_step(level, "push develop", lambda: run_git_cmd(["push", "origin", develop_branch]))
         _run_release_step(level, "checkout master", lambda: cmd_co([master_branch]))
         _run_release_step(level, "merge develop into master", lambda: cmd_me([develop_branch]))
-        _run_release_step(level, "push master", lambda: run_git_cmd(["push", "origin", master_branch]))
+        _run_release_step(level, "tag release on master", lambda: cmd_tg([release_message, release_tag]))
+        _run_release_step(level, "push master with tags", lambda: run_git_cmd(["push", "origin", master_branch, "--tags"]))
     _run_release_step(level, "return to work", lambda: cmd_co([work_branch]))
     _run_release_step(level, "show release details", lambda: cmd_de([]))
-    _run_release_step(level, "push tags", lambda: cmd_pt([]))
     print(f"Release {target_version} completed successfully.")
 
 
@@ -2711,8 +2715,9 @@ def cmd_chver(extra):
 
 ## @brief CLI entry-point for the `major` release subcommand.
 # @details Increments the major semver index (resets minor and patch to 0), merges and pushes
-#          to both configured `develop` and `master` branches, tags the release, and regenerates
-#          the changelog. Accepts optional `--include-patch` flag forwarded to changelog.
+#          to both configured `develop` and `master` branches, regenerates changelog via a
+#          temporary local tag on `work`, and creates the definitive release tag on `master`
+#          immediately before pushing `master` with `--tags`.
 # @param extra Iterable of CLI argument strings; accepted flag: `--include-patch`.
 # @return None; delegates to `_run_release_command("major", ...)`.
 # @satisfies REQ-026, REQ-045
@@ -2723,8 +2728,9 @@ def cmd_major(extra):
 
 ## @brief CLI entry-point for the `minor` release subcommand.
 # @details Increments the minor semver index (resets patch to 0), merges and pushes to both
-#          configured `develop` and `master` branches, tags the release, and regenerates the
-#          changelog. Accepts optional `--include-patch` flag forwarded to changelog.
+#          configured `develop` and `master` branches, regenerates changelog via a temporary local
+#          tag on `work`, and creates the definitive release tag on `master` immediately before
+#          pushing `master` with `--tags`.
 # @param extra Iterable of CLI argument strings; accepted flag: `--include-patch`.
 # @return None; delegates to `_run_release_command("minor", ...)`.
 # @satisfies REQ-026, REQ-045
@@ -2735,8 +2741,9 @@ def cmd_minor(extra):
 
 ## @brief CLI entry-point for the `patch` release subcommand.
 # @details Increments the patch semver index, merges and pushes to configured `develop` only
-#          (MUST NOT merge or push to `master`), tags the release, and regenerates the changelog
-#          with `--include-patch` automatically included even when not supplied by the user.
+#          (MUST NOT merge or push to `master`), regenerates changelog via a temporary local tag
+#          on `work`, and creates the definitive release tag on `develop` immediately before
+#          pushing `develop` with `--tags`; `--include-patch` is auto-included.
 # @param extra Iterable of CLI argument strings; accepted flag: `--include-patch`.
 # @return None; delegates to `_run_release_command("patch", ...)`.
 # @satisfies REQ-026, REQ-045

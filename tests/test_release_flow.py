@@ -10,7 +10,7 @@ class ReleaseFlowTest(unittest.TestCase):
     def setUp(self):
         core.CONFIG.update(core.DEFAULT_CONFIG)
 
-    def test_release_flow_pushes_tags_last(self):
+    def test_patch_release_pushes_develop_with_tags(self):
         steps = []
 
         def record_step(level, step_name, action):
@@ -28,7 +28,8 @@ class ReleaseFlowTest(unittest.TestCase):
             core._execute_release_flow("patch")
 
         self.assertTrue(steps)
-        self.assertEqual(steps[-1], "push tags")
+        self.assertIn("push develop with tags", steps)
+        self.assertNotIn("push tags", steps)
 
     def test_release_step_formats_output_with_level(self):
         buffer = io.StringIO()
@@ -124,7 +125,7 @@ class ReleaseFlowTest(unittest.TestCase):
         self.assertIn("accepts only --include-patch", err.getvalue())
 
     def test_patch_release_skips_master_steps(self):
-        # patch level MUST NOT execute checkout master / merge develop into master / push master
+        # patch level MUST NOT execute checkout master / merge develop into master / tag/push master
         steps = []
 
         def record_step(level, step_name, action):
@@ -143,10 +144,11 @@ class ReleaseFlowTest(unittest.TestCase):
 
         self.assertNotIn("checkout master", steps)
         self.assertNotIn("merge develop into master", steps)
-        self.assertNotIn("push master", steps)
+        self.assertNotIn("tag release on master", steps)
+        self.assertNotIn("push master with tags", steps)
 
     def test_major_release_includes_master_steps(self):
-        # major level MUST execute checkout master / merge develop into master / push master
+        # major level MUST execute checkout master / merge develop into master / tag/push master
         steps = []
 
         def record_step(level, step_name, action):
@@ -165,10 +167,11 @@ class ReleaseFlowTest(unittest.TestCase):
 
         self.assertIn("checkout master", steps)
         self.assertIn("merge develop into master", steps)
-        self.assertIn("push master", steps)
+        self.assertIn("tag release on master", steps)
+        self.assertIn("push master with tags", steps)
 
     def test_minor_release_includes_master_steps(self):
-        # minor level MUST execute checkout master / merge develop into master / push master
+        # minor level MUST execute checkout master / merge develop into master / tag/push master
         steps = []
 
         def record_step(level, step_name, action):
@@ -187,7 +190,83 @@ class ReleaseFlowTest(unittest.TestCase):
 
         self.assertIn("checkout master", steps)
         self.assertIn("merge develop into master", steps)
-        self.assertIn("push master", steps)
+        self.assertIn("tag release on master", steps)
+        self.assertIn("push master with tags", steps)
+
+    def test_release_flow_uses_temporary_tag_for_changelog_then_deletes_it(self):
+        steps = []
+
+        def run_step(_level, step_name, action):
+            steps.append(step_name)
+            if step_name in {
+                "create temporary changelog tag",
+                "delete temporary changelog tag",
+                "tag release on develop",
+            }:
+                action()
+            return None
+
+        with mock.patch.object(
+            core,
+            "_ensure_release_prerequisites",
+            return_value={"master": "master", "develop": "develop", "work": "work"},
+        ), mock.patch.object(core, "get_version_rules", return_value=[("README.md", "x")]), mock.patch.object(
+            core, "_determine_canonical_version", return_value="1.2.3"
+        ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
+            core, "_run_release_step", side_effect=run_step
+        ), mock.patch.object(core, "cmd_tg") as cmd_tg, mock.patch.object(core, "run_git_cmd") as run_git:
+            core._execute_release_flow("patch")
+
+        cmd_tg.assert_has_calls(
+            [
+                mock.call(["release: Release version 1.2.4", "v1.2.4"]),
+                mock.call(["release: Release version 1.2.4", "v1.2.4"]),
+            ]
+        )
+        run_git.assert_called_once_with(["tag", "--delete", "v1.2.4"])
+        self.assertLess(steps.index("create temporary changelog tag"), steps.index("regenerate changelog"))
+        self.assertLess(steps.index("regenerate changelog"), steps.index("delete temporary changelog tag"))
+
+    def test_patch_push_uses_tags_flag(self):
+        def run_step(_level, step_name, action):
+            if step_name == "push develop with tags":
+                action()
+            return None
+
+        with mock.patch.object(
+            core,
+            "_ensure_release_prerequisites",
+            return_value={"master": "master", "develop": "develop", "work": "work"},
+        ), mock.patch.object(core, "get_version_rules", return_value=[("README.md", "x")]), mock.patch.object(
+            core, "_determine_canonical_version", return_value="1.2.3"
+        ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
+            core, "_run_release_step", side_effect=run_step
+        ), mock.patch.object(core, "run_git_cmd") as run_git:
+            core._execute_release_flow("patch")
+        run_git.assert_called_once_with(["push", "origin", "develop", "--tags"])
+
+    def test_minor_pushes_develop_without_tags_and_master_with_tags(self):
+        def run_step(_level, step_name, action):
+            if step_name in {"push develop", "push master with tags"}:
+                action()
+            return None
+
+        with mock.patch.object(
+            core,
+            "_ensure_release_prerequisites",
+            return_value={"master": "master", "develop": "develop", "work": "work"},
+        ), mock.patch.object(core, "get_version_rules", return_value=[("README.md", "x")]), mock.patch.object(
+            core, "_determine_canonical_version", return_value="1.2.0"
+        ), mock.patch.object(core, "_bump_semver_version", return_value="1.3.0"), mock.patch.object(
+            core, "_run_release_step", side_effect=run_step
+        ), mock.patch.object(core, "run_git_cmd") as run_git:
+            core._execute_release_flow("minor")
+        run_git.assert_has_calls(
+            [
+                mock.call(["push", "origin", "develop"]),
+                mock.call(["push", "origin", "master", "--tags"]),
+            ]
+        )
 
     def test_create_release_commit_for_flow_uses_release_amend_strategy(self):
         with mock.patch.object(core, "_ensure_commit_ready"), mock.patch.object(core, "_execute_commit") as execute_commit:

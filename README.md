@@ -47,7 +47,7 @@ This is a companion script for the <b><a href="https://github.com/Ogekuri/useReq
     - `revert`: Revert changes.
     - `misc`: Miscellaneous tasks.
     - `cover`: Add/adjust tests to improve coverage.
-- Provides `major`, `minor`, and `patch` release commands that auto-generate a `CHANGELOG.md`, create a release commit and an annotated `v<next>` tag, and merge/push branches (`work` -> `develop`, and for `major`/`minor`: `develop` -> `master`). Optional flag: `--include-patch`.
+- Provides `major`, `minor`, and `patch` release commands that auto-generate a `CHANGELOG.md`, create a release commit, use a temporary local `v<next>` tag on `work` for changelog generation, and then create the definitive tag on `develop` (`patch`) or `master` (`major`/`minor`) immediately before pushing with `--tags`.
 - Provides `backup` command to run release preflight checks, merge `work` into `develop`, push `develop`, and return to `work`.
 - Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--include-patch`, `--force-write`, `--print-only`, `--disable-history`).
 - Self-upgrading feature.
@@ -111,7 +111,7 @@ When your `work` branch is fully committed, release a new version with:
 g minor
 ```
 
-The command must run from the `work` branch with a clean working tree; it bumps versions per `ver_rules`, creates/retags an annotated `v<next>` tag, regenerates `CHANGELOG.md`, merges `work` -> `develop` -> `master`, and pushes branches and tags to `origin`.
+The command must run from the `work` branch with a clean working tree; it bumps versions per `ver_rules`, creates a temporary local annotated `v<next>` tag only for changelog generation, deletes that temporary tag after changelog generation, and creates the definitive tag immediately before push (`patch`: on `develop` with `git push origin <develop> --tags`; `major`/`minor`: on `master` with `git push origin <master> --tags` after `develop` integration).
 
 
 ## Management Commands
@@ -122,6 +122,11 @@ Upgrade or remove the Git-Alias CLI:
 - `g --remove` / `git-alias --remove`: Uninstalls the tool.
 - `g --ver` / `g --version` / `git-alias --ver` / `git-alias --version`: Prints the CLI version.
 - `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
+
+### README Maintenance Policy
+
+When a CLI command is added, modified, or removed, this README is updated to reflect user-facing usage changes.
+Internal logic-only refactoring that does not change command behavior does not require README updates.
 
 
 ## CLI Examples

@@ -1,7 +1,7 @@
 ---
 title: "Requisiti di Git-Alias CLI"
 description: "Specifiche dei requisiti software"
-date: "2026-02-21"
+date: "2026-02-22"
 author: "Francesco Rolando"
 scope:
   paths:
@@ -13,9 +13,9 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.71
+**Versione**: 0.72
 **Autore**: Francesco Rolando
-**Data**: 2026-02-21
+**Data**: 2026-02-22
 ## Indice
 - [Requisiti di Git-Alias CLI](#requisiti-di-git-alias-cli)
   - [Indice](#indice)
@@ -108,6 +108,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-21 | 0.69 | changelog # History links resolved from master-branch remote URL using only local git commands; added REQ-046 for URL resolver contract |
 | 2026-02-21 | 0.70 | Added `changelog --disable-history`; `# History` default-on with resolver-failure skip; link rendering constrained to deterministic templates from local git data |
 | 2026-02-21 | 0.71 | Added `backup` command to merge `work` into `develop` with the same preflight checks and error handling used by release workflows |
+| 2026-02-22 | 0.72 | Updated release tag lifecycle for `major`/`minor`/`patch` and added README update governance for CLI command surface changes |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -196,7 +197,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
   Nota: Il tipo `refactor` è definito come "Code Refactoring" e deve essere visualizzato nelle sezioni del changelog con l'icona ✨ (U+2728) nella relativa intestazione di sezione.
 - **REQ-023**: Tutti i messaggi stampati da `core.py` (su stdout, stderr, in modalità normale, verbose o debug) devono essere in lingua inglese, inclusi gli help dei comandi e le diagnostiche degli alias.
 - **REQ-025**: Il comando `chver` deve accettare esattamente un argomento nel formato `major.minor.patch` (tre interi separati da punti), verificare la versione corrente tramite `ver`, terminare con errore se `ver` non restituisce una versione univoca o se l'argomento non è valido, evitare modifiche quando la versione richiesta coincide con quella corrente, determinare se l'operazione è un upgrade o un downgrade confrontando `major`, `minor` e `patch`, riscrivere tutte le occorrenze che corrispondono alle regole `ver_rules` attive (quelle lette da `.g.conf` o, in mancanza, `DEFAULT_CONFIG`), e al termine rieseguire `ver` per confermare la nuova versione stampando un messaggio di successo esplicito (upgrade o downgrade). Se la riesecuzione di `ver` non conferma la versione impostata, `chver` deve segnalare un errore critico.
-- **REQ-026**: The `major`, `minor`, and `patch` commands MUST automate version release by incrementing the corresponding semver index (resetting lower-order indices), MUST share the same support implementation, MUST accept `--include-patch` flag forwarded to `changelog` together with `--force-write`; the `patch` command MUST automatically include `--include-patch` in the changelog regeneration step even when the flag is not supplied by the user; the `major` and `minor` commands MUST NOT automatically include `--include-patch`, MUST enforce release prerequisites on configured local branches (`master`, `develop`, `work`), configured remotes (`origin/master`, `origin/develop`), remote update status for `master` and `develop`, current branch equal to `work`, clean working tree, and empty index, MUST print release step logs in the `--- [release:<level>] ... ---` format with one blank line before the first release step, and after `chver` plus staging MUST create the first release commit by amending HEAD when HEAD is an amendable `wip: work in progress.` commit not yet contained in configured `develop` and `master` or by creating a new commit otherwise before continuing with tagging, changelog regeneration, commit amend for changelog inclusion, branch merges/pushes, return to `work`, and final success output.
+- **REQ-026**: The `major`, `minor`, and `patch` commands MUST automate version release by incrementing the corresponding semver index (resetting lower-order indices), MUST share the same support implementation, MUST accept `--include-patch` flag forwarded to `changelog` together with `--force-write`; the `patch` command MUST automatically include `--include-patch` in the changelog regeneration step even when the flag is not supplied by the user; the `major` and `minor` commands MUST NOT automatically include `--include-patch`, MUST enforce release prerequisites on configured local branches (`master`, `develop`, `work`), configured remotes (`origin/master`, `origin/develop`), remote update status for `master` and `develop`, current branch equal to `work`, clean working tree, and empty index, MUST print release step logs in the `--- [release:<level>] ... ---` format with one blank line before the first release step, and after `chver` plus staging MUST create the first release commit by amending HEAD when HEAD is an amendable `wip: work in progress.` commit not yet contained in configured `develop` and `master` or by creating a new commit otherwise; before changelog regeneration the flow MUST create a temporary annotated `v<target>` tag on configured local `work`, MUST regenerate changelog, and MUST delete that temporary local tag before any branch integration.
 - **REQ-027**: The internal `cmd_release` function MUST reuse the same staging/worktree readiness and WIP amend decision logic used by `wip`, MUST determine the current version via `ver` before committing, MUST fail with the propagated detection error when version resolution fails, MUST create a `release: Release version <ver>` commit (where `<ver>` is `major.minor.patch`) by amending HEAD only when HEAD is an amendable `wip: work in progress.` commit not yet contained in configured `develop` and `master` and otherwise by creating a new commit, and MUST remain unavailable as a user-exposed CLI command.
 - **REQ-028**: L'alias `ra` deve comportarsi come inverso di `aa`: deve verificare di trovarsi sul branch `work` configurato, assicurarsi che non esistano modifiche nel working tree da aggiungere allo staging, verificare che lo staging contenga file pronti per la commit e, solo allora, rimuovere tutte le voci dallo staging riportandole nella working area.
 - **REQ-029**: Quando la CLI viene invocata senza argomenti deve stampare la riga di usage con la versione letta da `__init__.py` e appenderla alla fine nel formato `(x.y.z)`.
@@ -209,10 +210,11 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-037**: Visual diff aliases MUST execute fixed `git difftool -d` mappings: `dwc` MUST execute `git difftool -d HEAD` (working tree vs latest commit), `dcc` MUST execute `git difftool -d HEAD~1 HEAD` (penultimate vs latest commit), and `d` MUST require exactly two positional git refs (`<ref_a> <ref_b>`) and execute `git difftool -d <ref_a> <ref_b>` forwarding git errors without additional transformations.
 - **REQ-038**: The visual diff aliases MUST include `dwcc` mapped to `git difftool -d HEAD~1` (working tree vs penultimate commit) and `dccc` mapped to `git difftool -d HEAD~2 HEAD` (third-last vs last commit), and both aliases MUST expose explicit help text in global and per-command help outputs.
 - **REQ-039**: Every command `<command>` present in the CLI command dispatch map MUST be implemented by a Python function named exactly `cmd_<command>`, and the dispatch entry for `<command>` MUST reference that exact function symbol.
-- **REQ-045**: The `patch` command MUST merge and push to configured `develop` only and MUST NOT merge to or push `master`; the `major` and `minor` commands MUST merge and push to both `develop` and `master` in order.
+- **REQ-045**: The `patch` command MUST merge and push to configured `develop` only and MUST NOT merge to or push `master`; for `patch`, the definitive annotated `v<target>` tag MUST be created on configured `develop` immediately before `git push origin <develop> --tags`; for `major` and `minor`, the definitive annotated `v<target>` tag MUST be created on configured `master` immediately before `git push origin <master> --tags` after `develop` integration.
 - **REQ-047**: The `backup` command MUST enforce the same preflight checks and error reporting used by the `major`/`minor`/`patch` workflows, including: current branch equals configured `work`, clean working tree, empty index, and remote-update checks for configured `develop` and `master`.
 - **REQ-048**: The `backup` command MUST merge the configured local `work` branch into the configured local `develop` branch, and MUST push the updated `develop` branch to its configured remote tracking branch.
 - **REQ-049**: On success, the `backup` command MUST checkout back to configured `work` and MUST print a success message stating that all local `work` changes were merged and pushed to the configured remote `develop`.
+- **REQ-071**: When a CLI command is added, modified, or removed in the dispatch map, `README.md` MUST be updated for user-facing usage changes; internal logic-only refactors with unchanged command behavior MUST NOT require README updates.
 
 ### 3.3 Struttura File Progetto
 ```

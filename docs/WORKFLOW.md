@@ -242,10 +242,10 @@
           - `_read_version_file_text(...)`
           - `_replace_versions_in_text(...)`
           - `_determine_canonical_version(...)` (verification pass; reuses prepared contexts and cache)
-        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2719`]
+        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2724`]
           - `_parse_release_flags(...)` -> `_to_args(...)`
           - `_run_release_command(...)`
-            - `_execute_release_flow(...)` [`src/git_alias/core.py:1725`]
+            - `_execute_release_flow(...)` [`src/git_alias/core.py:1729`]
               - `_ensure_release_prerequisites(...)`
                 - `get_branch(...)` -> `get_config_value(...)`
                 - `_local_branch_exists(...)` -> `_ref_exists(...)`
@@ -264,21 +264,27 @@
                 - `cmd_chver(...)`
                 - `run_git_cmd(...)`
                 - `_create_release_commit_for_flow(...)` -> `_ensure_commit_ready(...)`, `_execute_commit(...)`
-                - `cmd_tg(...)`
+                - `cmd_tg(...)` (temporary changelog tag on `work`)
                 - `cmd_changelog(...)`
+                - `run_git_cmd(...)` (delete temporary changelog tag)
+                - `run_git_cmd(...)` (stage changelog)
+                - `run_git_cmd(...)` (amend release commit)
                 - `cmd_co(...)` (checkout develop)
                 - `cmd_me(...)` (merge work into develop)
-                - `run_git_cmd(...)` (push develop)
+              - `_run_release_step(...)` conditional on `level == "patch"`:
+                - `cmd_tg(...)` (definitive release tag on develop)
+                - `run_git_cmd(...)` (push develop with `--tags`)
               - `_run_release_step(...)` conditional on `level != "patch"` (major/minor only):
+                - `run_git_cmd(...)` (push develop)
                 - `cmd_co(...)` (checkout master)
                 - `cmd_me(...)` (merge develop into master)
-                - `run_git_cmd(...)` (push master)
+                - `cmd_tg(...)` (definitive release tag on master)
+                - `run_git_cmd(...)` (push master with `--tags`)
               - `_run_release_step(...)` shared post-integration steps:
                 - `cmd_co(...)` (return to work)
                 - `cmd_de(...)`
-                - `cmd_pt(...)`
-        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2731`]
-        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/push steps [`src/git_alias/core.py:2743`]
+        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2737`]
+        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/tag/push and creates definitive tag on develop before `push --tags` [`src/git_alias/core.py:2750`]
         - `cmd_backup(...)`: backup workflow entry [`src/git_alias/core.py:2755`]
           - `_run_backup_command(...)` [`src/git_alias/core.py:1821`]
             - `_execute_backup_flow(...)`: merge/push work->develop, then return to work [`src/git_alias/core.py:1780`]
