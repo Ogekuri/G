@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.0](https://github.com/Ogekuri/G/compare/v0.4.0..v0.5.0) - 2026-02-22
+### ⛰️  Features
+- add worktree aliases wt/wtl/wtp/wtr docs/tests [2026-02-22 16:27:03] *(core)*
+
+### 🐛  Bug Fixes
+- normalize multiline list markers [2026-02-22 18:07:32] *(changelog)*
+- normalize multiline entry indentation [2026-02-22 17:33:22] *(changelog)*
+- align multiline markdown list indentation [2026-02-22 17:25:57] *(changelog)*
+
+### 🚜  Changes
+- remove blank commit separators [useReq] *(changelog)*
+- resolve duplicate requirement id [useReq] *(requirements)*
+- preserve multiline markdown bullets [useReq] *(changelog)*
+- remove co-author trailers in markdown [2026-02-22 17:55:36] *(changelog)*
+- normalize commit description line breaks [2026-02-22 17:39:18] *(changelog)*
+- support breaking and multiline parsing [2026-02-22 13:26:20] *(changelog)*
+
 ## [0.4.0](https://github.com/Ogekuri/G/compare/v0.3.0..v0.4.0) - 2026-02-22
 ### 🐛  Bug Fixes
 - workflow. *(core)*
@@ -85,8 +102,26 @@
 - add backup workflow command [2026-02-21 19:39:09] *(backup)*
 - add --disable-history and local history link resolver [2026-02-21 19:18:29] *(changelog)*
 - resolve GitHub URL from master-branch remote using only local git commands [2026-02-21 18:15:15] *(_canonical_origin_base)*
+  - Add _get_remote_name_for_branch: queries git config branch.<master>.remote, falls back to origin
+  - Update _canonical_origin_base: uses master-branch remote instead of hardcoded origin
+  - REQ-043 updated: # History links use GitHub templates with OWNER/REPO from master remote URL
+  - REQ-046 added: URL resolver contract (local git commands only, SSH+HTTPS parsing)
+  - tests/test_changelog_command.py: GetRemoteNameForBranchTest + CanonicalOriginBaseTest added (9 new cases)
 - scope # History to changelog-body tags only [2026-02-21 17:39:45] *(changelog)*
+  - REQ-043 updated: # History now contains only tags present in the changelog body
+  - REQ-068 added: minor-only tags without --include-patch; minor + latest patch with --include-patch
+  - generate_changelog_document: removed list_tags_sorted_by_date(merged_ref=HEAD) call; builds history_tags from minor_tags + optional latest_patch
+  - Tests: replaced test_history_uses_tags_merged_into_head with two focused tests covering both modes
 - restrict patch release to develop-only branch integration; update major/minor help [2026-02-21 17:17:41] *(patch)*
+  - REQ-045 added: patch MUST NOT merge/push master; major/minor MUST merge/push develop+master
+  - _execute_release_flow: master branch steps conditioned on level != "patch"
+  - HELP_TEXTS: major and minor now mention Options: --include-patch
+  - Doxygen: updated @details and @satisfies for cmd_major, cmd_minor, cmd_patch, _execute_release_flow
+  - tests: added test_patch_release_skips_master_steps, test_major/minor_release_includes_master_steps
+  - docs/REQUIREMENTS.md: version 0.67, REQ-045 appended
+  - docs/WORKFLOW.md: call-trace updated for level-conditional master branch steps
+  - docs/REFERENCES.md: regenerated
+  - Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 - move scope indicator to suffix in changelog entry lines [2026-02-21 17:05:56] *(categorize_commit)*
 - group by minor releases; replace --include-unreleased with --include-patch [2026-02-21 16:41:16] *(changelog)*
 - remove include-draft flag path [2026-02-21 16:21:11] *(core)*
@@ -150,8 +185,10 @@
 - \[0.2.0\]: https://github.com/Ogekuri/G/releases/tag/v0.2.0
 - \[0.3.0\]: https://github.com/Ogekuri/G/releases/tag/v0.3.0
 - \[0.4.0\]: https://github.com/Ogekuri/G/releases/tag/v0.4.0
+- \[0.5.0\]: https://github.com/Ogekuri/G/releases/tag/v0.5.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
 [0.3.0]: https://github.com/Ogekuri/G/compare/v0.2.0..v0.3.0
 [0.4.0]: https://github.com/Ogekuri/G/compare/v0.3.0..v0.4.0
+[0.5.0]: https://github.com/Ogekuri/G/compare/v0.4.0..v0.5.0
