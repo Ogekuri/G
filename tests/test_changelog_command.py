@@ -347,7 +347,7 @@ class ChangelogCommandTest(unittest.TestCase):
         self.assertEqual(section, "Changes")
         self.assertEqual(line, "- headline *(changelog)*\n  - first detail\n  - second detail")
 
-    def test_generate_section_keeps_blank_line_between_commit_bullets(self):
+    def test_generate_section_keeps_commit_bullets_consecutive(self):
         with mock.patch.object(
             core,
             "git_log_subjects",
@@ -358,7 +358,7 @@ class ChangelogCommandTest(unittest.TestCase):
         ):
             section = core.generate_section_for_range(Path("/tmp"), "v1.2.3", "2026-02-18", "v1.2.2..v1.2.3")
         self.assertIsNotNone(section)
-        self.assertIn("- first line *(core)*\n  - second line\n\n- third line *(core)*", section)
+        self.assertIn("- first line *(core)*\n  - second line\n- third line *(core)*", section)
 
     def test_git_log_subjects_reads_full_commit_messages(self):
         payload = "fix(core)!: first line\n\nsecond line" + core.RECORD

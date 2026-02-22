@@ -411,7 +411,7 @@ When the breaking marker is present, the first description line is prefixed with
 
 ### fn `def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_range: str, expected_version: Optional[str] = None) -> Optional[str]` (L1107-1143)
 - Brief: Execute `generate_section_for_range` runtime logic for Git-Alias CLI.
-- Details: Executes `generate_section_for_range` using deterministic CLI control-flow and explicit error propagation.
+- Details: Executes `generate_section_for_range` using deterministic CLI control-flow and explicit error propagation; section entries are rendered as consecutive top-level bullets without blank separator lines.
 - Param: repo_root Input parameter consumed by `generate_section_for_range`.
 - Param: title Input parameter consumed by `generate_section_for_range`.
 - Param: date_s Input parameter consumed by `generate_section_for_range`.

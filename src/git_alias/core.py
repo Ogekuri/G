@@ -1138,7 +1138,7 @@ def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_ran
             emoji = SECTION_EMOJI.get(sec, "")
             header = f"### {emoji}  {sec}".rstrip()
             lines.append(header)
-            lines.append("\n\n".join(entries))
+            lines.extend(entries)
             lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 

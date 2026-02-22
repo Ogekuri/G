@@ -320,7 +320,7 @@
               - `categorize_commit(...)`
                 - `parse_conventional_commit(...)`
                 - `_format_changelog_description(...)`: removes `Co-authored-by:` trailer lines, removes empty lines, strips leading markdown-list markers from continuation lines, and preserves multiline payload for nested markdown bullets
-              - Section renderer behavior: one top-level bullet per commit, multiline continuation lines as consecutive indented bullets, and one blank line between commit bullets
+              - Section renderer behavior: one top-level bullet per commit, multiline continuation lines as consecutive indented bullets, and no blank separator lines between commit bullets
             - `build_history_section(...)`: receives only changelog-body tags (minor tags; plus latest patch when `include_patch=True`); executed only when `disable_history=False`
               - `_canonical_origin_base(...)`: same call-tree as above [`src/git_alias/core.py:1203`]
               - `get_release_page_url(...)`
