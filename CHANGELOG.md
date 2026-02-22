@@ -1,6 +1,9 @@
 # Changelog
 
-## [0.2.1](https://github.com/Ogekuri/G/compare/v0.2.0..v0.2.1) - 2026-02-22
+## [0.2.2](https://github.com/Ogekuri/G/compare/v0.2.0..v0.2.2) - 2026-02-22
+### 🐛  Bug Fixes
+- fix workflow. *(core)*
+
 ### 🚜  Changes
 - enforce tagged branch pushes in release flow [2026-02-22 11:01:35] *(core)*
 
@@ -140,8 +143,8 @@
 
 - \[0.1.0\]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 - \[0.2.0\]: https://github.com/Ogekuri/G/releases/tag/v0.2.0
-- \[0.2.1\]: https://github.com/Ogekuri/G/releases/tag/v0.2.1
+- \[0.2.2\]: https://github.com/Ogekuri/G/releases/tag/v0.2.2
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
-[0.2.1]: https://github.com/Ogekuri/G/compare/v0.2.0..v0.2.1
+[0.2.2]: https://github.com/Ogekuri/G/compare/v0.2.0..v0.2.2
