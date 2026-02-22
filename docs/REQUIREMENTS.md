@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.76
+**Versione**: 0.77
 **Autore**: Francesco Rolando
 **Data**: 2026-02-22
 ## Indice
@@ -113,6 +113,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-22 | 0.74 | Updated `lt` command contract to print containing branches for each tag |
 | 2026-02-22 | 0.75 | Updated changelog conventional-commit parsing to support breaking markers and multiline descriptions |
 | 2026-02-22 | 0.76 | Added worktree aliases `wt`, `wtl`, `wtp`, and `wtr` with full git-argument passthrough |
+| 2026-02-22 | 0.77 | Normalized changelog commit descriptions by removing empty lines and replacing CR/LF line breaks with spaces before markdown rendering |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -193,7 +194,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-068**: Without `--include-patch`, `# History` MUST contain only minor-release tags present in the changelog body; with `--include-patch`, it MUST additionally include the latest patch tag, using last minor or repository start as diff baseline.
 - **REQ-069**: `# History` release links MUST use template `https://github.com/<OWNER>/<REPO>/releases/tag/<TAG>` and diff links MUST use template `https://github.com/<OWNER>/<REPO>/compare/<TAG_FROM>..<TAG_TO>` generated deterministically from local changelog tags.
 - **REQ-070**: `# History` generation MUST NOT verify remote tag existence and MUST NOT query remote tags; changelog tag and commit collection MUST use only local git commands.
-- **REQ-044**: Each `changelog` commit entry MUST use full commit-message description text after the parsed conventional header (including multiline content); format MUST be `- <description> *(<scope>)*` when scope is present and `- <description>` when scope is absent; when the breaking marker is present, description MUST be prefixed with `BREAKING CHANGE: `.
+- **REQ-044**: Each `changelog` entry MUST normalize the parsed description by removing empty lines and replacing CR/LF line breaks with single spaces before rendering `- <description> *(<scope>)*` or `- <description>`, preserving `BREAKING CHANGE: ` prefixing.
 - **REQ-019**: L'alias `bd` deve eliminare un branch locale specificato dall'utente utilizzando `git branch -d <branch>`.
 - **REQ-020**: Il sistema deve fornire funzioni di supporto riutilizzabili dagli alias che consentano di verificare (a) la presenza di file o modifiche non ancora aggiunti allo staging, (b) la presenza di file già in staging ma non ancora committati, (c) la disponibilità di aggiornamenti remoti per il branch `develop`, e (d) la disponibilità di aggiornamenti remoti per il branch `master`. Le funzioni per i punti (c) e (d) devono prima sincronizzare i riferimenti remoti (ad esempio con `git remote -v update`) e poi determinare se il branch remoto è in avanti rispetto a quello locale.
 - **REQ-021**: L'alias `wip` deve eseguire un commit "work in progress" riutilizzando le stesse funzioni di verifica dell'alias `cm`, generando automaticamente un messaggio fisso `wip: work in progress.` e, come `cm`, deve rilevare se l'ultimo commit è una WIP non ancora presente su `develop`: in tal caso deve aggiornare il commit esistente con `git commit --amend` e stampare l'azione; altrimenti deve creare un nuovo commit e segnalarlo.

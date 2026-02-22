@@ -1020,19 +1020,16 @@ def parse_conventional_commit(message: str) -> Optional[Tuple[str, Optional[str]
 
 ## @brief Execute `_format_changelog_description` runtime logic for Git-Alias CLI.
 # @details Normalizes a commit description for markdown list rendering.
-#          Multiline descriptions are preserved line-by-line without injecting continuation
-#          indentation, preventing accidental nested-list rendering in output markdown.
+#          Removes empty lines and flattens CR/LF-separated lines into a single space-delimited
+#          description to keep each changelog bullet entry on one markdown line.
 # @param desc Parsed commit description.
 # @return Markdown-ready description text.
 def _format_changelog_description(desc: str) -> str:
     lines = [line.strip() for line in desc.strip().splitlines()]
-    if not lines:
+    non_empty_lines = [line for line in lines if line]
+    if not non_empty_lines:
         return ""
-    head = lines[0]
-    if len(lines) == 1:
-        return head
-    tail = "\n".join(lines[1:])
-    return f"{head}\n{tail}"
+    return " ".join(non_empty_lines)
 
 
 ## @brief Execute `categorize_commit` runtime logic for Git-Alias CLI.
