@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.1](https://github.com/Ogekuri/G/compare/v0.1.0..v0.1.1) - 2026-02-22
+## [0.2.0](https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0) - 2026-02-22
 ### 🐛  Bug Fixes
 - fix workflow. *(core)*
 
@@ -8,6 +8,7 @@
 - revise tag lifecycle and docs [2026-02-22 10:32:49] *(release-flow)*
 
 ### 📚  Documentation
+- update README.md. *(core)*
 - update README.md. *(core)*
 
 ## [0.1.0](https://github.com/Ogekuri/G/releases/tag/v0.1.0) - 2026-02-21
@@ -131,7 +132,7 @@
 # History
 
 - \[0.1.0\]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
-- \[0.1.1\]: https://github.com/Ogekuri/G/releases/tag/v0.1.1
+- \[0.2.0\]: https://github.com/Ogekuri/G/releases/tag/v0.2.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
-[0.1.1]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.1.1
+[0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
