@@ -37,17 +37,23 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 - Customizable three-branch workflow: `master`, `develop`, and `work`.
 - Conventional commit aliases support `<module>: <description>` syntax (example: `g new api: add endpoint`) and also accept `<description>` only, using `.g.conf.default_module` (default `core`).
 - Standardized commits with specific commands like: `g new core: foo bar.` Use these commands for common activities such as:
-    - `new`: Implement new features.
-    - `implement`: Implement features or larger changes.
-    - `refactor`: Refactor existing code without changing behavior.
-    - `fix`: Bug fixes.
-    - `change`: Software changes.
-    - `docs`: Add/modify documentation.
-    - `style`: Styling modifications.
-    - `revert`: Revert changes.
-    - `misc`: Miscellaneous tasks.
-    - `cover`: Add/adjust tests to improve coverage.
+  - `new`: Implement new features.
+  - `implement`: Implement features or larger changes.
+  - `refactor`: Refactor existing code without changing behavior.
+  - `fix`: Bug fixes.
+  - `change`: Software changes.
+  - `docs`: Add/modify documentation.
+  - `style`: Styling modifications.
+  - `revert`: Revert changes.
+  - `misc`: Miscellaneous tasks.
+  - `cover`: Add/adjust tests to improve coverage.
 - Provides `major`, `minor`, and `patch` release commands that auto-generate a `CHANGELOG.md`, create a release commit, use a temporary local `v<next>` tag on `work` for changelog generation, and then create the definitive tag on `develop` (`patch`) or `master` (`major`/`minor`) immediately before pushing with `--tags`.
+  | Command | Branch | Chagelog Type |
+  | --- | --- | --- |
+  | patch | work -> develop | Include patch versions |
+  | minor | work -> develop -> master | Minor versions only |
+  | major | work -> develop -> master | Minor versions only |
+
 - Provides `backup` command to run release preflight checks, merge `work` into `develop`, push `develop`, and return to `work`.
 - Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--include-patch`, `--force-write`, `--print-only`, `--disable-history`).
 - Self-upgrading feature.
