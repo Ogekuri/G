@@ -47,7 +47,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
   - `revert`: Revert changes.
   - `misc`: Miscellaneous tasks.
   - `cover`: Add/adjust tests to improve coverage.
-- Provides `major`, `minor`, and `patch` release commands that auto-generate a `CHANGELOG.md`, create a release commit, use a temporary local `v<next>` tag on `work` for changelog generation, and then create the definitive tag on `develop` (`patch`) or `master` (`major`/`minor`) immediately before pushing with `--tags`.
+- Provides `major`, `minor`, and `patch` release commands that auto-generate a `CHANGELOG.md`, create a tag on `develop` (`patch`) or `master` (`major`/`minor`).
   | Command | Branch | Chagelog Type |
   | --- | --- | --- |
   | patch | work -> develop | Include patch versions |
