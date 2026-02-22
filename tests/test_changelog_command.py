@@ -340,6 +340,13 @@ class ChangelogCommandTest(unittest.TestCase):
         self.assertEqual(section, "Changes")
         self.assertEqual(line, "- first line third line *(core)*")
 
+    def test_categorize_commit_flattens_multiline_markdown_list_body(self):
+        section, line = core.categorize_commit(
+            "change(changelog): headline\n\n- first detail\n- second detail"
+        )
+        self.assertEqual(section, "Changes")
+        self.assertEqual(line, "- headline first detail second detail *(changelog)*")
+
     def test_git_log_subjects_reads_full_commit_messages(self):
         payload = "fix(core)!: first line\n\nsecond line" + core.RECORD
         with mock.patch.object(core, "run_git_text", return_value=payload) as run_git_text:

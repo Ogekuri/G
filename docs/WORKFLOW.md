@@ -319,7 +319,7 @@
               - `_is_release_marker_commit(...)` -> `_extract_release_version(...)`
               - `categorize_commit(...)`
                 - `parse_conventional_commit(...)`
-                - `_format_changelog_description(...)`: removes `Co-authored-by:` trailer lines, then removes empty lines and flattens CR/LF-separated description lines into a single space-delimited markdown bullet payload
+                - `_format_changelog_description(...)`: removes `Co-authored-by:` trailer lines, removes empty lines, strips leading markdown-list markers from continuation lines, then flattens CR/LF-separated description lines into a single space-delimited markdown bullet payload
             - `build_history_section(...)`: receives only changelog-body tags (minor tags; plus latest patch when `include_patch=True`); executed only when `disable_history=False`
               - `_canonical_origin_base(...)`: same call-tree as above [`src/git_alias/core.py:1192`]
               - `get_release_page_url(...)`

@@ -1022,6 +1022,8 @@ def parse_conventional_commit(message: str) -> Optional[Tuple[str, Optional[str]
 # @details Normalizes a commit description for markdown list rendering.
 #          Removes `Co-authored-by:` trailer lines, drops empty lines, and flattens CR/LF-separated
 #          lines into a single space-delimited description to keep each changelog bullet on one line.
+#          Continuation lines strip leading markdown list markers so nested commit-body lists do not
+#          appear as misaligned pseudo-bullets inside a single changelog entry line.
 # @param desc Parsed commit description.
 # @return Markdown-ready description text.
 def _format_changelog_description(desc: str) -> str:
@@ -1030,7 +1032,10 @@ def _format_changelog_description(desc: str) -> str:
     non_empty_lines = [line for line in filtered_lines if line]
     if not non_empty_lines:
         return ""
-    return " ".join(non_empty_lines)
+    normalized_lines = [non_empty_lines[0]]
+    for line in non_empty_lines[1:]:
+        normalized_lines.append(re.sub(r"^(?:[-*+]|\d+[.)])\s+", "", line))
+    return " ".join(normalized_lines)
 
 
 ## @brief Execute `categorize_commit` runtime logic for Git-Alias CLI.
