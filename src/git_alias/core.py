@@ -405,7 +405,7 @@ HELP_TEXTS = {
     "lh": "Print last commit details.",
     "ll": "Print latest full commit hash.",
     "lm": "Print all merges.",
-    "lt": "Print all tags.",
+    "lt": "Print tags with containing branches.",
     "major": "Release a new major version from the work branch. Options: --include-patch.",
     "minor": "Release a new minor version from the work branch. Options: --include-patch.",
     "new": "Conventional commit new(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
@@ -2457,11 +2457,28 @@ def cmd_lm(extra):
 
 
 ## @brief Execute `cmd_lt` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_lt` using deterministic CLI control-flow and explicit error propagation.
+# @details Enumerates tags via `git tag -l`, resolves containing refs via `git branch -a --contains <tag>`,
+#          trims branch markers/prefixes from git output, and prints deterministic `<tag>: <branch_1>, <branch_2>, ...` lines.
 # @param extra Input parameter consumed by `cmd_lt`.
 # @return Result emitted by `cmd_lt` according to command contract.
 def cmd_lt(extra):
-    return run_git_cmd(["tag", "-l"], extra)
+    tags_text = capture_git_output(["tag", "-l", *_to_args(extra)])
+    tags = [tag.strip() for tag in tags_text.splitlines() if tag.strip()]
+    for tag in tags:
+        branches_text = capture_git_output(["branch", "-a", "--contains", tag])
+        branches = []
+        for branch_line in branches_text.splitlines():
+            branch = branch_line.strip()
+            if not branch:
+                continue
+            if branch.startswith("*"):
+                branch = branch.lstrip("*").strip()
+            if branch.startswith("remotes/"):
+                branch = branch[len("remotes/") :]
+            if " -> " in branch:
+                continue
+            branches.append(branch)
+        print(f"{tag}: {', '.join(branches)}" if branches else f"{tag}:")
 
 
 ## @brief Execute `cmd_me` runtime logic for Git-Alias CLI.

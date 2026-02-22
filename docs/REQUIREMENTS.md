@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.73
+**Versione**: 0.74
 **Autore**: Francesco Rolando
 **Data**: 2026-02-22
 ## Indice
@@ -110,6 +110,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-21 | 0.71 | Added `backup` command to merge `work` into `develop` with the same preflight checks and error handling used by release workflows |
 | 2026-02-22 | 0.72 | Updated release tag lifecycle for `major`/`minor`/`patch` and added README update governance for CLI command surface changes |
 | 2026-02-22 | 0.73 | Updated release push contract for `patch`/`minor`/`major` to require branch push with `--tags` |
+| 2026-02-22 | 0.74 | Updated `lt` command contract to print containing branches for each tag |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -174,7 +175,8 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
 - **REQ-010**: The system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.
 - **REQ-011**: Gli alias di reset e pulizia devono applicare le modalità di reset (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`) e le pulizie dello working tree (`rmloc`, `rmstg`, `rmunt`). I comandi di reset (`rs*`) devono stampare il testo di help dedicato quando invocati con `--help`, senza dipendere da alias separati.
-- **REQ-012**: Gli alias di tagging e archiviazione devono gestire la creazione di tag annotati (`tg`), la rimozione locale/remota (`rmtg`), la visualizzazione (`lt`) e l'archiviazione del ramo `master` in tar.gz (`ar`).
+- **REQ-012**: Tagging and archive aliases MUST support annotated tag creation (`tg`), local/remote tag deletion (`rmtg`), tag listing (`lt`), and archiving configured `master` in tar.gz (`ar`).
+- **REQ-073**: The `lt` alias MUST print one line per tag as `<tag>: <branch_1>, <branch_2>, ...`, where branches are the refs returned by `git branch -a --contains <tag>` after marker trimming.
 - **REQ-013**: L'alias `ed` deve consentire l'apertura di file arbitrari usando il comando definito dal parametro `editor` nel file `.g.conf` (default `edit`), segnalando errore se non viene passato alcun percorso.
 - **REQ-014**: Il comando `--write-config` deve generare nella root del repository git il file `.g.conf` come JSON ben formattato, contenente `master`, `develop`, `work`, `editor`, `default_module` e la lista `ver_rules` composta da oggetti con campi `pattern` e `regex`, così che l'utente possa personalizzarli manualmente.
 - **REQ-015**: All'avvio della CLI il valore del parametro `editor` definito in `.g.conf` deve essere caricato e utilizzato per tutte le operazioni di editing, adottando `edit` quando il parametro manca o è vuoto.

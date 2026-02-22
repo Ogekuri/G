@@ -31,7 +31,7 @@ import sys
 
 ---
 
-# core.py | Python | 3000L | 180 symbols | 16 imports | 788 comments
+# core.py | Python | 3017L | 180 symbols | 16 imports | 789 comments
 > Path: `src/git_alias/core.py`
 
 ## Imports
@@ -491,93 +491,93 @@ from urllib.request import Request, urlopen
 ### fn `def cmd_lm(extra)` (L2455-2458)
 - Return: Result emitted by `cmd_lm` according to command contract.
 
-### fn `def cmd_lt(extra)` (L2463-2466)
+### fn `def cmd_lt(extra)` (L2464-2483)
 - Return: Result emitted by `cmd_lt` according to command contract.
 
-### fn `def cmd_me(extra)` (L2471-2474)
+### fn `def cmd_me(extra)` (L2488-2491)
 - Return: Result emitted by `cmd_me` according to command contract.
 
-### fn `def cmd_pl(extra)` (L2479-2482)
+### fn `def cmd_pl(extra)` (L2496-2499)
 - Return: Result emitted by `cmd_pl` according to command contract.
 
-### fn `def cmd_pt(extra)` (L2487-2490)
+### fn `def cmd_pt(extra)` (L2504-2507)
 - Return: Result emitted by `cmd_pt` according to command contract.
 
-### fn `def cmd_pu(extra)` (L2495-2498)
+### fn `def cmd_pu(extra)` (L2512-2515)
 - Return: Result emitted by `cmd_pu` according to command contract.
 
-### fn `def cmd_rf(extra)` (L2503-2506)
+### fn `def cmd_rf(extra)` (L2520-2523)
 - Return: Result emitted by `cmd_rf` according to command contract.
 
-### fn `def cmd_rmtg(extra)` (L2511-2521)
+### fn `def cmd_rmtg(extra)` (L2528-2538)
 - Return: Result emitted by `cmd_rmtg` according to command contract.
 
-### fn `def cmd_rmloc(extra)` (L2526-2529)
+### fn `def cmd_rmloc(extra)` (L2543-2546)
 - Return: Result emitted by `cmd_rmloc` according to command contract.
 
-### fn `def cmd_rmstg(extra)` (L2534-2537)
+### fn `def cmd_rmstg(extra)` (L2551-2554)
 - Return: Result emitted by `cmd_rmstg` according to command contract.
 
-### fn `def cmd_rmunt(extra)` (L2542-2545)
+### fn `def cmd_rmunt(extra)` (L2559-2562)
 - Return: Result emitted by `cmd_rmunt` according to command contract.
 
-### fn `def cmd_rs(extra)` (L2550-2553)
+### fn `def cmd_rs(extra)` (L2567-2570)
 - Return: Result emitted by `cmd_rs` according to command contract.
 
-### fn `def cmd_rssft(extra)` (L2558-2561)
+### fn `def cmd_rssft(extra)` (L2575-2578)
 - Return: Result emitted by `cmd_rssft` according to command contract.
 
-### fn `def cmd_rsmix(extra)` (L2566-2569)
+### fn `def cmd_rsmix(extra)` (L2583-2586)
 - Return: Result emitted by `cmd_rsmix` according to command contract.
 
-### fn `def cmd_rshrd(extra)` (L2574-2577)
+### fn `def cmd_rshrd(extra)` (L2591-2594)
 - Return: Result emitted by `cmd_rshrd` according to command contract.
 
-### fn `def cmd_rsmrg(extra)` (L2582-2585)
+### fn `def cmd_rsmrg(extra)` (L2599-2602)
 - Return: Result emitted by `cmd_rsmrg` according to command contract.
 
-### fn `def cmd_rskep(extra)` (L2590-2593)
+### fn `def cmd_rskep(extra)` (L2607-2610)
 - Return: Result emitted by `cmd_rskep` according to command contract.
 
-### fn `def cmd_st(extra)` (L2598-2601)
+### fn `def cmd_st(extra)` (L2615-2618)
 - Return: Result emitted by `cmd_st` according to command contract.
 
-### fn `def cmd_tg(extra)` (L2606-2609)
+### fn `def cmd_tg(extra)` (L2623-2626)
 - Return: Result emitted by `cmd_tg` according to command contract.
 
-### fn `def cmd_unstg(extra)` (L2614-2617)
+### fn `def cmd_unstg(extra)` (L2631-2634)
 - Return: Result emitted by `cmd_unstg` according to command contract.
 
-### fn `def cmd_ver(extra)` (L2622-2648)
+### fn `def cmd_ver(extra)` (L2639-2665)
 - Return: Result emitted by `cmd_ver` according to command contract.
 
-### fn `def cmd_chver(extra)` (L2653-2725)
+### fn `def cmd_chver(extra)` (L2670-2742)
 - Return: Result emitted by `cmd_chver` according to command contract.
 
-### fn `def cmd_major(extra)` (L2734-2738)
+### fn `def cmd_major(extra)` (L2751-2755)
 - Sa: tisfies REQ-026, REQ-045
 
-### fn `def cmd_minor(extra)` (L2747-2751)
+### fn `def cmd_minor(extra)` (L2764-2768)
 - Sa: tisfies REQ-026, REQ-045
 
-### fn `def cmd_patch(extra)` (L2760-2764)
+### fn `def cmd_patch(extra)` (L2777-2781)
 - Sa: tisfies REQ-026, REQ-045
 
-### fn `def cmd_backup(extra)` (L2772-2782)
+### fn `def cmd_backup(extra)` (L2789-2799)
 - Sa: tisfies REQ-047, REQ-048, REQ-049
 
-### fn `def cmd_changelog(extra)` (L2792-2824)
+### fn `def cmd_changelog(extra)` (L2809-2841)
 - Sa: tisfies REQ-018, REQ-040, REQ-041, REQ-043
 
-- var `COMMANDS = {` (L2827)
+- var `COMMANDS = {` (L2844)
 - Brief: Constant `COMMANDS` used by CLI runtime paths and policies.
-### fn `def print_command_help(name, width=None)` (L2900-2906)
+### fn `def print_command_help(name, width=None)` (L2917-2923)
 - Return: Result emitted by `print_command_help` according to command contract.
 
-### fn `def print_all_help()` (L2910-2944)
+### fn `def print_all_help()` (L2927-2961)
 - Return: Result emitted by `print_all_help` according to command contract.
 
-### fn `def main(argv=None, *, check_updates: bool = True)` (L2950-3000)
+### fn `def main(argv=None, *, check_updates: bool = True)` (L2967-3017)
 - Return: Result emitted by `main` according to command contract.
 
 ## Symbol Index
@@ -733,34 +733,34 @@ from urllib.request import Request, urlopen
 |`cmd_lh`|fn|pub|2430-2433|def cmd_lh(extra)|
 |`cmd_ll`|fn|pub|2438-2450|def cmd_ll(extra)|
 |`cmd_lm`|fn|pub|2455-2458|def cmd_lm(extra)|
-|`cmd_lt`|fn|pub|2463-2466|def cmd_lt(extra)|
-|`cmd_me`|fn|pub|2471-2474|def cmd_me(extra)|
-|`cmd_pl`|fn|pub|2479-2482|def cmd_pl(extra)|
-|`cmd_pt`|fn|pub|2487-2490|def cmd_pt(extra)|
-|`cmd_pu`|fn|pub|2495-2498|def cmd_pu(extra)|
-|`cmd_rf`|fn|pub|2503-2506|def cmd_rf(extra)|
-|`cmd_rmtg`|fn|pub|2511-2521|def cmd_rmtg(extra)|
-|`cmd_rmloc`|fn|pub|2526-2529|def cmd_rmloc(extra)|
-|`cmd_rmstg`|fn|pub|2534-2537|def cmd_rmstg(extra)|
-|`cmd_rmunt`|fn|pub|2542-2545|def cmd_rmunt(extra)|
-|`cmd_rs`|fn|pub|2550-2553|def cmd_rs(extra)|
-|`cmd_rssft`|fn|pub|2558-2561|def cmd_rssft(extra)|
-|`cmd_rsmix`|fn|pub|2566-2569|def cmd_rsmix(extra)|
-|`cmd_rshrd`|fn|pub|2574-2577|def cmd_rshrd(extra)|
-|`cmd_rsmrg`|fn|pub|2582-2585|def cmd_rsmrg(extra)|
-|`cmd_rskep`|fn|pub|2590-2593|def cmd_rskep(extra)|
-|`cmd_st`|fn|pub|2598-2601|def cmd_st(extra)|
-|`cmd_tg`|fn|pub|2606-2609|def cmd_tg(extra)|
-|`cmd_unstg`|fn|pub|2614-2617|def cmd_unstg(extra)|
-|`cmd_ver`|fn|pub|2622-2648|def cmd_ver(extra)|
-|`cmd_chver`|fn|pub|2653-2725|def cmd_chver(extra)|
-|`cmd_major`|fn|pub|2734-2738|def cmd_major(extra)|
-|`cmd_minor`|fn|pub|2747-2751|def cmd_minor(extra)|
-|`cmd_patch`|fn|pub|2760-2764|def cmd_patch(extra)|
-|`cmd_backup`|fn|pub|2772-2782|def cmd_backup(extra)|
-|`cmd_changelog`|fn|pub|2792-2824|def cmd_changelog(extra)|
-|`COMMANDS`|var|pub|2827||
-|`print_command_help`|fn|pub|2900-2906|def print_command_help(name, width=None)|
-|`print_all_help`|fn|pub|2910-2944|def print_all_help()|
-|`main`|fn|pub|2950-3000|def main(argv=None, *, check_updates: bool = True)|
+|`cmd_lt`|fn|pub|2464-2483|def cmd_lt(extra)|
+|`cmd_me`|fn|pub|2488-2491|def cmd_me(extra)|
+|`cmd_pl`|fn|pub|2496-2499|def cmd_pl(extra)|
+|`cmd_pt`|fn|pub|2504-2507|def cmd_pt(extra)|
+|`cmd_pu`|fn|pub|2512-2515|def cmd_pu(extra)|
+|`cmd_rf`|fn|pub|2520-2523|def cmd_rf(extra)|
+|`cmd_rmtg`|fn|pub|2528-2538|def cmd_rmtg(extra)|
+|`cmd_rmloc`|fn|pub|2543-2546|def cmd_rmloc(extra)|
+|`cmd_rmstg`|fn|pub|2551-2554|def cmd_rmstg(extra)|
+|`cmd_rmunt`|fn|pub|2559-2562|def cmd_rmunt(extra)|
+|`cmd_rs`|fn|pub|2567-2570|def cmd_rs(extra)|
+|`cmd_rssft`|fn|pub|2575-2578|def cmd_rssft(extra)|
+|`cmd_rsmix`|fn|pub|2583-2586|def cmd_rsmix(extra)|
+|`cmd_rshrd`|fn|pub|2591-2594|def cmd_rshrd(extra)|
+|`cmd_rsmrg`|fn|pub|2599-2602|def cmd_rsmrg(extra)|
+|`cmd_rskep`|fn|pub|2607-2610|def cmd_rskep(extra)|
+|`cmd_st`|fn|pub|2615-2618|def cmd_st(extra)|
+|`cmd_tg`|fn|pub|2623-2626|def cmd_tg(extra)|
+|`cmd_unstg`|fn|pub|2631-2634|def cmd_unstg(extra)|
+|`cmd_ver`|fn|pub|2639-2665|def cmd_ver(extra)|
+|`cmd_chver`|fn|pub|2670-2742|def cmd_chver(extra)|
+|`cmd_major`|fn|pub|2751-2755|def cmd_major(extra)|
+|`cmd_minor`|fn|pub|2764-2768|def cmd_minor(extra)|
+|`cmd_patch`|fn|pub|2777-2781|def cmd_patch(extra)|
+|`cmd_backup`|fn|pub|2789-2799|def cmd_backup(extra)|
+|`cmd_changelog`|fn|pub|2809-2841|def cmd_changelog(extra)|
+|`COMMANDS`|var|pub|2844||
+|`print_command_help`|fn|pub|2917-2923|def print_command_help(name, width=None)|
+|`print_all_help`|fn|pub|2927-2961|def print_all_help()|
+|`main`|fn|pub|2967-3017|def main(argv=None, *, check_updates: bool = True)|
 

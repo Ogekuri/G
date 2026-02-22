@@ -200,7 +200,7 @@
         - `cmd_lh(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2183`]
         - `cmd_ll(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2191`]
         - `cmd_lm(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2208`]
-        - `cmd_lt(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2216`]
+        - `cmd_lt(...)`: tag visibility flow -> `capture_git_output(...)` (`git tag -l`) -> `_to_args(...)` -> `_run_checked(...)`; per tag `capture_git_output(...)` (`git branch -a --contains <tag>`) -> `_run_checked(...)` -> stdout formatter [`src/git_alias/core.py:2463`]
         - `cmd_me(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2224`]
         - `cmd_pl(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2232`]
         - `cmd_pt(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2240`]
