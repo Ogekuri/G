@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.72
+**Versione**: 0.73
 **Autore**: Francesco Rolando
 **Data**: 2026-02-22
 ## Indice
@@ -109,6 +109,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-21 | 0.70 | Added `changelog --disable-history`; `# History` default-on with resolver-failure skip; link rendering constrained to deterministic templates from local git data |
 | 2026-02-21 | 0.71 | Added `backup` command to merge `work` into `develop` with the same preflight checks and error handling used by release workflows |
 | 2026-02-22 | 0.72 | Updated release tag lifecycle for `major`/`minor`/`patch` and added README update governance for CLI command surface changes |
+| 2026-02-22 | 0.73 | Updated release push contract for `patch`/`minor`/`major` to require branch push with `--tags` |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -210,7 +211,8 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-037**: Visual diff aliases MUST execute fixed `git difftool -d` mappings: `dwc` MUST execute `git difftool -d HEAD` (working tree vs latest commit), `dcc` MUST execute `git difftool -d HEAD~1 HEAD` (penultimate vs latest commit), and `d` MUST require exactly two positional git refs (`<ref_a> <ref_b>`) and execute `git difftool -d <ref_a> <ref_b>` forwarding git errors without additional transformations.
 - **REQ-038**: The visual diff aliases MUST include `dwcc` mapped to `git difftool -d HEAD~1` (working tree vs penultimate commit) and `dccc` mapped to `git difftool -d HEAD~2 HEAD` (third-last vs last commit), and both aliases MUST expose explicit help text in global and per-command help outputs.
 - **REQ-039**: Every command `<command>` present in the CLI command dispatch map MUST be implemented by a Python function named exactly `cmd_<command>`, and the dispatch entry for `<command>` MUST reference that exact function symbol.
-- **REQ-045**: The `patch` command MUST merge and push to configured `develop` only and MUST NOT merge to or push `master`; for `patch`, the definitive annotated `v<target>` tag MUST be created on configured `develop` immediately before `git push origin <develop> --tags`; for `major` and `minor`, the definitive annotated `v<target>` tag MUST be created on configured `master` immediately before `git push origin <master> --tags` after `develop` integration.
+- **REQ-045**: The `patch` command MUST merge and push only configured `develop` using `git push origin <develop> --tags`, and MUST NOT merge to or push `master`.
+- **REQ-072**: The `major` and `minor` commands MUST push configured `develop` and configured `master` using `git push origin <branch> --tags` for each pushed branch, and MUST create definitive annotated `v<target>` on configured `master` immediately before master push.
 - **REQ-047**: The `backup` command MUST enforce the same preflight checks and error reporting used by the `major`/`minor`/`patch` workflows, including: current branch equals configured `work`, clean working tree, empty index, and remote-update checks for configured `develop` and `master`.
 - **REQ-048**: The `backup` command MUST merge the configured local `work` branch into the configured local `develop` branch, and MUST push the updated `develop` branch to its configured remote tracking branch.
 - **REQ-049**: On success, the `backup` command MUST checkout back to configured `work` and MUST print a success message stating that all local `work` changes were merged and pushed to the configured remote `develop`.

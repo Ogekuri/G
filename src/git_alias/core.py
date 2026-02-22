@@ -1711,11 +1711,21 @@ def _create_release_commit_for_flow(target_version):
     return _execute_commit(message, "release")
 
 
+## @brief Execute `_push_branch_with_tags` runtime logic for Git-Alias CLI.
+# @details Pushes the specified local branch to `origin` using an explicit branch refspec and
+#          includes `--tags` in the same push command.
+# @param branch_name Local branch name resolved from configured release branches.
+# @return Result emitted by `run_git_cmd` according to command contract.
+def _push_branch_with_tags(branch_name):
+    branch_ref = f"refs/heads/{branch_name}:refs/heads/{branch_name}"
+    return run_git_cmd(["push", "origin", branch_ref, "--tags"])
+
+
 ## @brief Execute `_execute_release_flow` runtime logic for Git-Alias CLI.
 # @details Orchestrates the full release pipeline for `major`, `minor`, and `patch` levels.
 #          Branch integration is level-dependent (REQ-045):
 #          - `patch`: merges `work` into `develop` and pushes `develop` only; skips `master`.
-#          - `major`/`minor`: merges `work` into `develop`, pushes `develop`, then merges
+#          - `major`/`minor`: merges `work` into `develop`, pushes `develop` with tags, then merges
 #            `develop` into `master` and pushes `master`.
 #          Changelog flags always include `--force-write`; `patch` auto-adds `--include-patch`.
 #          A temporary local `v<target>` tag is created on `work` only to generate changelog and
@@ -1762,13 +1772,13 @@ def _execute_release_flow(level, changelog_args=None):
     _run_release_step(level, "merge work into develop", lambda: cmd_me([work_branch]))
     if level == "patch":
         _run_release_step(level, "tag release on develop", lambda: cmd_tg([release_message, release_tag]))
-        _run_release_step(level, "push develop with tags", lambda: run_git_cmd(["push", "origin", develop_branch, "--tags"]))
+        _run_release_step(level, "push develop with tags", lambda: _push_branch_with_tags(develop_branch))
     else:
-        _run_release_step(level, "push develop", lambda: run_git_cmd(["push", "origin", develop_branch]))
+        _run_release_step(level, "push develop with tags", lambda: _push_branch_with_tags(develop_branch))
         _run_release_step(level, "checkout master", lambda: cmd_co([master_branch]))
         _run_release_step(level, "merge develop into master", lambda: cmd_me([develop_branch]))
         _run_release_step(level, "tag release on master", lambda: cmd_tg([release_message, release_tag]))
-        _run_release_step(level, "push master with tags", lambda: run_git_cmd(["push", "origin", master_branch, "--tags"]))
+        _run_release_step(level, "push master with tags", lambda: _push_branch_with_tags(master_branch))
     _run_release_step(level, "return to work", lambda: cmd_co([work_branch]))
     _run_release_step(level, "show release details", lambda: cmd_de([]))
     print(f"Release {target_version} completed successfully.")

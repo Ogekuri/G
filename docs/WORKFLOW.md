@@ -242,10 +242,10 @@
           - `_read_version_file_text(...)`
           - `_replace_versions_in_text(...)`
           - `_determine_canonical_version(...)` (verification pass; reuses prepared contexts and cache)
-        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2724`]
+        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2734`]
           - `_parse_release_flags(...)` -> `_to_args(...)`
           - `_run_release_command(...)`
-            - `_execute_release_flow(...)` [`src/git_alias/core.py:1729`]
+            - `_execute_release_flow(...)` [`src/git_alias/core.py:1739`]
               - `_ensure_release_prerequisites(...)`
                 - `get_branch(...)` -> `get_config_value(...)`
                 - `_local_branch_exists(...)` -> `_ref_exists(...)`
@@ -273,28 +273,28 @@
                 - `cmd_me(...)` (merge work into develop)
               - `_run_release_step(...)` conditional on `level == "patch"`:
                 - `cmd_tg(...)` (definitive release tag on develop)
-                - `run_git_cmd(...)` (push develop with `--tags`)
+                - `_push_branch_with_tags(...)` -> `run_git_cmd(...)` (push develop with explicit branch refspec and `--tags`)
               - `_run_release_step(...)` conditional on `level != "patch"` (major/minor only):
-                - `run_git_cmd(...)` (push develop)
+                - `_push_branch_with_tags(...)` -> `run_git_cmd(...)` (push develop with explicit branch refspec and `--tags`)
                 - `cmd_co(...)` (checkout master)
                 - `cmd_me(...)` (merge develop into master)
                 - `cmd_tg(...)` (definitive release tag on master)
-                - `run_git_cmd(...)` (push master with `--tags`)
+                - `_push_branch_with_tags(...)` -> `run_git_cmd(...)` (push master with explicit branch refspec and `--tags`)
               - `_run_release_step(...)` shared post-integration steps:
                 - `cmd_co(...)` (return to work)
                 - `cmd_de(...)`
-        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2737`]
-        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/tag/push and creates definitive tag on develop before `push --tags` [`src/git_alias/core.py:2750`]
-        - `cmd_backup(...)`: backup workflow entry [`src/git_alias/core.py:2755`]
-          - `_run_backup_command(...)` [`src/git_alias/core.py:1821`]
-            - `_execute_backup_flow(...)`: merge/push work->develop, then return to work [`src/git_alias/core.py:1780`]
+        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2747`]
+        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/tag/push and creates definitive tag on develop before `push --tags` [`src/git_alias/core.py:2760`]
+        - `cmd_backup(...)`: backup workflow entry [`src/git_alias/core.py:2772`]
+          - `_run_backup_command(...)` [`src/git_alias/core.py:1835`]
+            - `_execute_backup_flow(...)`: merge/push work->develop, then return to work [`src/git_alias/core.py:1794`]
               - `_ensure_release_prerequisites(...)`: shared release preflight checks and error contracts
               - `_run_release_step(...)` shared step wrapper:
                 - `cmd_co(...)` (checkout develop)
                 - `cmd_me(...)` (merge work into develop)
                 - `run_git_cmd(...)` (push develop)
                 - `cmd_co(...)` (return to work)
-        - `cmd_changelog(...)`: changelog generation flow with optional `--disable-history` gating [`src/git_alias/core.py:2775`]
+        - `cmd_changelog(...)`: changelog generation flow with optional `--disable-history` gating [`src/git_alias/core.py:2792`]
           - `print_command_help(...)`
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
           - `get_git_root(...)` -> `_run_checked(...)`

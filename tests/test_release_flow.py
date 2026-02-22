@@ -243,11 +243,11 @@ class ReleaseFlowTest(unittest.TestCase):
             core, "_run_release_step", side_effect=run_step
         ), mock.patch.object(core, "run_git_cmd") as run_git:
             core._execute_release_flow("patch")
-        run_git.assert_called_once_with(["push", "origin", "develop", "--tags"])
+        run_git.assert_called_once_with(["push", "origin", "refs/heads/develop:refs/heads/develop", "--tags"])
 
-    def test_minor_pushes_develop_without_tags_and_master_with_tags(self):
+    def test_minor_pushes_develop_and_master_with_tags(self):
         def run_step(_level, step_name, action):
-            if step_name in {"push develop", "push master with tags"}:
+            if step_name in {"push develop with tags", "push master with tags"}:
                 action()
             return None
 
@@ -263,8 +263,8 @@ class ReleaseFlowTest(unittest.TestCase):
             core._execute_release_flow("minor")
         run_git.assert_has_calls(
             [
-                mock.call(["push", "origin", "develop"]),
-                mock.call(["push", "origin", "master", "--tags"]),
+                mock.call(["push", "origin", "refs/heads/develop:refs/heads/develop", "--tags"]),
+                mock.call(["push", "origin", "refs/heads/master:refs/heads/master", "--tags"]),
             ]
         )
 
