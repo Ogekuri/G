@@ -326,26 +326,39 @@ class ChangelogCommandTest(unittest.TestCase):
     def test_categorize_commit_formats_multiline_description(self):
         section, line = core.categorize_commit("change(core)!: first line\nsecond line")
         self.assertEqual(section, "Changes")
-        self.assertEqual(line, "- BREAKING CHANGE: first line second line *(core)*")
+        self.assertEqual(line, "- BREAKING CHANGE: first line *(core)*\n  - second line")
 
     def test_categorize_commit_formats_multiline_with_blank_line(self):
         section, line = core.categorize_commit("change(core): first line\n\nCo-authored-by: Copilot <x@y.z>")
         self.assertEqual(section, "Changes")
         self.assertEqual(line, "- first line *(core)*")
 
-    def test_categorize_commit_flattens_crlf_and_blank_lines(self):
+    def test_categorize_commit_preserves_crlf_lines_as_nested_bullets(self):
         section, line = core.categorize_commit(
             "change(core): first line\r\n\r\nCo-authored-by: Copilot <x@y.z>\r\nthird line"
         )
         self.assertEqual(section, "Changes")
-        self.assertEqual(line, "- first line third line *(core)*")
+        self.assertEqual(line, "- first line *(core)*\n  - third line")
 
-    def test_categorize_commit_flattens_multiline_markdown_list_body(self):
+    def test_categorize_commit_renders_multiline_markdown_list_body_as_nested_bullets(self):
         section, line = core.categorize_commit(
             "change(changelog): headline\n\n- first detail\n- second detail"
         )
         self.assertEqual(section, "Changes")
-        self.assertEqual(line, "- headline first detail second detail *(changelog)*")
+        self.assertEqual(line, "- headline *(changelog)*\n  - first detail\n  - second detail")
+
+    def test_generate_section_keeps_blank_line_between_commit_bullets(self):
+        with mock.patch.object(
+            core,
+            "git_log_subjects",
+            return_value=[
+                "change(core): first line\nsecond line",
+                "change(core): third line",
+            ],
+        ):
+            section = core.generate_section_for_range(Path("/tmp"), "v1.2.3", "2026-02-18", "v1.2.2..v1.2.3")
+        self.assertIsNotNone(section)
+        self.assertIn("- first line *(core)*\n  - second line\n\n- third line *(core)*", section)
 
     def test_git_log_subjects_reads_full_commit_messages(self):
         payload = "fix(core)!: first line\n\nsecond line" + core.RECORD

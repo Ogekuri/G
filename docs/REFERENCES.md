@@ -31,7 +31,7 @@ import sys
 
 ---
 
-# core.py | Python | 3098L | 186 symbols | 16 imports | 820 comments
+# core.py | Python | 3101L | 186 symbols | 16 imports | 820 comments
 > Path: `src/git_alias/core.py`
 
 ## Imports
@@ -380,21 +380,20 @@ then returns extracted type/scope/breaking/description fields for changelog rend
 - Param: message Raw commit message text (subject and optional body).
 - Return: Tuple `(type, scope, breaking, description)` when message is parseable; otherwise `None`.
 
-### fn `def _format_changelog_description(desc: str) -> str` `priv` (L1029-1040)
+### fn `def _format_changelog_description(desc: str) -> List[str]` `priv` (L1027-1037)
 - Brief: Execute `_format_changelog_description` runtime logic for Git-Alias CLI.
-- Details: Normalizes a commit description for markdown list rendering.
-Removes `Co-authored-by:` trailer lines, drops empty lines, and flattens CR/LF-separated
-lines into a single space-delimited description to keep each changelog bullet on one line.
-Continuation lines strip leading markdown list markers so nested commit-body lists do not
-appear as misaligned pseudo-bullets inside a single changelog entry line.
+- Details: Normalizes a commit description for markdown list rendering while preserving logical lines.
+Removes `Co-authored-by:` trailer lines, drops empty lines, and strips leading markdown-list
+markers from continuation lines so multiline descriptions can be rendered as nested bullets.
 - Param: desc Parsed commit description.
-- Return: Markdown-ready description text.
+- Return: Ordered non-empty description lines ready for markdown rendering.
 
-### fn `def categorize_commit(subject: str) -> Tuple[Optional[str], str]` (L1047-1072)
+### fn `def categorize_commit(subject: str) -> Tuple[Optional[str], str]` (L1046-1073)
 - Brief: Execute `categorize_commit` runtime logic for Git-Alias CLI.
 - Details: Parses a conventional commit message and maps it to a changelog section and formatted entry line.
 Entry format: `- <description> *(<scope>)*` when scope is present; `- <description>` otherwise.
-When the breaking marker is present, description is prefixed with `BREAKING CHANGE: `.
+Multiline descriptions are rendered as consecutive indented sub-bullets under the commit line.
+When the breaking marker is present, the first description line is prefixed with `BREAKING CHANGE: `.
 - Param: subject Conventional commit message string.
 - Return: Tuple `(section, line)`: `section` is the changelog section name or `None` if type is unmapped or ignored; `line` is the formatted entry string or `""` when section is `None`.
 
@@ -410,7 +409,7 @@ When the breaking marker is present, description is prefixed with `BREAKING CHAN
 - Param: subject Input parameter consumed by `_is_release_marker_commit`.
 - Return: Result emitted by `_is_release_marker_commit` according to command contract.
 
-### fn `def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_range: str, expected_version: Optional[str] = None) -> Optional[str]` (L1104-1142)
+### fn `def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_range: str, expected_version: Optional[str] = None) -> Optional[str]` (L1107-1143)
 - Brief: Execute `generate_section_for_range` runtime logic for Git-Alias CLI.
 - Details: Executes `generate_section_for_range` using deterministic CLI control-flow and explicit error propagation.
 - Param: repo_root Input parameter consumed by `generate_section_for_range`.
@@ -420,7 +419,7 @@ When the breaking marker is present, description is prefixed with `BREAKING CHAN
 - Param: expected_version Input parameter consumed by `generate_section_for_range`.
 - Return: Result emitted by `generate_section_for_range` according to command contract.
 
-### fn `def _get_remote_name_for_branch(branch_name: str, repo_root: Path) -> str` `priv` (L1151-1159)
+### fn `def _get_remote_name_for_branch(branch_name: str, repo_root: Path) -> str` `priv` (L1154-1160)
 - Brief: Resolve the git remote name configured for a given branch.
 - Details: Queries `git config branch.<branch_name>.remote` via a local git command.
 Returns `origin` as fallback when the config key is absent or the command fails.
@@ -430,7 +429,7 @@ No network operations are performed.
 - Return: Remote name string; never empty (falls back to `"origin"`).
 - Satisfies: REQ-046
 
-### fn `def _extract_owner_repo(remote_url: str) -> Optional[Tuple[str, str]]` `priv` (L1166-1190)
+### fn `def _extract_owner_repo(remote_url: str) -> Optional[Tuple[str, str]]` `priv` (L1169-1191)
 - Brief: Resolve the normalized HTTPS base URL from the master branch's configured remote.
 - Details: Parses both SSH (`git@<host>:<owner>/<repo>[.git]`) and HTTPS
 (`https://<host>/<owner>/<repo>[.git]`) formats and extracts `<owner>` and `<repo>`
@@ -438,7 +437,7 @@ through deterministic string parsing.
 - Param: remote_url Raw git remote URL string.
 - Return: Tuple `(owner, repo)` when parsing succeeds; otherwise `None`.
 
-### fn `def _canonical_origin_base(repo_root: Path) -> Optional[str]` `priv` (L1200-1213)
+### fn `def _canonical_origin_base(repo_root: Path) -> Optional[str]` `priv` (L1203-1214)
 - Brief: Resolve normalized GitHub URL base from the master-branch configured remote.
 - Details: Determines remote name using `_get_remote_name_for_branch` with the configured
 master branch, then executes local `git remote get-url <remote>` command.
@@ -473,7 +472,7 @@ No network operation is performed; all data is derived from local git metadata.
 - Param: include_unreleased_link Input parameter consumed by `build_history_section`.
 - Return: Result emitted by `build_history_section` according to command contract.
 
-### fn `def generate_changelog_document(repo_root: Path, include_patch: bool, disable_history: bool = False) -> str` (L1294-1355)
+### fn `def generate_changelog_document(repo_root: Path, include_patch: bool, disable_history: bool = False) -> str` (L1297-1356)
 - Brief: Generate the full CHANGELOG.md document from repository tags and commits.
 - Details: Groups commits by minor release (semver where `patch=0` AND version `>=0.1.0`).
 By default only minor releases appear; the document body is empty when none exist.
@@ -1165,7 +1164,7 @@ to its remote tracking branch before returning to `work`.
 - Return: None; delegates to `_run_backup_command()`.
 - Satisfies: REQ-047, REQ-048, REQ-049
 
-### fn `def cmd_changelog(extra)` (L2886-2918)
+### fn `def cmd_changelog(extra)` (L2889-2920)
 - Brief: CLI entry-point for the `changelog` subcommand.
 - Details: Parses flags, delegates to `generate_changelog_document`, and writes or prints the result.
 Accepted flags: `--include-patch`, `--force-write`, `--print-only`,
@@ -1266,18 +1265,18 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 |`list_tags_sorted_by_date`|fn|pub|964-984|def list_tags_sorted_by_date(repo_root: Path, merged_ref:...|
 |`git_log_subjects`|fn|pub|991-1002|def git_log_subjects(repo_root: Path, rev_range: str) -> ...|
 |`parse_conventional_commit`|fn|pub|1008-1020|def parse_conventional_commit(message: str) -> Optional[T...|
-|`_format_changelog_description`|fn|priv|1029-1040|def _format_changelog_description(desc: str) -> str|
-|`categorize_commit`|fn|pub|1047-1072|def categorize_commit(subject: str) -> Tuple[Optional[str...|
+|`_format_changelog_description`|fn|priv|1027-1037|def _format_changelog_description(desc: str) -> List[str]|
+|`categorize_commit`|fn|pub|1046-1073|def categorize_commit(subject: str) -> Tuple[Optional[str...|
 |`_extract_release_version`|fn|priv|1077-1087|def _extract_release_version(subject: str) -> Optional[str]|
 |`_is_release_marker_commit`|fn|priv|1092-1095|def _is_release_marker_commit(subject: str) -> bool|
-|`generate_section_for_range`|fn|pub|1104-1142|def generate_section_for_range(repo_root: Path, title: st...|
-|`_get_remote_name_for_branch`|fn|priv|1151-1159|def _get_remote_name_for_branch(branch_name: str, repo_ro...|
-|`_extract_owner_repo`|fn|priv|1166-1190|def _extract_owner_repo(remote_url: str) -> Optional[Tupl...|
-|`_canonical_origin_base`|fn|priv|1200-1213|def _canonical_origin_base(repo_root: Path) -> Optional[str]|
+|`generate_section_for_range`|fn|pub|1107-1143|def generate_section_for_range(repo_root: Path, title: st...|
+|`_get_remote_name_for_branch`|fn|priv|1154-1160|def _get_remote_name_for_branch(branch_name: str, repo_ro...|
+|`_extract_owner_repo`|fn|priv|1169-1191|def _extract_owner_repo(remote_url: str) -> Optional[Tupl...|
+|`_canonical_origin_base`|fn|priv|1203-1214|def _canonical_origin_base(repo_root: Path) -> Optional[str]|
 |`get_origin_compare_url`|fn|pub|1220-1227|def get_origin_compare_url(base_url: Optional[str], prev_...|
 |`get_release_page_url`|fn|pub|1233-1238|def get_release_page_url(base_url: Optional[str], tag: st...|
 |`build_history_section`|fn|pub|1246-1250|def build_history_section(|
-|`generate_changelog_document`|fn|pub|1294-1355|def generate_changelog_document(repo_root: Path, include_...|
+|`generate_changelog_document`|fn|pub|1297-1356|def generate_changelog_document(repo_root: Path, include_...|
 |`VersionRuleContext`|class|pub|1366-1373|class VersionRuleContext|
 |`_normalize_version_rule_pattern`|fn|priv|1379-1390|def _normalize_version_rule_pattern(pattern: str) -> str|
 |`_build_version_file_inventory`|fn|priv|1396-1417|def _build_version_file_inventory(root: Path) -> List[Tup...|
@@ -1381,9 +1380,8 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 |`cmd_minor`|fn|pub|2841-2845|def cmd_minor(extra)|
 |`cmd_patch`|fn|pub|2854-2858|def cmd_patch(extra)|
 |`cmd_backup`|fn|pub|2866-2876|def cmd_backup(extra)|
-|`cmd_changelog`|fn|pub|2886-2918|def cmd_changelog(extra)|
+|`cmd_changelog`|fn|pub|2889-2920|def cmd_changelog(extra)|
 |`COMMANDS`|var|pub|2921||
 |`print_command_help`|fn|pub|2998-3004|def print_command_help(name, width=None)|
 |`print_all_help`|fn|pub|3008-3042|def print_all_help()|
 |`main`|fn|pub|3048-3098|def main(argv=None, *, check_updates: bool = True)|
-

@@ -1019,29 +1019,28 @@ def parse_conventional_commit(message: str) -> Optional[Tuple[str, Optional[str]
 
 
 ## @brief Execute `_format_changelog_description` runtime logic for Git-Alias CLI.
-# @details Normalizes a commit description for markdown list rendering.
-#          Removes `Co-authored-by:` trailer lines, drops empty lines, and flattens CR/LF-separated
-#          lines into a single space-delimited description to keep each changelog bullet on one line.
-#          Continuation lines strip leading markdown list markers so nested commit-body lists do not
-#          appear as misaligned pseudo-bullets inside a single changelog entry line.
+# @details Normalizes a commit description for markdown list rendering while preserving logical lines.
+#          Removes `Co-authored-by:` trailer lines, drops empty lines, and strips leading markdown-list
+#          markers from continuation lines so multiline descriptions can be rendered as nested bullets.
 # @param desc Parsed commit description.
-# @return Markdown-ready description text.
-def _format_changelog_description(desc: str) -> str:
+# @return Ordered non-empty description lines ready for markdown rendering.
+def _format_changelog_description(desc: str) -> List[str]:
     lines = [line.strip() for line in desc.strip().splitlines()]
     filtered_lines = [line for line in lines if not re.match(r"^Co-authored-by:.*$", line)]
     non_empty_lines = [line for line in filtered_lines if line]
     if not non_empty_lines:
-        return ""
+        return []
     normalized_lines = [non_empty_lines[0]]
     for line in non_empty_lines[1:]:
         normalized_lines.append(re.sub(r"^(?:[-*+]|\d+[.)])\s+", "", line))
-    return " ".join(normalized_lines)
+    return normalized_lines
 
 
 ## @brief Execute `categorize_commit` runtime logic for Git-Alias CLI.
 # @details Parses a conventional commit message and maps it to a changelog section and formatted entry line.
 #          Entry format: `- <description> *(<scope>)*` when scope is present; `- <description>` otherwise.
-#          When the breaking marker is present, description is prefixed with `BREAKING CHANGE: `.
+#          Multiline descriptions are rendered as consecutive indented sub-bullets under the commit line.
+#          When the breaking marker is present, the first description line is prefixed with `BREAKING CHANGE: `.
 # @param subject Conventional commit message string.
 # @return Tuple `(section, line)`: `section` is the changelog section name or `None` if type is unmapped or ignored; `line` is the formatted entry string or `""` when section is `None`.
 def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
@@ -1049,11 +1048,15 @@ def categorize_commit(subject: str) -> Tuple[Optional[str], str]:
     if not parsed:
         return (None, "")
     ctype, scope, breaking, desc = parsed
-    desc_text = _format_changelog_description(desc)
+    desc_lines = _format_changelog_description(desc)
+    if not desc_lines:
+        return (None, "")
     if breaking:
-        desc_text = f"BREAKING CHANGE: {desc_text}"
+        desc_lines[0] = f"BREAKING CHANGE: {desc_lines[0]}"
     scope_text = f" *({scope})*" if scope else ""
-    line = f"- {desc_text}{scope_text}"
+    line = f"- {desc_lines[0]}{scope_text}"
+    if len(desc_lines) > 1:
+        line = "\n".join([line, *[f"  - {item}" for item in desc_lines[1:]]])
     mapping = {
         "new": "Features",
         "implement": "Implementations",
@@ -1135,7 +1138,7 @@ def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_ran
             emoji = SECTION_EMOJI.get(sec, "")
             header = f"### {emoji}  {sec}".rstrip()
             lines.append(header)
-            lines.extend(entries)
+            lines.append("\n\n".join(entries))
             lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
