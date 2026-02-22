@@ -11,7 +11,7 @@
 <p align="center">
 <strong>Git-Alias CLI provides a command-line interface to replicate the Git aliases defined in this package.</strong><br>
 This allows them to be run both as a Python package (installed as <b>g</b> or <b>git-alias</b>) and directly using <b>uvx</b>.<br>
-This is a companion script for the <b><a href="https://github.com/Ogekuri/useReq">useReq</a></b> app.
+<i>This is a companion script for the <b><a href="https://github.com/Ogekuri/useReq">useReq/req</a></b> </i>🤖✨.
 </p>
 
 <p align="center">
