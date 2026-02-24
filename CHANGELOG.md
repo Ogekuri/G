@@ -1,19 +1,104 @@
 # Changelog
 
-## [0.5.1](https://github.com/Ogekuri/G/compare/v0.5.0..v0.5.1) - 2026-02-24
+## [0.6.0](https://github.com/Ogekuri/G/compare/v0.5.0..v0.6.0) - 2026-02-24
 ### ⛰️  Features
+- add overview ASCII topology section [useReq] *(core)*
+  - append REQ-089..REQ-093 for qualitative topology output\n- add section 4 ASCII tree rendering in cmd_o\n- map divergence counts to qualitative states\n- extend overview tests for section ordering and topology nodes\n- update workflow and regenerate references
+- add o overview alias with templates [useReq] *(core)*
+  - append REQ-082..REQ-088 for overview command\n- implement cmd_o with reusable formatting templates and help wiring\n- add tests and update README/WORKFLOW/REFERENCES
 - add .place-holder files. *(core)*
 - add ls/lsi file listing aliases [useReq] *(cli)*
   - Add REQ-079/REQ-080 and update REQ-008.\nAdd cmd_ls/cmd_lsi, help text, tests.\nUpdate WORKFLOW/REFERENCES and README.\nTests: PYTHONPATH=src /tmp/venv-userReq-G-work-3af15715-c78b-405c-a749-bf538bb2225a/bin/python -m pytest
 - add guidelines/, update .gitignore. *(core)*
 
+### 🐛  Bug Fixes
+- Fix workflow file. *(core)*
+- .g.conf. *(core)*
+- fiw workflow file. *(core)*
+
 ### 🚜  Changes
+- BREAKING CHANGE: enforce strict local/global config schemas [useReq] *(config)*
+  - Normalize .g.conf to local-only keys and $HOME/.g/g.conf to global-only keys.
+  - Rename global legacy key editor to edit_command during --write-config.
+  - Keep startup configuration loading read-only with scoped key application.
+  - Update requirements, workflow model, references, and configuration IO tests.
+- BREAKING CHANGE: split local and global configuration files [useReq] *(config)*
+  - Update REQUIREMENTS for split local/global config contracts and renamed keys.
+  - Refactor core config loading to read .g.conf and $HOME/.g/g.conf.
+  - Rename default_module->default_commit_module and editor->edit_command.
+  - Make --write-config add only missing keys without overwriting existing values.
+  - Remove runtime autofill persistence for missing gp_command/gr_command.
+  - Update config/help/conventional tests and refresh WORKFLOW/REFERENCES docs.
+- normalize description casing and period [useReq] *(conventional-commit)*
+  - Update REQ-022 to require conventional commit description normalization.
+  - Capitalize first description character unless numeric.
+  - Append trailing period when missing across conventional aliases.
+  - Add regression tests and refresh workflow/reference docs.
+- make gp/gr commands configurable [useReq] *(config)*
+  - Update DES-006, REQ-014, and REQ-015 for gp/gr configurable command keys and runtime fallback behavior.
+  - Add REQ-097 to persist missing gp_command/gr_command defaults into existing .g.conf while preserving existing keys.
+  - Refactor core command resolution for gp/gr with executable availability checks and fallback to default templates.
+  - Add tests for config IO autofill and gp/gr command execution/fallback; refresh WORKFLOW and REFERENCES docs.
+- color status prefixes in section 6 [useReq] *(overview-o)*
+  - Update REQ-094 for bright-red two-character status prefixes in CURRENT BRANCH STATE.
+  - Apply prefix coloring in _overview_current_branch_state_lines and keep header normalization.
+  - Add/adjust tests for section-6 prefix color rendering and regenerate workflow/reference docs.
+- normalize work label and conditional state section [useReq] *(overview-o)*
+  - Update REQ-084/088/094 and bump SRS version to 0.91.
+  - Implement state-aware Work prefix color across overview sections.
+  - Render section 6 only for non-clean worktree and normalize status header.
+  - Add/adjust cmd_o tests for clean/non-clean rendering behavior.
+  - Regenerate WORKFLOW and REFERENCES for updated call-trace/symbol map.
+- render aligned configured branch rows [useReq] *(overview-branches)*
+  - Replace section-5 lb-like listing with configured branch summary rows.
+  - Render '<Identifier> | <latest commit subject>' with aligned identifiers.
+  - Print commit subject in bright white bold and update cmd_o tests/spec/docs.
+- group Work with aligned refs in topology [useReq] *(overview-topology)*
+  - Update REQ-090 and REQ-092 to allow Work hash grouping.
+  - Implement topology grouping change in _overview_ascii_topology_lines.
+  - Adjust and extend cmd_o topology tests for aligned Work/Develop refs.
+- add overview branches section ordering [useReq] *(core)*
+  - update REQ-084 and REQ-094 for six-section overview layout
+  - add section 5 BRANCHES in cmd_o using lb-equivalent branch listing
+  - renumber current branch state heading to section 6
+  - extend cmd_o tests for new section ordering and branch output
+  - update WORKFLOW.md and regenerate REFERENCES.md
+- replace qualitative topology with chronological-position tree [useReq] *(core)*
+  - Updated REQ-089..REQ-093, added REQ-095 for chronological topology
+  - Rewritten _overview_ascii_topology_lines to derive node positions
+  - from actual commit hashes via git rev-parse and git merge-base
+  - Removed qualitative-state labels (in_sync/ahead/behind/diverged/unknown)
+  - from section-4 infographic output
+  - Removed _overview_compare_relation, _overview_inverse_relation_state,
+  - _overview_relation_state_text, _overview_normalize_relation_state,
+  - and OVERVIEW_RELATION_STATES constant
+  - Nodes grouped by shared commit hash, ordered most-ahead to most-behind
+  - WorkingTree always separate with [state] annotation
+  - Updated tests, WORKFLOW.md, REFERENCES.md
+- rework overview topology infographic [useReq] *(core)*
+  - revise REQ-089/090/092 for commit-alignment semantics\n- render section 4 as work-relative alignment groups\n- add silent relation helper for topology grouping\n- keep ahead/behind color semantics and section title\n- align tests, workflow trace, and regenerated references
+- refine overview current branch rendering [useReq] *(core)*
+  - update REQ-084/085/088/089 and add REQ-094 for section flow\n- add highlighted current-branch line in section 1\n- move git status branch-state output to new section 5\n- rename section 4 title to QUALITATIVE TOPOLOGY\n- align tests, workflow model, and regenerated references
+- redesign o overview visual output [useReq] *(core)*
+  - revise REQ-084..REQ-088 for configured branch/remote labels and color contract\n- render Work/Develop/Master and RemoteDevelop/RemoteMaster identifiers verbosely\n- enforce purple section titles, bright white subsection title, yellow branch tuples\n- color ahead counters bright green and behind counters bright red\n- align overview tests and refresh WORKFLOW/REFERENCES docs
+- extend o overview with active worktree section [useReq] *(core)*
+  - update REQ-084 and REQ-088 for third overview section behavior\n- add section 3 in cmd_o using git worktree list --verbose\n- keep existing overview templates/colors and update tests\n- refresh WORKFLOW.md and regenerate REFERENCES.md
+- rename d alias to dr and align handlers [useReq] *(core)*
+  - update REQ-008 and REQ-037 for dr visual diff alias
+  - rename cmd_d to cmd_dr and map command dispatch key to dr
+  - update diff alias tests and regenerate workflow/references docs
 - add lsa alias and align lsi ls-files flags [useReq] *(cli)*
   - Requirement Delta: update REQ-008, REQ-080, add REQ-081 for ls/lsi/lsa behavior.
   - Implementation Delta: add cmd_lsa, update cmd_lsi flags, register HELP_TEXTS/COMMANDS entries.
   - Test Delta: extend tests/test_cmd_ls.py for lsi and new lsa forwarding assertions.
   - Docs Delta: update docs/WORKFLOW.md call-trace nodes and regenerate docs/REFERENCES.md.
   - Execution-ID: b348bd2e-c5b4-4c5e-b78c-beb5e3b6c97d
+
+### 📚  Documentation
+- align config file documentation [useReq] *(readme)*
+  - Update README to document split local/global configuration files.
+  - Document default_commit_module and global edit_command key usage.
+  - Clarify --write-config normalization and legacy editor->edit_command migration.
 
 ## [0.5.0](https://github.com/Ogekuri/G/compare/v0.4.0..v0.5.0) - 2026-02-22
 ### ⛰️  Features
@@ -201,11 +286,11 @@
 - \[0.3.0\]: https://github.com/Ogekuri/G/releases/tag/v0.3.0
 - \[0.4.0\]: https://github.com/Ogekuri/G/releases/tag/v0.4.0
 - \[0.5.0\]: https://github.com/Ogekuri/G/releases/tag/v0.5.0
-- \[0.5.1\]: https://github.com/Ogekuri/G/releases/tag/v0.5.1
+- \[0.6.0\]: https://github.com/Ogekuri/G/releases/tag/v0.6.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
 [0.3.0]: https://github.com/Ogekuri/G/compare/v0.2.0..v0.3.0
 [0.4.0]: https://github.com/Ogekuri/G/compare/v0.3.0..v0.4.0
 [0.5.0]: https://github.com/Ogekuri/G/compare/v0.4.0..v0.5.0
-[0.5.1]: https://github.com/Ogekuri/G/compare/v0.5.0..v0.5.1
+[0.6.0]: https://github.com/Ogekuri/G/compare/v0.5.0..v0.6.0
