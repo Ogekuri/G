@@ -407,6 +407,7 @@ HELP_TEXTS = {
     "lm": "Print all merges.",
     "ls": "List tracked files using git ls-files.",
     "lsi": "List ignored files using git ls-files.",
+    "lsa": "List untracked files using git ls-files.",
     "lt": "Print tags with containing branches.",
     "major": "Release a new major version from the work branch. Options: --include-patch.",
     "minor": "Release a new minor version from the work branch. Options: --include-patch.",
@@ -2521,7 +2522,19 @@ def cmd_ls(extra):
 # @return Result emitted by `cmd_lsi` according to command contract.
 # @satisfies REQ-080
 def cmd_lsi(extra):
-    return run_git_cmd(["ls-files", "-i", "--exclude-standard"], extra)
+    return run_git_cmd(
+        ["ls-files", "--others", "--ignored", "--exclude-standard"],
+        extra,
+    )
+
+
+## @brief Execute `cmd_lsa` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_lsa` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_lsa`.
+# @return Result emitted by `cmd_lsa` according to command contract.
+# @satisfies REQ-081
+def cmd_lsa(extra):
+    return run_git_cmd(["ls-files", "--others", "--exclude-standard"], extra)
 
 
 ## @brief Execute `cmd_lt` runtime logic for Git-Alias CLI.
@@ -2977,6 +2990,7 @@ COMMANDS = {
     "lm": cmd_lm,
     "ls": cmd_ls,
     "lsi": cmd_lsi,
+    "lsa": cmd_lsa,
     "lt": cmd_lt,
     "major": cmd_major,
     "misc": cmd_misc,
