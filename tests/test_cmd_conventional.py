@@ -27,7 +27,7 @@ class ConventionalCommitAliasesTest(unittest.TestCase):
         execute.assert_called_once_with("docs(api): Aggiornamento documentazione.", "docs")
 
     def test_change_uses_configured_default_scope(self):
-        core.CONFIG["default_module"] = "ui"
+        core.CONFIG["default_commit_module"] = "ui"
         with mock.patch.object(core, "_ensure_commit_ready"), mock.patch.object(
             core, "_execute_commit", return_value=None
         ) as execute:

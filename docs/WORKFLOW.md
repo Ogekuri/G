@@ -74,7 +74,7 @@
 ### PROC:main
 - Entrypoint(s):
   - `git_alias.__main__::<module_guard>`: module entrypoint forwarding process exit code [`src/git_alias/__main__.py:10-11`]
-  - `main(argv=None, *, check_updates=True)`: primary CLI dispatcher [`src/git_alias/core.py:2671-2721`]
+  - `main(argv=None, *, check_updates=True)`: primary CLI dispatcher [`src/git_alias/core.py:3786-3836`]
 - Lifecycle/trigger:
   - Start: OS invokes Python module entrypoint (`python -m git_alias`) or console entrypoint calling `main(...)`.
   - Stop: returns from `main(...)` for non-error flows or terminates via `sys.exit(...)` on validation/command failures.
@@ -82,21 +82,26 @@
   - Threads: no explicit threads detected in `src/` (`threading`/`Thread` creation absent).
 - Internal Call-Trace Tree:
   - `__main__::<module_guard>(...)`: module execution bridge [`src/git_alias/__main__.py:10-11`]
-    - `main(...)`: CLI dispatch root [`src/git_alias/core.py:2671`]
-      - `get_git_root(...)`: resolve repository root path [`src/git_alias/core.py:275`]
+    - `main(...)`: CLI dispatch root [`src/git_alias/core.py:3786`]
+      - `get_git_root(...)`: resolve repository root path [`src/git_alias/core.py:293`]
         - `_run_checked(...)`: subprocess execution wrapper [`src/git_alias/core.py:588`]
-      - `load_cli_config(...)`: hydrate runtime config map from `.g.conf` and auto-sync missing `gp_command`/`gr_command` defaults [`src/git_alias/core.py:311`]
-        - `get_config_path(...)`: resolve config path [`src/git_alias/core.py:295`]
+      - `load_cli_config(...)`: hydrate runtime config map from local `.g.conf` and global `$HOME/.g/g.conf` without runtime autofill writes [`src/git_alias/core.py:377`]
+        - `get_global_config_path(...)`: resolve global config path [`src/git_alias/core.py:322`]
+        - `_read_config_object(...)`: parse JSON object safely [`src/git_alias/core.py:331`]
+        - `_apply_config_values(...)`: validate and apply key subsets [`src/git_alias/core.py:355`]
+        - `get_config_path(...)`: resolve repository config path [`src/git_alias/core.py:313`]
       - `check_for_newer_version(...)`: optional remote release check and cache handling [`src/git_alias/core.py:187`]
         - `get_cli_version(...)`: parse `__version__` from package init [`src/git_alias/core.py:160`]
         - `_parse_semver_tuple(...)`: semantic version parser [`src/git_alias/core.py:1360`]
         - `_normalize_semver_text(...)`: strip leading `v` tag prefix [`src/git_alias/core.py:176`]
-      - `print_all_help(...)`: global help output path [`src/git_alias/core.py:2617`]
+      - `print_all_help(...)`: global help output path [`src/git_alias/core.py:3746`]
         - `get_cli_version(...)`: include runtime version in usage header [`src/git_alias/core.py:160`]
-        - `print_command_help(...)`: print per-command help rows [`src/git_alias/core.py:2607`]
-      - `print_command_help(...)`: per-command help path [`src/git_alias/core.py:2607`]
-      - `write_default_config(...)`: write default config payload [`src/git_alias/core.py:361`]
-        - `get_config_path(...)`: resolve write target [`src/git_alias/core.py:295`]
+        - `print_command_help(...)`: print per-command help rows [`src/git_alias/core.py:3736`]
+      - `print_command_help(...)`: per-command help path [`src/git_alias/core.py:3736`]
+      - `write_default_config(...)`: insert missing keys in local `.g.conf` and global `$HOME/.g/g.conf` [`src/git_alias/core.py:421`]
+        - `_write_missing_config_values(...)`: add missing keys without overwriting existing values [`src/git_alias/core.py:396`]
+        - `get_config_path(...)`: resolve repository target [`src/git_alias/core.py:313`]
+        - `get_global_config_path(...)`: resolve global target [`src/git_alias/core.py:322`]
       - `upgrade_self(...)`: self-upgrade action [`src/git_alias/core.py:1733`]
         - `_run_checked(...)`: spawn `uv tool install ...` [`src/git_alias/core.py:588`]
       - `remove_self(...)`: self-remove action [`src/git_alias/core.py:1750`]
@@ -210,15 +215,15 @@
         - `cmd_dime(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2053`]
         - `cmd_dwc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2061`]
         - `cmd_dwcc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2069`]
-        - `cmd_ed(...)`: external editor flow [`src/git_alias/core.py:2077`]
+        - `cmd_ed(...)`: external editor flow [`src/git_alias/core.py:2508`]
           - `_to_args(...)`
           - `run_editor_command(...)`
             - `_editor_base_command(...)` -> `get_editor(...)` -> `get_config_value(...)`
             - `run_command(...)` -> `_run_checked(...)`
         - `cmd_fe(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2091`]
         - `cmd_feall(...)`: `cmd_fe(...)` + `_to_args(...)` [`src/git_alias/core.py:2099`]
-        - `cmd_gp(...)`: GUI wrapper -> `_config_command_parts(...)`, `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2456`]
-        - `cmd_gr(...)`: GUI wrapper -> `_config_command_parts(...)`, `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2464`]
+        - `cmd_gp(...)`: GUI wrapper -> `_config_command_parts(...)`, `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2538`]
+        - `cmd_gr(...)`: GUI wrapper -> `_config_command_parts(...)`, `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2546`]
         - `cmd_str(...)`: remote-status flow [`src/git_alias/core.py:2543`]
           - `run_git_text(...)` -> `_run_checked(...)`
           - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`
@@ -356,7 +361,7 @@
               - `get_release_page_url(...)`
               - `get_origin_compare_url(...)`
 - External Boundaries:
-  - OS subprocess execution (`subprocess.run`, `subprocess.Popen`) for `git`, `uv`, `gzip`, `gitk`, and configured editor binaries [`src/git_alias/core.py:588-593`, `src/git_alias/core.py:1804-1809`, `src/git_alias/core.py:1733-1751`, `src/git_alias/core.py:2107-2116`]
+  - OS subprocess execution (`subprocess.run`, `subprocess.Popen`) for `git`, `uv`, `gzip`, `gitk`, and configured editor binaries [`src/git_alias/core.py:651-656`, `src/git_alias/core.py:1877-1882`, `src/git_alias/core.py:1806-1824`, `src/git_alias/core.py:2508-2516`]
   - HTTP GET to GitHub Releases API via `urlopen` for version checks [`src/git_alias/core.py:221-234`]
   - File I/O: config file read/write and changelog/version file rewrites [`src/git_alias/core.py:304-347`, `src/git_alias/core.py:2427-2450`, `src/git_alias/core.py:2523-2531`]
 
@@ -415,7 +420,7 @@
 
 ### PROC:editor
 - Entrypoint(s):
-  - `cmd_ed(...)` [`src/git_alias/core.py:2077-2085`]
+  - `cmd_ed(...)` [`src/git_alias/core.py:2508-2516`]
 - Lifecycle/trigger:
   - Start: alias `ed` with one-or-more file paths.
   - Stop: one subprocess completion per file path.
@@ -428,12 +433,12 @@
       - `_editor_base_command(...)` -> `get_editor(...)` -> `get_config_value(...)`
       - `run_command(...)` -> `_run_checked(...)`
 - External Boundaries:
-  - External editor binary from config (`editor` key).
+  - External editor binary from config (`edit_command` key).
 
 ### PROC:gitk
 - Entrypoint(s):
-  - `cmd_gp(...)` [`src/git_alias/core.py:2456-2458`]
-  - `cmd_gr(...)` [`src/git_alias/core.py:2464-2466`]
+  - `cmd_gp(...)` [`src/git_alias/core.py:2538-2539`]
+  - `cmd_gr(...)` [`src/git_alias/core.py:2546-2547`]
 - Lifecycle/trigger:
   - Start: aliases `gp` / `gr`.
   - Stop: exits when configured viewer process terminates.
@@ -484,9 +489,9 @@
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv from configured editor command
   - Payload/Data-Shape: command parts (`List[str]`) + expanded file path argument(s)
-  - Evidence: `_editor_base_command` [`src/git_alias/core.py:354-366`], `run_editor_command` [`src/git_alias/core.py:373-374`], `cmd_ed` [`src/git_alias/core.py:2077-2085`]
+  - Evidence: `_editor_base_command` [`src/git_alias/core.py:436-448`], `run_editor_command` [`src/git_alias/core.py:455-456`], `cmd_ed` [`src/git_alias/core.py:2508-2516`]
 - EDGE: PROC:main -> PROC:gitk
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv + inherited stdio
   - Payload/Data-Shape: configured viewer argument vector (`List[str]`) plus forwarded CLI extras
-  - Evidence: `_config_command_parts` [`src/git_alias/core.py:402-429`], `cmd_gp` [`src/git_alias/core.py:2456-2458`], `cmd_gr` [`src/git_alias/core.py:2464-2466`], `run_command` [`src/git_alias/core.py:692-693`]
+  - Evidence: `_config_command_parts` [`src/git_alias/core.py:466-493`], `cmd_gp` [`src/git_alias/core.py:2538-2539`], `cmd_gr` [`src/git_alias/core.py:2546-2547`], `run_command` [`src/git_alias/core.py:755-756`]

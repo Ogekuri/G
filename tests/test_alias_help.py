@@ -132,7 +132,7 @@ class AliasHelpTest(unittest.TestCase):
         for alias in aliases:
             output = self.run_script([alias, "--help"])
             self.assertIn("<module>: <description>", output, msg=f"{alias} help missing module prefix syntax")
-            self.assertIn("default_module", output, msg=f"{alias} help missing default module fallback")
+            self.assertIn("default_commit_module", output, msg=f"{alias} help missing default module fallback")
 
     def test_usage_includes_version_when_no_args(self):
         code, stdout, _ = self.run_script_result([], check=False)

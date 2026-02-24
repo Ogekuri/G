@@ -26,6 +26,10 @@ pathspec = importlib.import_module("pathspec")
 ## @brief Constant `CONFIG_FILENAME` used by CLI runtime paths and policies.
 
 CONFIG_FILENAME = ".g.conf"
+## @brief Constant `GLOBAL_CONFIG_DIRECTORY` used by CLI runtime paths and policies.
+GLOBAL_CONFIG_DIRECTORY = ".g"
+## @brief Constant `GLOBAL_CONFIG_FILENAME` used by CLI runtime paths and policies.
+GLOBAL_CONFIG_FILENAME = "g.conf"
 
 ## @brief Constant `GITHUB_LATEST_RELEASE_API` used by CLI runtime paths and policies.
 
@@ -69,8 +73,8 @@ DEFAULT_CONFIG = {
     "master": "master",
     "develop": "develop",
     "work": "work",
-    "editor": "edit",
-    "default_module": "core",
+    "edit_command": "edit",
+    "default_commit_module": "core",
     "gp_command": DEFAULT_GP_COMMAND,
     "gr_command": DEFAULT_GR_COMMAND,
     "ver_rules": [
@@ -86,10 +90,17 @@ CONFIG = DEFAULT_CONFIG.copy()
 ## @brief Constant `BRANCH_KEYS` used by CLI runtime paths and policies.
 
 BRANCH_KEYS = ("master", "develop", "work")
+## @brief Constant `LOCAL_CONFIG_KEYS` used by CLI runtime paths and policies.
+LOCAL_CONFIG_KEYS = ("master", "develop", "work", "default_commit_module", "ver_rules")
+## @brief Constant `GLOBAL_CONFIG_KEYS` used by CLI runtime paths and policies.
+GLOBAL_CONFIG_KEYS = ("edit_command", "gp_command", "gr_command")
 ## @brief Constant `MANAGEMENT_HELP` used by CLI runtime paths and policies.
 
 MANAGEMENT_HELP = [
-    ("--write-config", "Generate the .g.conf file in the repository root with default values."),
+    (
+        "--write-config",
+        "Insert missing defaults into repository .g.conf and global $HOME/.g/g.conf.",
+    ),
     ("--upgrade", "Reinstall git-alias via uv tool install."),
     ("--remove", "Uninstall git-alias using uv tool uninstall."),
     ("--ver", "Print the CLI version."),
@@ -120,7 +131,7 @@ def get_branch(name):
 # @details Executes `get_editor` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `get_editor` according to command contract.
 def get_editor():
-    return get_config_value("editor")
+    return get_config_value("edit_command")
 
 
 ## @brief Execute `_load_config_rules` runtime logic for Git-Alias CLI.
@@ -304,40 +315,45 @@ def get_config_path(root=None):
     return base / CONFIG_FILENAME
 
 
-## @brief Execute `load_cli_config` runtime logic for Git-Alias CLI.
-# @details Executes `load_cli_config` using deterministic CLI control-flow and explicit error propagation.
-# @param root Input parameter consumed by `load_cli_config`.
-# @return Result emitted by `load_cli_config` according to command contract.
-def load_cli_config(root=None):
-    CONFIG.update(DEFAULT_CONFIG)
-    config_path = get_config_path(root)
+## @brief Execute `get_global_config_path` runtime logic for Git-Alias CLI.
+# @details Executes `get_global_config_path` using deterministic CLI control-flow and explicit error propagation.
+# @param home Input parameter consumed by `get_global_config_path`.
+# @return Result emitted by `get_global_config_path` according to command contract.
+def get_global_config_path(home=None):
+    base = Path(home).expanduser() if home is not None else Path.home()
+    return base / GLOBAL_CONFIG_DIRECTORY / GLOBAL_CONFIG_FILENAME
+
+
+## @brief Execute `_read_config_object` runtime logic for Git-Alias CLI.
+# @details Executes `_read_config_object` using deterministic CLI control-flow and explicit error propagation.
+# @param config_path Input parameter consumed by `_read_config_object`.
+# @return Result emitted by `_read_config_object` according to command contract.
+def _read_config_object(config_path):
     if not config_path.exists():
-        return config_path
+        return {}
     try:
         raw_text = config_path.read_text(encoding="utf-8")
     except OSError as exc:
         print(f"Unable to read {config_path}: {exc}", file=sys.stderr)
-        return config_path
+        return None
     try:
         data = json.loads(raw_text)
     except json.JSONDecodeError as exc:
         print(f"Unable to parse {config_path} as JSON: {exc}", file=sys.stderr)
-        return config_path
+        return None
     if not isinstance(data, dict):
         print(f"Ignoring {config_path}: expected a JSON object.", file=sys.stderr)
-        return config_path
-    should_sync_commands = False
-    for key in ("gp_command", "gr_command"):
-        if key in data:
-            continue
-        data[key] = DEFAULT_CONFIG[key]
-        should_sync_commands = True
-    if should_sync_commands:
-        try:
-            config_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-        except OSError as exc:
-            print(f"Unable to update {config_path}: {exc}", file=sys.stderr)
-    for key in DEFAULT_CONFIG:
+        return None
+    return data
+
+
+## @brief Execute `_apply_config_values` runtime logic for Git-Alias CLI.
+# @details Executes `_apply_config_values` using deterministic CLI control-flow and explicit error propagation.
+# @param data Input parameter consumed by `_apply_config_values`.
+# @param keys Input parameter consumed by `_apply_config_values`.
+# @return Result emitted by `_apply_config_values` according to command contract.
+def _apply_config_values(data, keys):
+    for key in keys:
         if key not in data:
             continue
         value = data[key]
@@ -351,36 +367,84 @@ def load_cli_config(root=None):
             CONFIG[key] = value
         else:
             print(f"Ignoring {key}: expected a non-empty string.", file=sys.stderr)
+
+
+## @brief Execute `load_cli_config` runtime logic for Git-Alias CLI.
+# @details Executes `load_cli_config` using deterministic CLI control-flow and explicit error propagation.
+# @param root Input parameter consumed by `load_cli_config`.
+# @param home Input parameter consumed by `load_cli_config`.
+# @return Result emitted by `load_cli_config` according to command contract.
+def load_cli_config(root=None, home=None):
+    CONFIG.update(DEFAULT_CONFIG)
+    global_config_path = get_global_config_path(home)
+    global_data = _read_config_object(global_config_path)
+    if global_data is not None:
+        _apply_config_values(global_data, GLOBAL_CONFIG_KEYS)
+    config_path = get_config_path(root)
+    local_data = _read_config_object(config_path)
+    if local_data is not None:
+        _apply_config_values(local_data, LOCAL_CONFIG_KEYS)
+    return config_path
+
+
+## @brief Execute `_write_missing_config_values` runtime logic for Git-Alias CLI.
+# @details Executes `_write_missing_config_values` using deterministic CLI control-flow and explicit error propagation.
+# @param config_path Input parameter consumed by `_write_missing_config_values`.
+# @param keys Input parameter consumed by `_write_missing_config_values`.
+# @param create_parent Input parameter consumed by `_write_missing_config_values`.
+# @return Result emitted by `_write_missing_config_values` according to command contract.
+def _write_missing_config_values(config_path, keys, create_parent=False):
+    data = _read_config_object(config_path)
+    if data is None:
+        return config_path
+    if create_parent:
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+    should_write = False
+    for key in keys:
+        if key in data:
+            continue
+        data[key] = DEFAULT_CONFIG[key]
+        should_write = True
+    if should_write:
+        try:
+            config_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        except OSError as exc:
+            print(f"Unable to update {config_path}: {exc}", file=sys.stderr)
     return config_path
 
 
 ## @brief Execute `write_default_config` runtime logic for Git-Alias CLI.
 # @details Executes `write_default_config` using deterministic CLI control-flow and explicit error propagation.
 # @param root Input parameter consumed by `write_default_config`.
+# @param home Input parameter consumed by `write_default_config`.
 # @return Result emitted by `write_default_config` according to command contract.
-def write_default_config(root=None):
-    config_path = get_config_path(root)
-    payload = json.dumps(DEFAULT_CONFIG, indent=2)
-    config_path.write_text(payload + "\n", encoding="utf-8")
-    print(f"Configuration written to {config_path}")
-    return config_path
+def write_default_config(root=None, home=None):
+    local_config_path = _write_missing_config_values(get_config_path(root), LOCAL_CONFIG_KEYS)
+    global_config_path = _write_missing_config_values(
+        get_global_config_path(home),
+        GLOBAL_CONFIG_KEYS,
+        create_parent=True,
+    )
+    print(f"Configuration updated at {local_config_path}")
+    print(f"Configuration updated at {global_config_path}")
+    return local_config_path
 
 
 ## @brief Execute `_editor_base_command` runtime logic for Git-Alias CLI.
 # @details Executes `_editor_base_command` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `_editor_base_command` according to command contract.
 def _editor_base_command():
-    raw_value = get_editor() or DEFAULT_CONFIG["editor"]
+    raw_value = get_editor() or DEFAULT_CONFIG["edit_command"]
     try:
         parts = shlex.split(raw_value)
     except ValueError as exc:
         print(
-            f"Ignoring invalid editor command '{raw_value}': {exc}. Falling back to '{DEFAULT_CONFIG['editor']}'",
+            f"Ignoring invalid edit command '{raw_value}': {exc}. Falling back to '{DEFAULT_CONFIG['edit_command']}'",
             file=sys.stderr,
         )
-        parts = [DEFAULT_CONFIG["editor"]]
+        parts = [DEFAULT_CONFIG["edit_command"]]
     if not parts:
-        parts = [DEFAULT_CONFIG["editor"]]
+        parts = [DEFAULT_CONFIG["edit_command"]]
     return parts
 
 
@@ -461,17 +525,17 @@ HELP_TEXTS = {
     "lt": "Print tags with containing branches.",
     "major": "Release a new major version from the work branch. Options: --include-patch.",
     "minor": "Release a new minor version from the work branch. Options: --include-patch.",
-    "new": "Conventional commit new(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
+    "new": "Conventional commit new(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
     "o": "Print a verbose overview with status, branch distances, active worktrees, and a qualitative ASCII topology tree.",
-    "implement": "Conventional commit implement(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
-    "refactor": "Conventional commit refactor(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
-    "fix": "Conventional commit fix(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
-    "change": "Conventional commit change(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
-    "docs": "Conventional commit docs(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
-    "style": "Conventional commit style(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
-    "revert": "Conventional commit revert(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
-    "misc": "Conventional commit misc(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
-    "cover": "Conventional commit cover(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
+    "implement": "Conventional commit implement(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
+    "refactor": "Conventional commit refactor(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
+    "fix": "Conventional commit fix(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
+    "change": "Conventional commit change(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
+    "docs": "Conventional commit docs(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
+    "style": "Conventional commit style(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
+    "revert": "Conventional commit revert(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
+    "misc": "Conventional commit misc(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
+    "cover": "Conventional commit cover(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
     "me": "Merge",
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
@@ -2037,7 +2101,7 @@ def _build_conventional_message(kind: str, extra, alias: str) -> str:
         scope = match.group("module")
         body = match.group("body").strip()
     else:
-        scope = get_config_value("default_module")
+        scope = get_config_value("default_commit_module")
         body = text
     if not body:
         print(f"git {alias} requires text after the '<module>:' prefix to complete the message.", file=sys.stderr)
