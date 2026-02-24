@@ -41,7 +41,14 @@ class CmdOverviewTest(unittest.TestCase):
     def test_cmd_o_runs_status_and_all_comparisons(self):
         with mock.patch.object(core, "is_inside_git_repo", return_value=True), \
              mock.patch.object(core, "get_branch", side_effect=["work", "develop", "master"]), \
-             mock.patch.object(core, "run_git_text", return_value="work"), \
+             mock.patch.object(
+                 core,
+                 "run_git_text",
+                 side_effect=[
+                     "work",
+                     "* work   1111111 commit one\n  develop 2222222 commit two",
+                 ],
+             ) as run_git_text, \
              mock.patch.object(core, "_overview_compare_refs") as compare, \
              mock.patch.object(core, "_overview_ascii_topology_lines", return_value=[]) as topo, \
              mock.patch.object(core, "_overview_worktree_state", return_value="clean"), \
@@ -64,13 +71,22 @@ class CmdOverviewTest(unittest.TestCase):
                 mock.call("master", "origin/master", ANY),
             ]
         )
+        run_git_text.assert_has_calls(
+            [
+                mock.call(["branch", "--show-current"]),
+                mock.call(["branch", "-v", "-a"]),
+            ]
+        )
         output = out.getvalue()
         normalized_output = re.sub(r"\x1b\[[0-9;]*m", "", output)
         self.assertIn("WORKING AREA, STAGE & CURRENT BRANCH", output)
         self.assertIn("BRANCH DISTANCES (COMMITS)", output)
         self.assertIn("ACTIVE WORKTREES", output)
         self.assertIn("QUALITATIVE TOPOLOGY", output)
+        self.assertIn("BRANCHES", output)
         self.assertIn("CURRENT BRANCH STATE", output)
+        self.assertIn("* work   1111111 commit one", normalized_output)
+        self.assertIn("develop 2222222 commit two", normalized_output)
         self.assertIn("Server Alignment", output)
         self.assertIn("Current Branch:", output)
         self.assertIn("Work(⎇ work)", normalized_output)
@@ -92,6 +108,10 @@ class CmdOverviewTest(unittest.TestCase):
         )
         self.assertLess(
             normalized_output.index("QUALITATIVE TOPOLOGY"),
+            normalized_output.index("BRANCHES"),
+        )
+        self.assertLess(
+            normalized_output.index("BRANCHES"),
             normalized_output.index("CURRENT BRANCH STATE"),
         )
         topo.assert_called_once_with(

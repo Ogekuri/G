@@ -2836,7 +2836,18 @@ def cmd_o(extra):
     print(
         OVERVIEW_SECTION_TEMPLATE.format(
             color=OVERVIEW_COLOR_SECTION_PURPLE,
-            title="5. CURRENT BRANCH STATE",
+            title="5. BRANCHES",
+            reset=OVERVIEW_COLOR_RESET,
+        )
+    )
+    branch_rows = run_git_text(["branch", "-v", "-a"]).splitlines()
+    for row in branch_rows:
+        print(f"{OVERVIEW_COLOR_WHITE}{row}{OVERVIEW_COLOR_RESET}")
+    print()
+    print(
+        OVERVIEW_SECTION_TEMPLATE.format(
+            color=OVERVIEW_COLOR_SECTION_PURPLE,
+            title="6. CURRENT BRANCH STATE",
             reset=OVERVIEW_COLOR_RESET,
         )
     )

@@ -127,6 +127,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-24 | 0.87 | Revised `o` overview section layout with dedicated current-branch state section and explicit highlighted current-branch indicator |
 | 2026-02-24 | 0.88 | Updated section-4 topology to represent commit-alignment groups from ahead/behind, not branch-hierarchy structure |
 | 2026-02-24 | 0.89 | Replaced qualitative-state topology with chronological-position tree derived from actual commit positions; removed state labels from infographic |
+| 2026-02-24 | 0.90 | Updated `o` overview with a dedicated branch list section before current branch state, preserving overview color/layout contracts |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -193,7 +194,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-081**: The `lsa` alias MUST run `git ls-files --others --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
 - **REQ-082**: The CLI MUST expose an `o` alias in `COMMANDS` and `HELP_TEXTS`, and `--help` outputs MUST include `o` in global and per-command help paths.
 - **REQ-083**: The `o` alias MUST terminate with non-zero exit when executed outside a Git repository and MUST print an explicit English error message to stderr.
-- **REQ-084**: The `o` alias MUST print five sections in order: section 1 working area context, section 2 branch distances, section 3 active worktrees, section 4 qualitative topology, and section 5 current-branch state.
+- **REQ-084**: The `o` alias MUST print six sections in order: section 1 working area context, section 2 branch distances, section 3 active worktrees, section 4 qualitative topology, section 5 branches, and section 6 current-branch state.
 - **REQ-085**: The `o` alias MUST always use configured `work`, `develop`, and `master` branch names, MUST print identifiers `Work(⎇ <work>)`, `Develop(⎇ <develop>)`, `Master(⎇ <master>)`, and MUST print `Current Branch: <Logical>(⎇ <current>)`.
 - **REQ-086**: The `o` alias MUST print verbose divergence rows with explicit configured labels and remote labels `RemoteDevelop(⎇ origin/<develop>)` and `RemoteMaster(⎇ origin/<master>)`, using `git rev-list` counts when compared refs exist.
 - **REQ-087**: The `o` alias MUST color ahead counters with bright green (`\033[92m`) and behind counters with bright red (`\033[31;1m`); zero-value counters and non-delta text MUST remain white.
@@ -204,7 +205,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-092**: The section-4 root node MUST be the node or group with the highest commit count from the merge-base; remaining nodes MUST appear as `|-- ` children ordered by descending commit count; `WorkingTree` MUST be positioned immediately above `Work` when at the same commit position or when the working tree is dirty; `Work` MUST always occupy its own output line.
 - **REQ-093**: The section-4 infographic MUST preserve the overview color contract: purple section title, yellow `(⎇ <name>)` tuples, and white generic text including tree connectors and `WorkingTree` state annotation.
 - **REQ-095**: The section-4 `WorkingTree` node MUST display `WorkingTree [<state>]` where `<state>` is the working-tree state string (`clean`, `unstaged`, `staged`, or `mixed`) derived from the same diagnostic function used by `cmd_o`.
-- **REQ-094**: The `o` alias MUST execute `git worktree list --verbose` in section 3 and MUST execute `git status -sb` only in section 5 for current-branch state output.
+- **REQ-094**: The `o` alias MUST execute `git worktree list --verbose` in section 3, MUST print section title `=== 5. BRANCHES ===` with branch listing formatted equivalently to alias `lb`, and MUST execute `git status -sb` only in section 6 for current-branch state output under title `=== 6. CURRENT BRANCH STATE ===`.
 - **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
 - **REQ-010**: The system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.
 - **REQ-011**: Gli alias di reset e pulizia devono applicare le modalità di reset (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`) e le pulizie dello working tree (`rmloc`, `rmstg`, `rmunt`). I comandi di reset (`rs*`) devono stampare il testo di help dedicato quando invocati con `--help`, senza dipendere da alias separati.
