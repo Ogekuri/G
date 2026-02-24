@@ -35,7 +35,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 - Common aliases for repetitive tasks like `add --all` (`aa`) and more.
 - Acts like a `.gitconfig` [alias] section, providing all standard Git commands with a fallback mechanism.
 - Customizable three-branch workflow: `master`, `develop`, and `work`.
-- Conventional commit aliases support `<module>: <description>` syntax (example: `g new api: add endpoint`) and also accept `<description>` only, using `.g.conf.default_module` (default `core`).
+- Conventional commit aliases support `<module>: <description>` syntax (example: `g new api: add endpoint`) and also accept `<description>` only, using `.g.conf.default_commit_module` (default `core`).
 - Standardized commits with specific commands like: `g new core: foo bar.` Use these commands for common activities such as:
   - `new`: Implement new features.
   - `implement`: Implement features or larger changes.
@@ -83,17 +83,18 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
   ```
 
 
-### Create a `.g.conf` Configuration File
+### Create Configuration Files (`.g.conf` + `$HOME/.g/g.conf`)
 
 ```bash
 g --write-config
 ```
 
 
-### Edit the `.g.conf` Configuration File
+### Edit Configuration Files
 
-- Customize your `.g.conf` JSON file with `master`, `develop`, `work`, `editor`, and `default_module` values.
-- Configure `ver_rules` (pattern/regex pairs) to define which files `g ver`, `g chver`, and release commands read/update for version consistency.
+- Customize repository-local `.g.conf` with `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`.
+- Customize global `$HOME/.g/g.conf` with `edit_command`, `gp_command`, and `gr_command`.
+- Running `g --write-config` normalizes both files to these key sets and migrates legacy global `editor` to `edit_command`.
 
 
 ### Work-in-Progress Commits
@@ -145,7 +146,7 @@ Some CLI examples:
 - `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
 - `g lg --help`: Shows the help text for the `lg` alias.
 - `g cm "Message"`: Runs `git commit` with the provided message.
-- `g new api: add endpoint`: Creates `new(api): add endpoint`; omit `api:` to use `.g.conf.default_module`.
+- `g new api: add endpoint`: Creates `new(api): add endpoint`; omit `api:` to use `.g.conf.default_commit_module`.
 - `g backup`: Merges configured `work` into `develop`, pushes `develop`, and checks out back to `work`.
 - `g wt`: Runs `git worktree list`.
 - `g wtr -f ../repo-worktree`: Runs `git worktree remove -f ../repo-worktree`.
