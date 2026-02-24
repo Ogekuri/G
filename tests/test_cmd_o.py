@@ -64,6 +64,7 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertIn("WORKING AREA, STAGE & CURRENT BRANCH", output)
         self.assertIn("BRANCH DISTANCES (COMMITS)", output)
         self.assertIn("ACTIVE WORKTREES", output)
+        self.assertIn("QUALITATIVE TOPOLOGY (ASCII TREE)", output)
         self.assertIn("Server Alignment", output)
         self.assertIn("Work(", output)
         self.assertIn("Develop(", output)
@@ -77,6 +78,10 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertLess(
             output.index("BRANCH DISTANCES (COMMITS)"),
             output.index("ACTIVE WORKTREES"),
+        )
+        self.assertLess(
+            output.index("ACTIVE WORKTREES"),
+            output.index("QUALITATIVE TOPOLOGY (ASCII TREE)"),
         )
 
     ## @brief Verify `cmd_o` uses configured branch names consistently in compare calls.
@@ -106,11 +111,12 @@ class CmdOverviewTest(unittest.TestCase):
         ):
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
-                core._overview_compare_refs("HEAD", "develop", "Current vs Develop")
+                state = core._overview_compare_refs("HEAD", "develop", "Current vs Develop")
         line = out.getvalue().strip()
         self.assertIn("Current vs Develop", line)
         self.assertIn("↑ ahead 2", line)
         self.assertIn("↓ behind 1", line)
+        self.assertEqual(state, "diverged")
 
     ## @brief Verify `_overview_compare_refs` prints explicit n/a values when refs are unavailable.
     # @return None.
@@ -120,11 +126,38 @@ class CmdOverviewTest(unittest.TestCase):
         ) as run_git_text:
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
-                core._overview_compare_refs("HEAD", "develop", "Current vs Develop")
+                state = core._overview_compare_refs("HEAD", "develop", "Current vs Develop")
         self.assertIn("ahead", out.getvalue())
         self.assertIn("n/a", out.getvalue())
         self.assertIn("behind", out.getvalue())
+        self.assertEqual(state, "unknown")
         run_git_text.assert_not_called()
+
+    ## @brief Verify `_overview_ascii_topology_lines` renders a qualitative ASCII tree.
+    # @return None.
+    def test_overview_ascii_topology_lines_renders_nodes_and_states(self):
+        lines = core._overview_ascii_topology_lines(
+            work_display="Work(⎇ work)",
+            develop_display="Develop(⎇ develop)",
+            master_display="Master(⎇ master)",
+            remote_develop_display="RemoteDevelop(⎇ origin/develop)",
+            remote_master_display="RemoteMaster(⎇ origin/master)",
+            worktree_state="clean",
+            work_vs_develop="ahead",
+            work_vs_master="behind",
+            develop_vs_remote="in_sync",
+            master_vs_remote="diverged",
+        )
+        rendered = "\n".join(lines)
+        self.assertIn("WorkingTree", rendered)
+        self.assertIn("\\-- Work(⎇ work)", rendered)
+        self.assertIn("|-- Develop(⎇ develop)", rendered)
+        self.assertIn("\\-- RemoteDevelop(⎇ origin/develop)", rendered)
+        self.assertIn("\\-- Master(⎇ master)", rendered)
+        self.assertIn("\\-- RemoteMaster(⎇ origin/master)", rendered)
+        self.assertIn("ahead", rendered)
+        self.assertIn("behind", rendered)
+        self.assertIn("diverged", rendered)
 
 
 if __name__ == "__main__":

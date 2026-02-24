@@ -412,7 +412,7 @@ HELP_TEXTS = {
     "major": "Release a new major version from the work branch. Options: --include-patch.",
     "minor": "Release a new minor version from the work branch. Options: --include-patch.",
     "new": "Conventional commit new(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
-    "o": "Print a verbose repository overview for configured Work/Develop/Master branches, remotes, and active worktrees.",
+    "o": "Print a verbose overview with status, branch distances, active worktrees, and a qualitative ASCII topology tree.",
     "implement": "Conventional commit implement(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
     "refactor": "Conventional commit refactor(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
     "fix": "Conventional commit fix(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
@@ -2435,6 +2435,8 @@ OVERVIEW_SECTION_TEMPLATE = "{color}=== {title} ==={reset}"
 OVERVIEW_SUBSECTION_TEMPLATE = "{color}--- {title} ---{reset}"
 ## @brief Constant `OVERVIEW_DISTANCE_TEMPLATE` used by CLI runtime paths and policies.
 OVERVIEW_DISTANCE_TEMPLATE = "{text_color}{label}{reset} | {ahead} | {behind}"
+## @brief Constant `OVERVIEW_RELATION_STATES` used by CLI runtime paths and policies.
+OVERVIEW_RELATION_STATES = {"in_sync", "ahead", "behind", "diverged", "unknown"}
 
 
 ## @brief Execute `_overview_branch_identifier` runtime logic for Git-Alias CLI.
@@ -2464,6 +2466,61 @@ def _overview_ref_is_available(ref_name: str) -> bool:
     return proc.returncode == 0
 
 
+## @brief Execute `_overview_relation_state` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_relation_state` using deterministic CLI control-flow and explicit error propagation.
+# @param ahead Input parameter consumed by `_overview_relation_state`.
+# @param behind Input parameter consumed by `_overview_relation_state`.
+# @return Result emitted by `_overview_relation_state` according to command contract.
+def _overview_relation_state(ahead: int, behind: int) -> str:
+    if ahead > 0 and behind > 0:
+        return "diverged"
+    if ahead > 0:
+        return "ahead"
+    if behind > 0:
+        return "behind"
+    return "in_sync"
+
+
+## @brief Execute `_overview_normalize_relation_state` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_normalize_relation_state` using deterministic CLI control-flow and explicit error propagation.
+# @param state Input parameter consumed by `_overview_normalize_relation_state`.
+# @return Result emitted by `_overview_normalize_relation_state` according to command contract.
+def _overview_normalize_relation_state(state) -> str:
+    if isinstance(state, str) and state in OVERVIEW_RELATION_STATES:
+        return state
+    return "unknown"
+
+
+## @brief Execute `_overview_relation_state_text` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_relation_state_text` using deterministic CLI control-flow and explicit error propagation.
+# @param state Input parameter consumed by `_overview_relation_state_text`.
+# @return Result emitted by `_overview_relation_state_text` according to command contract.
+def _overview_relation_state_text(state) -> str:
+    normalized = _overview_normalize_relation_state(state)
+    if normalized == "ahead":
+        return f"{OVERVIEW_COLOR_AHEAD}{normalized}{OVERVIEW_COLOR_RESET}"
+    if normalized == "behind":
+        return f"{OVERVIEW_COLOR_BEHIND}{normalized}{OVERVIEW_COLOR_RESET}"
+    return f"{OVERVIEW_COLOR_WHITE}{normalized}{OVERVIEW_COLOR_RESET}"
+
+
+## @brief Execute `_overview_worktree_state` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_worktree_state` using deterministic CLI control-flow and explicit error propagation.
+# @param status_lines Input parameter consumed by `_overview_worktree_state`.
+# @return Result emitted by `_overview_worktree_state` according to command contract.
+def _overview_worktree_state(status_lines=None) -> str:
+    lines = status_lines if status_lines is not None else _git_status_lines()
+    has_unstaged = has_unstaged_changes(lines)
+    has_staged = has_staged_changes(lines)
+    if has_unstaged and has_staged:
+        return "mixed"
+    if has_staged:
+        return "staged"
+    if has_unstaged:
+        return "unstaged"
+    return "clean"
+
+
 ## @brief Execute `_overview_distance_text` runtime logic for Git-Alias CLI.
 # @details Executes `_overview_distance_text` using deterministic CLI control-flow and explicit error propagation.
 # @param is_ahead Input parameter consumed by `_overview_distance_text`.
@@ -2484,7 +2541,7 @@ def _overview_distance_text(is_ahead: bool, count: int) -> str:
 # @param target_ref Input parameter consumed by `_overview_compare_refs`.
 # @param label Input parameter consumed by `_overview_compare_refs`.
 # @return Result emitted by `_overview_compare_refs` according to command contract.
-def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> None:
+def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> str:
     if not _overview_ref_is_available(base_ref) or not _overview_ref_is_available(target_ref):
         unavailable = f"{OVERVIEW_COLOR_WHITE}n/a{OVERVIEW_COLOR_RESET}"
         print(
@@ -2496,7 +2553,7 @@ def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> None:
                 behind=f"{OVERVIEW_COLOR_WHITE}behind {unavailable}{OVERVIEW_COLOR_RESET}",
             )
         )
-        return
+        return "unknown"
     try:
         ahead = int(run_git_text(["rev-list", "--count", f"{target_ref}..{base_ref}"]))
         behind = int(run_git_text(["rev-list", "--count", f"{base_ref}..{target_ref}"]))
@@ -2511,7 +2568,8 @@ def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> None:
                 behind=f"{OVERVIEW_COLOR_WHITE}behind {unavailable}{OVERVIEW_COLOR_RESET}",
             )
         )
-        return
+        return "unknown"
+    state = _overview_relation_state(ahead, behind)
     print(
         OVERVIEW_DISTANCE_TEMPLATE.format(
             text_color=OVERVIEW_COLOR_WHITE,
@@ -2521,13 +2579,51 @@ def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> None:
             behind=_overview_distance_text(False, behind),
         )
     )
+    return state
+
+
+## @brief Execute `_overview_ascii_topology_lines` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_ascii_topology_lines` using deterministic CLI control-flow and explicit error propagation.
+# @param work_display Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param develop_display Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param master_display Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param remote_develop_display Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param remote_master_display Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param worktree_state Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param work_vs_develop Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param work_vs_master Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param develop_vs_remote Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param master_vs_remote Input parameter consumed by `_overview_ascii_topology_lines`.
+# @return Result emitted by `_overview_ascii_topology_lines` according to command contract.
+def _overview_ascii_topology_lines(
+    work_display: str,
+    develop_display: str,
+    master_display: str,
+    remote_develop_display: str,
+    remote_master_display: str,
+    worktree_state: str,
+    work_vs_develop,
+    work_vs_master,
+    develop_vs_remote,
+    master_vs_remote,
+) -> List[str]:
+    work_state = "in_sync" if worktree_state == "clean" else "diverged"
+    lines = [
+        f"{OVERVIEW_COLOR_WHITE}WorkingTree{OVERVIEW_COLOR_WHITE} [{worktree_state}]{OVERVIEW_COLOR_RESET}",
+        f"{OVERVIEW_COLOR_WHITE}\\-- {work_display} [{_overview_relation_state_text(work_state)}{OVERVIEW_COLOR_WHITE}]{OVERVIEW_COLOR_RESET}",
+        f"{OVERVIEW_COLOR_WHITE}    |-- {develop_display} [{_overview_relation_state_text(work_vs_develop)}{OVERVIEW_COLOR_WHITE}]{OVERVIEW_COLOR_RESET}",
+        f"{OVERVIEW_COLOR_WHITE}    |   \\-- {remote_develop_display} [{_overview_relation_state_text(develop_vs_remote)}{OVERVIEW_COLOR_WHITE}]{OVERVIEW_COLOR_RESET}",
+        f"{OVERVIEW_COLOR_WHITE}    \\-- {master_display} [{_overview_relation_state_text(work_vs_master)}{OVERVIEW_COLOR_WHITE}]{OVERVIEW_COLOR_RESET}",
+        f"{OVERVIEW_COLOR_WHITE}        \\-- {remote_master_display} [{_overview_relation_state_text(master_vs_remote)}{OVERVIEW_COLOR_WHITE}]{OVERVIEW_COLOR_RESET}",
+    ]
+    return lines
 
 
 ## @brief Execute `cmd_o` runtime logic for Git-Alias CLI.
 # @details Executes `cmd_o` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_o`.
 # @return Result emitted by `cmd_o` according to command contract.
-# @satisfies REQ-082, REQ-083, REQ-084, REQ-085, REQ-086, REQ-087, REQ-088
+# @satisfies REQ-082, REQ-083, REQ-084, REQ-085, REQ-086, REQ-087, REQ-088, REQ-089, REQ-090, REQ-091, REQ-092, REQ-093
 def cmd_o(extra):
     del extra
     if not is_inside_git_repo():
@@ -2561,12 +2657,12 @@ def cmd_o(extra):
             reset=OVERVIEW_COLOR_RESET,
         )
     )
-    _overview_compare_refs(
+    work_vs_develop_state = _overview_compare_refs(
         work_branch,
         develop_branch,
         f"{work_display} vs {develop_display}",
     )
-    _overview_compare_refs(
+    work_vs_master_state = _overview_compare_refs(
         work_branch,
         master_branch,
         f"{work_display} vs {master_display}",
@@ -2578,12 +2674,12 @@ def cmd_o(extra):
             reset=OVERVIEW_COLOR_RESET,
         )
     )
-    _overview_compare_refs(
+    develop_vs_remote_state = _overview_compare_refs(
         develop_branch,
         remote_develop,
         f"{develop_display} vs {remote_develop_display}",
     )
-    _overview_compare_refs(
+    master_vs_remote_state = _overview_compare_refs(
         master_branch,
         remote_master,
         f"{master_display} vs {remote_master_display}",
@@ -2597,6 +2693,28 @@ def cmd_o(extra):
         )
     )
     run_git_cmd(["worktree", "list", "--verbose"])
+    print()
+    print(
+        OVERVIEW_SECTION_TEMPLATE.format(
+            color=OVERVIEW_COLOR_SECTION_PURPLE,
+            title="4. QUALITATIVE TOPOLOGY (ASCII TREE)",
+            reset=OVERVIEW_COLOR_RESET,
+        )
+    )
+    topology_lines = _overview_ascii_topology_lines(
+        work_display=work_display,
+        develop_display=develop_display,
+        master_display=master_display,
+        remote_develop_display=remote_develop_display,
+        remote_master_display=remote_master_display,
+        worktree_state=_overview_worktree_state(),
+        work_vs_develop=work_vs_develop_state,
+        work_vs_master=work_vs_master_state,
+        develop_vs_remote=develop_vs_remote_state,
+        master_vs_remote=master_vs_remote_state,
+    )
+    for line in topology_lines:
+        print(line)
     print()
 
 
