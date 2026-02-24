@@ -2824,6 +2824,11 @@ def _overview_current_branch_state_lines(current_branch_display: str) -> List[st
             )
             header_replaced = True
             continue
+        if line:
+            normalized_lines.append(
+                f"{OVERVIEW_COLOR_BEHIND}{line[:2]}{OVERVIEW_COLOR_RESET}{line[2:]}"
+            )
+            continue
         normalized_lines.append(line)
     return normalized_lines
 

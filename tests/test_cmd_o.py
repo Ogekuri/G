@@ -156,6 +156,28 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertIn("CURRENT BRANCH STATE", normalized_output)
         self.assertIn("## Work(⎇ work)", normalized_output)
         self.assertIn(" M tracked.py", normalized_output)
+        self.assertIn(
+            f"{core.OVERVIEW_COLOR_BEHIND} M{core.OVERVIEW_COLOR_RESET} tracked.py",
+            out.getvalue(),
+        )
+
+    ## @brief Verify section-6 status helper colors two-character prefixes in bright red.
+    # @return None.
+    def test_overview_current_branch_state_lines_colors_status_prefixes(self):
+        with mock.patch.object(core, "run_git_text", return_value="## work\n?? clean.sh\n M tracked.py"):
+            lines = core._overview_current_branch_state_lines("Work(⎇ work)")
+        self.assertEqual(
+            f"{core.OVERVIEW_COLOR_WHITE}## Work(⎇ work){core.OVERVIEW_COLOR_RESET}",
+            lines[0],
+        )
+        self.assertEqual(
+            f"{core.OVERVIEW_COLOR_BEHIND}??{core.OVERVIEW_COLOR_RESET} clean.sh",
+            lines[1],
+        )
+        self.assertEqual(
+            f"{core.OVERVIEW_COLOR_BEHIND} M{core.OVERVIEW_COLOR_RESET} tracked.py",
+            lines[2],
+        )
 
     ## @brief Verify `cmd_o` uses configured branch names consistently in compare calls.
     # @return None.

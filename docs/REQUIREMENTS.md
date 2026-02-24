@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.91
+**Versione**: 0.92
 **Autore**: Francesco Rolando
 **Data**: 2026-02-24
 ## Indice
@@ -129,6 +129,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-24 | 0.89 | Replaced qualitative-state topology with chronological-position tree derived from actual commit positions; removed state labels from infographic |
 | 2026-02-24 | 0.90 | Updated `o` overview with a dedicated branch list section before current branch state, preserving overview color/layout contracts |
 | 2026-02-24 | 0.91 | Updated `o` overview current-branch state visibility and work-label color normalization contracts |
+| 2026-02-24 | 0.92 | Updated section-6 `CURRENT BRANCH STATE` contract to render each status prefix column in bright red |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -206,7 +207,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-092**: The section-4 root node MUST be the node or group with the highest commit count from the merge-base; remaining nodes MUST appear as `|-- ` children ordered by descending commit count; `WorkingTree` MUST be positioned immediately above the line containing `Work` when at the same commit position or when the working tree is dirty.
 - **REQ-093**: The section-4 infographic MUST preserve the overview color contract: purple section title, yellow `(⎇ <name>)` tuples, and white generic text including tree connectors and `WorkingTree` state annotation.
 - **REQ-095**: The section-4 `WorkingTree` node MUST display `WorkingTree [<state>]` where `<state>` is the working-tree state string (`clean`, `unstaged`, `staged`, or `mixed`) derived from the same diagnostic function used by `cmd_o`.
-- **REQ-094**: The `o` alias MUST execute `git worktree list --verbose` in section 3, MUST execute `git status -sb` only when `WorkingTree` state is not `clean`, and in section 6 MUST normalize the status header line from `## <branch>` to `## <Logical>(⎇ <branch>)` using the same color formatting as section-1 `Current Branch`.
+- **REQ-094**: The `o` alias MUST execute `git worktree list --verbose` in section 3, MUST execute `git status -sb` only when `WorkingTree` state is not `clean`, and in section 6 MUST normalize the status header line from `## <branch>` to `## <Logical>(⎇ <branch>)` using the same color formatting as section-1 `Current Branch`, and MUST render each non-header status line two-character status prefix in bright red (`\033[31;1m`).
 - **REQ-096**: The `o` alias MUST print section `=== 5. BRANCHES ===` as aligned rows for `Work`, `Develop`, `Master`, `RemoteDevelop`, `RemoteMaster`, formatted `<Identifier> | <latest commit subject>`, with commit subject in bright white bold (`\033[97;1m`).
 - **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
 - **REQ-010**: The system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.

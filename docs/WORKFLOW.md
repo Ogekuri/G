@@ -185,7 +185,7 @@
             - `_overview_ref_latest_subject(...)`
               - `_overview_ref_is_available(...)` -> `_run_checked(...)`
               - `run_git_text(...)` (`git log -1 --pretty=%s`) -> `_run_checked(...)`
-          - `_overview_current_branch_state_lines(...)` (executed only when `worktree_state != clean`)
+          - `_overview_current_branch_state_lines(...)` (executed only when `worktree_state != clean`; normalizes header and colors each two-character status prefix in bright red)
             - `run_git_text(...)` (`git status -sb`) -> `_run_checked(...)`
         - `cmd_refactor(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1921`]
         - `cmd_fix(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1929`]
