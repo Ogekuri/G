@@ -197,7 +197,7 @@
         - `cmd_misc(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1977`]
         - `cmd_cover(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1985`]
         - `_run_conventional_commit(...)`: conventional commit helper [`src/git_alias/core.py:1688`]
-          - `_build_conventional_message(...)` -> `_prepare_commit_message(...)`, `get_config_value(...)`
+          - `_build_conventional_message(...)` -> `_prepare_commit_message(...)`, `get_config_value(...)`, `_normalize_conventional_description(...)`
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
         - `cmd_co(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:1993`]

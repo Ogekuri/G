@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.93
+**Versione**: 0.94
 **Autore**: Francesco Rolando
 **Data**: 2026-02-24
 ## Indice
@@ -131,6 +131,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-24 | 0.91 | Updated `o` overview current-branch state visibility and work-label color normalization contracts |
 | 2026-02-24 | 0.92 | Updated section-6 `CURRENT BRANCH STATE` contract to render each status prefix column in bright red |
 | 2026-02-24 | 0.93 | Updated gp/gr command runtime and `.g.conf` contracts with configurable command templates, executable validation, fallback defaults, and missing-key autofill |
+| 2026-02-24 | 0.94 | Updated conventional commit aliases to normalize description capitalization and enforce trailing period |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -235,7 +236,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-019**: L'alias `bd` deve eliminare un branch locale specificato dall'utente utilizzando `git branch -d <branch>`.
 - **REQ-020**: Il sistema deve fornire funzioni di supporto riutilizzabili dagli alias che consentano di verificare (a) la presenza di file o modifiche non ancora aggiunti allo staging, (b) la presenza di file già in staging ma non ancora committati, (c) la disponibilità di aggiornamenti remoti per il branch `develop`, e (d) la disponibilità di aggiornamenti remoti per il branch `master`. Le funzioni per i punti (c) e (d) devono prima sincronizzare i riferimenti remoti (ad esempio con `git remote -v update`) e poi determinare se il branch remoto è in avanti rispetto a quello locale.
 - **REQ-021**: L'alias `wip` deve eseguire un commit "work in progress" riutilizzando le stesse funzioni di verifica dell'alias `cm`, generando automaticamente un messaggio fisso `wip: work in progress.` e, come `cm`, deve rilevare se l'ultimo commit è una WIP non ancora presente su `develop`: in tal caso deve aggiornare il commit esistente con `git commit --amend` e stampare l'azione; altrimenti deve creare un nuovo commit e segnalarlo.
-- **REQ-022**: The aliases `new`, `fix`, `change`, `implement`, `refactor`, `docs`, `style`, `revert`, `misc`, and `cover` MUST execute conventional commits compatible with `changelog` using the message format `<type>(<module>): <description>`, MUST reuse the same readiness checks used by `cm`/`wip`, MUST require commit text as a mandatory argument, MUST support `<module>: <description>` prefix parsing, MUST use `.g.conf.default_module` (default `core`) when the module is omitted, and MUST amend the latest commit with `git commit --amend` instead of creating a new commit when HEAD is exactly `wip: work in progress.` and that HEAD commit is not yet contained in the configured `develop` and `master` branches.
+- **REQ-022**: The aliases `new`, `fix`, `change`, `implement`, `refactor`, `docs`, `style`, `revert`, `misc`, and `cover` MUST execute conventional commits compatible with `changelog` using the message format `<type>(<module>): <description>`, MUST reuse the same readiness checks used by `cm`/`wip`, MUST require commit text as a mandatory argument, MUST support `<module>: <description>` prefix parsing, MUST use `.g.conf.default_module` (default `core`) when the module is omitted, MUST uppercase the first character of `<description>` unless that character is numeric, MUST append `.` when `<description>` does not end with `.`, and MUST amend the latest commit with `git commit --amend` instead of creating a new commit when HEAD is exactly `wip: work in progress.` and that HEAD commit is not yet contained in the configured `develop` and `master` branches.
 
   Nota: Il tipo `refactor` è definito come "Code Refactoring" e deve essere visualizzato nelle sezioni del changelog con l'icona ✨ (U+2728) nella relativa intestazione di sezione.
 - **REQ-023**: Tutti i messaggi stampati da `core.py` (su stdout, stderr, in modalità normale, verbose o debug) devono essere in lingua inglese, inclusi gli help dei comandi e le diagnostiche degli alias.

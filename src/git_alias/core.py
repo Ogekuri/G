@@ -2007,6 +2007,23 @@ def _prepare_commit_message(extra, alias):
     return " ".join(args)
 
 
+## @brief Normalize conventional commit description formatting.
+# @details Applies canonical description normalization for conventional aliases:
+# uppercases the first character unless it is numeric and appends a trailing
+# period when missing.
+# @param description Input parameter consumed by `_normalize_conventional_description`.
+# @return Result emitted by `_normalize_conventional_description` according to command contract.
+def _normalize_conventional_description(description: str) -> str:
+    text = description.strip()
+    if not text:
+        return text
+    if not text[0].isdigit():
+        text = text[0].upper() + text[1:]
+    if not text.endswith("."):
+        text = f"{text}."
+    return text
+
+
 ## @brief Execute `_build_conventional_message` runtime logic for Git-Alias CLI.
 # @details Executes `_build_conventional_message` using deterministic CLI control-flow and explicit error propagation.
 # @param kind Input parameter consumed by `_build_conventional_message`.
@@ -2025,6 +2042,7 @@ def _build_conventional_message(kind: str, extra, alias: str) -> str:
     if not body:
         print(f"git {alias} requires text after the '<module>:' prefix to complete the message.", file=sys.stderr)
         sys.exit(1)
+    body = _normalize_conventional_description(body)
     return f"{kind}({scope}): {body}"
 
 
