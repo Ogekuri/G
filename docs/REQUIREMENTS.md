@@ -1,7 +1,7 @@
 ---
 title: "Requisiti di Git-Alias CLI"
 description: "Specifiche dei requisiti software"
-date: "2026-02-22"
+date: "2026-02-24"
 author: "Francesco Rolando"
 scope:
   paths:
@@ -13,9 +13,9 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.80
+**Versione**: 0.81
 **Autore**: Francesco Rolando
-**Data**: 2026-02-22
+**Data**: 2026-02-24
 ## Indice
 - [Requisiti di Git-Alias CLI](#requisiti-di-git-alias-cli)
   - [Indice](#indice)
@@ -117,6 +117,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-22 | 0.78 | Changelog markdown generation now removes `Co-authored-by:` trailer lines before blank-line removal and CR/LF-to-space normalization |
 | 2026-02-22 | 0.79 | Updated changelog markdown rendering to preserve multiline breaks and emit nested bullets with commit-level blank-line separation |
 | 2026-02-22 | 0.80 | Updated changelog markdown rendering to keep top-level commit bullets consecutive without blank separator lines |
+| 2026-02-24 | 0.81 | Added `ls` and `lsi` aliases for listing tracked and ignored files |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -177,7 +178,9 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-005**: L'alias di commit `cm` deve permettere commit standard senza automatismi aggiuntivi né messaggi precompilati, ma prima di eseguire `git commit` deve verificare (riutilizzando funzioni diagnostiche centralizzate) che (a) non esistano file o modifiche nello working tree ancora da aggiungere all'index/stage, (b) l'index contenga effettivamente modifiche pronte al commit, e (c) l'ultimo commit del branch corrente non sia una `wip: work in progress.` non mergiata. Se l'ultimo commit ha il messaggio `wip: work in progress.` e non è stato ancora portato ne sui rami `develop`/`master` configurati, `cm` deve aggiornare quel commit tramite `git commit --amend` e stampare un messaggio esplicito; in tutti gli altri casi deve creare un nuovo commit e segnalare l'azione eseguita.
 - **REQ-006**: Gli alias di navigazione branch devono consentire checkout mirati (`co`) utilizzando i nomi di branch configurati nel file `.g.conf` (default `work`, `develop`, `master`).
 - **REQ-007**: Gli alias di fetch/pull/push devono eseguire le varianti generiche per il ramo corrente (`fe`, `feall`, `pl`, `pt`, `pu`), senza scorciatoie dedicate ai rami configurati.
-- **REQ-008**: Gli alias di ispezione devono fornire viste su branch, log e stato (`br`, `lb`, `ck`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`, `str`, `dwc`, `dcc`, `d`).
+- **REQ-008**: Inspection aliases MUST provide branch, log, and status views via `br`, `lb`, `ck`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`, `str`, `dwc`, `dcc`, `d`, `ls`, `lsi`.
+- **REQ-079**: The `ls` alias MUST run `git ls-files --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
+- **REQ-080**: The `lsi` alias MUST run `git ls-files -i --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
 - **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
 - **REQ-010**: The system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.
 - **REQ-011**: Gli alias di reset e pulizia devono applicare le modalità di reset (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`) e le pulizie dello working tree (`rmloc`, `rmstg`, `rmunt`). I comandi di reset (`rs*`) devono stampare il testo di help dedicato quando invocati con `--help`, senza dipendere da alias separati.

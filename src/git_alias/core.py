@@ -405,6 +405,8 @@ HELP_TEXTS = {
     "lh": "Print last commit details.",
     "ll": "Print latest full commit hash.",
     "lm": "Print all merges.",
+    "ls": "List tracked files using git ls-files.",
+    "lsi": "List ignored files using git ls-files.",
     "lt": "Print tags with containing branches.",
     "major": "Release a new major version from the work branch. Options: --include-patch.",
     "minor": "Release a new minor version from the work branch. Options: --include-patch.",
@@ -2504,6 +2506,24 @@ def cmd_lm(extra):
     return run_git_cmd(["log", "--merges"], extra)
 
 
+## @brief Execute `cmd_ls` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_ls` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_ls`.
+# @return Result emitted by `cmd_ls` according to command contract.
+# @satisfies REQ-079
+def cmd_ls(extra):
+    return run_git_cmd(["ls-files", "--exclude-standard"], extra)
+
+
+## @brief Execute `cmd_lsi` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_lsi` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_lsi`.
+# @return Result emitted by `cmd_lsi` according to command contract.
+# @satisfies REQ-080
+def cmd_lsi(extra):
+    return run_git_cmd(["ls-files", "-i", "--exclude-standard"], extra)
+
+
 ## @brief Execute `cmd_lt` runtime logic for Git-Alias CLI.
 # @details Enumerates tags via `git tag -l`, resolves containing refs via `git branch -a --contains <tag>`,
 #          trims branch markers/prefixes from git output, and prints deterministic `<tag>: <branch_1>, <branch_2>, ...` lines.
@@ -2955,6 +2975,8 @@ COMMANDS = {
     "lh": cmd_lh,
     "ll": cmd_ll,
     "lm": cmd_lm,
+    "ls": cmd_ls,
+    "lsi": cmd_lsi,
     "lt": cmd_lt,
     "major": cmd_major,
     "misc": cmd_misc,
