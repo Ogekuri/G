@@ -2558,6 +2558,19 @@ def _overview_relation_state_text(state) -> str:
     return f"{OVERVIEW_COLOR_WHITE}{normalized}{OVERVIEW_COLOR_RESET}"
 
 
+## @brief Execute `_overview_inverse_relation_state` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_inverse_relation_state` using deterministic CLI control-flow and explicit error propagation.
+# @param state Input parameter consumed by `_overview_inverse_relation_state`.
+# @return Result emitted by `_overview_inverse_relation_state` according to command contract.
+def _overview_inverse_relation_state(state) -> str:
+    normalized = _overview_normalize_relation_state(state)
+    if normalized == "ahead":
+        return "behind"
+    if normalized == "behind":
+        return "ahead"
+    return normalized
+
+
 ## @brief Execute `_overview_worktree_state` runtime logic for Git-Alias CLI.
 # @details Executes `_overview_worktree_state` using deterministic CLI control-flow and explicit error propagation.
 # @param status_lines Input parameter consumed by `_overview_worktree_state`.
@@ -2636,6 +2649,22 @@ def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> str:
     return state
 
 
+## @brief Execute `_overview_compare_relation` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_compare_relation` using deterministic CLI control-flow and explicit error propagation.
+# @param base_ref Input parameter consumed by `_overview_compare_relation`.
+# @param target_ref Input parameter consumed by `_overview_compare_relation`.
+# @return Result emitted by `_overview_compare_relation` according to command contract.
+def _overview_compare_relation(base_ref: str, target_ref: str) -> str:
+    if not _overview_ref_is_available(base_ref) or not _overview_ref_is_available(target_ref):
+        return "unknown"
+    try:
+        ahead = int(run_git_text(["rev-list", "--count", f"{target_ref}..{base_ref}"]))
+        behind = int(run_git_text(["rev-list", "--count", f"{base_ref}..{target_ref}"]))
+    except (RuntimeError, ValueError):
+        return "unknown"
+    return _overview_relation_state(ahead, behind)
+
+
 ## @brief Execute `_overview_ascii_topology_lines` runtime logic for Git-Alias CLI.
 # @details Executes `_overview_ascii_topology_lines` using deterministic CLI control-flow and explicit error propagation.
 # @param work_display Input parameter consumed by `_overview_ascii_topology_lines`.
@@ -2646,8 +2675,8 @@ def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> str:
 # @param worktree_state Input parameter consumed by `_overview_ascii_topology_lines`.
 # @param work_vs_develop Input parameter consumed by `_overview_ascii_topology_lines`.
 # @param work_vs_master Input parameter consumed by `_overview_ascii_topology_lines`.
-# @param develop_vs_remote Input parameter consumed by `_overview_ascii_topology_lines`.
-# @param master_vs_remote Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param work_vs_remote_develop Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param work_vs_remote_master Input parameter consumed by `_overview_ascii_topology_lines`.
 # @return Result emitted by `_overview_ascii_topology_lines` according to command contract.
 def _overview_ascii_topology_lines(
     work_display: str,
@@ -2658,18 +2687,40 @@ def _overview_ascii_topology_lines(
     worktree_state: str,
     work_vs_develop,
     work_vs_master,
-    develop_vs_remote,
-    master_vs_remote,
+    work_vs_remote_develop,
+    work_vs_remote_master,
 ) -> List[str]:
-    work_state = "in_sync" if worktree_state == "clean" else "diverged"
-    lines = [
-        f"{OVERVIEW_COLOR_WHITE}WorkingTree{OVERVIEW_COLOR_WHITE} [{worktree_state}]{OVERVIEW_COLOR_RESET}",
-        f"{OVERVIEW_COLOR_WHITE}\\-- {work_display} [{_overview_relation_state_text(work_state)}{OVERVIEW_COLOR_WHITE}]{OVERVIEW_COLOR_RESET}",
-        f"{OVERVIEW_COLOR_WHITE}    |-- {develop_display} [{_overview_relation_state_text(work_vs_develop)}{OVERVIEW_COLOR_WHITE}]{OVERVIEW_COLOR_RESET}",
-        f"{OVERVIEW_COLOR_WHITE}    |   \\-- {remote_develop_display} [{_overview_relation_state_text(develop_vs_remote)}{OVERVIEW_COLOR_WHITE}]{OVERVIEW_COLOR_RESET}",
-        f"{OVERVIEW_COLOR_WHITE}    \\-- {master_display} [{_overview_relation_state_text(work_vs_master)}{OVERVIEW_COLOR_WHITE}]{OVERVIEW_COLOR_RESET}",
-        f"{OVERVIEW_COLOR_WHITE}        \\-- {remote_master_display} [{_overview_relation_state_text(master_vs_remote)}{OVERVIEW_COLOR_WHITE}]{OVERVIEW_COLOR_RESET}",
+    state_groups = {
+        "in_sync": [work_display],
+        "ahead": [],
+        "behind": [],
+        "diverged": [],
+        "unknown": [],
+    }
+    state_groups[_overview_inverse_relation_state(work_vs_develop)].append(develop_display)
+    state_groups[_overview_inverse_relation_state(work_vs_master)].append(master_display)
+    state_groups[_overview_inverse_relation_state(work_vs_remote_develop)].append(remote_develop_display)
+    state_groups[_overview_inverse_relation_state(work_vs_remote_master)].append(remote_master_display)
+    worktree_relation = "in_sync" if worktree_state == "clean" else "diverged"
+    state_labels = [
+        ("in_sync", "in_sync with Work"),
+        ("ahead", "ahead of Work"),
+        ("behind", "behind Work"),
+        ("diverged", "diverged from Work"),
+        ("unknown", "unknown vs Work"),
     ]
+    lines = [
+        f"{OVERVIEW_COLOR_WHITE}WorkingTree [{worktree_state}]"
+        f" [{_overview_relation_state_text(worktree_relation)}{OVERVIEW_COLOR_WHITE}]{OVERVIEW_COLOR_RESET}",
+        f"{OVERVIEW_COLOR_WHITE}|{OVERVIEW_COLOR_RESET}",
+    ]
+    for state_name, state_line_label in state_labels:
+        members = state_groups.get(state_name, [])
+        members_text = ", ".join(members) if members else f"{OVERVIEW_COLOR_WHITE}none{OVERVIEW_COLOR_RESET}"
+        lines.append(
+            f"{OVERVIEW_COLOR_WHITE}|-- {_overview_relation_state_text(state_name)}"
+            f"{OVERVIEW_COLOR_WHITE} {state_line_label.split(' ', 1)[1]}: {members_text}{OVERVIEW_COLOR_RESET}"
+        )
     return lines
 
 
@@ -2735,16 +2786,18 @@ def cmd_o(extra):
             reset=OVERVIEW_COLOR_RESET,
         )
     )
-    develop_vs_remote_state = _overview_compare_refs(
+    _overview_compare_refs(
         develop_branch,
         remote_develop,
         f"{develop_display} vs {remote_develop_display}",
     )
-    master_vs_remote_state = _overview_compare_refs(
+    _overview_compare_refs(
         master_branch,
         remote_master,
         f"{master_display} vs {remote_master_display}",
     )
+    work_vs_remote_develop_state = _overview_compare_relation(work_branch, remote_develop)
+    work_vs_remote_master_state = _overview_compare_relation(work_branch, remote_master)
     print()
     print(
         OVERVIEW_SECTION_TEMPLATE.format(
@@ -2771,8 +2824,8 @@ def cmd_o(extra):
         worktree_state=_overview_worktree_state(),
         work_vs_develop=work_vs_develop_state,
         work_vs_master=work_vs_master_state,
-        develop_vs_remote=develop_vs_remote_state,
-        master_vs_remote=master_vs_remote_state,
+        work_vs_remote_develop=work_vs_remote_develop_state,
+        work_vs_remote_master=work_vs_remote_master_state,
     )
     for line in topology_lines:
         print(line)

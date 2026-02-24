@@ -43,6 +43,8 @@ class CmdOverviewTest(unittest.TestCase):
             core, "get_branch", side_effect=["work", "develop", "master"]
         ), mock.patch.object(
             core, "run_git_text", return_value="work"
+        ), mock.patch.object(
+            core, "_overview_compare_relation", side_effect=["in_sync", "behind"]
         ), mock.patch.object(core, "_overview_compare_refs"
         ) as compare, mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             out = io.StringIO()
@@ -102,6 +104,8 @@ class CmdOverviewTest(unittest.TestCase):
         ), mock.patch.object(
             core, "run_git_text", return_value="wrk"
         ), mock.patch.object(
+            core, "_overview_compare_relation", side_effect=["in_sync", "behind"]
+        ), mock.patch.object(
             core, "_overview_compare_refs"
         ) as compare, mock.patch.object(core, "run_git_cmd", return_value=None):
             core.cmd_o([])
@@ -157,9 +161,9 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertIn(f"{core.OVERVIEW_COLOR_BEHIND}Work", rendered)
         self.assertIn(f"{core.OVERVIEW_COLOR_LABEL}⎇ work", rendered)
 
-    ## @brief Verify `_overview_ascii_topology_lines` renders a qualitative ASCII tree.
+    ## @brief Verify `_overview_ascii_topology_lines` renders commit-alignment groups.
     # @return None.
-    def test_overview_ascii_topology_lines_renders_nodes_and_states(self):
+    def test_overview_ascii_topology_lines_renders_commit_alignment_groups(self):
         lines = core._overview_ascii_topology_lines(
             work_display="Work(⎇ work)",
             develop_display="Develop(⎇ develop)",
@@ -169,16 +173,20 @@ class CmdOverviewTest(unittest.TestCase):
             worktree_state="clean",
             work_vs_develop="ahead",
             work_vs_master="behind",
-            develop_vs_remote="in_sync",
-            master_vs_remote="diverged",
+            work_vs_remote_develop="in_sync",
+            work_vs_remote_master="diverged",
         )
         rendered = "\n".join(lines)
-        self.assertIn("WorkingTree", rendered)
-        self.assertIn("\\-- Work(⎇ work)", rendered)
-        self.assertIn("|-- Develop(⎇ develop)", rendered)
-        self.assertIn("\\-- RemoteDevelop(⎇ origin/develop)", rendered)
-        self.assertIn("\\-- Master(⎇ master)", rendered)
-        self.assertIn("\\-- RemoteMaster(⎇ origin/master)", rendered)
+        normalized_rendered = re.sub(r"\x1b\[[0-9;]*m", "", rendered)
+        self.assertIn("WorkingTree", normalized_rendered)
+        self.assertIn("in_sync with Work", normalized_rendered)
+        self.assertIn("ahead of Work", normalized_rendered)
+        self.assertIn("behind Work", normalized_rendered)
+        self.assertIn("Work(⎇ work)", normalized_rendered)
+        self.assertIn("Develop(⎇ develop)", normalized_rendered)
+        self.assertIn("RemoteDevelop(⎇ origin/develop)", normalized_rendered)
+        self.assertIn("Master(⎇ master)", normalized_rendered)
+        self.assertIn("RemoteMaster(⎇ origin/master)", normalized_rendered)
         self.assertIn("ahead", rendered)
         self.assertIn("behind", rendered)
         self.assertIn("diverged", rendered)
