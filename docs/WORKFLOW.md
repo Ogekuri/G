@@ -160,13 +160,17 @@
             - `_iter_versions_in_text(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
         - `cmd_new(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1913`]
-        - `cmd_o(...)`: repository overview flow [`src/git_alias/core.py:2797`]
+        - `cmd_o(...)`: repository overview flow [`src/git_alias/core.py:2836`]
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
           - `get_branch(...)` (`work`, `develop`, `master`) -> `get_config_value(...)`
           - `run_git_text(...)` (`git branch --show-current`) -> `_run_checked(...)`
+          - `_git_status_lines(...)` -> `_run_checked(...)`
+          - `_overview_worktree_state(...)` -> `has_unstaged_changes(...)`, `has_staged_changes(...)`
+          - `_overview_work_prefix_color(...)` (state-aware Work logical-prefix color selection)
           - `_overview_branch_identifier(...)` (configured/remote label rendering)
           - `_overview_current_branch_display(...)`
             - `_overview_logical_branch_name(...)`
+            - `_overview_work_prefix_color(...)` (only when logical current branch is Work)
             - `_overview_branch_identifier(...)` (current-branch label rendering)
           - `_overview_compare_refs(...)`
             - `_overview_ref_is_available(...)` -> `_run_checked(...)`
@@ -174,7 +178,6 @@
             - `_overview_relation_state(...)`
             - `_overview_distance_text(...)`
           - `run_git_cmd(...)` (`git worktree list --verbose`) -> `_to_args(...)` -> `_run_checked(...)`
-          - `_overview_worktree_state(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
           - `_overview_ascii_topology_lines(...)` (chronological-position tree; Work may share hash-group lines with aligned refs while WorkingTree remains dedicated)
             - `_overview_ref_is_available(...)` -> `_run_checked(...)`
             - `run_git_text(...)` (`git rev-parse`, `git merge-base --octopus`, `git rev-list --count`) -> `_run_checked(...)`
@@ -182,7 +185,8 @@
             - `_overview_ref_latest_subject(...)`
               - `_overview_ref_is_available(...)` -> `_run_checked(...)`
               - `run_git_text(...)` (`git log -1 --pretty=%s`) -> `_run_checked(...)`
-          - `run_git_cmd(...)` (`git status -sb`) -> `_to_args(...)` -> `_run_checked(...)`
+          - `_overview_current_branch_state_lines(...)` (executed only when `worktree_state != clean`)
+            - `run_git_text(...)` (`git status -sb`) -> `_run_checked(...)`
         - `cmd_refactor(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1921`]
         - `cmd_fix(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1929`]
         - `cmd_change(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1937`]

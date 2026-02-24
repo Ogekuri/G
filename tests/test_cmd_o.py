@@ -41,6 +41,7 @@ class CmdOverviewTest(unittest.TestCase):
     def test_cmd_o_runs_status_and_all_comparisons(self):
         with mock.patch.object(core, "is_inside_git_repo", return_value=True), \
              mock.patch.object(core, "get_branch", side_effect=["work", "develop", "master"]), \
+             mock.patch.object(core, "_git_status_lines", return_value=[]), \
              mock.patch.object(core, "run_git_text", return_value="work") as run_git_text, \
              mock.patch.object(core, "_overview_compare_refs") as compare, \
              mock.patch.object(
@@ -57,13 +58,7 @@ class CmdOverviewTest(unittest.TestCase):
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
                 core.cmd_o([])
-        run_git.assert_has_calls(
-            [
-                mock.call(["worktree", "list", "--verbose"]),
-                mock.call(["status", "-sb"]),
-            ]
-        )
-        self.assertEqual(run_git.call_count, 2)
+        run_git.assert_called_once_with(["worktree", "list", "--verbose"])
         compare.assert_has_calls(
             [
                 mock.call("work", "develop", ANY),
@@ -96,7 +91,7 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertIn("ACTIVE WORKTREES", output)
         self.assertIn("QUALITATIVE TOPOLOGY", output)
         self.assertIn("BRANCHES", output)
-        self.assertIn("CURRENT BRANCH STATE", output)
+        self.assertNotIn("CURRENT BRANCH STATE", output)
         self.assertIn("Work(⎇ work)                    | commit one", normalized_output)
         self.assertIn("Develop(⎇ develop)              | commit two", normalized_output)
         self.assertIn("Server Alignment", output)
@@ -122,10 +117,6 @@ class CmdOverviewTest(unittest.TestCase):
             normalized_output.index("QUALITATIVE TOPOLOGY"),
             normalized_output.index("BRANCHES"),
         )
-        self.assertLess(
-            normalized_output.index("BRANCHES"),
-            normalized_output.index("CURRENT BRANCH STATE"),
-        )
         topo.assert_called_once_with(
             work_ref="work",
             develop_ref="develop",
@@ -140,11 +131,38 @@ class CmdOverviewTest(unittest.TestCase):
             worktree_state="clean",
         )
 
+    ## @brief Verify section-6 status renders only for non-clean worktree and normalizes branch header.
+    # @return None.
+    def test_cmd_o_prints_current_branch_state_only_when_non_clean(self):
+        with mock.patch.object(core, "is_inside_git_repo", return_value=True), \
+             mock.patch.object(core, "get_branch", side_effect=["work", "develop", "master"]), \
+             mock.patch.object(core, "_git_status_lines", return_value=[" M tracked.py"]), \
+             mock.patch.object(
+                 core,
+                 "run_git_text",
+                 side_effect=[
+                     "work",
+                     "## work\n M tracked.py",
+                 ],
+             ), \
+             mock.patch.object(core, "_overview_compare_refs"), \
+             mock.patch.object(core, "_overview_branch_summary_lines", return_value=[]), \
+             mock.patch.object(core, "_overview_ascii_topology_lines", return_value=[]), \
+             mock.patch.object(core, "run_git_cmd", return_value=None):
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                core.cmd_o([])
+        normalized_output = re.sub(r"\x1b\[[0-9;]*m", "", out.getvalue())
+        self.assertIn("CURRENT BRANCH STATE", normalized_output)
+        self.assertIn("## Work(⎇ work)", normalized_output)
+        self.assertIn(" M tracked.py", normalized_output)
+
     ## @brief Verify `cmd_o` uses configured branch names consistently in compare calls.
     # @return None.
     def test_cmd_o_uses_configured_branch_names_for_comparisons(self):
         with mock.patch.object(core, "is_inside_git_repo", return_value=True), \
              mock.patch.object(core, "get_branch", side_effect=["wrk", "dev", "mst"]), \
+             mock.patch.object(core, "_git_status_lines", return_value=[]), \
              mock.patch.object(core, "run_git_text", return_value="wrk"), \
              mock.patch.object(core, "_overview_compare_refs") as compare, \
              mock.patch.object(core, "_overview_branch_summary_lines", return_value=[]), \
@@ -195,14 +213,23 @@ class CmdOverviewTest(unittest.TestCase):
     ## @brief Verify current branch identifier uses red logical prefix and yellow tuple.
     # @return None.
     def test_overview_current_branch_display_uses_expected_colors(self):
-        rendered = core._overview_current_branch_display(
+        rendered_unstaged = core._overview_current_branch_display(
             current_branch="work",
             work_branch="work",
             develop_branch="develop",
             master_branch="master",
+            worktree_state="unstaged",
         )
-        self.assertIn(f"{core.OVERVIEW_COLOR_BEHIND}Work", rendered)
-        self.assertIn(f"{core.OVERVIEW_COLOR_LABEL}⎇ work", rendered)
+        rendered_clean = core._overview_current_branch_display(
+            current_branch="work",
+            work_branch="work",
+            develop_branch="develop",
+            master_branch="master",
+            worktree_state="clean",
+        )
+        self.assertIn(f"{core.OVERVIEW_COLOR_BEHIND}Work", rendered_unstaged)
+        self.assertIn(f"{core.OVERVIEW_COLOR_AHEAD}Work", rendered_clean)
+        self.assertIn(f"{core.OVERVIEW_COLOR_LABEL}⎇ work", rendered_unstaged)
 
     ## @brief Verify `_overview_ref_latest_subject` returns latest commit subject text.
     # @return None.

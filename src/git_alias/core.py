@@ -2456,6 +2456,18 @@ def _overview_branch_identifier(
     )
 
 
+## @brief Execute `_overview_work_prefix_color` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_work_prefix_color` using deterministic CLI control-flow and explicit error propagation.
+# @param worktree_state Input parameter consumed by `_overview_work_prefix_color`.
+# @return Result emitted by `_overview_work_prefix_color` according to command contract.
+def _overview_work_prefix_color(worktree_state: str) -> str:
+    if worktree_state == "clean":
+        return OVERVIEW_COLOR_AHEAD
+    if worktree_state == "unstaged":
+        return OVERVIEW_COLOR_BEHIND
+    return OVERVIEW_COLOR_WHITE
+
+
 ## @brief Execute `_overview_logical_branch_name` runtime logic for Git-Alias CLI.
 # @details Executes `_overview_logical_branch_name` using deterministic CLI control-flow and explicit error propagation.
 # @param current_branch Input parameter consumed by `_overview_logical_branch_name`.
@@ -2484,12 +2496,14 @@ def _overview_logical_branch_name(
 # @param work_branch Input parameter consumed by `_overview_current_branch_display`.
 # @param develop_branch Input parameter consumed by `_overview_current_branch_display`.
 # @param master_branch Input parameter consumed by `_overview_current_branch_display`.
+# @param worktree_state Input parameter consumed by `_overview_current_branch_display`.
 # @return Result emitted by `_overview_current_branch_display` according to command contract.
 def _overview_current_branch_display(
     current_branch: str,
     work_branch: str,
     develop_branch: str,
     master_branch: str,
+    worktree_state: str,
 ) -> str:
     logical_name = _overview_logical_branch_name(
         current_branch=current_branch,
@@ -2497,10 +2511,13 @@ def _overview_current_branch_display(
         develop_branch=develop_branch,
         master_branch=master_branch,
     )
+    prefix_color = OVERVIEW_COLOR_BEHIND
+    if logical_name == "Work":
+        prefix_color = _overview_work_prefix_color(worktree_state)
     return _overview_branch_identifier(
         logical_name=logical_name,
         ref_name=current_branch,
-        prefix_color=OVERVIEW_COLOR_BEHIND,
+        prefix_color=prefix_color,
     )
 
 
@@ -2789,6 +2806,28 @@ def _overview_ascii_topology_lines(
     return lines
 
 
+## @brief Build normalized section-6 status lines for overview output.
+# @details Executes `git status -sb`, rewrites the header line from
+# `## <branch>` to `## <Logical>(⎇ <branch>)` with the same color formatting
+# used by section-1 current-branch output, and preserves all other lines.
+# @param current_branch_display Input parameter consumed by `_overview_current_branch_state_lines`.
+# @return {List[str]} Result emitted by `_overview_current_branch_state_lines` according to command contract.
+# @satisfies REQ-094
+def _overview_current_branch_state_lines(current_branch_display: str) -> List[str]:
+    lines = run_git_text(["status", "-sb"]).splitlines()
+    normalized_lines: List[str] = []
+    header_replaced = False
+    for line in lines:
+        if line.startswith("## ") and not header_replaced:
+            normalized_lines.append(
+                f"{OVERVIEW_COLOR_WHITE}## {current_branch_display}{OVERVIEW_COLOR_RESET}"
+            )
+            header_replaced = True
+            continue
+        normalized_lines.append(line)
+    return normalized_lines
+
+
 ## @brief Execute `cmd_o` runtime logic for Git-Alias CLI.
 # @details Executes `cmd_o` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_o`.
@@ -2805,7 +2844,13 @@ def cmd_o(extra):
     remote_develop = f"origin/{develop_branch}"
     remote_master = f"origin/{master_branch}"
     current_branch = run_git_text(["branch", "--show-current"]).strip() or "HEAD"
-    work_display = _overview_branch_identifier("Work", work_branch)
+    status_lines = _git_status_lines()
+    worktree_state = _overview_worktree_state(status_lines)
+    work_display = _overview_branch_identifier(
+        "Work",
+        work_branch,
+        prefix_color=_overview_work_prefix_color(worktree_state),
+    )
     develop_display = _overview_branch_identifier("Develop", develop_branch)
     master_display = _overview_branch_identifier("Master", master_branch)
     remote_develop_display = _overview_branch_identifier("RemoteDevelop", remote_develop)
@@ -2815,6 +2860,7 @@ def cmd_o(extra):
         work_branch=work_branch,
         develop_branch=develop_branch,
         master_branch=master_branch,
+        worktree_state=worktree_state,
     )
     print(
         OVERVIEW_SECTION_TEMPLATE.format(
@@ -2889,7 +2935,7 @@ def cmd_o(extra):
         master_display=master_display,
         remote_develop_display=remote_develop_display,
         remote_master_display=remote_master_display,
-        worktree_state=_overview_worktree_state(),
+        worktree_state=worktree_state,
     )
     for line in topology_lines:
         print(line)
@@ -2916,15 +2962,17 @@ def cmd_o(extra):
     for row in branch_rows:
         print(f"{OVERVIEW_COLOR_WHITE}{row}{OVERVIEW_COLOR_RESET}")
     print()
-    print(
-        OVERVIEW_SECTION_TEMPLATE.format(
-            color=OVERVIEW_COLOR_SECTION_PURPLE,
-            title="6. CURRENT BRANCH STATE",
-            reset=OVERVIEW_COLOR_RESET,
+    if worktree_state != "clean":
+        print(
+            OVERVIEW_SECTION_TEMPLATE.format(
+                color=OVERVIEW_COLOR_SECTION_PURPLE,
+                title="6. CURRENT BRANCH STATE",
+                reset=OVERVIEW_COLOR_RESET,
+            )
         )
-    )
-    run_git_cmd(["status", "-sb"])
-    print()
+        for line in _overview_current_branch_state_lines(current_branch_display):
+            print(line)
+        print()
 
 
 ## @brief Execute `cmd_str` runtime logic for Git-Alias CLI.
