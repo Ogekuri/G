@@ -400,11 +400,33 @@ def _write_missing_config_values(config_path, keys, create_parent=False):
     if create_parent:
         config_path.parent.mkdir(parents=True, exist_ok=True)
     should_write = False
+    if keys == GLOBAL_CONFIG_KEYS and "edit_command" not in data and isinstance(data.get("editor"), str):
+        legacy_editor = data.get("editor", "").strip()
+        if legacy_editor:
+            data["edit_command"] = legacy_editor
+            should_write = True
+    normalized = {}
     for key in keys:
-        if key in data:
+        value = data.get(key)
+        if key == "ver_rules":
+            if isinstance(value, list):
+                normalized[key] = value
+            else:
+                normalized[key] = DEFAULT_CONFIG[key]
+                if key in data:
+                    print(f"Ignoring {key}: expected a JSON array.", file=sys.stderr)
+                    should_write = True
             continue
-        data[key] = DEFAULT_CONFIG[key]
+        if isinstance(value, str) and value.strip():
+            normalized[key] = value
+        else:
+            normalized[key] = DEFAULT_CONFIG[key]
+            if key in data:
+                print(f"Ignoring {key}: expected a non-empty string.", file=sys.stderr)
+            should_write = True
+    if set(data.keys()) != set(keys):
         should_write = True
+    data = normalized
     if should_write:
         try:
             config_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")

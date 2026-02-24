@@ -64,10 +64,12 @@ class ConfigIOTest(unittest.TestCase):
                 "master": "main",
                 "work": "workbench",
                 "default_commit_module": "ui",
+                "gp_command": "legacy-gp-command",
             }
             global_payload = {
-                "edit_command": "vim",
+                "editor": "vim",
                 "gp_command": "gitk --all --date-order",
+                "master": "legacy-master",
             }
             (root / core.CONFIG_FILENAME).write_text(json.dumps(local_payload), encoding="utf-8")
             global_path = core.get_global_config_path(home)
@@ -84,10 +86,13 @@ class ConfigIOTest(unittest.TestCase):
             self.assertEqual(local_data["develop"], core.DEFAULT_CONFIG["develop"])
             self.assertEqual(local_data["ver_rules"], core.DEFAULT_CONFIG["ver_rules"])
             self.assertNotIn("gp_command", local_data)
+            self.assertNotIn("edit_command", local_data)
 
             self.assertEqual(global_data["edit_command"], "vim")
             self.assertEqual(global_data["gp_command"], "gitk --all --date-order")
             self.assertEqual(global_data["gr_command"], core.DEFAULT_CONFIG["gr_command"])
+            self.assertNotIn("editor", global_data)
+            self.assertNotIn("master", global_data)
 
     def test_load_cli_config_does_not_persist_missing_global_gpgr_keys(self):
         with tempfile.TemporaryDirectory() as tmpdir:

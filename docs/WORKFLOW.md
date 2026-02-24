@@ -85,7 +85,7 @@
     - `main(...)`: CLI dispatch root [`src/git_alias/core.py:3786`]
       - `get_git_root(...)`: resolve repository root path [`src/git_alias/core.py:293`]
         - `_run_checked(...)`: subprocess execution wrapper [`src/git_alias/core.py:588`]
-      - `load_cli_config(...)`: hydrate runtime config map from local `.g.conf` and global `$HOME/.g/g.conf` without runtime autofill writes [`src/git_alias/core.py:377`]
+      - `load_cli_config(...)`: hydrate runtime config map from local `.g.conf` and global `$HOME/.g/g.conf` while ignoring out-of-scope keys in each file [`src/git_alias/core.py:377`]
         - `get_global_config_path(...)`: resolve global config path [`src/git_alias/core.py:322`]
         - `_read_config_object(...)`: parse JSON object safely [`src/git_alias/core.py:331`]
         - `_apply_config_values(...)`: validate and apply key subsets [`src/git_alias/core.py:355`]
@@ -98,8 +98,8 @@
         - `get_cli_version(...)`: include runtime version in usage header [`src/git_alias/core.py:160`]
         - `print_command_help(...)`: print per-command help rows [`src/git_alias/core.py:3736`]
       - `print_command_help(...)`: per-command help path [`src/git_alias/core.py:3736`]
-      - `write_default_config(...)`: insert missing keys in local `.g.conf` and global `$HOME/.g/g.conf` [`src/git_alias/core.py:421`]
-        - `_write_missing_config_values(...)`: add missing keys without overwriting existing values [`src/git_alias/core.py:396`]
+      - `write_default_config(...)`: normalize local/global config files to strict key scopes [`src/git_alias/core.py:443`]
+        - `_write_missing_config_values(...)`: keep only allowed keys, fill defaults, and rename global `editor` to `edit_command` [`src/git_alias/core.py:396`]
         - `get_config_path(...)`: resolve repository target [`src/git_alias/core.py:313`]
         - `get_global_config_path(...)`: resolve global target [`src/git_alias/core.py:322`]
       - `upgrade_self(...)`: self-upgrade action [`src/git_alias/core.py:1733`]
@@ -215,7 +215,7 @@
         - `cmd_dime(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2053`]
         - `cmd_dwc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2061`]
         - `cmd_dwcc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2069`]
-        - `cmd_ed(...)`: external editor flow [`src/git_alias/core.py:2508`]
+        - `cmd_ed(...)`: external editor flow [`src/git_alias/core.py:2530`]
           - `_to_args(...)`
           - `run_editor_command(...)`
             - `_editor_base_command(...)` -> `get_editor(...)` -> `get_config_value(...)`
@@ -361,9 +361,9 @@
               - `get_release_page_url(...)`
               - `get_origin_compare_url(...)`
 - External Boundaries:
-  - OS subprocess execution (`subprocess.run`, `subprocess.Popen`) for `git`, `uv`, `gzip`, `gitk`, and configured editor binaries [`src/git_alias/core.py:651-656`, `src/git_alias/core.py:1877-1882`, `src/git_alias/core.py:1806-1824`, `src/git_alias/core.py:2508-2516`]
+  - OS subprocess execution (`subprocess.run`, `subprocess.Popen`) for `git`, `uv`, `gzip`, `gitk`, and configured editor binaries [`src/git_alias/core.py:673-678`, `src/git_alias/core.py:1899-1904`, `src/git_alias/core.py:1828-1846`, `src/git_alias/core.py:2530-2538`]
   - HTTP GET to GitHub Releases API via `urlopen` for version checks [`src/git_alias/core.py:221-234`]
-  - File I/O: config file read/write and changelog/version file rewrites [`src/git_alias/core.py:304-347`, `src/git_alias/core.py:2427-2450`, `src/git_alias/core.py:2523-2531`]
+  - File I/O: config file read/write and changelog/version file rewrites [`src/git_alias/core.py:313-451`, `src/git_alias/core.py:2449-2472`, `src/git_alias/core.py:2545-2553`]
 
 ### PROC:git
 - Entrypoint(s):
@@ -420,7 +420,7 @@
 
 ### PROC:editor
 - Entrypoint(s):
-  - `cmd_ed(...)` [`src/git_alias/core.py:2508-2516`]
+  - `cmd_ed(...)` [`src/git_alias/core.py:2530-2538`]
 - Lifecycle/trigger:
   - Start: alias `ed` with one-or-more file paths.
   - Stop: one subprocess completion per file path.
@@ -489,7 +489,7 @@
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv from configured editor command
   - Payload/Data-Shape: command parts (`List[str]`) + expanded file path argument(s)
-  - Evidence: `_editor_base_command` [`src/git_alias/core.py:436-448`], `run_editor_command` [`src/git_alias/core.py:455-456`], `cmd_ed` [`src/git_alias/core.py:2508-2516`]
+  - Evidence: `_editor_base_command` [`src/git_alias/core.py:458-470`], `run_editor_command` [`src/git_alias/core.py:477-478`], `cmd_ed` [`src/git_alias/core.py:2530-2538`]
 - EDGE: PROC:main -> PROC:gitk
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv + inherited stdio
