@@ -9,6 +9,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -59,6 +60,10 @@ VERSION_CLEANUP_REGEXES = [
 VERSION_CLEANUP_PATTERNS = [re.compile(pattern) for pattern in VERSION_CLEANUP_REGEXES]
 
 ## @brief Constant `DEFAULT_CONFIG` used by CLI runtime paths and policies.
+## @brief Constant `DEFAULT_GP_COMMAND` used by CLI runtime paths and policies.
+DEFAULT_GP_COMMAND = "gitk --all"
+## @brief Constant `DEFAULT_GR_COMMAND` used by CLI runtime paths and policies.
+DEFAULT_GR_COMMAND = "gitk --simplify-by-decoration --all"
 
 DEFAULT_CONFIG = {
     "master": "master",
@@ -66,6 +71,8 @@ DEFAULT_CONFIG = {
     "work": "work",
     "editor": "edit",
     "default_module": "core",
+    "gp_command": DEFAULT_GP_COMMAND,
+    "gr_command": DEFAULT_GR_COMMAND,
     "ver_rules": [
         {"pattern": "README.md", "regex": r'\s*\((\d+\.\d+\.\d+)\)\n'},
         {"pattern": "src/**/*.py", "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'},
@@ -319,6 +326,17 @@ def load_cli_config(root=None):
     if not isinstance(data, dict):
         print(f"Ignoring {config_path}: expected a JSON object.", file=sys.stderr)
         return config_path
+    should_sync_commands = False
+    for key in ("gp_command", "gr_command"):
+        if key in data:
+            continue
+        data[key] = DEFAULT_CONFIG[key]
+        should_sync_commands = True
+    if should_sync_commands:
+        try:
+            config_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        except OSError as exc:
+            print(f"Unable to update {config_path}: {exc}", file=sys.stderr)
     for key in DEFAULT_CONFIG:
         if key not in data:
             continue
@@ -372,6 +390,38 @@ def _editor_base_command():
 # @return Result emitted by `run_editor_command` according to command contract.
 def run_editor_command(args):
     return run_command(_editor_base_command() + list(args))
+
+
+## @brief Resolve command parts from config with executable-availability fallback.
+# @details Parses a configured command line and verifies the configured executable
+# is available in PATH. Invalid or unavailable configured commands fall back to
+# the provided default command template.
+# @param key Input parameter consumed by `_config_command_parts`.
+# @param default_command Input parameter consumed by `_config_command_parts`.
+# @return Result emitted by `_config_command_parts` according to command contract.
+def _config_command_parts(key: str, default_command: str) -> List[str]:
+    default_parts = shlex.split(default_command)
+    raw_value = get_config_value(key) or default_command
+    configured_value = raw_value != default_command
+    try:
+        parts = shlex.split(raw_value)
+    except ValueError as exc:
+        print(
+            f"Ignoring invalid {key} command '{raw_value}': {exc}. "
+            f"Falling back to '{default_command}'",
+            file=sys.stderr,
+        )
+        return default_parts
+    if not parts:
+        return default_parts
+    if configured_value and shutil.which(parts[0]) is None:
+        print(
+            f"Ignoring unavailable {key} executable '{parts[0]}'. "
+            f"Falling back to '{default_command}'",
+            file=sys.stderr,
+        )
+        return default_parts
+    return parts
 
 ## @brief Constant `HELP_TEXTS` used by CLI runtime paths and policies.
 
@@ -2404,7 +2454,7 @@ def cmd_feall(extra):
 # @param extra Input parameter consumed by `cmd_gp`.
 # @return Result emitted by `cmd_gp` according to command contract.
 def cmd_gp(extra):
-    return run_command(["gitk", "--all"] + _to_args(extra))
+    return run_command(_config_command_parts("gp_command", DEFAULT_GP_COMMAND) + _to_args(extra))
 
 
 ## @brief Execute `cmd_gr` runtime logic for Git-Alias CLI.
@@ -2412,7 +2462,7 @@ def cmd_gp(extra):
 # @param extra Input parameter consumed by `cmd_gr`.
 # @return Result emitted by `cmd_gr` according to command contract.
 def cmd_gr(extra):
-    return run_command(["gitk", "--simplify-by-decoration", "--all"] + _to_args(extra))
+    return run_command(_config_command_parts("gr_command", DEFAULT_GR_COMMAND) + _to_args(extra))
 
 
 ## @brief Constant `OVERVIEW_COLOR_RESET` used by CLI runtime paths and policies.

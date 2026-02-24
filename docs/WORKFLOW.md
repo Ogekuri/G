@@ -54,7 +54,7 @@
 - ID: PROC:gitk
   - Type: Process
   - Parent Process: null
-  - Role: External `gitk` GUI process
+  - Role: External graph-viewer process for `gp`/`gr` aliases (default `gitk`)
   - Entrypoint Symbols:
     - `cmd_gp(...)`
     - `cmd_gr(...)`
@@ -85,7 +85,7 @@
     - `main(...)`: CLI dispatch root [`src/git_alias/core.py:2671`]
       - `get_git_root(...)`: resolve repository root path [`src/git_alias/core.py:275`]
         - `_run_checked(...)`: subprocess execution wrapper [`src/git_alias/core.py:588`]
-      - `load_cli_config(...)`: hydrate runtime config map from `.g.conf` [`src/git_alias/core.py:304`]
+      - `load_cli_config(...)`: hydrate runtime config map from `.g.conf` and auto-sync missing `gp_command`/`gr_command` defaults [`src/git_alias/core.py:311`]
         - `get_config_path(...)`: resolve config path [`src/git_alias/core.py:295`]
       - `check_for_newer_version(...)`: optional remote release check and cache handling [`src/git_alias/core.py:187`]
         - `get_cli_version(...)`: parse `__version__` from package init [`src/git_alias/core.py:160`]
@@ -95,7 +95,7 @@
         - `get_cli_version(...)`: include runtime version in usage header [`src/git_alias/core.py:160`]
         - `print_command_help(...)`: print per-command help rows [`src/git_alias/core.py:2607`]
       - `print_command_help(...)`: per-command help path [`src/git_alias/core.py:2607`]
-      - `write_default_config(...)`: write default config payload [`src/git_alias/core.py:343`]
+      - `write_default_config(...)`: write default config payload [`src/git_alias/core.py:361`]
         - `get_config_path(...)`: resolve write target [`src/git_alias/core.py:295`]
       - `upgrade_self(...)`: self-upgrade action [`src/git_alias/core.py:1733`]
         - `_run_checked(...)`: spawn `uv tool install ...` [`src/git_alias/core.py:588`]
@@ -217,8 +217,8 @@
             - `run_command(...)` -> `_run_checked(...)`
         - `cmd_fe(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2091`]
         - `cmd_feall(...)`: `cmd_fe(...)` + `_to_args(...)` [`src/git_alias/core.py:2099`]
-        - `cmd_gp(...)`: GUI wrapper -> `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2107`]
-        - `cmd_gr(...)`: GUI wrapper -> `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2115`]
+        - `cmd_gp(...)`: GUI wrapper -> `_config_command_parts(...)`, `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2456`]
+        - `cmd_gr(...)`: GUI wrapper -> `_config_command_parts(...)`, `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2464`]
         - `cmd_str(...)`: remote-status flow [`src/git_alias/core.py:2543`]
           - `run_git_text(...)` -> `_run_checked(...)`
           - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`
@@ -432,22 +432,24 @@
 
 ### PROC:gitk
 - Entrypoint(s):
-  - `cmd_gp(...)` [`src/git_alias/core.py:2107-2108`]
-  - `cmd_gr(...)` [`src/git_alias/core.py:2115-2116`]
+  - `cmd_gp(...)` [`src/git_alias/core.py:2456-2458`]
+  - `cmd_gr(...)` [`src/git_alias/core.py:2464-2466`]
 - Lifecycle/trigger:
   - Start: aliases `gp` / `gr`.
-  - Stop: exits when `gitk` process terminates.
+  - Stop: exits when configured viewer process terminates.
   - Loop/block: synchronous process wait from `_run_checked(...)`.
   - Threads: no explicit threads detected from repository-managed spawn logic.
 - Internal Call-Trace Tree:
   - `cmd_gp(...)`
+    - `_config_command_parts(...)`
     - `_to_args(...)`
     - `run_command(...)` -> `_run_checked(...)`
   - `cmd_gr(...)`
+    - `_config_command_parts(...)`
     - `_to_args(...)`
     - `run_command(...)` -> `_run_checked(...)`
 - External Boundaries:
-  - External GUI process `gitk`.
+  - External GUI process resolved from `gp_command` / `gr_command` (fallback default `gitk` templates).
 
 ### PROC:gha-release-uvx
 - Entrypoint(s):
@@ -486,5 +488,5 @@
 - EDGE: PROC:main -> PROC:gitk
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv + inherited stdio
-  - Payload/Data-Shape: `["gitk", ...]` argument vector
-  - Evidence: `cmd_gp` [`src/git_alias/core.py:2107-2108`], `cmd_gr` [`src/git_alias/core.py:2115-2116`], `run_command` [`src/git_alias/core.py:633-634`]
+  - Payload/Data-Shape: configured viewer argument vector (`List[str]`) plus forwarded CLI extras
+  - Evidence: `_config_command_parts` [`src/git_alias/core.py:402-429`], `cmd_gp` [`src/git_alias/core.py:2456-2458`], `cmd_gr` [`src/git_alias/core.py:2464-2466`], `run_command` [`src/git_alias/core.py:692-693`]

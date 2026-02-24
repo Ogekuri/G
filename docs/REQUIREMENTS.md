@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.92
+**Versione**: 0.93
 **Autore**: Francesco Rolando
 **Data**: 2026-02-24
 ## Indice
@@ -130,6 +130,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-24 | 0.90 | Updated `o` overview with a dedicated branch list section before current branch state, preserving overview color/layout contracts |
 | 2026-02-24 | 0.91 | Updated `o` overview current-branch state visibility and work-label color normalization contracts |
 | 2026-02-24 | 0.92 | Updated section-6 `CURRENT BRANCH STATE` contract to render each status prefix column in bright red |
+| 2026-02-24 | 0.93 | Updated gp/gr command runtime and `.g.conf` contracts with configurable command templates, executable validation, fallback defaults, and missing-key autofill |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -177,7 +178,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **DES-003**: Ogni comando deve avere un testo di help e il comando globale `--help` deve elencarli in ordine alfabetico.
 - **DES-004**: Se l'eseguibile viene chiamato senza argomenti deve stampare un messaggio, mostrare l'help completo e uscire con codice di errore.
 - **DES-005**: Gli alias costituiscono la base per lo sviluppo di alias più complessi, pertanto se nell'implementazione di un alias è necessario svolgere una attività implementata in un alias più semplice verrà utilizzata la funzione che specializza quella più semplice.
-- **DES-006**: L'eseguibile deve leggere ad ogni invocazione il file `.g.conf` presente alla root del repository git come documento JSON valido, interpretando un oggetto che può definire `master`, `develop`, `work`, `editor`, `default_module` e `ver_rules`, e deve ripiegare sui valori di default quando il file è assente o una chiave è mancante o non valida.
+- **DES-006**: The executable MUST load `.g.conf` at each invocation as a JSON object and resolve `master`, `develop`, `work`, `editor`, `default_module`, `ver_rules`, `gp_command`, and `gr_command`, using defaults when file, key, or value is missing or invalid.
 - **DES-007**: Le verifiche sul readiness del commit (worktree, staging, commit precedente) devono essere centralizzate in funzioni riutilizzabili da tutti gli alias che eseguono commit (`cm`, `wip`, e futuri).
 - **DES-008**: Tutti i messaggi stampati in console devono essere in inglese.
 - **DES-009**: L'output del comando globale `--help` deve essere strutturato nel seguente ordine: (a) una riga di usage che mostra la sintassi generale del comando; (b) una sezione \"Management Commands\" con l'elenco delle opzioni di gestione ricavate da `MANAGEMENT_HELP`; (c) una sezione \"Configuration Parameters\" che stampa i valori correnti dei parametri letti da `.g.conf` (o, se non presenti, i default di `DEFAULT_CONFIG`); (d) una sezione \"Commands\" che elenca gli help di tutti gli alias disponibili in ordine alfabetico.
@@ -209,14 +210,15 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-095**: The section-4 `WorkingTree` node MUST display `WorkingTree [<state>]` where `<state>` is the working-tree state string (`clean`, `unstaged`, `staged`, or `mixed`) derived from the same diagnostic function used by `cmd_o`.
 - **REQ-094**: The `o` alias MUST execute `git worktree list --verbose` in section 3, MUST execute `git status -sb` only when `WorkingTree` state is not `clean`, and in section 6 MUST normalize the status header line from `## <branch>` to `## <Logical>(⎇ <branch>)` using the same color formatting as section-1 `Current Branch`, and MUST render each non-header status line two-character status prefix in bright red (`\033[31;1m`).
 - **REQ-096**: The `o` alias MUST print section `=== 5. BRANCHES ===` as aligned rows for `Work`, `Develop`, `Master`, `RemoteDevelop`, `RemoteMaster`, formatted `<Identifier> | <latest commit subject>`, with commit subject in bright white bold (`\033[97;1m`).
+- **REQ-097**: When `.g.conf` exists and omits `gp_command` or `gr_command`, the loader MUST append missing keys with default values to the same file while preserving all pre-existing keys and values.
 - **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
 - **REQ-010**: The system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.
 - **REQ-011**: Gli alias di reset e pulizia devono applicare le modalità di reset (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`) e le pulizie dello working tree (`rmloc`, `rmstg`, `rmunt`). I comandi di reset (`rs*`) devono stampare il testo di help dedicato quando invocati con `--help`, senza dipendere da alias separati.
 - **REQ-012**: Tagging and archive aliases MUST support annotated tag creation (`tg`), local/remote tag deletion (`rmtg`), tag listing (`lt`), and archiving configured `master` in tar.gz (`ar`).
 - **REQ-073**: The `lt` alias MUST print one line per tag as `<tag>: <branch_1>, <branch_2>, ...`, where branches are the refs returned by `git branch -a --contains <tag>` after marker trimming.
 - **REQ-013**: L'alias `ed` deve consentire l'apertura di file arbitrari usando il comando definito dal parametro `editor` nel file `.g.conf` (default `edit`), segnalando errore se non viene passato alcun percorso.
-- **REQ-014**: Il comando `--write-config` deve generare nella root del repository git il file `.g.conf` come JSON ben formattato, contenente `master`, `develop`, `work`, `editor`, `default_module` e la lista `ver_rules` composta da oggetti con campi `pattern` e `regex`, così che l'utente possa personalizzarli manualmente.
-- **REQ-015**: All'avvio della CLI il valore del parametro `editor` definito in `.g.conf` deve essere caricato e utilizzato per tutte le operazioni di editing, adottando `edit` quando il parametro manca o è vuoto.
+- **REQ-014**: The `--write-config` command MUST generate `.g.conf` in repository root as formatted JSON containing `master`, `develop`, `work`, `editor`, `default_module`, `gp_command`, `gr_command`, and `ver_rules` with `pattern`/`regex` objects.
+- **REQ-015**: At CLI startup, `editor`, `gp_command`, and `gr_command` values from `.g.conf` MUST be loaded; `gp_command` and `gr_command` MUST be used only when their executable exists in PATH, otherwise defaults MUST be used.
 - **REQ-016**: L'invocazione della CLI con `--help` o senza comandi deve mostrare prima le funzioni `--write-config`, `--upgrade`, `--remove` e poi l'elenco completo degli alias disponibili.
 - **REQ-017**: Il comando `ver` deve leggere `ver_rules` dal file `.g.conf` come lista di oggetti JSON con campi `pattern` e `regex` (o usare i valori di default), usare la libreria `pathspec` (sintassi GitIgnore) per determinare i file che corrispondono al pattern associato, interpretando i pattern con `/` come ancorati alla root del repository. Per ottenere l'elenco dei file da analizzare, il comando deve utilizzare esclusivamente `rglob()` dalla root del repository senza dipendere dallo stato di tracciamento git, escludendo i percorsi che corrispondono ad espressioni regolari hardcoded per `.git/`, `.vscode/`, `tmp/`, `temp/`, `.cache/`, `.pytest_cache/`, `node_modules/.cache`. Il comando deve quindi applicare ogni regexp solo ai file selezionati dal pattern, raccogliere tutte le versioni trovate e: (a) stampare la versione quando tutte le occorrenze coincidono, oppure (b) terminare con errore indicando i primi due file che presentano versioni differenti, oppure (c) terminare con errore quando una regola non produce alcun match, riportando la stringa della regola che non ha prodotto risultati.
 - **REQ-018**: The `changelog` command MUST generate `CHANGELOG.md` grouping commits by minor releases (semver tags where `patch=0` AND version `>=0.1.0`); MUST include only minor releases by default with all commits between consecutive minor releases (from repository beginning for the first minor); MUST produce an empty changelog body when no minor releases exist; MUST list releases reverse-chronologically (newest first).

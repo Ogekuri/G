@@ -19,6 +19,8 @@ class ConfigIOTest(unittest.TestCase):
                 "work": "work",
                 "editor": "vim",
                 "default_module": "ui",
+                "gp_command": "gitk --all --date-order",
+                "gr_command": "gitk --simplify-by-decoration --all --branches",
                 "ver_rules": [{"pattern": "README.md", "regex": "x"}],
             }
             (root / core.CONFIG_FILENAME).write_text(json.dumps(payload), encoding="utf-8")
@@ -26,6 +28,8 @@ class ConfigIOTest(unittest.TestCase):
             self.assertEqual(core.CONFIG["master"], "main")
             self.assertEqual(core.CONFIG["editor"], "vim")
             self.assertEqual(core.CONFIG["default_module"], "ui")
+            self.assertEqual(core.CONFIG["gp_command"], payload["gp_command"])
+            self.assertEqual(core.CONFIG["gr_command"], payload["gr_command"])
             self.assertEqual(core.CONFIG["ver_rules"], payload["ver_rules"])
 
     def test_load_cli_config_ignores_invalid_types(self):
@@ -49,4 +53,24 @@ class ConfigIOTest(unittest.TestCase):
             content = config_path.read_text(encoding="utf-8")
             data = json.loads(content)
             self.assertEqual(data["master"], core.DEFAULT_CONFIG["master"])
+            self.assertEqual(data["gp_command"], core.DEFAULT_CONFIG["gp_command"])
+            self.assertEqual(data["gr_command"], core.DEFAULT_CONFIG["gr_command"])
             self.assertIsInstance(data["ver_rules"], list)
+
+    def test_load_cli_config_autofills_missing_gpgr_command_keys(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            payload = {
+                "master": "main",
+                "editor": "vim",
+                "default_module": "ui",
+                "ver_rules": [{"pattern": "README.md", "regex": "x"}],
+            }
+            config_path = root / core.CONFIG_FILENAME
+            config_path.write_text(json.dumps(payload), encoding="utf-8")
+            core.load_cli_config(root)
+            persisted = json.loads(config_path.read_text(encoding="utf-8"))
+            self.assertEqual(persisted["master"], "main")
+            self.assertEqual(persisted["editor"], "vim")
+            self.assertEqual(persisted["gp_command"], core.DEFAULT_CONFIG["gp_command"])
+            self.assertEqual(persisted["gr_command"], core.DEFAULT_CONFIG["gr_command"])
