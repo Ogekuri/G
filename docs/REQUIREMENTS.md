@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.84
+**Versione**: 0.85
 **Autore**: Francesco Rolando
 **Data**: 2026-02-24
 ## Indice
@@ -122,6 +122,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-24 | 0.82 | Added `lsa` alias for untracked files and updated `lsi` ignored-files command contract |
 | 2026-02-24 | 0.83 | Renamed visual diff alias `d` to `dr` and aligned command handler naming |
 | 2026-02-24 | 0.84 | Added an active worktrees section to `o` overview while preserving reusable styling templates/colors |
+| 2026-02-24 | 0.85 | Refined `o` overview graphics with explicit configured branch/remote identifiers and color contract |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -188,11 +189,11 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-081**: The `lsa` alias MUST run `git ls-files --others --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
 - **REQ-082**: The CLI MUST expose an `o` alias in `COMMANDS` and `HELP_TEXTS`, and `--help` outputs MUST include `o` in global and per-command help paths.
 - **REQ-083**: The `o` alias MUST terminate with non-zero exit when executed outside a Git repository and MUST print an explicit English error message to stderr.
-- **REQ-084**: The `o` alias MUST print three sections in order and MUST run `git status -sb` for section 1, branch-distance output for section 2, and `git worktree list --verbose` for section 3.
-- **REQ-085**: The `o` alias MUST detect the primary branch as `main` when `refs/heads/main` exists; otherwise it MUST use the configured `master` branch name.
-- **REQ-086**: The `o` alias MUST print commit-distance rows as `label | ahead | behind` by counting `git rev-list` divergence only for branch/ref pairs that exist.
-- **REQ-087**: The `o` alias MUST print server-alignment rows for `develop` versus `origin/develop` and primary branch versus its `origin` counterpart when those refs exist.
-- **REQ-088**: The `o` alias MUST reuse shared hardcoded templates and ANSI color constants for all section headers, including the active-worktrees section, to keep styling changes centralized.
+- **REQ-084**: The `o` alias MUST print three sections in order and MUST run `git status -sb` for section 1, configured branch-distance output for section 2, and `git worktree list --verbose` for section 3.
+- **REQ-085**: The `o` alias MUST always use configured `work`, `develop`, and `master` branch names, and MUST print explicit identifiers `Work(⎇ <work>)`, `Develop(⎇ <develop>)`, and `Master(⎇ <master>)`.
+- **REQ-086**: The `o` alias MUST print verbose divergence rows with explicit configured labels and remote labels `RemoteDevelop(⎇ origin/<develop>)` and `RemoteMaster(⎇ origin/<master>)`, using `git rev-list` counts when compared refs exist.
+- **REQ-087**: The `o` alias MUST color ahead counters with bright green (`\033[92m`) and behind counters with bright red (`\033[31;1m`); zero-value counters and non-delta text MUST remain white.
+- **REQ-088**: The `o` alias MUST render section titles in purple (`\033[35;1m`), MUST render branch/remote identifier tuples `(⎇ <name>)` in bright yellow (`\033[38;5;226m`), and MUST render subsection titles (for example `--- Server Alignment ---`) in bright white.
 - **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
 - **REQ-010**: The system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.
 - **REQ-011**: Gli alias di reset e pulizia devono applicare le modalità di reset (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`) e le pulizie dello working tree (`rmloc`, `rmstg`, `rmunt`). I comandi di reset (`rs*`) devono stampare il testo di help dedicato quando invocati con `--help`, senza dipendere da alias separati.

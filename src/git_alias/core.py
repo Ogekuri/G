@@ -412,7 +412,7 @@ HELP_TEXTS = {
     "major": "Release a new major version from the work branch. Options: --include-patch.",
     "minor": "Release a new minor version from the work branch. Options: --include-patch.",
     "new": "Conventional commit new(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
-    "o": "Print a verbose repository overview with status and branch divergence sections.",
+    "o": "Print a verbose repository overview for configured Work/Develop/Master branches, remotes, and active worktrees.",
     "implement": "Conventional commit implement(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
     "refactor": "Conventional commit refactor(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
     "fix": "Conventional commit fix(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
@@ -2417,20 +2417,37 @@ def cmd_gr(extra):
 
 ## @brief Constant `OVERVIEW_COLOR_RESET` used by CLI runtime paths and policies.
 OVERVIEW_COLOR_RESET = "\033[0m"
-## @brief Constant `OVERVIEW_COLOR_CYAN` used by CLI runtime paths and policies.
-OVERVIEW_COLOR_CYAN = "\033[36m"
-## @brief Constant `OVERVIEW_COLOR_GREEN` used by CLI runtime paths and policies.
-OVERVIEW_COLOR_GREEN = "\033[32m"
-## @brief Constant `OVERVIEW_COLOR_RED` used by CLI runtime paths and policies.
-OVERVIEW_COLOR_RED = "\033[31m"
-## @brief Constant `OVERVIEW_COLOR_YELLOW` used by CLI runtime paths and policies.
-OVERVIEW_COLOR_YELLOW = "\033[33m"
+## @brief Constant `OVERVIEW_COLOR_SECTION_PURPLE` used by CLI runtime paths and policies.
+OVERVIEW_COLOR_SECTION_PURPLE = "\033[35;1m"
+## @brief Constant `OVERVIEW_COLOR_AHEAD` used by CLI runtime paths and policies.
+OVERVIEW_COLOR_AHEAD = "\033[92m"
+## @brief Constant `OVERVIEW_COLOR_BEHIND` used by CLI runtime paths and policies.
+OVERVIEW_COLOR_BEHIND = "\033[31;1m"
+## @brief Constant `OVERVIEW_COLOR_LABEL` used by CLI runtime paths and policies.
+OVERVIEW_COLOR_LABEL = "\033[38;5;226m"
+## @brief Constant `OVERVIEW_COLOR_WHITE` used by CLI runtime paths and policies.
+OVERVIEW_COLOR_WHITE = "\033[97m"
+## @brief Constant `OVERVIEW_COLOR_WHITE_BOLD` used by CLI runtime paths and policies.
+OVERVIEW_COLOR_WHITE_BOLD = "\033[97;1m"
 ## @brief Constant `OVERVIEW_SECTION_TEMPLATE` used by CLI runtime paths and policies.
 OVERVIEW_SECTION_TEMPLATE = "{color}=== {title} ==={reset}"
 ## @brief Constant `OVERVIEW_SUBSECTION_TEMPLATE` used by CLI runtime paths and policies.
 OVERVIEW_SUBSECTION_TEMPLATE = "{color}--- {title} ---{reset}"
 ## @brief Constant `OVERVIEW_DISTANCE_TEMPLATE` used by CLI runtime paths and policies.
-OVERVIEW_DISTANCE_TEMPLATE = "{label:<25} | {ahead:<15} | {behind}"
+OVERVIEW_DISTANCE_TEMPLATE = "{text_color}{label}{reset} | {ahead} | {behind}"
+
+
+## @brief Execute `_overview_branch_identifier` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_branch_identifier` using deterministic CLI control-flow and explicit error propagation.
+# @param logical_name Input parameter consumed by `_overview_branch_identifier`.
+# @param ref_name Input parameter consumed by `_overview_branch_identifier`.
+# @return Result emitted by `_overview_branch_identifier` according to command contract.
+def _overview_branch_identifier(logical_name: str, ref_name: str) -> str:
+    return (
+        f"{OVERVIEW_COLOR_WHITE}{logical_name}"
+        f"({OVERVIEW_COLOR_LABEL}⎇ {ref_name}{OVERVIEW_COLOR_RESET}{OVERVIEW_COLOR_WHITE})"
+        f"{OVERVIEW_COLOR_RESET}"
+    )
 
 
 ## @brief Execute `_overview_ref_is_available` runtime logic for Git-Alias CLI.
@@ -2453,11 +2470,11 @@ def _overview_ref_is_available(ref_name: str) -> bool:
 # @param count Input parameter consumed by `_overview_distance_text`.
 # @return Result emitted by `_overview_distance_text` according to command contract.
 def _overview_distance_text(is_ahead: bool, count: int) -> str:
-    if count == 0:
-        return f"{'ahead' if is_ahead else 'behind'} 0"
-    arrow = "↑" if is_ahead else "↓"
-    color = OVERVIEW_COLOR_GREEN if is_ahead else OVERVIEW_COLOR_RED
     label = "ahead" if is_ahead else "behind"
+    if count == 0:
+        return f"{OVERVIEW_COLOR_WHITE}{label} 0{OVERVIEW_COLOR_RESET}"
+    arrow = "↑" if is_ahead else "↓"
+    color = OVERVIEW_COLOR_AHEAD if is_ahead else OVERVIEW_COLOR_BEHIND
     return f"{color}{arrow} {label} {count}{OVERVIEW_COLOR_RESET}"
 
 
@@ -2469,28 +2486,41 @@ def _overview_distance_text(is_ahead: bool, count: int) -> str:
 # @return Result emitted by `_overview_compare_refs` according to command contract.
 def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> None:
     if not _overview_ref_is_available(base_ref) or not _overview_ref_is_available(target_ref):
+        unavailable = f"{OVERVIEW_COLOR_WHITE}n/a{OVERVIEW_COLOR_RESET}"
+        print(
+            OVERVIEW_DISTANCE_TEMPLATE.format(
+                text_color=OVERVIEW_COLOR_WHITE,
+                label=label,
+                reset=OVERVIEW_COLOR_RESET,
+                ahead=f"{OVERVIEW_COLOR_WHITE}ahead {unavailable}{OVERVIEW_COLOR_RESET}",
+                behind=f"{OVERVIEW_COLOR_WHITE}behind {unavailable}{OVERVIEW_COLOR_RESET}",
+            )
+        )
         return
     try:
         ahead = int(run_git_text(["rev-list", "--count", f"{target_ref}..{base_ref}"]))
         behind = int(run_git_text(["rev-list", "--count", f"{base_ref}..{target_ref}"]))
     except (RuntimeError, ValueError):
+        unavailable = f"{OVERVIEW_COLOR_WHITE}n/a{OVERVIEW_COLOR_RESET}"
+        print(
+            OVERVIEW_DISTANCE_TEMPLATE.format(
+                text_color=OVERVIEW_COLOR_WHITE,
+                label=label,
+                reset=OVERVIEW_COLOR_RESET,
+                ahead=f"{OVERVIEW_COLOR_WHITE}ahead {unavailable}{OVERVIEW_COLOR_RESET}",
+                behind=f"{OVERVIEW_COLOR_WHITE}behind {unavailable}{OVERVIEW_COLOR_RESET}",
+            )
+        )
         return
     print(
         OVERVIEW_DISTANCE_TEMPLATE.format(
+            text_color=OVERVIEW_COLOR_WHITE,
             label=label,
+            reset=OVERVIEW_COLOR_RESET,
             ahead=_overview_distance_text(True, ahead),
             behind=_overview_distance_text(False, behind),
         )
     )
-
-
-## @brief Execute `_overview_primary_branch_name` runtime logic for Git-Alias CLI.
-# @details Executes `_overview_primary_branch_name` using deterministic CLI control-flow and explicit error propagation.
-# @return Result emitted by `_overview_primary_branch_name` according to command contract.
-def _overview_primary_branch_name() -> str:
-    if _ref_exists("refs/heads/main"):
-        return "main"
-    return get_branch("master")
 
 
 ## @brief Execute `cmd_o` runtime logic for Git-Alias CLI.
@@ -2503,40 +2533,65 @@ def cmd_o(extra):
     if not is_inside_git_repo():
         print("Error: The overview command must be executed inside a Git repository.", file=sys.stderr)
         sys.exit(2)
+    work_branch = get_branch("work")
+    develop_branch = get_branch("develop")
+    master_branch = get_branch("master")
+    remote_develop = f"origin/{develop_branch}"
+    remote_master = f"origin/{master_branch}"
+    work_display = _overview_branch_identifier("Work", work_branch)
+    develop_display = _overview_branch_identifier("Develop", develop_branch)
+    master_display = _overview_branch_identifier("Master", master_branch)
+    remote_develop_display = _overview_branch_identifier("RemoteDevelop", remote_develop)
+    remote_master_display = _overview_branch_identifier("RemoteMaster", remote_master)
     print(
         OVERVIEW_SECTION_TEMPLATE.format(
-            color=OVERVIEW_COLOR_CYAN,
+            color=OVERVIEW_COLOR_SECTION_PURPLE,
             title="1. WORKING AREA, STAGE & CURRENT BRANCH",
             reset=OVERVIEW_COLOR_RESET,
         )
     )
+    print(f"{OVERVIEW_COLOR_WHITE}Configured branches: {work_display}, {develop_display}, {master_display}{OVERVIEW_COLOR_RESET}")
+    print(f"{OVERVIEW_COLOR_WHITE}Configured remotes: {remote_develop_display}, {remote_master_display}{OVERVIEW_COLOR_RESET}")
     run_git_cmd(["status", "-sb"])
     print()
     print(
         OVERVIEW_SECTION_TEMPLATE.format(
-            color=OVERVIEW_COLOR_CYAN,
+            color=OVERVIEW_COLOR_SECTION_PURPLE,
             title="2. BRANCH DISTANCES (COMMITS)",
             reset=OVERVIEW_COLOR_RESET,
         )
     )
-    primary_branch = _overview_primary_branch_name()
-    current_branch = run_git_text(["branch", "--show-current"], check=False).strip() or "HEAD"
-    if current_branch not in {"develop", primary_branch}:
-        _overview_compare_refs("HEAD", "develop", "Current vs Develop")
-        _overview_compare_refs("HEAD", primary_branch, f"Current vs {primary_branch}")
+    _overview_compare_refs(
+        work_branch,
+        develop_branch,
+        f"{work_display} vs {develop_display}",
+    )
+    _overview_compare_refs(
+        work_branch,
+        master_branch,
+        f"{work_display} vs {master_display}",
+    )
     print(
         OVERVIEW_SUBSECTION_TEMPLATE.format(
-            color=OVERVIEW_COLOR_YELLOW,
+            color=OVERVIEW_COLOR_WHITE_BOLD,
             title="Server Alignment",
             reset=OVERVIEW_COLOR_RESET,
         )
     )
-    _overview_compare_refs("develop", "origin/develop", "Develop vs origin/Develop")
-    _overview_compare_refs(primary_branch, f"origin/{primary_branch}", f"{primary_branch} vs origin")
+    _overview_compare_refs(
+        develop_branch,
+        remote_develop,
+        f"{develop_display} vs {remote_develop_display}",
+    )
+    _overview_compare_refs(
+        master_branch,
+        remote_master,
+        f"{master_display} vs {remote_master_display}",
+    )
     print()
     print(
         OVERVIEW_SECTION_TEMPLATE.format(
-            color=OVERVIEW_COLOR_CYAN,
+            color=OVERVIEW_COLOR_SECTION_PURPLE,
             title="3. ACTIVE WORKTREES",
             reset=OVERVIEW_COLOR_RESET,
         )

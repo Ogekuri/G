@@ -5,6 +5,7 @@ import contextlib
 import io
 import unittest
 from unittest import mock
+from unittest.mock import ANY
 
 from git_alias import core
 
@@ -38,9 +39,8 @@ class CmdOverviewTest(unittest.TestCase):
     # @return None.
     def test_cmd_o_runs_status_and_all_comparisons(self):
         with mock.patch.object(core, "is_inside_git_repo", return_value=True), mock.patch.object(
-            core, "_overview_primary_branch_name", return_value="main"
-        ), mock.patch.object(core, "run_git_text", return_value="feature"), mock.patch.object(
-            core, "_overview_compare_refs"
+            core, "get_branch", side_effect=["work", "develop", "master"]
+        ), mock.patch.object(core, "_overview_compare_refs"
         ) as compare, mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
@@ -54,10 +54,10 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertEqual(run_git.call_count, 2)
         compare.assert_has_calls(
             [
-                mock.call("HEAD", "develop", "Current vs Develop"),
-                mock.call("HEAD", "main", "Current vs main"),
-                mock.call("develop", "origin/develop", "Develop vs origin/Develop"),
-                mock.call("main", "origin/main", "main vs origin"),
+                mock.call("work", "develop", ANY),
+                mock.call("work", "master", ANY),
+                mock.call("develop", "origin/develop", ANY),
+                mock.call("master", "origin/master", ANY),
             ]
         )
         output = out.getvalue()
@@ -65,6 +65,11 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertIn("BRANCH DISTANCES (COMMITS)", output)
         self.assertIn("ACTIVE WORKTREES", output)
         self.assertIn("Server Alignment", output)
+        self.assertIn("Work(", output)
+        self.assertIn("Develop(", output)
+        self.assertIn("Master(", output)
+        self.assertIn("RemoteDevelop(", output)
+        self.assertIn("RemoteMaster(", output)
         self.assertLess(
             output.index("WORKING AREA, STAGE & CURRENT BRANCH"),
             output.index("BRANCH DISTANCES (COMMITS)"),
@@ -74,22 +79,24 @@ class CmdOverviewTest(unittest.TestCase):
             output.index("ACTIVE WORKTREES"),
         )
 
-    ## @brief Verify `cmd_o` skips local-branch comparisons when already on `develop` or primary.
+    ## @brief Verify `cmd_o` uses configured branch names consistently in compare calls.
     # @return None.
-    def test_cmd_o_skips_current_branch_comparisons_on_primary(self):
+    def test_cmd_o_uses_configured_branch_names_for_comparisons(self):
         with mock.patch.object(core, "is_inside_git_repo", return_value=True), mock.patch.object(
-            core, "_overview_primary_branch_name", return_value="main"
-        ), mock.patch.object(core, "run_git_text", return_value="main"), mock.patch.object(
+            core, "get_branch", side_effect=["wrk", "dev", "mst"]
+        ), mock.patch.object(
             core, "_overview_compare_refs"
         ) as compare, mock.patch.object(core, "run_git_cmd", return_value=None):
             core.cmd_o([])
         compare.assert_has_calls(
             [
-                mock.call("develop", "origin/develop", "Develop vs origin/Develop"),
-                mock.call("main", "origin/main", "main vs origin"),
+                mock.call("wrk", "dev", ANY),
+                mock.call("wrk", "mst", ANY),
+                mock.call("dev", "origin/dev", ANY),
+                mock.call("mst", "origin/mst", ANY),
             ]
         )
-        self.assertEqual(compare.call_count, 2)
+        self.assertEqual(compare.call_count, 4)
 
     ## @brief Verify `_overview_compare_refs` formats and prints divergence rows.
     # @return None.
@@ -105,16 +112,18 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertIn("↑ ahead 2", line)
         self.assertIn("↓ behind 1", line)
 
-    ## @brief Verify `_overview_compare_refs` skips output when compared refs are unavailable.
+    ## @brief Verify `_overview_compare_refs` prints explicit n/a values when refs are unavailable.
     # @return None.
-    def test_overview_compare_refs_skips_missing_refs(self):
+    def test_overview_compare_refs_marks_missing_refs(self):
         with mock.patch.object(core, "_overview_ref_is_available", side_effect=[True, False]), mock.patch.object(
             core, "run_git_text"
         ) as run_git_text:
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
                 core._overview_compare_refs("HEAD", "develop", "Current vs Develop")
-        self.assertEqual(out.getvalue(), "")
+        self.assertIn("ahead", out.getvalue())
+        self.assertIn("n/a", out.getvalue())
+        self.assertIn("behind", out.getvalue())
         run_git_text.assert_not_called()
 
 

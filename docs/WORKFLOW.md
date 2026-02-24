@@ -104,7 +104,7 @@
       - `run_git_cmd(...)`: fallback path when command not registered in `COMMANDS` [`src/git_alias/core.py:613`]
         - `_to_args(...)`: normalize optional arg list [`src/git_alias/core.py:536`]
         - `_run_checked(...)`: spawn `git` process [`src/git_alias/core.py:588`]
-      - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py:3079-3153`, `src/git_alias/core.py:3245-3255`]
+      - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py:3144-3217`, `src/git_alias/core.py:3309-3319`]
         - `cmd_aa(...)`: stage all changed files [`src/git_alias/core.py:1758`]
           - `_git_status_lines(...)` -> `_run_checked(...)`
           - `has_unstaged_changes(...)` -> `_git_status_lines(...)`
@@ -160,11 +160,11 @@
             - `_iter_versions_in_text(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
         - `cmd_new(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1913`]
-        - `cmd_o(...)`: repository overview flow [`src/git_alias/core.py:2501`]
+        - `cmd_o(...)`: repository overview flow [`src/git_alias/core.py:2531`]
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
+          - `get_branch(...)` (`work`, `develop`, `master`) -> `get_config_value(...)`
+          - `_overview_branch_identifier(...)` (configured/remote label rendering)
           - `run_git_cmd(...)` (`git status -sb`) -> `_to_args(...)` -> `_run_checked(...)`
-          - `_overview_primary_branch_name(...)` -> `_ref_exists(...)`, `get_branch(...)` -> `get_config_value(...)`
-          - `run_git_text(...)` (`git branch --show-current`) -> `_run_checked(...)`
           - `_overview_compare_refs(...)`
             - `_overview_ref_is_available(...)` -> `_run_checked(...)`
             - `run_git_text(...)` -> `_run_checked(...)`
