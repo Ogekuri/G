@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.1](https://github.com/Ogekuri/G/compare/v0.5.0..v0.5.1) - 2026-02-24
+### ⛰️  Features
+- add .place-holder files. *(core)*
+- add ls/lsi file listing aliases [useReq] *(cli)*
+  - Add REQ-079/REQ-080 and update REQ-008.\nAdd cmd_ls/cmd_lsi, help text, tests.\nUpdate WORKFLOW/REFERENCES and README.\nTests: PYTHONPATH=src /tmp/venv-userReq-G-work-3af15715-c78b-405c-a749-bf538bb2225a/bin/python -m pytest
+- add guidelines/, update .gitignore. *(core)*
+
+### 🚜  Changes
+- add lsa alias and align lsi ls-files flags [useReq] *(cli)*
+  - Requirement Delta: update REQ-008, REQ-080, add REQ-081 for ls/lsi/lsa behavior.
+  - Implementation Delta: add cmd_lsa, update cmd_lsi flags, register HELP_TEXTS/COMMANDS entries.
+  - Test Delta: extend tests/test_cmd_ls.py for lsi and new lsa forwarding assertions.
+  - Docs Delta: update docs/WORKFLOW.md call-trace nodes and regenerate docs/REFERENCES.md.
+  - Execution-ID: b348bd2e-c5b4-4c5e-b78c-beb5e3b6c97d
+
 ## [0.5.0](https://github.com/Ogekuri/G/compare/v0.4.0..v0.5.0) - 2026-02-22
 ### ⛰️  Features
 - add worktree aliases wt/wtl/wtp/wtr docs/tests [2026-02-22 16:27:03] *(core)*
@@ -186,9 +201,11 @@
 - \[0.3.0\]: https://github.com/Ogekuri/G/releases/tag/v0.3.0
 - \[0.4.0\]: https://github.com/Ogekuri/G/releases/tag/v0.4.0
 - \[0.5.0\]: https://github.com/Ogekuri/G/releases/tag/v0.5.0
+- \[0.5.1\]: https://github.com/Ogekuri/G/releases/tag/v0.5.1
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
 [0.3.0]: https://github.com/Ogekuri/G/compare/v0.2.0..v0.3.0
 [0.4.0]: https://github.com/Ogekuri/G/compare/v0.3.0..v0.4.0
 [0.5.0]: https://github.com/Ogekuri/G/compare/v0.4.0..v0.5.0
+[0.5.1]: https://github.com/Ogekuri/G/compare/v0.5.0..v0.5.1
