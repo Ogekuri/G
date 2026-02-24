@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.88
+**Versione**: 0.89
 **Autore**: Francesco Rolando
 **Data**: 2026-02-24
 ## Indice
@@ -126,6 +126,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-24 | 0.86 | Added section 4 qualitative ASCII topology infographic for overview command |
 | 2026-02-24 | 0.87 | Revised `o` overview section layout with dedicated current-branch state section and explicit highlighted current-branch indicator |
 | 2026-02-24 | 0.88 | Updated section-4 topology to represent commit-alignment groups from ahead/behind, not branch-hierarchy structure |
+| 2026-02-24 | 0.89 | Replaced qualitative-state topology with chronological-position tree derived from actual commit positions; removed state labels from infographic |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -197,11 +198,12 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-086**: The `o` alias MUST print verbose divergence rows with explicit configured labels and remote labels `RemoteDevelop(⎇ origin/<develop>)` and `RemoteMaster(⎇ origin/<master>)`, using `git rev-list` counts when compared refs exist.
 - **REQ-087**: The `o` alias MUST color ahead counters with bright green (`\033[92m`) and behind counters with bright red (`\033[31;1m`); zero-value counters and non-delta text MUST remain white.
 - **REQ-088**: The `o` alias MUST render section titles in purple (`\033[35;1m`), branch/remote identifier tuples `(⎇ <name>)` in bright yellow (`\033[38;5;226m`), current-branch logical prefix in bright red (`\033[31;1m`), and subsection titles in bright white.
-- **REQ-089**: The `o` alias MUST print section 4 with title `QUALITATIVE TOPOLOGY` and MUST render a commit-alignment infographic, not a branch-hierarchy tree.
-- **REQ-090**: The section-4 infographic MUST include `WorkingTree`, `Work`, `Develop`, `RemoteDevelop`, `Master`, and `RemoteMaster`, and MUST group branch nodes by qualitative commit alignment relative to `Work`.
-- **REQ-091**: The section-4 infographic MUST classify branch relations using qualitative states only: `in_sync`, `ahead`, `behind`, `diverged`, or `unknown`.
-- **REQ-092**: The section-4 infographic MUST derive grouping states from ahead/behind signals and MUST NOT encode proportional distances or branch-parent ancestry.
-- **REQ-093**: The section-4 infographic MUST preserve the overview color contract: purple section title, yellow `(⎇ <name>)` tuples, bright green `ahead`, bright red `behind`, and white generic text.
+- **REQ-089**: The `o` alias MUST print section 4 with title `QUALITATIVE TOPOLOGY` and MUST render a chronological-position tree where node placement derives from actual commit positions in the repository history.
+- **REQ-090**: The section-4 infographic MUST include `WorkingTree`, `Work`, `Develop`, `RemoteDevelop`, `Master`, and `RemoteMaster`; MUST resolve the commit hash of each ref via `git rev-parse`; MUST group refs sharing the same commit hash on the same output line (excluding `WorkingTree` and `Work` which MUST always occupy separate lines); MUST order nodes from most-ahead (root) to most-behind (deepest child) using `git rev-list --count` from the octopus merge-base of all available refs.
+- **REQ-091**: The section-4 infographic MUST NOT emit qualitative-state labels (`in_sync`, `ahead`, `behind`, `diverged`, `unknown`) in the topology output lines.
+- **REQ-092**: The section-4 root node MUST be the node or group with the highest commit count from the merge-base; remaining nodes MUST appear as `|-- ` children ordered by descending commit count; `WorkingTree` MUST be positioned immediately above `Work` when at the same commit position or when the working tree is dirty; `Work` MUST always occupy its own output line.
+- **REQ-093**: The section-4 infographic MUST preserve the overview color contract: purple section title, yellow `(⎇ <name>)` tuples, and white generic text including tree connectors and `WorkingTree` state annotation.
+- **REQ-095**: The section-4 `WorkingTree` node MUST display `WorkingTree [<state>]` where `<state>` is the working-tree state string (`clean`, `unstaged`, `staged`, or `mixed`) derived from the same diagnostic function used by `cmd_o`.
 - **REQ-094**: The `o` alias MUST execute `git worktree list --verbose` in section 3 and MUST execute `git status -sb` only in section 5 for current-branch state output.
 - **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
 - **REQ-010**: The system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.

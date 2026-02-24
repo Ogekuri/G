@@ -2435,8 +2435,6 @@ OVERVIEW_SECTION_TEMPLATE = "{color}=== {title} ==={reset}"
 OVERVIEW_SUBSECTION_TEMPLATE = "{color}--- {title} ---{reset}"
 ## @brief Constant `OVERVIEW_DISTANCE_TEMPLATE` used by CLI runtime paths and policies.
 OVERVIEW_DISTANCE_TEMPLATE = "{text_color}{label}{reset} | {ahead} | {behind}"
-## @brief Constant `OVERVIEW_RELATION_STATES` used by CLI runtime paths and policies.
-OVERVIEW_RELATION_STATES = {"in_sync", "ahead", "behind", "diverged", "unknown"}
 
 
 ## @brief Execute `_overview_branch_identifier` runtime logic for Git-Alias CLI.
@@ -2535,42 +2533,6 @@ def _overview_relation_state(ahead: int, behind: int) -> str:
     return "in_sync"
 
 
-## @brief Execute `_overview_normalize_relation_state` runtime logic for Git-Alias CLI.
-# @details Executes `_overview_normalize_relation_state` using deterministic CLI control-flow and explicit error propagation.
-# @param state Input parameter consumed by `_overview_normalize_relation_state`.
-# @return Result emitted by `_overview_normalize_relation_state` according to command contract.
-def _overview_normalize_relation_state(state) -> str:
-    if isinstance(state, str) and state in OVERVIEW_RELATION_STATES:
-        return state
-    return "unknown"
-
-
-## @brief Execute `_overview_relation_state_text` runtime logic for Git-Alias CLI.
-# @details Executes `_overview_relation_state_text` using deterministic CLI control-flow and explicit error propagation.
-# @param state Input parameter consumed by `_overview_relation_state_text`.
-# @return Result emitted by `_overview_relation_state_text` according to command contract.
-def _overview_relation_state_text(state) -> str:
-    normalized = _overview_normalize_relation_state(state)
-    if normalized == "ahead":
-        return f"{OVERVIEW_COLOR_AHEAD}{normalized}{OVERVIEW_COLOR_RESET}"
-    if normalized == "behind":
-        return f"{OVERVIEW_COLOR_BEHIND}{normalized}{OVERVIEW_COLOR_RESET}"
-    return f"{OVERVIEW_COLOR_WHITE}{normalized}{OVERVIEW_COLOR_RESET}"
-
-
-## @brief Execute `_overview_inverse_relation_state` runtime logic for Git-Alias CLI.
-# @details Executes `_overview_inverse_relation_state` using deterministic CLI control-flow and explicit error propagation.
-# @param state Input parameter consumed by `_overview_inverse_relation_state`.
-# @return Result emitted by `_overview_inverse_relation_state` according to command contract.
-def _overview_inverse_relation_state(state) -> str:
-    normalized = _overview_normalize_relation_state(state)
-    if normalized == "ahead":
-        return "behind"
-    if normalized == "behind":
-        return "ahead"
-    return normalized
-
-
 ## @brief Execute `_overview_worktree_state` runtime logic for Git-Alias CLI.
 # @details Executes `_overview_worktree_state` using deterministic CLI control-flow and explicit error propagation.
 # @param status_lines Input parameter consumed by `_overview_worktree_state`.
@@ -2649,78 +2611,120 @@ def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> str:
     return state
 
 
-## @brief Execute `_overview_compare_relation` runtime logic for Git-Alias CLI.
-# @details Executes `_overview_compare_relation` using deterministic CLI control-flow and explicit error propagation.
-# @param base_ref Input parameter consumed by `_overview_compare_relation`.
-# @param target_ref Input parameter consumed by `_overview_compare_relation`.
-# @return Result emitted by `_overview_compare_relation` according to command contract.
-def _overview_compare_relation(base_ref: str, target_ref: str) -> str:
-    if not _overview_ref_is_available(base_ref) or not _overview_ref_is_available(target_ref):
-        return "unknown"
-    try:
-        ahead = int(run_git_text(["rev-list", "--count", f"{target_ref}..{base_ref}"]))
-        behind = int(run_git_text(["rev-list", "--count", f"{base_ref}..{target_ref}"]))
-    except (RuntimeError, ValueError):
-        return "unknown"
-    return _overview_relation_state(ahead, behind)
-
-
-## @brief Execute `_overview_ascii_topology_lines` runtime logic for Git-Alias CLI.
-# @details Executes `_overview_ascii_topology_lines` using deterministic CLI control-flow and explicit error propagation.
-# @param work_display Input parameter consumed by `_overview_ascii_topology_lines`.
-# @param develop_display Input parameter consumed by `_overview_ascii_topology_lines`.
-# @param master_display Input parameter consumed by `_overview_ascii_topology_lines`.
-# @param remote_develop_display Input parameter consumed by `_overview_ascii_topology_lines`.
-# @param remote_master_display Input parameter consumed by `_overview_ascii_topology_lines`.
-# @param worktree_state Input parameter consumed by `_overview_ascii_topology_lines`.
-# @param work_vs_develop Input parameter consumed by `_overview_ascii_topology_lines`.
-# @param work_vs_master Input parameter consumed by `_overview_ascii_topology_lines`.
-# @param work_vs_remote_develop Input parameter consumed by `_overview_ascii_topology_lines`.
-# @param work_vs_remote_master Input parameter consumed by `_overview_ascii_topology_lines`.
-# @return Result emitted by `_overview_ascii_topology_lines` according to command contract.
+## @brief Build chronological-position topology tree from actual commit positions.
+# @details Resolves commit hashes for each ref, computes commit counts from
+# octopus merge-base, groups refs sharing the same hash on one output line,
+# and orders nodes from most-ahead (root) to most-behind (deepest child).
+# WorkingTree and Work always occupy separate lines. Complexity O(R) git
+# subprocess calls where R is the number of available refs.
+# @param work_ref {str} Git ref name for work branch.
+# @param develop_ref {str} Git ref name for develop branch.
+# @param master_ref {str} Git ref name for master branch.
+# @param remote_develop_ref {str} Git ref name for remote develop (e.g., origin/develop).
+# @param remote_master_ref {str} Git ref name for remote master (e.g., origin/master).
+# @param work_display {str} Rendered display string for Work identifier.
+# @param develop_display {str} Rendered display string for Develop identifier.
+# @param master_display {str} Rendered display string for Master identifier.
+# @param remote_develop_display {str} Rendered display string for RemoteDevelop identifier.
+# @param remote_master_display {str} Rendered display string for RemoteMaster identifier.
+# @param worktree_state {str} Working tree state (clean/unstaged/staged/mixed).
+# @return {List[str]} Rendered topology lines with ANSI color codes.
+# @satisfies REQ-089, REQ-090, REQ-091, REQ-092, REQ-093, REQ-095
 def _overview_ascii_topology_lines(
+    work_ref: str,
+    develop_ref: str,
+    master_ref: str,
+    remote_develop_ref: str,
+    remote_master_ref: str,
     work_display: str,
     develop_display: str,
     master_display: str,
     remote_develop_display: str,
     remote_master_display: str,
     worktree_state: str,
-    work_vs_develop,
-    work_vs_master,
-    work_vs_remote_develop,
-    work_vs_remote_master,
 ) -> List[str]:
-    state_groups = {
-        "in_sync": [work_display],
-        "ahead": [],
-        "behind": [],
-        "diverged": [],
-        "unknown": [],
-    }
-    state_groups[_overview_inverse_relation_state(work_vs_develop)].append(develop_display)
-    state_groups[_overview_inverse_relation_state(work_vs_master)].append(master_display)
-    state_groups[_overview_inverse_relation_state(work_vs_remote_develop)].append(remote_develop_display)
-    state_groups[_overview_inverse_relation_state(work_vs_remote_master)].append(remote_master_display)
-    worktree_relation = "in_sync" if worktree_state == "clean" else "diverged"
-    state_labels = [
-        ("in_sync", "in_sync with Work"),
-        ("ahead", "ahead of Work"),
-        ("behind", "behind Work"),
-        ("diverged", "diverged from Work"),
-        ("unknown", "unknown vs Work"),
+    branch_nodes = [
+        ("Work", work_ref, work_display),
+        ("Develop", develop_ref, develop_display),
+        ("Master", master_ref, master_display),
+        ("RemoteDevelop", remote_develop_ref, remote_develop_display),
+        ("RemoteMaster", remote_master_ref, remote_master_display),
     ]
+    ref_hashes: Dict[str, Optional[str]] = {}
+    available_refs: List[str] = []
+    for name, ref, _ in branch_nodes:
+        if _overview_ref_is_available(ref):
+            try:
+                h = run_git_text(["rev-parse", ref]).strip()
+                ref_hashes[name] = h
+                available_refs.append(ref)
+            except RuntimeError:
+                ref_hashes[name] = None
+        else:
+            ref_hashes[name] = None
+    merge_base: Optional[str] = None
+    if len(available_refs) >= 2:
+        try:
+            merge_base = run_git_text(
+                ["merge-base", "--octopus"] + available_refs,
+            ).strip()
+        except RuntimeError:
+            merge_base = None
+    positions: Dict[str, int] = {}
+    for name, ref, _ in branch_nodes:
+        if ref_hashes.get(name) is None:
+            positions[name] = 0
+            continue
+        if merge_base:
+            try:
+                count = int(
+                    run_git_text(["rev-list", "--count", f"{merge_base}..{ref}"]),
+                )
+                positions[name] = count
+            except (RuntimeError, ValueError):
+                positions[name] = 0
+        else:
+            positions[name] = 0
+    work_pos = positions.get("Work", 0)
+    wt_sort_key = float(work_pos) + 0.5 if worktree_state != "clean" else float(work_pos)
+    wt_text = (
+        f"{OVERVIEW_COLOR_WHITE}WorkingTree [{worktree_state}]{OVERVIEW_COLOR_RESET}"
+    )
+    entries: List[Tuple[float, int, str]] = [(wt_sort_key, 2, wt_text)]
+    if ref_hashes.get("Work") is not None:
+        entries.append((float(work_pos), 1, work_display))
+    work_hash = ref_hashes.get("Work")
+    hash_groups: Dict[str, List[str]] = {}
+    hash_positions: Dict[str, int] = {}
+    for name, ref, display in branch_nodes:
+        if name == "Work":
+            continue
+        h = ref_hashes.get(name)
+        if h is None:
+            continue
+        if h not in hash_groups:
+            hash_groups[h] = []
+            hash_positions[h] = positions[name]
+        hash_groups[h].append(display)
+    for h, members in hash_groups.items():
+        pos = hash_positions[h]
+        if h == work_hash:
+            sort_key = float(work_pos) - 0.1
+        else:
+            sort_key = float(pos)
+        members_text = ", ".join(members)
+        entries.append((sort_key, 0, members_text))
+    entries.sort(key=lambda e: (e[0], e[1]), reverse=True)
+    if not entries:
+        return []
+    root_text = entries[0][2]
     lines = [
-        f"{OVERVIEW_COLOR_WHITE}WorkingTree [{worktree_state}]"
-        f" [{_overview_relation_state_text(worktree_relation)}{OVERVIEW_COLOR_WHITE}]{OVERVIEW_COLOR_RESET}",
+        root_text,
         f"{OVERVIEW_COLOR_WHITE}|{OVERVIEW_COLOR_RESET}",
     ]
-    for state_name, state_line_label in state_labels:
-        members = state_groups.get(state_name, [])
-        members_text = ", ".join(members) if members else f"{OVERVIEW_COLOR_WHITE}none{OVERVIEW_COLOR_RESET}"
-        lines.append(
-            f"{OVERVIEW_COLOR_WHITE}|-- {_overview_relation_state_text(state_name)}"
-            f"{OVERVIEW_COLOR_WHITE} {state_line_label.split(' ', 1)[1]}: {members_text}{OVERVIEW_COLOR_RESET}"
-        )
+    for _, _, text in entries[1:]:
+        lines.append(f"{OVERVIEW_COLOR_WHITE}|-- {OVERVIEW_COLOR_RESET}{text}")
+    lines.append(f"{OVERVIEW_COLOR_WHITE}|{OVERVIEW_COLOR_RESET}")
     return lines
 
 
@@ -2728,7 +2732,7 @@ def _overview_ascii_topology_lines(
 # @details Executes `cmd_o` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_o`.
 # @return Result emitted by `cmd_o` according to command contract.
-# @satisfies REQ-082, REQ-083, REQ-084, REQ-085, REQ-086, REQ-087, REQ-088, REQ-089, REQ-090, REQ-091, REQ-092, REQ-093, REQ-094
+# @satisfies REQ-082, REQ-083, REQ-084, REQ-085, REQ-086, REQ-087, REQ-088, REQ-089, REQ-090, REQ-091, REQ-092, REQ-093, REQ-094, REQ-095
 def cmd_o(extra):
     del extra
     if not is_inside_git_repo():
@@ -2769,12 +2773,12 @@ def cmd_o(extra):
             reset=OVERVIEW_COLOR_RESET,
         )
     )
-    work_vs_develop_state = _overview_compare_refs(
+    _overview_compare_refs(
         work_branch,
         develop_branch,
         f"{work_display} vs {develop_display}",
     )
-    work_vs_master_state = _overview_compare_refs(
+    _overview_compare_refs(
         work_branch,
         master_branch,
         f"{work_display} vs {master_display}",
@@ -2796,8 +2800,6 @@ def cmd_o(extra):
         remote_master,
         f"{master_display} vs {remote_master_display}",
     )
-    work_vs_remote_develop_state = _overview_compare_relation(work_branch, remote_develop)
-    work_vs_remote_master_state = _overview_compare_relation(work_branch, remote_master)
     print()
     print(
         OVERVIEW_SECTION_TEMPLATE.format(
@@ -2816,16 +2818,17 @@ def cmd_o(extra):
         )
     )
     topology_lines = _overview_ascii_topology_lines(
+        work_ref=work_branch,
+        develop_ref=develop_branch,
+        master_ref=master_branch,
+        remote_develop_ref=remote_develop,
+        remote_master_ref=remote_master,
         work_display=work_display,
         develop_display=develop_display,
         master_display=master_display,
         remote_develop_display=remote_develop_display,
         remote_master_display=remote_master_display,
         worktree_state=_overview_worktree_state(),
-        work_vs_develop=work_vs_develop_state,
-        work_vs_master=work_vs_master_state,
-        work_vs_remote_develop=work_vs_remote_develop_state,
-        work_vs_remote_master=work_vs_remote_master_state,
     )
     for line in topology_lines:
         print(line)

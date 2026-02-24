@@ -39,14 +39,13 @@ class CmdOverviewTest(unittest.TestCase):
     ## @brief Verify `cmd_o` emits headings and performs all comparisons on feature branches.
     # @return None.
     def test_cmd_o_runs_status_and_all_comparisons(self):
-        with mock.patch.object(core, "is_inside_git_repo", return_value=True), mock.patch.object(
-            core, "get_branch", side_effect=["work", "develop", "master"]
-        ), mock.patch.object(
-            core, "run_git_text", return_value="work"
-        ), mock.patch.object(
-            core, "_overview_compare_relation", side_effect=["in_sync", "behind"]
-        ), mock.patch.object(core, "_overview_compare_refs"
-        ) as compare, mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
+        with mock.patch.object(core, "is_inside_git_repo", return_value=True), \
+             mock.patch.object(core, "get_branch", side_effect=["work", "develop", "master"]), \
+             mock.patch.object(core, "run_git_text", return_value="work"), \
+             mock.patch.object(core, "_overview_compare_refs") as compare, \
+             mock.patch.object(core, "_overview_ascii_topology_lines", return_value=[]) as topo, \
+             mock.patch.object(core, "_overview_worktree_state", return_value="clean"), \
+             mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
                 core.cmd_o([])
@@ -95,19 +94,30 @@ class CmdOverviewTest(unittest.TestCase):
             normalized_output.index("QUALITATIVE TOPOLOGY"),
             normalized_output.index("CURRENT BRANCH STATE"),
         )
+        topo.assert_called_once_with(
+            work_ref="work",
+            develop_ref="develop",
+            master_ref="master",
+            remote_develop_ref="origin/develop",
+            remote_master_ref="origin/master",
+            work_display=ANY,
+            develop_display=ANY,
+            master_display=ANY,
+            remote_develop_display=ANY,
+            remote_master_display=ANY,
+            worktree_state="clean",
+        )
 
     ## @brief Verify `cmd_o` uses configured branch names consistently in compare calls.
     # @return None.
     def test_cmd_o_uses_configured_branch_names_for_comparisons(self):
-        with mock.patch.object(core, "is_inside_git_repo", return_value=True), mock.patch.object(
-            core, "get_branch", side_effect=["wrk", "dev", "mst"]
-        ), mock.patch.object(
-            core, "run_git_text", return_value="wrk"
-        ), mock.patch.object(
-            core, "_overview_compare_relation", side_effect=["in_sync", "behind"]
-        ), mock.patch.object(
-            core, "_overview_compare_refs"
-        ) as compare, mock.patch.object(core, "run_git_cmd", return_value=None):
+        with mock.patch.object(core, "is_inside_git_repo", return_value=True), \
+             mock.patch.object(core, "get_branch", side_effect=["wrk", "dev", "mst"]), \
+             mock.patch.object(core, "run_git_text", return_value="wrk"), \
+             mock.patch.object(core, "_overview_compare_refs") as compare, \
+             mock.patch.object(core, "_overview_ascii_topology_lines", return_value=[]), \
+             mock.patch.object(core, "_overview_worktree_state", return_value="clean"), \
+             mock.patch.object(core, "run_git_cmd", return_value=None):
             core.cmd_o([])
         compare.assert_has_calls(
             [
@@ -161,35 +171,174 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertIn(f"{core.OVERVIEW_COLOR_BEHIND}Work", rendered)
         self.assertIn(f"{core.OVERVIEW_COLOR_LABEL}⎇ work", rendered)
 
-    ## @brief Verify `_overview_ascii_topology_lines` renders commit-alignment groups.
+    ## @brief Verify `_overview_ascii_topology_lines` renders chronological-position tree
+    #  when all refs are at the same commit (in_sync scenario).
     # @return None.
-    def test_overview_ascii_topology_lines_renders_commit_alignment_groups(self):
-        lines = core._overview_ascii_topology_lines(
-            work_display="Work(⎇ work)",
-            develop_display="Develop(⎇ develop)",
-            master_display="Master(⎇ master)",
-            remote_develop_display="RemoteDevelop(⎇ origin/develop)",
-            remote_master_display="RemoteMaster(⎇ origin/master)",
-            worktree_state="clean",
-            work_vs_develop="ahead",
-            work_vs_master="behind",
-            work_vs_remote_develop="in_sync",
-            work_vs_remote_master="diverged",
-        )
+    def test_topology_all_in_sync_clean(self):
+        same_hash = "aaa111"
+        with mock.patch.object(core, "_overview_ref_is_available", return_value=True), \
+             mock.patch.object(core, "run_git_text", side_effect=[
+                 same_hash, same_hash, same_hash, same_hash, same_hash,
+                 same_hash,
+                 "0", "0", "0", "0", "0",
+             ]):
+            lines = core._overview_ascii_topology_lines(
+                work_ref="work",
+                develop_ref="develop",
+                master_ref="master",
+                remote_develop_ref="origin/develop",
+                remote_master_ref="origin/master",
+                work_display="Work(⎇ work)",
+                develop_display="Develop(⎇ develop)",
+                master_display="Master(⎇ master)",
+                remote_develop_display="RemoteDevelop(⎇ origin/develop)",
+                remote_master_display="RemoteMaster(⎇ origin/master)",
+                worktree_state="clean",
+            )
         rendered = "\n".join(lines)
-        normalized_rendered = re.sub(r"\x1b\[[0-9;]*m", "", rendered)
-        self.assertIn("WorkingTree", normalized_rendered)
-        self.assertIn("in_sync with Work", normalized_rendered)
-        self.assertIn("ahead of Work", normalized_rendered)
-        self.assertIn("behind Work", normalized_rendered)
-        self.assertIn("Work(⎇ work)", normalized_rendered)
-        self.assertIn("Develop(⎇ develop)", normalized_rendered)
-        self.assertIn("RemoteDevelop(⎇ origin/develop)", normalized_rendered)
-        self.assertIn("Master(⎇ master)", normalized_rendered)
-        self.assertIn("RemoteMaster(⎇ origin/master)", normalized_rendered)
-        self.assertIn("ahead", rendered)
-        self.assertIn("behind", rendered)
-        self.assertIn("diverged", rendered)
+        normalized = re.sub(r"\x1b\[[0-9;]*m", "", rendered)
+        self.assertIn("WorkingTree [clean]", normalized)
+        self.assertIn("Work(⎇ work)", normalized)
+        self.assertIn("Develop(⎇ develop)", normalized)
+        self.assertIn("Master(⎇ master)", normalized)
+        self.assertIn("RemoteDevelop(⎇ origin/develop)", normalized)
+        self.assertIn("RemoteMaster(⎇ origin/master)", normalized)
+        self.assertNotIn("in_sync", normalized)
+        self.assertNotIn("ahead", normalized)
+        self.assertNotIn("behind", normalized)
+        self.assertNotIn("diverged", normalized)
+        self.assertNotIn("unknown", normalized)
+        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", l) for l in lines]
+        self.assertIn("WorkingTree [clean]", norm_lines[0])
+        self.assertEqual("|", norm_lines[1])
+        work_idx = next(i for i, l in enumerate(norm_lines) if "Work(⎇ work)" in l)
+        others_idx = next(
+            i for i, l in enumerate(norm_lines)
+            if "Develop(⎇ develop)" in l and "Master(⎇ master)" in l
+        )
+        self.assertGreater(others_idx, work_idx)
+
+    ## @brief Verify `_overview_ascii_topology_lines` places dirty WorkingTree above Work.
+    # @return None.
+    def test_topology_dirty_worktree_above_work(self):
+        work_hash = "bbb222"
+        other_hash = "ccc333"
+        with mock.patch.object(core, "_overview_ref_is_available", return_value=True), \
+             mock.patch.object(core, "run_git_text", side_effect=[
+                 work_hash, other_hash, other_hash, other_hash, other_hash,
+                 work_hash,
+                 "3", "1", "1", "1", "1",
+             ]):
+            lines = core._overview_ascii_topology_lines(
+                work_ref="work",
+                develop_ref="develop",
+                master_ref="master",
+                remote_develop_ref="origin/develop",
+                remote_master_ref="origin/master",
+                work_display="Work(⎇ work)",
+                develop_display="Develop(⎇ develop)",
+                master_display="Master(⎇ master)",
+                remote_develop_display="RemoteDevelop(⎇ origin/develop)",
+                remote_master_display="RemoteMaster(⎇ origin/master)",
+                worktree_state="unstaged",
+            )
+        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", l) for l in lines]
+        wt_idx = next(i for i, l in enumerate(norm_lines) if "WorkingTree" in l)
+        work_idx = next(i for i, l in enumerate(norm_lines) if "Work(⎇ work)" in l)
+        self.assertLess(wt_idx, work_idx)
+        self.assertIn("[unstaged]", norm_lines[wt_idx])
+
+    ## @brief Verify topology places remote ahead of local when remote has more commits.
+    # @return None.
+    def test_topology_remote_ahead_becomes_root(self):
+        work_hash = "ddd444"
+        dev_hash = "eee555"
+        remote_dev_hash = "fff666"
+        master_hash = "ggg777"
+        with mock.patch.object(core, "_overview_ref_is_available", return_value=True), \
+             mock.patch.object(core, "run_git_text", side_effect=[
+                 work_hash, dev_hash, master_hash, remote_dev_hash, master_hash,
+                 "aaa000",
+                 "2", "1", "0", "4", "0",
+             ]):
+            lines = core._overview_ascii_topology_lines(
+                work_ref="work",
+                develop_ref="develop",
+                master_ref="master",
+                remote_develop_ref="origin/develop",
+                remote_master_ref="origin/master",
+                work_display="Work(⎇ work)",
+                develop_display="Develop(⎇ develop)",
+                master_display="Master(⎇ master)",
+                remote_develop_display="RemoteDevelop(⎇ origin/develop)",
+                remote_master_display="RemoteMaster(⎇ origin/master)",
+                worktree_state="unstaged",
+            )
+        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", l) for l in lines]
+        self.assertIn("RemoteDevelop(⎇ origin/develop)", norm_lines[0])
+        wt_idx = next(i for i, l in enumerate(norm_lines) if "WorkingTree" in l)
+        work_idx = next(i for i, l in enumerate(norm_lines) if "Work(⎇ work)" in l)
+        self.assertLess(wt_idx, work_idx)
+
+    ## @brief Verify topology groups refs sharing the same commit hash on one line.
+    # @return None.
+    def test_topology_groups_same_hash_refs(self):
+        same_hash = "hhh888"
+        work_hash = "iii999"
+        with mock.patch.object(core, "_overview_ref_is_available", return_value=True), \
+             mock.patch.object(core, "run_git_text", side_effect=[
+                 work_hash, same_hash, same_hash, same_hash, same_hash,
+                 "jjj000",
+                 "3", "1", "1", "1", "1",
+             ]):
+            lines = core._overview_ascii_topology_lines(
+                work_ref="work",
+                develop_ref="develop",
+                master_ref="master",
+                remote_develop_ref="origin/develop",
+                remote_master_ref="origin/master",
+                work_display="Work(⎇ work)",
+                develop_display="Develop(⎇ develop)",
+                master_display="Master(⎇ master)",
+                remote_develop_display="RemoteDevelop(⎇ origin/develop)",
+                remote_master_display="RemoteMaster(⎇ origin/master)",
+                worktree_state="clean",
+            )
+        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", l) for l in lines]
+        grouped_line = next(
+            l for l in norm_lines
+            if "Develop(⎇ develop)" in l and "Master(⎇ master)" in l
+        )
+        self.assertIn("RemoteDevelop(⎇ origin/develop)", grouped_line)
+        self.assertIn("RemoteMaster(⎇ origin/master)", grouped_line)
+
+    ## @brief Verify topology does not emit qualitative-state labels.
+    # @return None.
+    def test_topology_no_qualitative_state_labels(self):
+        same_hash = "kkk111"
+        with mock.patch.object(core, "_overview_ref_is_available", return_value=True), \
+             mock.patch.object(core, "run_git_text", side_effect=[
+                 same_hash, same_hash, same_hash, same_hash, same_hash,
+                 same_hash,
+                 "0", "0", "0", "0", "0",
+             ]):
+            lines = core._overview_ascii_topology_lines(
+                work_ref="work",
+                develop_ref="develop",
+                master_ref="master",
+                remote_develop_ref="origin/develop",
+                remote_master_ref="origin/master",
+                work_display="Work(⎇ work)",
+                develop_display="Develop(⎇ develop)",
+                master_display="Master(⎇ master)",
+                remote_develop_display="RemoteDevelop(⎇ origin/develop)",
+                remote_master_display="RemoteMaster(⎇ origin/master)",
+                worktree_state="clean",
+            )
+        rendered = "\n".join(lines)
+        normalized = re.sub(r"\x1b\[[0-9;]*m", "", rendered)
+        for label in ["in_sync", "ahead", "behind", "diverged", "unknown"]:
+            self.assertNotIn(label, normalized)
 
 
 if __name__ == "__main__":

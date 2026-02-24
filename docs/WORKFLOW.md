@@ -160,7 +160,7 @@
             - `_iter_versions_in_text(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
         - `cmd_new(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1913`]
-        - `cmd_o(...)`: repository overview flow [`src/git_alias/core.py:2732`]
+        - `cmd_o(...)`: repository overview flow [`src/git_alias/core.py:2694`]
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
           - `get_branch(...)` (`work`, `develop`, `master`) -> `get_config_value(...)`
           - `run_git_text(...)` (`git branch --show-current`) -> `_run_checked(...)`
@@ -173,17 +173,11 @@
             - `run_git_text(...)` -> `_run_checked(...)`
             - `_overview_relation_state(...)`
             - `_overview_distance_text(...)`
-          - `_overview_compare_relation(...)`
-            - `_overview_ref_is_available(...)` -> `_run_checked(...)`
-            - `run_git_text(...)` -> `_run_checked(...)`
-            - `_overview_relation_state(...)`
           - `run_git_cmd(...)` (`git worktree list --verbose`) -> `_to_args(...)` -> `_run_checked(...)`
           - `_overview_worktree_state(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
-          - `_overview_ascii_topology_lines(...)`
-            - `_overview_inverse_relation_state(...)`
-              - `_overview_normalize_relation_state(...)`
-            - `_overview_relation_state_text(...)`
-              - `_overview_normalize_relation_state(...)`
+          - `_overview_ascii_topology_lines(...)` (chronological-position tree from commit hashes)
+            - `_overview_ref_is_available(...)` -> `_run_checked(...)`
+            - `run_git_text(...)` (`git rev-parse`, `git merge-base --octopus`, `git rev-list --count`) -> `_run_checked(...)`
           - `run_git_cmd(...)` (`git status -sb`) -> `_to_args(...)` -> `_run_checked(...)`
         - `cmd_refactor(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1921`]
         - `cmd_fix(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1929`]
