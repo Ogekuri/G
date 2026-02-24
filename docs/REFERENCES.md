@@ -853,11 +853,11 @@ an explicit success confirmation.
 - Param: extra Input parameter consumed by `cmd_co`.
 - Return: Result emitted by `cmd_co` according to command contract.
 
-### fn `def cmd_d(extra)` (L2299-2306)
-- Brief: Execute `cmd_d` runtime logic for Git-Alias CLI.
-- Details: Executes `cmd_d` using deterministic CLI control-flow and explicit error propagation.
-- Param: extra Input parameter consumed by `cmd_d`.
-- Return: Result emitted by `cmd_d` according to command contract.
+### fn `def cmd_dr(extra)` (L2299-2306)
+- Brief: Execute `cmd_dr` runtime logic for Git-Alias CLI.
+- Details: Executes `cmd_dr` using deterministic CLI control-flow and explicit error propagation.
+- Param: extra Input parameter consumed by `cmd_dr`.
+- Return: Result emitted by `cmd_dr` according to command contract.
 
 ### fn `def cmd_dcc(extra)` (L2311-2314)
 - Brief: Execute `cmd_dcc` runtime logic for Git-Alias CLI.
@@ -1352,7 +1352,7 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 |`cmd_misc`|fn|pub|2275-2278|def cmd_misc(extra)|
 |`cmd_cover`|fn|pub|2283-2286|def cmd_cover(extra)|
 |`cmd_co`|fn|pub|2291-2294|def cmd_co(extra)|
-|`cmd_d`|fn|pub|2299-2306|def cmd_d(extra)|
+|`cmd_dr`|fn|pub|2299-2306|def cmd_dr(extra)|
 |`cmd_dcc`|fn|pub|2311-2314|def cmd_dcc(extra)|
 |`cmd_dccc`|fn|pub|2319-2322|def cmd_dccc(extra)|
 |`cmd_de`|fn|pub|2327-2330|def cmd_de(extra)|

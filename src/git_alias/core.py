@@ -386,7 +386,7 @@ HELP_TEXTS = {
     "ck": "Check differences.",
     "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
-    "d": "Run a directory difftool between two refs. Syntax: git d <ref_a> <ref_b>.",
+    "dr": "Run a directory difftool between two refs. Syntax: git dr <ref_a> <ref_b>.",
     "dcc": "Run a directory difftool between HEAD~1 and HEAD.",
     "dccc": "Run a directory difftool between HEAD~2 and HEAD.",
     "de": "Print last tagged commit details.",
@@ -2292,14 +2292,14 @@ def cmd_co(extra):
     return run_git_cmd(["checkout"], extra)
 
 
-## @brief Execute `cmd_d` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_d` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_d`.
-# @return Result emitted by `cmd_d` according to command contract.
-def cmd_d(extra):
+## @brief Execute `cmd_dr` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_dr` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_dr`.
+# @return Result emitted by `cmd_dr` according to command contract.
+def cmd_dr(extra):
     args = _to_args(extra)
     if len(args) != 2:
-        print("git d requires exactly two refs: git d <ref_a> <ref_b>", file=sys.stderr)
+        print("git dr requires exactly two refs: git dr <ref_a> <ref_b>", file=sys.stderr)
         sys.exit(1)
     return run_git_cmd(["difftool", "-d", args[0], args[1]])
 
@@ -2967,7 +2967,7 @@ COMMANDS = {
     "ck": cmd_ck,
     "cm": cmd_cm,
     "co": cmd_co,
-    "d": cmd_d,
+    "dr": cmd_dr,
     "dcc": cmd_dcc,
     "dccc": cmd_dccc,
     "de": cmd_de,

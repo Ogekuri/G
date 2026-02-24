@@ -174,7 +174,7 @@
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
         - `cmd_co(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:1993`]
-        - `cmd_d(...)`: wrapper + arg guard -> `_to_args(...)`, `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2001`]
+        - `cmd_dr(...)`: wrapper + arg guard -> `_to_args(...)`, `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2001`]
         - `cmd_dcc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2013`]
         - `cmd_dccc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2021`]
         - `cmd_de(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2029`]
