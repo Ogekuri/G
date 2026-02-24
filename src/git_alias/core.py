@@ -2518,6 +2518,70 @@ def _overview_ref_is_available(ref_name: str) -> bool:
     return proc.returncode == 0
 
 
+## @brief Resolve latest commit subject for an overview ref.
+# @details Returns the `%s` subject of `git log -1` for the input ref, or `n/a`
+# when the ref is unavailable or the lookup fails.
+# @param ref_name Input parameter consumed by `_overview_ref_latest_subject`.
+# @return Result emitted by `_overview_ref_latest_subject` according to command contract.
+def _overview_ref_latest_subject(ref_name: str) -> str:
+    if not _overview_ref_is_available(ref_name):
+        return "n/a"
+    try:
+        subject = run_git_text(["log", "-1", "--pretty=%s", ref_name]).strip()
+    except RuntimeError:
+        return "n/a"
+    return subject if subject else "n/a"
+
+
+## @brief Build section-5 aligned branch summary lines for overview output.
+# @details Produces one row for each configured branch/ref identifier using
+# `<Identifier> | <latest commit subject>` formatting, aligned by visible
+# identifier width and with commit subject in bright white bold.
+# @param work_ref Input parameter consumed by `_overview_branch_summary_lines`.
+# @param develop_ref Input parameter consumed by `_overview_branch_summary_lines`.
+# @param master_ref Input parameter consumed by `_overview_branch_summary_lines`.
+# @param remote_develop_ref Input parameter consumed by `_overview_branch_summary_lines`.
+# @param remote_master_ref Input parameter consumed by `_overview_branch_summary_lines`.
+# @param work_display Input parameter consumed by `_overview_branch_summary_lines`.
+# @param develop_display Input parameter consumed by `_overview_branch_summary_lines`.
+# @param master_display Input parameter consumed by `_overview_branch_summary_lines`.
+# @param remote_develop_display Input parameter consumed by `_overview_branch_summary_lines`.
+# @param remote_master_display Input parameter consumed by `_overview_branch_summary_lines`.
+# @return Result emitted by `_overview_branch_summary_lines` according to command contract.
+# @satisfies REQ-094, REQ-096
+def _overview_branch_summary_lines(
+    work_ref: str,
+    develop_ref: str,
+    master_ref: str,
+    remote_develop_ref: str,
+    remote_master_ref: str,
+    work_display: str,
+    develop_display: str,
+    master_display: str,
+    remote_develop_display: str,
+    remote_master_display: str,
+) -> List[str]:
+    rows = [
+        ("Work", work_ref, work_display),
+        ("Develop", develop_ref, develop_display),
+        ("Master", master_ref, master_display),
+        ("RemoteDevelop", remote_develop_ref, remote_develop_display),
+        ("RemoteMaster", remote_master_ref, remote_master_display),
+    ]
+    label_width = max(len(f"{logical_name}(⎇ {ref_name})") for logical_name, ref_name, _ in rows)
+    lines: List[str] = []
+    for logical_name, ref_name, display in rows:
+        label_text = f"{logical_name}(⎇ {ref_name})"
+        padding = " " * (label_width - len(label_text))
+        subject = _overview_ref_latest_subject(ref_name)
+        lines.append(
+            f"{display}"
+            f"{OVERVIEW_COLOR_WHITE}{padding} | {OVERVIEW_COLOR_RESET}"
+            f"{OVERVIEW_COLOR_WHITE_BOLD}{subject}{OVERVIEW_COLOR_RESET}"
+        )
+    return lines
+
+
 ## @brief Execute `_overview_relation_state` runtime logic for Git-Alias CLI.
 # @details Executes `_overview_relation_state` using deterministic CLI control-flow and explicit error propagation.
 # @param ahead Input parameter consumed by `_overview_relation_state`.
@@ -2729,7 +2793,7 @@ def _overview_ascii_topology_lines(
 # @details Executes `cmd_o` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_o`.
 # @return Result emitted by `cmd_o` according to command contract.
-# @satisfies REQ-082, REQ-083, REQ-084, REQ-085, REQ-086, REQ-087, REQ-088, REQ-089, REQ-090, REQ-091, REQ-092, REQ-093, REQ-094, REQ-095
+# @satisfies REQ-082, REQ-083, REQ-084, REQ-085, REQ-086, REQ-087, REQ-088, REQ-089, REQ-090, REQ-091, REQ-092, REQ-093, REQ-094, REQ-095, REQ-096
 def cmd_o(extra):
     del extra
     if not is_inside_git_repo():
@@ -2837,7 +2901,18 @@ def cmd_o(extra):
             reset=OVERVIEW_COLOR_RESET,
         )
     )
-    branch_rows = run_git_text(["branch", "-v", "-a"]).splitlines()
+    branch_rows = _overview_branch_summary_lines(
+        work_ref=work_branch,
+        develop_ref=develop_branch,
+        master_ref=master_branch,
+        remote_develop_ref=remote_develop,
+        remote_master_ref=remote_master,
+        work_display=work_display,
+        develop_display=develop_display,
+        master_display=master_display,
+        remote_develop_display=remote_develop_display,
+        remote_master_display=remote_master_display,
+    )
     for row in branch_rows:
         print(f"{OVERVIEW_COLOR_WHITE}{row}{OVERVIEW_COLOR_RESET}")
     print()

@@ -41,15 +41,16 @@ class CmdOverviewTest(unittest.TestCase):
     def test_cmd_o_runs_status_and_all_comparisons(self):
         with mock.patch.object(core, "is_inside_git_repo", return_value=True), \
              mock.patch.object(core, "get_branch", side_effect=["work", "develop", "master"]), \
+             mock.patch.object(core, "run_git_text", return_value="work") as run_git_text, \
+             mock.patch.object(core, "_overview_compare_refs") as compare, \
              mock.patch.object(
                  core,
-                 "run_git_text",
-                 side_effect=[
-                     "work",
-                     "* work   1111111 commit one\n  develop 2222222 commit two",
+                 "_overview_branch_summary_lines",
+                 return_value=[
+                     "Work(⎇ work)                    | commit one",
+                     "Develop(⎇ develop)              | commit two",
                  ],
-             ) as run_git_text, \
-             mock.patch.object(core, "_overview_compare_refs") as compare, \
+             ) as branch_summary, \
              mock.patch.object(core, "_overview_ascii_topology_lines", return_value=[]) as topo, \
              mock.patch.object(core, "_overview_worktree_state", return_value="clean"), \
              mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
@@ -74,8 +75,19 @@ class CmdOverviewTest(unittest.TestCase):
         run_git_text.assert_has_calls(
             [
                 mock.call(["branch", "--show-current"]),
-                mock.call(["branch", "-v", "-a"]),
             ]
+        )
+        branch_summary.assert_called_once_with(
+            work_ref="work",
+            develop_ref="develop",
+            master_ref="master",
+            remote_develop_ref="origin/develop",
+            remote_master_ref="origin/master",
+            work_display=ANY,
+            develop_display=ANY,
+            master_display=ANY,
+            remote_develop_display=ANY,
+            remote_master_display=ANY,
         )
         output = out.getvalue()
         normalized_output = re.sub(r"\x1b\[[0-9;]*m", "", output)
@@ -85,8 +97,8 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertIn("QUALITATIVE TOPOLOGY", output)
         self.assertIn("BRANCHES", output)
         self.assertIn("CURRENT BRANCH STATE", output)
-        self.assertIn("* work   1111111 commit one", normalized_output)
-        self.assertIn("develop 2222222 commit two", normalized_output)
+        self.assertIn("Work(⎇ work)                    | commit one", normalized_output)
+        self.assertIn("Develop(⎇ develop)              | commit two", normalized_output)
         self.assertIn("Server Alignment", output)
         self.assertIn("Current Branch:", output)
         self.assertIn("Work(⎇ work)", normalized_output)
@@ -135,6 +147,7 @@ class CmdOverviewTest(unittest.TestCase):
              mock.patch.object(core, "get_branch", side_effect=["wrk", "dev", "mst"]), \
              mock.patch.object(core, "run_git_text", return_value="wrk"), \
              mock.patch.object(core, "_overview_compare_refs") as compare, \
+             mock.patch.object(core, "_overview_branch_summary_lines", return_value=[]), \
              mock.patch.object(core, "_overview_ascii_topology_lines", return_value=[]), \
              mock.patch.object(core, "_overview_worktree_state", return_value="clean"), \
              mock.patch.object(core, "run_git_cmd", return_value=None):
@@ -190,6 +203,57 @@ class CmdOverviewTest(unittest.TestCase):
         )
         self.assertIn(f"{core.OVERVIEW_COLOR_BEHIND}Work", rendered)
         self.assertIn(f"{core.OVERVIEW_COLOR_LABEL}⎇ work", rendered)
+
+    ## @brief Verify `_overview_ref_latest_subject` returns latest commit subject text.
+    # @return None.
+    def test_overview_ref_latest_subject_returns_subject_text(self):
+        with mock.patch.object(core, "_overview_ref_is_available", return_value=True), \
+             mock.patch.object(core, "run_git_text", return_value="release version: 0.0.4\n"):
+            subject = core._overview_ref_latest_subject("develop")
+        self.assertEqual("release version: 0.0.4", subject)
+
+    ## @brief Verify `_overview_ref_latest_subject` returns `n/a` for unavailable refs.
+    # @return None.
+    def test_overview_ref_latest_subject_returns_na_for_unavailable_ref(self):
+        with mock.patch.object(core, "_overview_ref_is_available", return_value=False), \
+             mock.patch.object(core, "run_git_text") as run_git_text:
+            subject = core._overview_ref_latest_subject("origin/develop")
+        self.assertEqual("n/a", subject)
+        run_git_text.assert_not_called()
+
+    ## @brief Verify section-5 branch rows are aligned and subject text uses bright white bold.
+    # @return None.
+    def test_overview_branch_summary_lines_align_and_highlight_subject(self):
+        with mock.patch.object(
+            core,
+            "_overview_ref_latest_subject",
+            side_effect=[
+                "docs(workflow): regenerate runtime model from source",
+                "release version: 0.0.4",
+                "release version: 0.0.4",
+                "release version: 0.0.4",
+                "release version: 0.0.4",
+            ],
+        ):
+            lines = core._overview_branch_summary_lines(
+                work_ref="work",
+                develop_ref="develop",
+                master_ref="master",
+                remote_develop_ref="origin/develop",
+                remote_master_ref="origin/master",
+                work_display="Work(⎇ work)",
+                develop_display="Develop(⎇ develop)",
+                master_display="Master(⎇ master)",
+                remote_develop_display="RemoteDevelop(⎇ origin/develop)",
+                remote_master_display="RemoteMaster(⎇ origin/master)",
+            )
+        normalized = [re.sub(r"\x1b\[[0-9;]*m", "", line) for line in lines]
+        bar_positions = {line.index("|") for line in normalized}
+        self.assertEqual(1, len(bar_positions))
+        self.assertEqual(5, len(normalized))
+        self.assertIn("Work(⎇ work)", normalized[0])
+        self.assertIn("RemoteMaster(⎇ origin/master)", normalized[-1])
+        self.assertIn(core.OVERVIEW_COLOR_WHITE_BOLD, lines[0])
 
     ## @brief Verify `_overview_ascii_topology_lines` groups all refs with shared hash.
     # @return None.
