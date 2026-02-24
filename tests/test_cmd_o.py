@@ -45,7 +45,13 @@ class CmdOverviewTest(unittest.TestCase):
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
                 core.cmd_o([])
-        run_git.assert_called_once_with(["status", "-sb"])
+        run_git.assert_has_calls(
+            [
+                mock.call(["status", "-sb"]),
+                mock.call(["worktree", "list", "--verbose"]),
+            ]
+        )
+        self.assertEqual(run_git.call_count, 2)
         compare.assert_has_calls(
             [
                 mock.call("HEAD", "develop", "Current vs Develop"),
@@ -57,7 +63,16 @@ class CmdOverviewTest(unittest.TestCase):
         output = out.getvalue()
         self.assertIn("WORKING AREA, STAGE & CURRENT BRANCH", output)
         self.assertIn("BRANCH DISTANCES (COMMITS)", output)
+        self.assertIn("ACTIVE WORKTREES", output)
         self.assertIn("Server Alignment", output)
+        self.assertLess(
+            output.index("WORKING AREA, STAGE & CURRENT BRANCH"),
+            output.index("BRANCH DISTANCES (COMMITS)"),
+        )
+        self.assertLess(
+            output.index("BRANCH DISTANCES (COMMITS)"),
+            output.index("ACTIVE WORKTREES"),
+        )
 
     ## @brief Verify `cmd_o` skips local-branch comparisons when already on `develop` or primary.
     # @return None.

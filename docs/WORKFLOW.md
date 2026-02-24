@@ -162,13 +162,14 @@
         - `cmd_new(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1913`]
         - `cmd_o(...)`: repository overview flow [`src/git_alias/core.py:2501`]
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
-          - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`
+          - `run_git_cmd(...)` (`git status -sb`) -> `_to_args(...)` -> `_run_checked(...)`
           - `_overview_primary_branch_name(...)` -> `_ref_exists(...)`, `get_branch(...)` -> `get_config_value(...)`
           - `run_git_text(...)` (`git branch --show-current`) -> `_run_checked(...)`
           - `_overview_compare_refs(...)`
             - `_overview_ref_is_available(...)` -> `_run_checked(...)`
             - `run_git_text(...)` -> `_run_checked(...)`
             - `_overview_distance_text(...)`
+          - `run_git_cmd(...)` (`git worktree list --verbose`) -> `_to_args(...)` -> `_run_checked(...)`
         - `cmd_refactor(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1921`]
         - `cmd_fix(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1929`]
         - `cmd_change(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1937`]

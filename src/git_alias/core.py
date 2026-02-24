@@ -2534,6 +2534,15 @@ def cmd_o(extra):
     _overview_compare_refs("develop", "origin/develop", "Develop vs origin/Develop")
     _overview_compare_refs(primary_branch, f"origin/{primary_branch}", f"{primary_branch} vs origin")
     print()
+    print(
+        OVERVIEW_SECTION_TEMPLATE.format(
+            color=OVERVIEW_COLOR_CYAN,
+            title="3. ACTIVE WORKTREES",
+            reset=OVERVIEW_COLOR_RESET,
+        )
+    )
+    run_git_cmd(["worktree", "list", "--verbose"])
+    print()
 
 
 ## @brief Execute `cmd_str` runtime logic for Git-Alias CLI.
