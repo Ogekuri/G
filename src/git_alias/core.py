@@ -412,6 +412,7 @@ HELP_TEXTS = {
     "major": "Release a new major version from the work branch. Options: --include-patch.",
     "minor": "Release a new minor version from the work branch. Options: --include-patch.",
     "new": "Conventional commit new(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
+    "o": "Print a verbose repository overview with status and branch divergence sections.",
     "implement": "Conventional commit implement(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
     "refactor": "Conventional commit refactor(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
     "fix": "Conventional commit fix(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_module).",
@@ -2414,6 +2415,127 @@ def cmd_gr(extra):
     return run_command(["gitk", "--simplify-by-decoration", "--all"] + _to_args(extra))
 
 
+## @brief Constant `OVERVIEW_COLOR_RESET` used by CLI runtime paths and policies.
+OVERVIEW_COLOR_RESET = "\033[0m"
+## @brief Constant `OVERVIEW_COLOR_CYAN` used by CLI runtime paths and policies.
+OVERVIEW_COLOR_CYAN = "\033[36m"
+## @brief Constant `OVERVIEW_COLOR_GREEN` used by CLI runtime paths and policies.
+OVERVIEW_COLOR_GREEN = "\033[32m"
+## @brief Constant `OVERVIEW_COLOR_RED` used by CLI runtime paths and policies.
+OVERVIEW_COLOR_RED = "\033[31m"
+## @brief Constant `OVERVIEW_COLOR_YELLOW` used by CLI runtime paths and policies.
+OVERVIEW_COLOR_YELLOW = "\033[33m"
+## @brief Constant `OVERVIEW_SECTION_TEMPLATE` used by CLI runtime paths and policies.
+OVERVIEW_SECTION_TEMPLATE = "{color}=== {title} ==={reset}"
+## @brief Constant `OVERVIEW_SUBSECTION_TEMPLATE` used by CLI runtime paths and policies.
+OVERVIEW_SUBSECTION_TEMPLATE = "{color}--- {title} ---{reset}"
+## @brief Constant `OVERVIEW_DISTANCE_TEMPLATE` used by CLI runtime paths and policies.
+OVERVIEW_DISTANCE_TEMPLATE = "{label:<25} | {ahead:<15} | {behind}"
+
+
+## @brief Execute `_overview_ref_is_available` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_ref_is_available` using deterministic CLI control-flow and explicit error propagation.
+# @param ref_name Input parameter consumed by `_overview_ref_is_available`.
+# @return Result emitted by `_overview_ref_is_available` according to command contract.
+def _overview_ref_is_available(ref_name: str) -> bool:
+    proc = _run_checked(
+        ["git", "rev-parse", "--verify", "--quiet", ref_name],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return proc.returncode == 0
+
+
+## @brief Execute `_overview_distance_text` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_distance_text` using deterministic CLI control-flow and explicit error propagation.
+# @param is_ahead Input parameter consumed by `_overview_distance_text`.
+# @param count Input parameter consumed by `_overview_distance_text`.
+# @return Result emitted by `_overview_distance_text` according to command contract.
+def _overview_distance_text(is_ahead: bool, count: int) -> str:
+    if count == 0:
+        return f"{'ahead' if is_ahead else 'behind'} 0"
+    arrow = "↑" if is_ahead else "↓"
+    color = OVERVIEW_COLOR_GREEN if is_ahead else OVERVIEW_COLOR_RED
+    label = "ahead" if is_ahead else "behind"
+    return f"{color}{arrow} {label} {count}{OVERVIEW_COLOR_RESET}"
+
+
+## @brief Execute `_overview_compare_refs` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_compare_refs` using deterministic CLI control-flow and explicit error propagation.
+# @param base_ref Input parameter consumed by `_overview_compare_refs`.
+# @param target_ref Input parameter consumed by `_overview_compare_refs`.
+# @param label Input parameter consumed by `_overview_compare_refs`.
+# @return Result emitted by `_overview_compare_refs` according to command contract.
+def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> None:
+    if not _overview_ref_is_available(base_ref) or not _overview_ref_is_available(target_ref):
+        return
+    try:
+        ahead = int(run_git_text(["rev-list", "--count", f"{target_ref}..{base_ref}"]))
+        behind = int(run_git_text(["rev-list", "--count", f"{base_ref}..{target_ref}"]))
+    except (RuntimeError, ValueError):
+        return
+    print(
+        OVERVIEW_DISTANCE_TEMPLATE.format(
+            label=label,
+            ahead=_overview_distance_text(True, ahead),
+            behind=_overview_distance_text(False, behind),
+        )
+    )
+
+
+## @brief Execute `_overview_primary_branch_name` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_primary_branch_name` using deterministic CLI control-flow and explicit error propagation.
+# @return Result emitted by `_overview_primary_branch_name` according to command contract.
+def _overview_primary_branch_name() -> str:
+    if _ref_exists("refs/heads/main"):
+        return "main"
+    return get_branch("master")
+
+
+## @brief Execute `cmd_o` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_o` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_o`.
+# @return Result emitted by `cmd_o` according to command contract.
+# @satisfies REQ-082, REQ-083, REQ-084, REQ-085, REQ-086, REQ-087, REQ-088
+def cmd_o(extra):
+    del extra
+    if not is_inside_git_repo():
+        print("Error: The overview command must be executed inside a Git repository.", file=sys.stderr)
+        sys.exit(2)
+    print(
+        OVERVIEW_SECTION_TEMPLATE.format(
+            color=OVERVIEW_COLOR_CYAN,
+            title="1. WORKING AREA, STAGE & CURRENT BRANCH",
+            reset=OVERVIEW_COLOR_RESET,
+        )
+    )
+    run_git_cmd(["status", "-sb"])
+    print()
+    print(
+        OVERVIEW_SECTION_TEMPLATE.format(
+            color=OVERVIEW_COLOR_CYAN,
+            title="2. BRANCH DISTANCES (COMMITS)",
+            reset=OVERVIEW_COLOR_RESET,
+        )
+    )
+    primary_branch = _overview_primary_branch_name()
+    current_branch = run_git_text(["branch", "--show-current"], check=False).strip() or "HEAD"
+    if current_branch not in {"develop", primary_branch}:
+        _overview_compare_refs("HEAD", "develop", "Current vs Develop")
+        _overview_compare_refs("HEAD", primary_branch, f"Current vs {primary_branch}")
+    print(
+        OVERVIEW_SUBSECTION_TEMPLATE.format(
+            color=OVERVIEW_COLOR_YELLOW,
+            title="Server Alignment",
+            reset=OVERVIEW_COLOR_RESET,
+        )
+    )
+    _overview_compare_refs("develop", "origin/develop", "Develop vs origin/Develop")
+    _overview_compare_refs(primary_branch, f"origin/{primary_branch}", f"{primary_branch} vs origin")
+    print()
+
+
 ## @brief Execute `cmd_str` runtime logic for Git-Alias CLI.
 # @details Executes `cmd_str` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_str`.
@@ -2997,6 +3119,7 @@ COMMANDS = {
     "me": cmd_me,
     "minor": cmd_minor,
     "new": cmd_new,
+    "o": cmd_o,
     "cover": cmd_cover,
     "str": cmd_str,
     "refactor": cmd_refactor,

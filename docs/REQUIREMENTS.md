@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.81
+**Versione**: 0.82
 **Autore**: Francesco Rolando
 **Data**: 2026-02-24
 ## Indice
@@ -118,6 +118,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-22 | 0.79 | Updated changelog markdown rendering to preserve multiline breaks and emit nested bullets with commit-level blank-line separation |
 | 2026-02-22 | 0.80 | Updated changelog markdown rendering to keep top-level commit bullets consecutive without blank separator lines |
 | 2026-02-24 | 0.81 | Added `ls` and `lsi` aliases for listing tracked and ignored files |
+| 2026-02-24 | 0.82 | Added `o` overview alias with structured status/divergence report and reusable output templates |
 | 2026-02-24 | 0.82 | Added `lsa` alias for untracked files and updated `lsi` ignored-files command contract |
 | 2026-02-24 | 0.83 | Renamed visual diff alias `d` to `dr` and aligned command handler naming |
 
@@ -184,6 +185,13 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-079**: The `ls` alias MUST run `git ls-files --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
 - **REQ-080**: The `lsi` alias MUST run `git ls-files --others --ignored --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
 - **REQ-081**: The `lsa` alias MUST run `git ls-files --others --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
+- **REQ-082**: The CLI MUST expose an `o` alias in `COMMANDS` and `HELP_TEXTS`, and `--help` outputs MUST include `o` in global and per-command help paths.
+- **REQ-083**: The `o` alias MUST terminate with non-zero exit when executed outside a Git repository and MUST print an explicit English error message to stderr.
+- **REQ-084**: The `o` alias MUST print a working-area section and execute `git status -sb` to report branch, index, and working-tree state.
+- **REQ-085**: The `o` alias MUST detect the primary branch as `main` when `refs/heads/main` exists; otherwise it MUST use the configured `master` branch name.
+- **REQ-086**: The `o` alias MUST print commit-distance rows as `label | ahead | behind` by counting `git rev-list` divergence only for branch/ref pairs that exist.
+- **REQ-087**: The `o` alias MUST print server-alignment rows for `develop` versus `origin/develop` and primary branch versus its `origin` counterpart when those refs exist.
+- **REQ-088**: The `o` alias MUST implement overview formatting through reusable hardcoded templates/constants for section titles and rows to keep future style changes centralized.
 - **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
 - **REQ-010**: The system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.
 - **REQ-011**: Gli alias di reset e pulizia devono applicare le modalità di reset (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`) e le pulizie dello working tree (`rmloc`, `rmstg`, `rmunt`). I comandi di reset (`rs*`) devono stampare il testo di help dedicato quando invocati con `--help`, senza dipendere da alias separati.

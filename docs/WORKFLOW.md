@@ -104,7 +104,7 @@
       - `run_git_cmd(...)`: fallback path when command not registered in `COMMANDS` [`src/git_alias/core.py:613`]
         - `_to_args(...)`: normalize optional arg list [`src/git_alias/core.py:536`]
         - `_run_checked(...)`: spawn `git` process [`src/git_alias/core.py:588`]
-      - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py:2549-2614`, `src/git_alias/core.py:2716`]
+      - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py:3079-3153`, `src/git_alias/core.py:3245-3255`]
         - `cmd_aa(...)`: stage all changed files [`src/git_alias/core.py:1758`]
           - `_git_status_lines(...)` -> `_run_checked(...)`
           - `has_unstaged_changes(...)` -> `_git_status_lines(...)`
@@ -160,6 +160,15 @@
             - `_iter_versions_in_text(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
         - `cmd_new(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1913`]
+        - `cmd_o(...)`: repository overview flow [`src/git_alias/core.py:2501`]
+          - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
+          - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`
+          - `_overview_primary_branch_name(...)` -> `_ref_exists(...)`, `get_branch(...)` -> `get_config_value(...)`
+          - `run_git_text(...)` (`git branch --show-current`) -> `_run_checked(...)`
+          - `_overview_compare_refs(...)`
+            - `_overview_ref_is_available(...)` -> `_run_checked(...)`
+            - `run_git_text(...)` -> `_run_checked(...)`
+            - `_overview_distance_text(...)`
         - `cmd_refactor(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1921`]
         - `cmd_fix(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1929`]
         - `cmd_change(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1937`]
@@ -192,7 +201,7 @@
         - `cmd_feall(...)`: `cmd_fe(...)` + `_to_args(...)` [`src/git_alias/core.py:2099`]
         - `cmd_gp(...)`: GUI wrapper -> `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2107`]
         - `cmd_gr(...)`: GUI wrapper -> `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2115`]
-        - `cmd_str(...)`: remote-status flow [`src/git_alias/core.py:2123`]
+        - `cmd_str(...)`: remote-status flow [`src/git_alias/core.py:2543`]
           - `run_git_text(...)` -> `_run_checked(...)`
           - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`
         - `cmd_lb(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2157`]
