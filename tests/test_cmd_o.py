@@ -191,8 +191,7 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertIn(f"{core.OVERVIEW_COLOR_BEHIND}Work", rendered)
         self.assertIn(f"{core.OVERVIEW_COLOR_LABEL}⎇ work", rendered)
 
-    ## @brief Verify `_overview_ascii_topology_lines` renders chronological-position tree
-    #  when all refs are at the same commit (in_sync scenario).
+    ## @brief Verify `_overview_ascii_topology_lines` groups all refs with shared hash.
     # @return None.
     def test_topology_all_in_sync_clean(self):
         same_hash = "aaa111"
@@ -231,12 +230,49 @@ class CmdOverviewTest(unittest.TestCase):
         norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", l) for l in lines]
         self.assertIn("WorkingTree [clean]", norm_lines[0])
         self.assertEqual("|", norm_lines[1])
-        work_idx = next(i for i, l in enumerate(norm_lines) if "Work(⎇ work)" in l)
-        others_idx = next(
-            i for i, l in enumerate(norm_lines)
-            if "Develop(⎇ develop)" in l and "Master(⎇ master)" in l
+        grouped_idx = next(
+            i
+            for i, l in enumerate(norm_lines)
+            if "Work(⎇ work)" in l
+            and "Develop(⎇ develop)" in l
+            and "Master(⎇ master)" in l
         )
-        self.assertGreater(others_idx, work_idx)
+        self.assertGreater(grouped_idx, 1)
+
+    ## @brief Verify topology groups Work with aligned Develop and RemoteDevelop refs.
+    # @return None.
+    def test_topology_groups_work_with_aligned_develop_refs(self):
+        aligned_hash = "lll222"
+        master_hash = "mmm333"
+        with mock.patch.object(core, "_overview_ref_is_available", return_value=True), \
+             mock.patch.object(core, "run_git_text", side_effect=[
+                 aligned_hash, aligned_hash, master_hash, aligned_hash, master_hash,
+                 "nnn000",
+                 "2", "2", "0", "2", "0",
+             ]):
+            lines = core._overview_ascii_topology_lines(
+                work_ref="work",
+                develop_ref="develop",
+                master_ref="master",
+                remote_develop_ref="origin/develop",
+                remote_master_ref="origin/master",
+                work_display="Work(⎇ work)",
+                develop_display="Develop(⎇ develop)",
+                master_display="Master(⎇ master)",
+                remote_develop_display="RemoteDevelop(⎇ origin/develop)",
+                remote_master_display="RemoteMaster(⎇ origin/master)",
+                worktree_state="clean",
+            )
+        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", l) for l in lines]
+        work_group_idx = next(
+            i
+            for i, l in enumerate(norm_lines)
+            if "Work(⎇ work)" in l
+            and "Develop(⎇ develop)" in l
+            and "RemoteDevelop(⎇ origin/develop)" in l
+        )
+        wt_idx = next(i for i, l in enumerate(norm_lines) if "WorkingTree" in l)
+        self.assertEqual(wt_idx + 2, work_group_idx)
 
     ## @brief Verify `_overview_ascii_topology_lines` places dirty WorkingTree above Work.
     # @return None.

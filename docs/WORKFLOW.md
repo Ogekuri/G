@@ -175,7 +175,7 @@
             - `_overview_distance_text(...)`
           - `run_git_cmd(...)` (`git worktree list --verbose`) -> `_to_args(...)` -> `_run_checked(...)`
           - `_overview_worktree_state(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
-          - `_overview_ascii_topology_lines(...)` (chronological-position tree from commit hashes)
+          - `_overview_ascii_topology_lines(...)` (chronological-position tree; Work may share hash-group lines with aligned refs while WorkingTree remains dedicated)
             - `_overview_ref_is_available(...)` -> `_run_checked(...)`
             - `run_git_text(...)` (`git rev-parse`, `git merge-base --octopus`, `git rev-list --count`) -> `_run_checked(...)`
           - `run_git_text(...)` (`git branch -v -a`) -> `_run_checked(...)`

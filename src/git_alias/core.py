@@ -2615,7 +2615,8 @@ def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> str:
 # @details Resolves commit hashes for each ref, computes commit counts from
 # octopus merge-base, groups refs sharing the same hash on one output line,
 # and orders nodes from most-ahead (root) to most-behind (deepest child).
-# WorkingTree and Work always occupy separate lines. Complexity O(R) git
+# WorkingTree always occupies a dedicated line above the line that contains
+# Work when tied or dirty. Complexity O(R) git
 # subprocess calls where R is the number of available refs.
 # @param work_ref {str} Git ref name for work branch.
 # @param develop_ref {str} Git ref name for develop branch.
@@ -2691,14 +2692,10 @@ def _overview_ascii_topology_lines(
         f"{OVERVIEW_COLOR_WHITE}WorkingTree [{worktree_state}]{OVERVIEW_COLOR_RESET}"
     )
     entries: List[Tuple[float, int, str]] = [(wt_sort_key, 2, wt_text)]
-    if ref_hashes.get("Work") is not None:
-        entries.append((float(work_pos), 1, work_display))
     work_hash = ref_hashes.get("Work")
     hash_groups: Dict[str, List[str]] = {}
     hash_positions: Dict[str, int] = {}
     for name, ref, display in branch_nodes:
-        if name == "Work":
-            continue
         h = ref_hashes.get(name)
         if h is None:
             continue
