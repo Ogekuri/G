@@ -2443,12 +2443,66 @@ OVERVIEW_RELATION_STATES = {"in_sync", "ahead", "behind", "diverged", "unknown"}
 # @details Executes `_overview_branch_identifier` using deterministic CLI control-flow and explicit error propagation.
 # @param logical_name Input parameter consumed by `_overview_branch_identifier`.
 # @param ref_name Input parameter consumed by `_overview_branch_identifier`.
+# @param prefix_color Input parameter consumed by `_overview_branch_identifier`.
 # @return Result emitted by `_overview_branch_identifier` according to command contract.
-def _overview_branch_identifier(logical_name: str, ref_name: str) -> str:
+def _overview_branch_identifier(
+    logical_name: str,
+    ref_name: str,
+    prefix_color: str = OVERVIEW_COLOR_WHITE,
+) -> str:
     return (
-        f"{OVERVIEW_COLOR_WHITE}{logical_name}"
+        f"{prefix_color}{logical_name}"
+        f"{OVERVIEW_COLOR_WHITE}"
         f"({OVERVIEW_COLOR_LABEL}⎇ {ref_name}{OVERVIEW_COLOR_RESET}{OVERVIEW_COLOR_WHITE})"
         f"{OVERVIEW_COLOR_RESET}"
+    )
+
+
+## @brief Execute `_overview_logical_branch_name` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_logical_branch_name` using deterministic CLI control-flow and explicit error propagation.
+# @param current_branch Input parameter consumed by `_overview_logical_branch_name`.
+# @param work_branch Input parameter consumed by `_overview_logical_branch_name`.
+# @param develop_branch Input parameter consumed by `_overview_logical_branch_name`.
+# @param master_branch Input parameter consumed by `_overview_logical_branch_name`.
+# @return Result emitted by `_overview_logical_branch_name` according to command contract.
+def _overview_logical_branch_name(
+    current_branch: str,
+    work_branch: str,
+    develop_branch: str,
+    master_branch: str,
+) -> str:
+    if current_branch == work_branch:
+        return "Work"
+    if current_branch == develop_branch:
+        return "Develop"
+    if current_branch == master_branch:
+        return "Master"
+    return "Current"
+
+
+## @brief Execute `_overview_current_branch_display` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_current_branch_display` using deterministic CLI control-flow and explicit error propagation.
+# @param current_branch Input parameter consumed by `_overview_current_branch_display`.
+# @param work_branch Input parameter consumed by `_overview_current_branch_display`.
+# @param develop_branch Input parameter consumed by `_overview_current_branch_display`.
+# @param master_branch Input parameter consumed by `_overview_current_branch_display`.
+# @return Result emitted by `_overview_current_branch_display` according to command contract.
+def _overview_current_branch_display(
+    current_branch: str,
+    work_branch: str,
+    develop_branch: str,
+    master_branch: str,
+) -> str:
+    logical_name = _overview_logical_branch_name(
+        current_branch=current_branch,
+        work_branch=work_branch,
+        develop_branch=develop_branch,
+        master_branch=master_branch,
+    )
+    return _overview_branch_identifier(
+        logical_name=logical_name,
+        ref_name=current_branch,
+        prefix_color=OVERVIEW_COLOR_BEHIND,
     )
 
 
@@ -2623,7 +2677,7 @@ def _overview_ascii_topology_lines(
 # @details Executes `cmd_o` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_o`.
 # @return Result emitted by `cmd_o` according to command contract.
-# @satisfies REQ-082, REQ-083, REQ-084, REQ-085, REQ-086, REQ-087, REQ-088, REQ-089, REQ-090, REQ-091, REQ-092, REQ-093
+# @satisfies REQ-082, REQ-083, REQ-084, REQ-085, REQ-086, REQ-087, REQ-088, REQ-089, REQ-090, REQ-091, REQ-092, REQ-093, REQ-094
 def cmd_o(extra):
     del extra
     if not is_inside_git_repo():
@@ -2634,11 +2688,18 @@ def cmd_o(extra):
     master_branch = get_branch("master")
     remote_develop = f"origin/{develop_branch}"
     remote_master = f"origin/{master_branch}"
+    current_branch = run_git_text(["branch", "--show-current"]).strip() or "HEAD"
     work_display = _overview_branch_identifier("Work", work_branch)
     develop_display = _overview_branch_identifier("Develop", develop_branch)
     master_display = _overview_branch_identifier("Master", master_branch)
     remote_develop_display = _overview_branch_identifier("RemoteDevelop", remote_develop)
     remote_master_display = _overview_branch_identifier("RemoteMaster", remote_master)
+    current_branch_display = _overview_current_branch_display(
+        current_branch=current_branch,
+        work_branch=work_branch,
+        develop_branch=develop_branch,
+        master_branch=master_branch,
+    )
     print(
         OVERVIEW_SECTION_TEMPLATE.format(
             color=OVERVIEW_COLOR_SECTION_PURPLE,
@@ -2648,7 +2709,7 @@ def cmd_o(extra):
     )
     print(f"{OVERVIEW_COLOR_WHITE}Configured branches: {work_display}, {develop_display}, {master_display}{OVERVIEW_COLOR_RESET}")
     print(f"{OVERVIEW_COLOR_WHITE}Configured remotes: {remote_develop_display}, {remote_master_display}{OVERVIEW_COLOR_RESET}")
-    run_git_cmd(["status", "-sb"])
+    print(f"{OVERVIEW_COLOR_WHITE}Current Branch: {current_branch_display}{OVERVIEW_COLOR_RESET}")
     print()
     print(
         OVERVIEW_SECTION_TEMPLATE.format(
@@ -2697,7 +2758,7 @@ def cmd_o(extra):
     print(
         OVERVIEW_SECTION_TEMPLATE.format(
             color=OVERVIEW_COLOR_SECTION_PURPLE,
-            title="4. QUALITATIVE TOPOLOGY (ASCII TREE)",
+            title="4. QUALITATIVE TOPOLOGY",
             reset=OVERVIEW_COLOR_RESET,
         )
     )
@@ -2715,6 +2776,15 @@ def cmd_o(extra):
     )
     for line in topology_lines:
         print(line)
+    print()
+    print(
+        OVERVIEW_SECTION_TEMPLATE.format(
+            color=OVERVIEW_COLOR_SECTION_PURPLE,
+            title="5. CURRENT BRANCH STATE",
+            reset=OVERVIEW_COLOR_RESET,
+        )
+    )
+    run_git_cmd(["status", "-sb"])
     print()
 
 

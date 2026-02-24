@@ -3,6 +3,7 @@
 
 import contextlib
 import io
+import re
 import unittest
 from unittest import mock
 from unittest.mock import ANY
@@ -40,6 +41,8 @@ class CmdOverviewTest(unittest.TestCase):
     def test_cmd_o_runs_status_and_all_comparisons(self):
         with mock.patch.object(core, "is_inside_git_repo", return_value=True), mock.patch.object(
             core, "get_branch", side_effect=["work", "develop", "master"]
+        ), mock.patch.object(
+            core, "run_git_text", return_value="work"
         ), mock.patch.object(core, "_overview_compare_refs"
         ) as compare, mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             out = io.StringIO()
@@ -47,8 +50,8 @@ class CmdOverviewTest(unittest.TestCase):
                 core.cmd_o([])
         run_git.assert_has_calls(
             [
-                mock.call(["status", "-sb"]),
                 mock.call(["worktree", "list", "--verbose"]),
+                mock.call(["status", "-sb"]),
             ]
         )
         self.assertEqual(run_git.call_count, 2)
@@ -61,27 +64,34 @@ class CmdOverviewTest(unittest.TestCase):
             ]
         )
         output = out.getvalue()
+        normalized_output = re.sub(r"\x1b\[[0-9;]*m", "", output)
         self.assertIn("WORKING AREA, STAGE & CURRENT BRANCH", output)
         self.assertIn("BRANCH DISTANCES (COMMITS)", output)
         self.assertIn("ACTIVE WORKTREES", output)
-        self.assertIn("QUALITATIVE TOPOLOGY (ASCII TREE)", output)
+        self.assertIn("QUALITATIVE TOPOLOGY", output)
+        self.assertIn("CURRENT BRANCH STATE", output)
         self.assertIn("Server Alignment", output)
-        self.assertIn("Work(", output)
-        self.assertIn("Develop(", output)
-        self.assertIn("Master(", output)
-        self.assertIn("RemoteDevelop(", output)
-        self.assertIn("RemoteMaster(", output)
+        self.assertIn("Current Branch:", output)
+        self.assertIn("Work(⎇ work)", normalized_output)
+        self.assertIn("Develop(⎇ develop)", normalized_output)
+        self.assertIn("Master(⎇ master)", normalized_output)
+        self.assertIn("RemoteDevelop(⎇ origin/develop)", normalized_output)
+        self.assertIn("RemoteMaster(⎇ origin/master)", normalized_output)
         self.assertLess(
-            output.index("WORKING AREA, STAGE & CURRENT BRANCH"),
-            output.index("BRANCH DISTANCES (COMMITS)"),
+            normalized_output.index("WORKING AREA, STAGE & CURRENT BRANCH"),
+            normalized_output.index("BRANCH DISTANCES (COMMITS)"),
         )
         self.assertLess(
-            output.index("BRANCH DISTANCES (COMMITS)"),
-            output.index("ACTIVE WORKTREES"),
+            normalized_output.index("BRANCH DISTANCES (COMMITS)"),
+            normalized_output.index("ACTIVE WORKTREES"),
         )
         self.assertLess(
-            output.index("ACTIVE WORKTREES"),
-            output.index("QUALITATIVE TOPOLOGY (ASCII TREE)"),
+            normalized_output.index("ACTIVE WORKTREES"),
+            normalized_output.index("QUALITATIVE TOPOLOGY"),
+        )
+        self.assertLess(
+            normalized_output.index("QUALITATIVE TOPOLOGY"),
+            normalized_output.index("CURRENT BRANCH STATE"),
         )
 
     ## @brief Verify `cmd_o` uses configured branch names consistently in compare calls.
@@ -89,6 +99,8 @@ class CmdOverviewTest(unittest.TestCase):
     def test_cmd_o_uses_configured_branch_names_for_comparisons(self):
         with mock.patch.object(core, "is_inside_git_repo", return_value=True), mock.patch.object(
             core, "get_branch", side_effect=["wrk", "dev", "mst"]
+        ), mock.patch.object(
+            core, "run_git_text", return_value="wrk"
         ), mock.patch.object(
             core, "_overview_compare_refs"
         ) as compare, mock.patch.object(core, "run_git_cmd", return_value=None):
@@ -132,6 +144,18 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertIn("behind", out.getvalue())
         self.assertEqual(state, "unknown")
         run_git_text.assert_not_called()
+
+    ## @brief Verify current branch identifier uses red logical prefix and yellow tuple.
+    # @return None.
+    def test_overview_current_branch_display_uses_expected_colors(self):
+        rendered = core._overview_current_branch_display(
+            current_branch="work",
+            work_branch="work",
+            develop_branch="develop",
+            master_branch="master",
+        )
+        self.assertIn(f"{core.OVERVIEW_COLOR_BEHIND}Work", rendered)
+        self.assertIn(f"{core.OVERVIEW_COLOR_LABEL}⎇ work", rendered)
 
     ## @brief Verify `_overview_ascii_topology_lines` renders a qualitative ASCII tree.
     # @return None.
