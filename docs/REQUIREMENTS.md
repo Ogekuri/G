@@ -1,312 +1,202 @@
 ---
-title: "Requisiti di Git-Alias CLI"
-description: "Specifiche dei requisiti software"
+title: "Git-Alias CLI Requirements"
+description: "Software Requirements Specification"
 date: "2026-02-25"
 author: "Francesco Rolando"
 scope:
   paths:
-    - "**/*.py"
+    - "src/**/*.py"
+    - ".github/workflows/**/*.yml"
   excludes:
-    - ".*/**"
-visibility: "bozza"
-tags: ["markdown", "requisiti", "git-alias"]
+    - "tests/**"
+    - "doxygen/**"
+visibility: "draft"
+tags: ["requirements", "srs", "git-alias"]
 ---
 
-# Requisiti di Git-Alias CLI
-**Versione**: 0.97
-**Autore**: Francesco Rolando
-**Data**: 2026-02-24
-## Indice
-- [Requisiti di Git-Alias CLI](#requisiti-di-git-alias-cli)
-  - [Indice](#indice)
-  - [Cronologia Revisioni](#cronologia-revisioni)
-  - [1. Introduzione](#1-introduzione)
-    - [1.1 Regole del Documento](#11-regole-del-documento)
-    - [1.2 Ambito del Progetto](#12-ambito-del-progetto)
-  - [2. Requisiti di Progetto](#2-requisiti-di-progetto)
-    - [2.1 Funzioni di Progetto](#21-funzioni-di-progetto)
-    - [2.2 Vincoli di Progetto](#22-vincoli-di-progetto)
-    - [2.3 Componenti e Librerie](#23-componenti-e-librerie)
-  - [3. Requisiti](#3-requisiti)
-    - [3.1 Progettazione e Implementazione](#31-progettazione-e-implementazione)
-    - [3.2 Funzioni](#32-funzioni)
-    - [3.3 Struttura File Progetto](#33-struttura-file-progetto)
-    - [3.4 Organizzazione Componenti](#34-organizzazione-componenti)
+# Git-Alias CLI Requirements
+**Version**: 0.98
+**Author**: Francesco Rolando
+**Date**: 2026-02-25
 
-## Cronologia Revisioni
-| Data | Versione | Motivo e descrizione della modifica |
-|------|----------|--------------------------------------|
-| 2025-12-15 | 0.1 | Prima bozza automatizzata dei requisiti |
-| 2025-12-15 | 0.2 | Configurazione dei branch tramite `.g.conf` e flag `--write-config` |
-| 2025-12-15 | 0.3 | Aggiunta configurazione dell'editor via `.g.conf` e default `edit` |
-| 2025-12-15 | 0.4 | Ordinamento output help con sezioni per funzioni di gestione |
-| 2025-12-15 | 0.5 | Rimozione dell'alias `ver` e degli obblighi associati |
-| 2025-12-15 | 0.6 | Reintroduzione dell'alias `ver` con ricerca delle versioni configurabile |
-| 2025-12-15 | 0.7 | Configurazione del comando `ver` tramite coppie wildcard/regexp abbinate |
-| 2025-12-15 | 0.8 | Introduzione del comando `changelog` per generare CHANGELOG.md |
-| 2025-12-15 | 0.9 | Rimozione degli alias `mkrepo`, `mkyday`, `mktday`, `mkcma`, `mkmas`, `mkdev` |
-| 2025-12-15 | 0.10 | Rimozione degli alias `cmarelease`, `release`, `cowrk`, `codev`, `comas`, `mkwrk` |
-| 2025-12-15 | 0.11 | Ridenominazione dell'alias `brall` in `lsbr` |
-| 2025-12-15 | 0.12 | Rimozione degli alias specifici per i branch `develop`/`master` (`fedev`, `femas`, `medev`, `mewrk`, `pldev`, `plmas`, `pudev`, `pumas`) |
-| 2025-12-15 | 0.13 | Aggiornamento delle categorie del comando `changelog` (tipi `new`/`change`, rimozione `perf`/`test`/`build`/`ci`/`chore`, sezione \"Miscellaneous Tasks\" limitata a `misc`) |
-| 2025-12-15 | 0.14 | Rimozione degli alias `hl`/`hlrs` e integrazione dell'help dei reset direttamente nei comandi `rs*` |
-| 2025-12-15 | 0.15 | Rimozione degli alias `tree`, `lg1`, `lg2`, `lg3`, `cma`, `rmwrk`, `edbrc`, `edbsh`, `edcfg`, `edgit`, `edign`, `edpro` |
-| 2025-12-15 | 0.16 | Aggiunta dell'alias `bd` per la cancellazione di un branch locale |
-| 2025-12-15 | 0.17 | Ridenominazione dell'alias `lsbr` in `lb` e riordino alfabetico dei comandi `l*` |
-| 2025-12-15 | 0.18 | Aggiunta delle funzioni diagnostiche sullo stato del repository e nuova validazione per l'alias `aa` |
-| 2025-12-17 | 0.19 | Validazione preventiva del comando `cm` sugli stati work/index |
-| 2025-12-17 | 0.20 | Aggiornamento remoto prima delle verifiche di pull e conferma controlli per `aa` |
-| 2025-12-17 | 0.21 | Introduzione dell'alias `wip` con messaggio predefinito e verifiche condivise con `cm` |
-| 2025-12-17 | 0.22 | Nuove verifiche WIP/amend condivise tra `cm` e `wip` |
-| 2025-12-17 | 0.23 | Aggiornamento messaggio WIP fisso senza timestamp e controlli correlati |
-| 2025-12-17 | 0.24 | Ordinamento cronologico rivisto per le sezioni del comando `changelog` |
-| 2025-12-17 | 0.25 | Nuovi alias convenzionali per commit compatibili con il changelog |
-| 2025-12-17 | 0.26 | Testi di output della CLI tradotti in inglese |
-| 2025-12-17 | 0.27 | Commenti descrittivi per tutte le funzioni di core.py |
-| 2025-12-17 | 0.28 | Fallback ai comandi git nativi quando un alias sconosciuto viene richiesto |
-| 2025-12-17 | 0.29 | Gestione centralizzata delle eccezioni dei processi esterni e propagazione controllata degli errori |
-| 2025-12-17 | 0.30 | Messaggi CLI obbligatoriamente in inglese con spiegazione delle operazioni di commit relative ad amend |
-| 2025-12-17 | 0.31 | Struttura completa dell'help globale con usage, comandi di gestione, configurazione attiva e alias |
-| 2025-12-17 | 0.32 | Introduzione del comando `chver` per aggiornare o ripristinare la versione del progetto |
-| 2025-12-17 | 0.33 | Nuovi comandi `major`/`minor`/`patch` per automatizzare il rilascio incrementale delle versioni |
-| 2025-12-17 | 0.34 | Miglioramenti ai comandi `major`/`minor`/`patch` con logging degli step e push automatici dei branch `develop` e `master` |
-| 2025-12-17 | 0.35 | Introduzione del comando `release` come commit regolamentato usato dai workflow `major`/`minor`/`patch` |
-| 2025-12-17 | 0.35 | Introduzione del comando `release` come commit regolamentato usato dai workflow `major`/`minor`/`patch` |
-| 2025-12-19 | 0.36 | Introduzione del comando `ra` per rimuovere lo staging sul branch `work` |
-| 2025-12-19 | 0.37 | Elenco di link alle release nella sezione \"# History\" del changelog |
-| 2025-12-20 | 0.38 | Errore su `ver` quando una regola `ver_rules` non produce alcun match |
-| 2025-12-20 | 0.39 | Formato JSON per `.g.conf` e adeguamento di lettura/scrittura configurazione |
-| 2025-12-20 | 0.40 | Limitazione predefinita del changelog ai tag >=0.1.0 e introduzione del flag `--include-draft` |
-| 2025-12-20 | 0.41 | Formato dei messaggi di step per `major`/`minor`/`patch` con prefisso e separazione |
-| 2025-12-20 | 0.42 | Flag `--include-unreleased` e `--include-draft` per i comandi `major`/`minor`/`patch` |
-| 2025-12-20 | 0.43 | Help dei comandi con opzioni esplicite nella stringa di help |
-| 2025-12-31 | 0.44 | Versione CLI in usage senza argomenti e flag globali `--ver`/`--version` |
-| 2026-01-02 | 0.45 | Rimozione del comando CLI `release` mantenendo la funzione interna per i workflow di rilascio |
-| 2026-01-02 | 0.46 | Requisito esplicito per tutti i messaggi CLI in lingua inglese |
-| 2026-01-02 | 0.47 | Requisito esplicito per tutti i commenti del codice sorgente in lingua italiana |
-| 2026-01-11 | 0.48 | Controllo non bloccante della disponibilità di una nuova versione tramite GitHub API |
-| 2026-01-25 | 0.49 | Aggiunta del comando `cover` (Cover Requirements) come alias convenzionale con icona 🎯; comportamento identico agli altri comandi convenzionali |
-| 2026-02-03 | 0.50 | Matching dei pattern `ver_rules` tramite libreria pathspec |
-| 2026-02-03 | 0.51 | Pulizia hardcoded dei file esclusi dal matching `ver_rules` |
-| 2026-02-03 | 0.52 | Ottimizzazione ricerca file tramite `git ls-files` nel comando `ver` |
-| 2026-02-03 | 0.53 | Cache temporizzata per il controllo versione online (TTL 6 ore) |
-| 2026-02-04 | 0.54 | Aggiunta del comando `ori` per visualizzare e analizzare i remote del repository |
-| 2026-02-04 | 0.55 | Rinominato comando `ori` in `str` (Show remotes) |
-| 2026-02-10 | 0.56 | Output verbose/debug del comando `ver` con evidenze di matching |
-| 2026-02-10 | 0.57 | Ricerca `ver_rules` tramite rglob senza uso di `git ls-files` |
-| 2026-02-15 | 0.58 | Documentazione sorgente standardizzata in formato Doxygen LLM-native su tutti i componenti |
-| 2026-02-15 | 0.59 | Rimozione requisiti relativi alle modalità di commentazione/documentazione interna del codice sorgente |
-| 2026-02-17 | 0.60 | Introduzione script `doxygen.sh` per generazione documentazione Doxygen multi-formato da `src/` |
-| 2026-02-17 | 0.61 | Introduzione alias difftool `dwc`, `dcc`, `d` per confronti working tree/commit e revisioni arbitrarie |
-| 2026-02-18 | 0.62 | Aggiunta alias convenzionale `implement` con categoria changelog "Implementations" (icona 🏗️) e relativo help |
-| 2026-02-20 | 0.63 | Added diff aliases `dwcc` and `dccc` for comparisons against `HEAD~1` and `HEAD~2` |
-| 2026-02-21 | 0.64 | Rimosso il flag `--include-draft`; changelog e release includono sempre tutta la history senza filtri draft |
-| 2026-02-21 | 0.65 | Refactored `changelog` command to group by minor releases only; replaced `--include-unreleased` with `--include-patch`; updated `patch` release command to auto-forward `--include-patch` |
-| 2026-02-21 | 0.66 | Changelog entry line format: scope indicator moved from prefix to suffix position |
-| 2026-02-21 | 0.67 | patch release command restricted to develop-only branch integration; major/minor retain full develop+master flow |
-| 2026-02-21 | 0.68 | # History section scoped to changelog-body tags only; minor-only without --include-patch; adds latest patch with --include-patch |
-| 2026-02-21 | 0.69 | changelog # History links resolved from master-branch remote URL using only local git commands; added REQ-046 for URL resolver contract |
-| 2026-02-21 | 0.70 | Added `changelog --disable-history`; `# History` default-on with resolver-failure skip; link rendering constrained to deterministic templates from local git data |
-| 2026-02-21 | 0.71 | Added `backup` command to merge `work` into `develop` with the same preflight checks and error handling used by release workflows |
-| 2026-02-22 | 0.72 | Updated release tag lifecycle for `major`/`minor`/`patch` and added README update governance for CLI command surface changes |
-| 2026-02-22 | 0.73 | Updated release push contract for `patch`/`minor`/`major` to require branch push with `--tags` |
-| 2026-02-22 | 0.74 | Updated `lt` command contract to print containing branches for each tag |
-| 2026-02-22 | 0.75 | Updated changelog conventional-commit parsing to support breaking markers and multiline descriptions |
-| 2026-02-22 | 0.76 | Added worktree aliases `wt`, `wtl`, `wtp`, and `wtr` with full git-argument passthrough |
-| 2026-02-22 | 0.77 | Normalized changelog commit descriptions by removing empty lines and replacing CR/LF line breaks with spaces before markdown rendering |
-| 2026-02-22 | 0.78 | Changelog markdown generation now removes `Co-authored-by:` trailer lines before blank-line removal and CR/LF-to-space normalization |
-| 2026-02-22 | 0.79 | Updated changelog markdown rendering to preserve multiline breaks and emit nested bullets with commit-level blank-line separation |
-| 2026-02-22 | 0.80 | Updated changelog markdown rendering to keep top-level commit bullets consecutive without blank separator lines |
-| 2026-02-24 | 0.81 | Added `ls` and `lsi` aliases for listing tracked and ignored files |
-| 2026-02-24 | 0.82 | Added `o` overview alias with structured status/divergence report and reusable output templates |
-| 2026-02-24 | 0.82 | Added `lsa` alias for untracked files and updated `lsi` ignored-files command contract |
-| 2026-02-24 | 0.83 | Renamed visual diff alias `d` to `dr` and aligned command handler naming |
-| 2026-02-24 | 0.84 | Added an active worktrees section to `o` overview while preserving reusable styling templates/colors |
-| 2026-02-24 | 0.85 | Refined `o` overview graphics with explicit configured branch/remote identifiers and color contract |
-| 2026-02-24 | 0.86 | Added section 4 qualitative ASCII topology infographic for overview command |
-| 2026-02-24 | 0.87 | Revised `o` overview section layout with dedicated current-branch state section and explicit highlighted current-branch indicator |
-| 2026-02-24 | 0.88 | Updated section-4 topology to represent commit-alignment groups from ahead/behind, not branch-hierarchy structure |
-| 2026-02-24 | 0.89 | Replaced qualitative-state topology with chronological-position tree derived from actual commit positions; removed state labels from infographic |
-| 2026-02-24 | 0.90 | Updated `o` overview with a dedicated branch list section before current branch state, preserving overview color/layout contracts |
-| 2026-02-24 | 0.91 | Updated `o` overview current-branch state visibility and work-label color normalization contracts |
-| 2026-02-24 | 0.92 | Updated section-6 `CURRENT BRANCH STATE` contract to render each status prefix column in bright red |
-| 2026-02-24 | 0.93 | Updated gp/gr command runtime and `.g.conf` contracts with configurable command templates, executable validation, fallback defaults, and missing-key autofill |
-| 2026-02-24 | 0.94 | Updated conventional commit aliases to normalize description capitalization and enforce trailing period |
-| 2026-02-24 | 0.95 | Refactored configuration contracts to split local repository settings and global user commands with renamed keys and write-only key insertion |
-| 2026-02-24 | 0.96 | Enforced strict local/global config schemas and normalized global key rename from `editor` to `edit_command` |
-| 2026-02-25 | 0.97 | Added `l` command for text-based tree visualization of git commit history with vine-based graph algorithm, configurable styles, symbols, colors, and working tree status display |
+## Revision History
+| Date | Version | Change Summary |
+|------|---------|----------------|
+| 2026-02-24 | 0.97 | Added `l` command contracts and foresta engine requirements. |
+| 2026-02-25 | 0.98 | Recreated SRS structure in English from repository evidence while preserving existing requirement IDs and appending workflow coverage requirements. |
 
-## 1. Introduzione
-Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
+## 1. Introduction
+This SRS defines machine-testable requirements for the Git-Alias CLI and associated release automation implemented in the repository.
 
-### 1.1 Regole del Documento
-Questo documento deve sempre seguire queste regole:
-- Questo documento è scritto in italiano
-- Ogni identificativo di requisito (ad esempio **PRJ-001**, **CTN-001**, **DES-001**, **REQ-001**) deve essere univoco.
-- Ogni identificativo deve iniziare con il prefisso che identifica il gruppo di appartenenza:
-  * I requisiti di funzione di progetto iniziano con **PRJ-**
-  * I requisiti di vincolo di progetto iniziano con **CTN-**
-  * I requisiti per componenti e librerie **CPT-**
-  * I requisiti di progettazione e implementazione iniziano con **DES-**
-  * I requisiti funzionali iniziano con **REQ-**
-- Ogni requisito deve essere identificabile, verificabile e testabile.
-- A ogni modifica del documento si deve aggiornare il numero di versione e aggiungere una nuova riga alla cronologia revisioni.
+### 1.1 Document Rules
+- The document MUST be written in English.
+- Requirement identifiers MUST remain unique and stable once assigned.
+- Existing requirement IDs MUST NOT be renumbered or reused for different behavior.
+- Requirement statements MUST use RFC 2119 keywords (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY).
+- Each requirement MUST be atomic, verifiable, and testable.
 
-### 1.2 Ambito del Progetto
-Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un file di configurazione personalizzato, permettendone l'uso locale o tramite `uvx` senza dover installare manualmente gli alias nel profilo git dell'utente.
+### 1.2 Project Scope
+The project provides a Python CLI (`git-alias` / `g`) that executes curated git aliases, manages local/global configuration, automates release-oriented operations, and exposes text/GUI repository inspection commands.
 
-## 2. Requisiti di Progetto
-### 2.1 Funzioni di Progetto
-- **PRJ-001**: Il sistema deve esporre i comandi `git-alias` e `g` che instradano le chiamate verso gli alias implementati nel modulo `core.py`, eseguendoli nel repository git corrente.
-- **PRJ-002**: Il sistema deve fornire un sistema di help integrato che elenca tutti gli alias disponibili e ne mostra la descrizione in inglese su richiesta.
-- **PRJ-003**: Il sistema deve supportare l'aggiornamento e la rimozione dell'installazione tramite comandi dedicati integrati nel CLI (--upgrade, --remove).
+## 2. Project Requirements
+### 2.1 Project Functions
+- **PRJ-001**: MUST expose `git-alias` and `g` commands that dispatch to aliases implemented in `core.py` for execution in the current git repository.
+- **PRJ-002**: MUST provide integrated help that lists available aliases and prints each alias description in English.
+- **PRJ-003**: MUST support self-upgrade and self-removal through dedicated CLI management commands (`--upgrade`, `--remove`).
 
-### 2.2 Vincoli di Progetto
-- **CTN-001**: Il pacchetto deve richiedere Python 3.11 o superiore come ambiente di runtime.
-- **CTN-002**: Il sistema deve dipendere dalla disponibilità del comando `git` (e degli strumenti correlati `gitk` e `uv`) nel `PATH`, poiché tutte le operazioni invocano processi git esterni.
-- **CTN-003**: File-edit aliases MUST use a CLI-invokable editor configured by `edit_command` in `$HOME/.g/g.conf`, defaulting to `edit` when the file, key, or value is missing or invalid.
+### 2.2 Project Constraints
+- **CTN-001**: MUST require Python 3.11 or newer at runtime.
+- **CTN-002**: MUST require `git` in PATH and depend on `gitk` and `uv` availability for related aliases and management flows.
+- **CTN-003**: MUST file-edit aliases MUST use a CLI-invokable editor configured by `edit_command` in `$HOME/.g/g.conf`, defaulting to `edit` when the file, key, or value is missing or invalid.
 
-### 2.3 Componenti e Librerie
-- **CPT-001**:Modulo `core.py` con dispatcher CLI e implementazione degli alias.
-- **CPT-002**:Script di lancio `core.py` e entrypoint console `git-alias`/`g`.
-- **CPT-003**:Suite di test `tests/test_alias_help.py` che verifica coerenza degli help.
-- **CPT-004**:Librerie standard Python: `os`, `shlex`, `subprocess`, `sys`, `datetime`, `pathlib`.
-- **CPT-005**:Dipendenze esterne: eseguibili `git`, `gitk`, `uv`/`uvx`.
-- **CPT-006**:Libreria esterna `pathspec` per il matching dei pattern di configurazione.
-- **CPT-007**:Script shell `doxygen.sh` in root progetto per orchestrazione generazione documentazione Doxygen.
-- **CPT-008**:Modulo `foresta.py` con motore di visualizzazione ad albero dei commit git tramite algoritmo vine-based.
+### 2.3 Components and Libraries
+- **CPT-001**: MUST implement CLI dispatch and alias runtime behavior in `src/git_alias/core.py`.
+- **CPT-002**: MUST provide package entrypoints through `src/git_alias/__main__.py` and console scripts `git-alias` and `g`.
+- **CPT-003**: MUST include automated tests under `tests/` covering user-visible command contracts.
+- **CPT-004**: MUST use Python standard libraries including `os`, `shlex`, `subprocess`, `sys`, `datetime`, and `pathlib` in runtime logic.
+- **CPT-005**: MUST invoke external executables `git`, `gitk`, and `uv`/`uvx` for delegated operations.
+- **CPT-006**: MUST use `pathspec` for gitignore-style pattern matching in version rules processing.
+- **CPT-007**: MUST include root-level `doxygen.sh` to orchestrate Doxygen documentation generation.
+- **CPT-008**: MUST include `src/git_alias/foresta.py` implementing text-based commit tree visualization.
 
-## 3. Requisiti
-### 3.1 Progettazione e Implementazione
-- **DES-001**: Il dispatcher CLI deve accettare un comando come primo argomento, invocare l'alias corrispondente quando il nome è mappato e, quando il comando richiesto non è riconosciuto, eseguire `git` inoltrando tutti gli argomenti originali senza interrompere il flusso, mantenendo invariato il comportamento di help/errore quando non vengono forniti argomenti o viene richiesto `--help`.
-- **DES-002**: Ogni alias deve inoltrare eventuali argomenti aggiuntivi al comando git corrispondente, propagando il codice di uscita del processo esterno e gestendo ogni errore dei processi esterni catturando le eccezioni (ad esempio `subprocess.CalledProcessError`) tramite un wrapper condiviso che converte l'errore in una segnalazione esplicita stampata dall'alias chiamante senza mostrare trace Python grezzi. 
-- **DES-003**: Ogni comando deve avere un testo di help e il comando globale `--help` deve elencarli in ordine alfabetico.
-- **DES-004**: Se l'eseguibile viene chiamato senza argomenti deve stampare un messaggio, mostrare l'help completo e uscire con codice di errore.
-- **DES-005**: Gli alias costituiscono la base per lo sviluppo di alias più complessi, pertanto se nell'implementazione di un alias è necessario svolgere una attività implementata in un alias più semplice verrà utilizzata la funzione che specializza quella più semplice.
-- **DES-006**: The executable MUST load `.g.conf` for `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`, and `$HOME/.g/g.conf` for `edit_command`, `gp_command`, and `gr_command`, and MUST ignore out-of-scope keys in each file.
-- **DES-007**: Le verifiche sul readiness del commit (worktree, staging, commit precedente) devono essere centralizzate in funzioni riutilizzabili da tutti gli alias che eseguono commit (`cm`, `wip`, e futuri).
-- **DES-008**: Tutti i messaggi stampati in console devono essere in inglese.
-- **DES-009**: The global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.g.conf` plus `$HOME/.g/g.conf`, otherwise defaults from `DEFAULT_CONFIG`.
+## 3. Software Requirements
+### 3.1 Design and Implementation
+- **DES-001**: MUST accept the first CLI argument as command, dispatch mapped aliases, and fallback to native `git <command> <args>` when command is unknown while preserving help/error behavior.
+- **DES-002**: MUST forward extra arguments to delegated git commands, propagate external exit codes, and convert subprocess failures into explicit user-facing errors without raw Python tracebacks.
+- **DES-003**: MUST define help text for every command and list commands alphabetically in global help output.
+- **DES-004**: MUST print an explicit message plus full help and exit non-zero when invoked without arguments.
+- **DES-005**: MUST compose complex aliases by reusing simpler alias functions when overlapping behavior exists.
+- **DES-006**: MUST the executable MUST load `.g.conf` for `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`, and `$HOME/.g/g.conf` for `edit_command`, `gp_command`, and `gr_command`, and MUST ignore out-of-scope keys in each file.
+- **DES-007**: MUST centralize commit-readiness checks (working tree, staging, previous commit) in reusable functions shared by `cm`, `wip`, and related aliases.
+- **DES-008**: MUST print all console messages in English.
+- **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.g.conf` plus `$HOME/.g/g.conf`, otherwise defaults from `DEFAULT_CONFIG`.
 
-### 3.2 Funzioni
-- **REQ-001**: Il comando `--upgrade` deve reinstallare l'utility usando `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git`.
-- **REQ-002**: Il comando `--remove` deve disinstallare l'utility globale tramite `uv tool uninstall git-alias`.
-- **REQ-003**: Il comando `--help` deve elencare tutti gli alias disponibili o mostrare la descrizione del comando richiesto quando viene specificato un alias; quando il comando dispone di opzioni/flag, la stringa di help del comando deve includere esplicitamente tali opzioni.
-- **REQ-004**: L'alias `aa` deve aggiungere tutte le modifiche e i file nuovi all'area di staging con `git add --all`, ma prima deve verificare (riutilizzando le funzioni diagnostiche sullo working tree) che esistano file o modifiche non ancora aggiunti allo staging e, quando non c'è nulla da aggiungere, deve terminare con errore descrivendo il problema.
-- **REQ-005**: L'alias di commit `cm` deve permettere commit standard senza automatismi aggiuntivi né messaggi precompilati, ma prima di eseguire `git commit` deve verificare (riutilizzando funzioni diagnostiche centralizzate) che (a) non esistano file o modifiche nello working tree ancora da aggiungere all'index/stage, (b) l'index contenga effettivamente modifiche pronte al commit, e (c) l'ultimo commit del branch corrente non sia una `wip: work in progress.` non mergiata. Se l'ultimo commit ha il messaggio `wip: work in progress.` e non è stato ancora portato ne sui rami `develop`/`master` configurati, `cm` deve aggiornare quel commit tramite `git commit --amend` e stampare un messaggio esplicito; in tutti gli altri casi deve creare un nuovo commit e segnalare l'azione eseguita.
-- **REQ-006**: Gli alias di navigazione branch devono consentire checkout mirati (`co`) utilizzando i nomi di branch configurati nel file `.g.conf` (default `work`, `develop`, `master`).
-- **REQ-007**: Gli alias di fetch/pull/push devono eseguire le varianti generiche per il ramo corrente (`fe`, `feall`, `pl`, `pt`, `pu`), senza scorciatoie dedicate ai rami configurati.
-- **REQ-008**: Inspection aliases MUST provide branch, log, and status views via `br`, `lb`, `ck`, `l`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`, `str`, `dwc`, `dcc`, `dr`, `ls`, `lsi`, `lsa`.
-- **REQ-079**: The `ls` alias MUST run `git ls-files --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
-- **REQ-080**: The `lsi` alias MUST run `git ls-files --others --ignored --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
-- **REQ-081**: The `lsa` alias MUST run `git ls-files --others --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
-- **REQ-082**: The CLI MUST expose an `o` alias in `COMMANDS` and `HELP_TEXTS`, and `--help` outputs MUST include `o` in global and per-command help paths.
-- **REQ-083**: The `o` alias MUST terminate with non-zero exit when executed outside a Git repository and MUST print an explicit English error message to stderr.
-- **REQ-084**: The `o` alias MUST print sections in order as: section 1 working area context, section 2 branch distances, section 3 active worktrees, section 4 qualitative topology, section 5 branches, and section 6 current-branch state only when `WorkingTree` state is not `clean`.
-- **REQ-085**: The `o` alias MUST always use configured `work`, `develop`, and `master` branch names, MUST print identifiers `Work(⎇ <work>)`, `Develop(⎇ <develop>)`, `Master(⎇ <master>)`, and MUST print `Current Branch: <Logical>(⎇ <current>)`.
-- **REQ-086**: The `o` alias MUST print verbose divergence rows with explicit configured labels and remote labels `RemoteDevelop(⎇ origin/<develop>)` and `RemoteMaster(⎇ origin/<master>)`, using `git rev-list` counts when compared refs exist.
-- **REQ-087**: The `o` alias MUST color ahead counters with bright green (`\033[92m`) and behind counters with bright red (`\033[31;1m`); zero-value counters and non-delta text MUST remain white.
-- **REQ-088**: The `o` alias MUST render section titles in purple (`\033[35;1m`), branch/remote identifier tuples `(⎇ <name>)` in bright yellow (`\033[38;5;226m`), subsection titles in bright white, and every rendered `Work(⎇ <work>)` logical prefix in bright green (`\033[92m`) when state is `clean`, bright red (`\033[31;1m`) when state is `unstaged`, otherwise bright white (`\033[97m`), reusing the same formatting in all sections.
-- **REQ-089**: The `o` alias MUST print section 4 with title `QUALITATIVE TOPOLOGY` and MUST render a chronological-position tree where node placement derives from actual commit positions in the repository history.
-- **REQ-090**: The section-4 infographic MUST include `WorkingTree`, `Work`, `Develop`, `RemoteDevelop`, `Master`, and `RemoteMaster`; MUST resolve each ref hash via `git rev-parse`; MUST group refs sharing the same commit hash on the same output line except `WorkingTree`; MUST order nodes by descending `git rev-list --count` from the octopus merge-base of available refs.
-- **REQ-091**: The section-4 infographic MUST NOT emit qualitative-state labels (`in_sync`, `ahead`, `behind`, `diverged`, `unknown`) in the topology output lines.
-- **REQ-092**: The section-4 root node MUST be the node or group with the highest commit count from the merge-base; remaining nodes MUST appear as `|-- ` children ordered by descending commit count; `WorkingTree` MUST be positioned immediately above the line containing `Work` when at the same commit position or when the working tree is dirty.
-- **REQ-093**: The section-4 infographic MUST preserve the overview color contract: purple section title, yellow `(⎇ <name>)` tuples, and white generic text including tree connectors and `WorkingTree` state annotation.
-- **REQ-095**: The section-4 `WorkingTree` node MUST display `WorkingTree [<state>]` where `<state>` is the working-tree state string (`clean`, `unstaged`, `staged`, or `mixed`) derived from the same diagnostic function used by `cmd_o`.
-- **REQ-094**: The `o` alias MUST execute `git worktree list --verbose` in section 3, MUST execute `git status -sb` only when `WorkingTree` state is not `clean`, and in section 6 MUST normalize the status header line from `## <branch>` to `## <Logical>(⎇ <branch>)` using the same color formatting as section-1 `Current Branch`, and MUST render each non-header status line two-character status prefix in bright red (`\033[31;1m`).
-- **REQ-096**: The `o` alias MUST print section `=== 5. BRANCHES ===` as aligned rows for `Work`, `Develop`, `Master`, `RemoteDevelop`, `RemoteMaster`, formatted `<Identifier> | <latest commit subject>`, with commit subject in bright white bold (`\033[97;1m`).
-- **REQ-097**: Runtime configuration loading MUST NOT append, persist, or mutate configuration files; file normalization and key insertion MUST occur only when `--write-config` is explicitly executed.
-- **REQ-009**: Gli alias di merge devono offrire merge fast-forward generici (`me`) per integrare i rami configurati senza workflow automatizzati aggiuntivi.
-- **REQ-010**: The system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.
-- **REQ-011**: Gli alias di reset e pulizia devono applicare le modalità di reset (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`) e le pulizie dello working tree (`rmloc`, `rmstg`, `rmunt`). I comandi di reset (`rs*`) devono stampare il testo di help dedicato quando invocati con `--help`, senza dipendere da alias separati.
-- **REQ-012**: Tagging and archive aliases MUST support annotated tag creation (`tg`), local/remote tag deletion (`rmtg`), tag listing (`lt`), and archiving configured `master` in tar.gz (`ar`).
-- **REQ-073**: The `lt` alias MUST print one line per tag as `<tag>: <branch_1>, <branch_2>, ...`, where branches are the refs returned by `git branch -a --contains <tag>` after marker trimming.
-- **REQ-013**: The `ed` alias MUST open arbitrary file paths using `edit_command` from `$HOME/.g/g.conf` (default `edit`) and MUST fail with an explicit error when no path is provided.
-- **REQ-014**: The `--write-config` command MUST normalize `.g.conf` to contain only `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`, and MUST normalize `$HOME/.g/g.conf` to contain only `edit_command`, `gp_command`, and `gr_command`.
-- **REQ-015**: The `--write-config` normalization of `$HOME/.g/g.conf` MUST rename legacy key `editor` to `edit_command` by preserving the legacy value when `edit_command` is absent, and MUST remove `editor` from the final file.
-- **REQ-016**: L'invocazione della CLI con `--help` o senza comandi deve mostrare prima le funzioni `--write-config`, `--upgrade`, `--remove` e poi l'elenco completo degli alias disponibili.
-- **REQ-017**: Il comando `ver` deve leggere `ver_rules` dal file `.g.conf` come lista di oggetti JSON con campi `pattern` e `regex` (o usare i valori di default), usare la libreria `pathspec` (sintassi GitIgnore) per determinare i file che corrispondono al pattern associato, interpretando i pattern con `/` come ancorati alla root del repository. Per ottenere l'elenco dei file da analizzare, il comando deve utilizzare esclusivamente `rglob()` dalla root del repository senza dipendere dallo stato di tracciamento git, escludendo i percorsi che corrispondono ad espressioni regolari hardcoded per `.git/`, `.vscode/`, `tmp/`, `temp/`, `.cache/`, `.pytest_cache/`, `node_modules/.cache`. Il comando deve quindi applicare ogni regexp solo ai file selezionati dal pattern, raccogliere tutte le versioni trovate e: (a) stampare la versione quando tutte le occorrenze coincidono, oppure (b) terminare con errore indicando i primi due file che presentano versioni differenti, oppure (c) terminare con errore quando una regola non produce alcun match, riportando la stringa della regola che non ha prodotto risultati.
-- **REQ-018**: The `changelog` command MUST generate `CHANGELOG.md` grouping commits by minor releases (semver tags where `patch=0` AND version `>=0.1.0`); MUST include only minor releases by default with all commits between consecutive minor releases (from repository beginning for the first minor); MUST produce an empty changelog body when no minor releases exist; MUST list releases reverse-chronologically (newest first).
-- **REQ-040**: The `changelog` `--include-patch` option MUST prepend the chronologically latest patch release after the last minor release, including all commits from the last minor to that patch; if no minor release exists MUST include only the latest patch with all commits from the beginning.
-- **REQ-041**: The `changelog` command MUST support `--force-write`, `--print-only`, and `--disable-history`; command help MUST list all available options; disk writes MUST occur only when `CHANGELOG.md` is absent or `--force-write` is provided.
-- **REQ-042**: The `changelog` commit parser MUST recognize types: `new` (Features), `implement` (Implementations), `fix` (Bug Fixes), `change` (Changes), `cover` (Cover Requirements), `refactor` (Refactor), `docs` (Documentation), `style` (Styling), `revert` (Revert), `misc` (Miscellaneous Tasks); MUST parse headers `<type>:`, `<type>(<module>):`, `<type>!:`, and `<type>(<module>)!:` extracting type, optional module, optional breaking marker, and description; MUST ignore `perf`, `test`, `build`, `ci`, `chore`; MUST ignore commits whose subject matches `release: Release version <semver>`; MUST NOT generate an "Other" section; Implementations section header MUST use the 🏗️ icon.
-- **REQ-043**: The `changelog` `# History` section MUST be enabled by default, MUST be skipped when `--disable-history` is provided, and MUST be skipped when owner/repository resolution via REQ-046 fails with command error.
-- **REQ-046**: The `changelog` GitHub URL resolver MUST query `git config branch.<master_branch>.remote` (fallback `origin`) and `git remote get-url <remote>`; MUST parse SSH/HTTPS URL formats into `<owner>` and `<repo>` using shared string-parsing utilities; MUST NOT perform network operations.
-- **REQ-068**: Without `--include-patch`, `# History` MUST contain only minor-release tags present in the changelog body; with `--include-patch`, it MUST additionally include the latest patch tag, using last minor or repository start as diff baseline.
-- **REQ-069**: `# History` release links MUST use template `https://github.com/<OWNER>/<REPO>/releases/tag/<TAG>` and diff links MUST use template `https://github.com/<OWNER>/<REPO>/compare/<TAG_FROM>..<TAG_TO>` generated deterministically from local changelog tags.
-- **REQ-070**: `# History` generation MUST NOT verify remote tag existence and MUST NOT query remote tags; changelog tag and commit collection MUST use only local git commands.
-- **REQ-044**: Each `changelog` entry MUST remove lines matching `^Co-authored-by:.*` before normalization and MUST remove empty lines from commit descriptions.
-- **REQ-078**: Changelog markdown MUST render one top-level bullet per commit; multiline description lines MUST become consecutive indented sub-bullets; renderer MUST NOT insert blank separator lines between consecutive top-level commit bullets.
-- **REQ-019**: L'alias `bd` deve eliminare un branch locale specificato dall'utente utilizzando `git branch -d <branch>`.
-- **REQ-020**: Il sistema deve fornire funzioni di supporto riutilizzabili dagli alias che consentano di verificare (a) la presenza di file o modifiche non ancora aggiunti allo staging, (b) la presenza di file già in staging ma non ancora committati, (c) la disponibilità di aggiornamenti remoti per il branch `develop`, e (d) la disponibilità di aggiornamenti remoti per il branch `master`. Le funzioni per i punti (c) e (d) devono prima sincronizzare i riferimenti remoti (ad esempio con `git remote -v update`) e poi determinare se il branch remoto è in avanti rispetto a quello locale.
-- **REQ-021**: L'alias `wip` deve eseguire un commit "work in progress" riutilizzando le stesse funzioni di verifica dell'alias `cm`, generando automaticamente un messaggio fisso `wip: work in progress.` e, come `cm`, deve rilevare se l'ultimo commit è una WIP non ancora presente su `develop`: in tal caso deve aggiornare il commit esistente con `git commit --amend` e stampare l'azione; altrimenti deve creare un nuovo commit e segnalarlo.
-- **REQ-022**: The aliases `new`, `fix`, `change`, `implement`, `refactor`, `docs`, `style`, `revert`, `misc`, and `cover` MUST execute conventional commits compatible with `changelog` using the message format `<type>(<module>): <description>`, MUST reuse the same readiness checks used by `cm`/`wip`, MUST require commit text as a mandatory argument, MUST support `<module>: <description>` prefix parsing, MUST use `.g.conf.default_commit_module` (default `core`) when the module is omitted, MUST uppercase the first character of `<description>` unless that character is numeric, MUST append `.` when `<description>` does not end with `.`, and MUST amend the latest commit with `git commit --amend` instead of creating a new commit when HEAD is exactly `wip: work in progress.` and that HEAD commit is not yet contained in the configured `develop` and `master` branches.
+### 3.2 Functional Requirements
+- **REQ-001**: MUST reinstall the utility via `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git` when `--upgrade` is invoked.
+- **REQ-002**: MUST uninstall the utility via `uv tool uninstall git-alias` when `--remove` is invoked.
+- **REQ-003**: MUST show global command help or specific command help via `--help`, and per-command help text MUST explicitly list supported options when present.
+- **REQ-004**: MUST execute `git add --all` for alias `aa` only after reusable diagnostics confirm pending unstaged/untracked changes, and MUST fail with explicit error when nothing can be added.
+- **REQ-005**: MUST validate `cm` preconditions (no unstaged changes, non-empty index, and WIP-amend decision) and MUST amend `wip: work in progress.` only when not yet merged to configured `develop` and `master`.
+- **REQ-006**: MUST support targeted branch checkout via `co` using configured branch names from `.g.conf` defaults (`work`, `develop`, `master`).
+- **REQ-007**: MUST implement generic current-branch fetch/pull/push aliases (`fe`, `feall`, `pl`, `pt`, `pu`) without dedicated per-branch shortcuts.
+- **REQ-008**: MUST inspection aliases MUST provide branch, log, and status views via `br`, `lb`, `ck`, `l`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`, `str`, `dwc`, `dcc`, `dr`, `ls`, `lsi`, `lsa`.
+- **REQ-009**: MUST provide generic merge integration through alias `me` for configured branch workflows without extra automation wrappers.
+- **REQ-010**: MUST the system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.
+- **REQ-011**: MUST provide reset/cleanup aliases (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`, `rmloc`, `rmstg`, `rmunt`) and MUST print dedicated reset help when `rs*` commands receive `--help`.
+- **REQ-012**: MUST tagging and archive aliases MUST support annotated tag creation (`tg`), local/remote tag deletion (`rmtg`), tag listing (`lt`), and archiving configured `master` in tar.gz (`ar`).
+- **REQ-013**: MUST open file paths through `ed` using `edit_command` from `$HOME/.g/g.conf` (default `edit`) and MUST fail with explicit error when no path is supplied.
+- **REQ-014**: MUST normalize `.g.conf` to keys `master`, `develop`, `work`, `default_commit_module`, `ver_rules` and normalize `$HOME/.g/g.conf` to keys `edit_command`, `gp_command`, `gr_command` when `--write-config` runs.
+- **REQ-015**: MUST migrate legacy global key `editor` to `edit_command` during `--write-config` when `edit_command` is missing, and MUST remove `editor` from persisted output.
+- **REQ-016**: MUST show management commands before alias listings when global help is requested or when command input is missing.
+- **REQ-017**: MUST evaluate `ver_rules` from `.g.conf` (or defaults), select files via pathspec plus repository-root `rglob()`, exclude hardcoded cache/temp paths, and fail on mismatched or missing version matches as specified.
+- **REQ-018**: MUST the `changelog` command MUST generate `CHANGELOG.md` grouping commits by minor releases (semver tags where `patch=0` AND version `>=0.1.0`); MUST include only minor releases by default with all commits between consecutive minor releases (from repository beginning for the first minor); MUST produce an empty changelog body when no minor releases exist; MUST list releases reverse-chronologically (newest first).
+- **REQ-019**: MUST delete a user-specified local branch via `git branch -d <branch>` for alias `bd`.
+- **REQ-020**: MUST provide reusable checks for unstaged changes, staged changes, and remote-forward status of configured `develop` and `master`, including remote reference update before ahead/behind evaluation.
+- **REQ-021**: MUST implement `wip` using the fixed message `wip: work in progress.` and the same readiness/WIP-amend logic used by `cm`.
+- **REQ-022**: MUST the aliases `new`, `fix`, `change`, `implement`, `refactor`, `docs`, `style`, `revert`, `misc`, and `cover` MUST execute conventional commits compatible with `changelog` using the message format `<type>(<module>): <description>`, MUST reuse the same readiness checks used by `cm`/`wip`, MUST require commit text as a mandatory argument, MUST support `<module>: <description>` prefix parsing, MUST use `.g.conf.default_commit_module` (default `core`) when the module is omitted, MUST uppercase the first character of `<description>` unless that character is numeric, MUST append `.` when `<description>` does not end with `.`, and MUST amend the latest commit with `git commit --amend` instead of creating a new commit when HEAD is exactly `wip: work in progress.` and that HEAD commit is not yet contained in the configured `develop` and `master` branches.
+- **REQ-023**: MUST keep all `core.py` output messages (stdout/stderr, normal/verbose/debug, help/errors) in English.
+- **REQ-025**: MUST require exactly one `major.minor.patch` argument for `chver`, update matching version occurrences from active `ver_rules`, and re-run `ver` to confirm the requested target version.
+- **REQ-026**: MUST the `major`, `minor`, and `patch` commands MUST automate version release by incrementing the corresponding semver index (resetting lower-order indices), MUST share the same support implementation, MUST accept `--include-patch` flag forwarded to `changelog` together with `--force-write`; the `patch` command MUST automatically include `--include-patch` in the changelog regeneration step even when the flag is not supplied by the user; the `major` and `minor` commands MUST NOT automatically include `--include-patch`, MUST enforce release prerequisites on configured local branches (`master`, `develop`, `work`), configured remotes (`origin/master`, `origin/develop`), remote update status for `master` and `develop`, current branch equal to `work`, clean working tree, and empty index, MUST print release step logs in the `--- [release:<level>] ... ---` format with one blank line before the first release step, and after `chver` plus staging MUST create the first release commit by amending HEAD when HEAD is an amendable `wip: work in progress.` commit not yet contained in configured `develop` and `master` or by creating a new commit otherwise; before changelog regeneration the flow MUST create a temporary annotated `v<target>` tag on configured local `work`, MUST regenerate changelog, and MUST delete that temporary local tag before any branch integration.
+- **REQ-027**: MUST the internal `cmd_release` function MUST reuse the same staging/worktree readiness and WIP amend decision logic used by `wip`, MUST determine the current version via `ver` before committing, MUST fail with the propagated detection error when version resolution fails, MUST create a `release: Release version <ver>` commit (where `<ver>` is `major.minor.patch`) by amending HEAD only when HEAD is an amendable `wip: work in progress.` commit not yet contained in configured `develop` and `master` and otherwise by creating a new commit, and MUST remain unavailable as a user-exposed CLI command.
+- **REQ-028**: MUST implement `ra` as inverse of `aa` by requiring configured `work` branch, no pending unstaged changes, and non-empty staging before unstaging all indexed entries.
+- **REQ-029**: MUST print usage with package version suffix `(x.y.z)` when CLI is invoked without command arguments.
+- **REQ-030**: MUST print the package version and exit successfully when invoked with `--ver` or `--version`.
+- **REQ-031**: MUST keep all CLI output messages in English, including usage/help/info/debug/error paths.
+- **REQ-033**: MUST perform pre-execution latest-version checks using a 6-hour temp-file cache `.g_version_check_cache.json`, fetch GitHub release data with 1-second timeout when cache is stale, and continue silently on network/cache failures.
+- **REQ-034**: MUST run `git remote -v`, print unique remote names, and run `git remote show <remote>` for each discovered remote in alias `str`.
+- **REQ-035**: MUST support `ver --verbose` (per-file regex outcome output) and `ver --debug` (full glob-match listing for each rule pattern).
+- **REQ-036**: MUST provide executable root script `doxygen.sh` that runs system `doxygen` to generate HTML/PDF/Markdown documentation under `doxygen/` from `src/`.
+- **REQ-037**: MUST visual diff aliases MUST execute fixed `git difftool -d` mappings: `dwc` MUST execute `git difftool -d HEAD` (working tree vs latest commit), `dcc` MUST execute `git difftool -d HEAD~1 HEAD` (penultimate vs latest commit), and `dr` MUST require exactly two positional git refs (`<ref_a> <ref_b>`) and execute `git difftool -d <ref_a> <ref_b>` forwarding git errors without additional transformations.
+- **REQ-038**: MUST the visual diff aliases MUST include `dwcc` mapped to `git difftool -d HEAD~1` (working tree vs penultimate commit) and `dccc` mapped to `git difftool -d HEAD~2 HEAD` (third-last vs last commit), and both aliases MUST expose explicit help text in global and per-command help outputs.
+- **REQ-039**: MUST every command `<command>` present in the CLI command dispatch map MUST be implemented by a Python function named exactly `cmd_<command>`, and the dispatch entry for `<command>` MUST reference that exact function symbol.
+- **REQ-040**: MUST the `changelog` `--include-patch` option MUST prepend the chronologically latest patch release after the last minor release, including all commits from the last minor to that patch; if no minor release exists MUST include only the latest patch with all commits from the beginning.
+- **REQ-041**: MUST the `changelog` command MUST support `--force-write`, `--print-only`, and `--disable-history`; command help MUST list all available options; disk writes MUST occur only when `CHANGELOG.md` is absent or `--force-write` is provided.
+- **REQ-042**: MUST the `changelog` commit parser MUST recognize types: `new` (Features), `implement` (Implementations), `fix` (Bug Fixes), `change` (Changes), `cover` (Cover Requirements), `refactor` (Refactor), `docs` (Documentation), `style` (Styling), `revert` (Revert), `misc` (Miscellaneous Tasks); MUST parse headers `<type>:`, `<type>(<module>):`, `<type>!:`, and `<type>(<module>)!:` extracting type, optional module, optional breaking marker, and description; MUST ignore `perf`, `test`, `build`, `ci`, `chore`; MUST ignore commits whose subject matches `release: Release version <semver>`; MUST NOT generate an "Other" section; Implementations section header MUST use the 🏗️ icon.
+- **REQ-043**: MUST the `changelog` `# History` section MUST be enabled by default, MUST be skipped when `--disable-history` is provided, and MUST be skipped when owner/repository resolution via REQ-046 fails with command error.
+- **REQ-044**: MUST each `changelog` entry MUST remove lines matching `^Co-authored-by:.*` before normalization and MUST remove empty lines from commit descriptions.
+- **REQ-045**: MUST the `patch` command MUST merge and push only configured `develop` using `git push origin <develop> --tags`, and MUST NOT merge to or push `master`.
+- **REQ-046**: MUST the `changelog` GitHub URL resolver MUST query `git config branch.<master_branch>.remote` (fallback `origin`) and `git remote get-url <remote>`; MUST parse SSH/HTTPS URL formats into `<owner>` and `<repo>` using shared string-parsing utilities; MUST NOT perform network operations.
+- **REQ-047**: MUST the `backup` command MUST enforce the same preflight checks and error reporting used by the `major`/`minor`/`patch` workflows, including: current branch equals configured `work`, clean working tree, empty index, and remote-update checks for configured `develop` and `master`.
+- **REQ-048**: MUST the `backup` command MUST merge the configured local `work` branch into the configured local `develop` branch, and MUST push the updated `develop` branch to its configured remote tracking branch.
+- **REQ-049**: MUST on success, the `backup` command MUST checkout back to configured `work` and MUST print a success message stating that all local `work` changes were merged and pushed to the configured remote `develop`.
+- **REQ-068**: MUST without `--include-patch`, `# History` MUST contain only minor-release tags present in the changelog body; with `--include-patch`, it MUST additionally include the latest patch tag, using last minor or repository start as diff baseline.
+- **REQ-069**: MUST `# History` release links MUST use template `https://github.com/<OWNER>/<REPO>/releases/tag/<TAG>` and diff links MUST use template `https://github.com/<OWNER>/<REPO>/compare/<TAG_FROM>..<TAG_TO>` generated deterministically from local changelog tags.
+- **REQ-070**: MUST `# History` generation MUST NOT verify remote tag existence and MUST NOT query remote tags; changelog tag and commit collection MUST use only local git commands.
+- **REQ-071**: MUST when a CLI command is added, modified, or removed in the dispatch map, `README.md` MUST be updated for user-facing usage changes; internal logic-only refactors with unchanged command behavior MUST NOT require README updates.
+- **REQ-072**: MUST the `major` and `minor` commands MUST push configured `develop` and configured `master` using `git push origin <branch> --tags` for each pushed branch, and MUST create definitive annotated `v<target>` on configured `master` immediately before master push.
+- **REQ-073**: MUST the `lt` alias MUST print one line per tag as `<tag>: <branch_1>, <branch_2>, ...`, where branches are the refs returned by `git branch -a --contains <tag>` after marker trimming.
+- **REQ-074**: MUST the alias `wt` MUST execute `git worktree list`, and `wtl` MUST execute `git worktree list` while forwarding all provided arguments unchanged.
+- **REQ-075**: MUST the alias `wtl` MUST accept and forward `-v`, `--porcelain`, and `-z` options as native `git worktree list` arguments without CLI-side transformation.
+- **REQ-076**: MUST the alias `wtp` MUST execute `git worktree prune` and MUST forward `-n`, `-v`, `--expire <expire>`, and additional git-compatible arguments unchanged.
+- **REQ-077**: MUST the alias `wtr` MUST execute `git worktree remove` and MUST forward `-f`, required `<worktree>`, and additional git-compatible arguments unchanged.
+- **REQ-078**: MUST changelog markdown MUST render one top-level bullet per commit; multiline description lines MUST become consecutive indented sub-bullets; renderer MUST NOT insert blank separator lines between consecutive top-level commit bullets.
+- **REQ-079**: MUST the `ls` alias MUST run `git ls-files --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
+- **REQ-080**: MUST the `lsi` alias MUST run `git ls-files --others --ignored --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
+- **REQ-081**: MUST the `lsa` alias MUST run `git ls-files --others --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
+- **REQ-082**: MUST the CLI MUST expose an `o` alias in `COMMANDS` and `HELP_TEXTS`, and `--help` outputs MUST include `o` in global and per-command help paths.
+- **REQ-083**: MUST the `o` alias MUST terminate with non-zero exit when executed outside a Git repository and MUST print an explicit English error message to stderr.
+- **REQ-084**: MUST the `o` alias MUST print sections in order as: section 1 working area context, section 2 branch distances, section 3 active worktrees, section 4 qualitative topology, section 5 branches, and section 6 current-branch state only when `WorkingTree` state is not `clean`.
+- **REQ-085**: MUST the `o` alias MUST always use configured `work`, `develop`, and `master` branch names, MUST print identifiers `Work(⎇ <work>)`, `Develop(⎇ <develop>)`, `Master(⎇ <master>)`, and MUST print `Current Branch: <Logical>(⎇ <current>)`.
+- **REQ-086**: MUST the `o` alias MUST print verbose divergence rows with explicit configured labels and remote labels `RemoteDevelop(⎇ origin/<develop>)` and `RemoteMaster(⎇ origin/<master>)`, using `git rev-list` counts when compared refs exist.
+- **REQ-087**: MUST the `o` alias MUST color ahead counters with bright green (`\033[92m`) and behind counters with bright red (`\033[31;1m`); zero-value counters and non-delta text MUST remain white.
+- **REQ-088**: MUST the `o` alias MUST render section titles in purple (`\033[35;1m`), branch/remote identifier tuples `(⎇ <name>)` in bright yellow (`\033[38;5;226m`), subsection titles in bright white, and every rendered `Work(⎇ <work>)` logical prefix in bright green (`\033[92m`) when state is `clean`, bright red (`\033[31;1m`) when state is `unstaged`, otherwise bright white (`\033[97m`), reusing the same formatting in all sections.
+- **REQ-089**: MUST the `o` alias MUST print section 4 with title `QUALITATIVE TOPOLOGY` and MUST render a chronological-position tree where node placement derives from actual commit positions in the repository history.
+- **REQ-090**: MUST the section-4 infographic MUST include `WorkingTree`, `Work`, `Develop`, `RemoteDevelop`, `Master`, and `RemoteMaster`; MUST resolve each ref hash via `git rev-parse`; MUST group refs sharing the same commit hash on the same output line except `WorkingTree`; MUST order nodes by descending `git rev-list --count` from the octopus merge-base of available refs.
+- **REQ-091**: MUST the section-4 infographic MUST NOT emit qualitative-state labels (`in_sync`, `ahead`, `behind`, `diverged`, `unknown`) in the topology output lines.
+- **REQ-092**: MUST the section-4 root node MUST be the node or group with the highest commit count from the merge-base; remaining nodes MUST appear as `|-- ` children ordered by descending commit count; `WorkingTree` MUST be positioned immediately above the line containing `Work` when at the same commit position or when the working tree is dirty.
+- **REQ-093**: MUST the section-4 infographic MUST preserve the overview color contract: purple section title, yellow `(⎇ <name>)` tuples, and white generic text including tree connectors and `WorkingTree` state annotation.
+- **REQ-094**: MUST the `o` alias MUST execute `git worktree list --verbose` in section 3, MUST execute `git status -sb` only when `WorkingTree` state is not `clean`, and in section 6 MUST normalize the status header line from `## <branch>` to `## <Logical>(⎇ <branch>)` using the same color formatting as section-1 `Current Branch`, and MUST render each non-header status line two-character status prefix in bright red (`\033[31;1m`).
+- **REQ-095**: MUST the section-4 `WorkingTree` node MUST display `WorkingTree [<state>]` where `<state>` is the working-tree state string (`clean`, `unstaged`, `staged`, or `mixed`) derived from the same diagnostic function used by `cmd_o`.
+- **REQ-096**: MUST the `o` alias MUST print section `=== 5. BRANCHES ===` as aligned rows for `Work`, `Develop`, `Master`, `RemoteDevelop`, `RemoteMaster`, formatted `<Identifier> | <latest commit subject>`, with commit subject in bright white bold (`\033[97;1m`).
+- **REQ-097**: MUST runtime configuration loading MUST NOT append, persist, or mutate configuration files; file normalization and key insertion MUST occur only when `--write-config` is explicitly executed.
+- **REQ-098**: MUST the CLI MUST expose an `l` alias in `COMMANDS` and `HELP_TEXTS`, and `--help` outputs MUST include `l` in global and per-command help paths.
+- **REQ-099**: MUST the `l` alias MUST render a text-based tree visualization of git commit history by invoking `git log --date-order` with a custom pretty format and processing the output through a vine-based graph algorithm.
+- **REQ-100**: MUST each `l` output line MUST display columns in fixed order: abbreviated commit hash, author date formatted as `%Y-%m-%d %H:%M`, graph tree segment, author name, ref decoration, commit subject.
+- **REQ-101**: MUST the `l` alias MUST support `--style=<n>` with values: 1 (single-line Unicode, default), 2 (double-line Unicode), 10 (rounded Unicode edges), 15 (bold-line Unicode).
+- **REQ-102**: MUST the `l` alias MUST use configurable graph symbols with defaults: commit `●`, merge `◎`, overpass `═`, root `■`, tip `○`; overridable via `--graph-symbol-commit=<s>`, `--graph-symbol-merge=<s>`, `--graph-symbol-overpass=<s>`, `--graph-symbol-root=<s>`, `--graph-symbol-tip=<s>`.
+- **REQ-103**: MUST the `l` alias MUST apply ANSI color scheme: tree (cyan `\033[0;36m`), hash (magenta `\033[0;35m`), date (blue `\033[0;34m`), author (yellow `\033[0;33m`), tag (bold magenta `\033[1;35m`), default (reset `\033[0m`); `--no-color` MUST disable all ANSI color output.
+- **REQ-104**: MUST the `l` alias MUST support options: `--all` (show all branches and HEAD), `--reverse` (reverse output order), `--abbrev=<n>` (hash abbreviation width 4..40, default auto-detect from `git rev-parse --short HEAD`), `--svdepth=<n>` (maximum subvine merge depth, default 2), `--no-status` (disable working tree status display).
+- **REQ-105**: MUST the `l` alias MUST support `--graph-margin-left=<n>` (left margin columns, default 2) and `--graph-margin-right=<n>` (right margin columns, default 1) controlling spacing around the graph tree segment.
+- **REQ-106**: MUST the `l` alias MUST display working tree status indicators appended to the HEAD ref decoration: `*` (unstaged changes), `+` (staged changes), `$` (stash entries), `%` (untracked files); the status display MUST be disabled when `--no-status` is specified.
+- **REQ-107**: MUST the `l` alias MUST detect and display mid-flow state indicators appended to the working tree status: `|REBASE-i`, `|REBASE-m`, `|REBASE`, `|AM`, `|AM/REBASE`, `|MERGING`, `|CHERRY-PICKING`, `|REVERTING`, `|BISECTING`.
+- **REQ-108**: MUST the `l` alias MUST detect an active interactive rebase state and annotate the ref map with `rebase/next`, `rebase/onto`, and `rebase/new` markers at the corresponding commit SHA positions.
+- **REQ-109**: MUST the `l` alias MUST implement a vine-based graph algorithm with three phases per commit: vine_branch (draw branch convergence connectors), vine_commit (place commit node and assign tip positions), vine_merge (draw merge fan-out connectors and allocate parent vine slots).
+- **REQ-110**: MUST the `l` alias MUST cycle branch colors from a predefined palette (`blue_bold`, `yellow_bold`, `magenta_bold`, `green_bold`, `cyan_bold`) with neighbor-avoidance logic ensuring adjacent branches use distinct colors.
+- **REQ-111**: MUST the `l` alias MUST pass all unrecognized command-line arguments through to the underlying `git log` invocation without modification, enabling standard git-log filtering (e.g., `--author`, `--since`, `--grep`, branch/path specs).
+- **REQ-112**: MUST trigger GitHub release workflow `release-uvx.yml` only on pushed tags matching `v<major>.<minor>.<patch>`, and MUST continue release execution only when the tagged commit is contained in `origin/master`.
+- **REQ-113**: MUST build release distributions in GitHub Actions with Python 3.11 using `python -m build`, and MUST attest provenance for `dist/*` artifacts.
+- **REQ-114**: MUST publish a non-draft, non-prerelease GitHub Release for the triggering tag and upload `dist/**/*` assets using changelog content produced by the configured changelog-builder step.
 
-  Nota: Il tipo `refactor` è definito come "Code Refactoring" e deve essere visualizzato nelle sezioni del changelog con l'icona ✨ (U+2728) nella relativa intestazione di sezione.
-- **REQ-023**: Tutti i messaggi stampati da `core.py` (su stdout, stderr, in modalità normale, verbose o debug) devono essere in lingua inglese, inclusi gli help dei comandi e le diagnostiche degli alias.
-- **REQ-025**: Il comando `chver` deve accettare esattamente un argomento nel formato `major.minor.patch` (tre interi separati da punti), verificare la versione corrente tramite `ver`, terminare con errore se `ver` non restituisce una versione univoca o se l'argomento non è valido, evitare modifiche quando la versione richiesta coincide con quella corrente, determinare se l'operazione è un upgrade o un downgrade confrontando `major`, `minor` e `patch`, riscrivere tutte le occorrenze che corrispondono alle regole `ver_rules` attive (quelle lette da `.g.conf` o, in mancanza, `DEFAULT_CONFIG`), e al termine rieseguire `ver` per confermare la nuova versione stampando un messaggio di successo esplicito (upgrade o downgrade). Se la riesecuzione di `ver` non conferma la versione impostata, `chver` deve segnalare un errore critico.
-- **REQ-026**: The `major`, `minor`, and `patch` commands MUST automate version release by incrementing the corresponding semver index (resetting lower-order indices), MUST share the same support implementation, MUST accept `--include-patch` flag forwarded to `changelog` together with `--force-write`; the `patch` command MUST automatically include `--include-patch` in the changelog regeneration step even when the flag is not supplied by the user; the `major` and `minor` commands MUST NOT automatically include `--include-patch`, MUST enforce release prerequisites on configured local branches (`master`, `develop`, `work`), configured remotes (`origin/master`, `origin/develop`), remote update status for `master` and `develop`, current branch equal to `work`, clean working tree, and empty index, MUST print release step logs in the `--- [release:<level>] ... ---` format with one blank line before the first release step, and after `chver` plus staging MUST create the first release commit by amending HEAD when HEAD is an amendable `wip: work in progress.` commit not yet contained in configured `develop` and `master` or by creating a new commit otherwise; before changelog regeneration the flow MUST create a temporary annotated `v<target>` tag on configured local `work`, MUST regenerate changelog, and MUST delete that temporary local tag before any branch integration.
-- **REQ-027**: The internal `cmd_release` function MUST reuse the same staging/worktree readiness and WIP amend decision logic used by `wip`, MUST determine the current version via `ver` before committing, MUST fail with the propagated detection error when version resolution fails, MUST create a `release: Release version <ver>` commit (where `<ver>` is `major.minor.patch`) by amending HEAD only when HEAD is an amendable `wip: work in progress.` commit not yet contained in configured `develop` and `master` and otherwise by creating a new commit, and MUST remain unavailable as a user-exposed CLI command.
-- **REQ-028**: L'alias `ra` deve comportarsi come inverso di `aa`: deve verificare di trovarsi sul branch `work` configurato, assicurarsi che non esistano modifiche nel working tree da aggiungere allo staging, verificare che lo staging contenga file pronti per la commit e, solo allora, rimuovere tutte le voci dallo staging riportandole nella working area.
-- **REQ-029**: Quando la CLI viene invocata senza argomenti deve stampare la riga di usage con la versione letta da `__init__.py` e appenderla alla fine nel formato `(x.y.z)`.
-- **REQ-030**: Quando la CLI viene invocata con i flag globali `--ver` o `--version` deve stampare la versione letta da `__init__.py` ed uscire con successo.
-- **REQ-031**: Tutti i messaggi di output della CLI (usage, help, informazioni, verbose, debug, messaggi di errore) devono essere in lingua inglese.
-- **REQ-033**: Dopo aver validato gli input e prima di eseguire qualsiasi operazione, la CLI deve verificare la disponibilità di una nuova versione utilizzando un meccanismo di cache temporizzata. Il sistema deve memorizzare il risultato del controllo in un file cache JSON nella directory temporanea di sistema (utilizzando `tempfile.gettempdir()`) con nome `.g_version_check_cache.json` e tempo di vita (TTL) di 6 ore. All'avvio, se esiste una cache valida (non scaduta), il sistema deve utilizzare i dati memorizzati senza effettuare chiamate di rete; se la cache è assente o scaduta, deve effettuare una chiamata HTTP GET con timeout di 1 secondo a `https://api.github.com/repos/Ogekuri/G/releases/latest`, determinare l'ultima versione disponibile dalla risposta JSON (campo `tag_name`, con eventuale prefisso `v`), confrontarla con la versione corrente e salvare il risultato nella cache con timestamp di scadenza. Se il server non è contattabile o la chiamata fallisce, la CLI deve considerare la versione attuale come ultima disponibile e procedere senza segnalare nulla. Se la versione disponibile è maggiore di quella attuale (sia da cache che da chiamata online), la CLI deve stampare un messaggio di avviso che indichi la versione attuale e quella disponibile e includa l'istruzione di aggiornamento tramite `--upgrade`. Eventuali errori di lettura o scrittura della cache non devono impedire l'esecuzione del comando.
-- **REQ-034**: Il comando `str` deve eseguire `git remote -v`, filtrare e stampare tutti i remote univoci trovati nell'output e, per ogni remote univoco identificato, eseguire il comando `git remote show <remote>` stampando lo stato completo restituito dal comando.
-- **REQ-035**: Il comando `ver` deve supportare il flag `--verbose` per stampare l'elenco dei file controllati durante il processo e l'esito positivo o negativo del match della `regex` per ciascun file. Con il flag `--debug` deve includere anche le informazioni di ricerca del globbing, stampando l'elenco completo dei file che matchano il `pattern` associato alla regola.
-- **REQ-036**: Il sistema deve fornire nella root del repository uno script eseguibile `doxygen.sh` che, quando invocato, deve utilizzare l'eseguibile `doxygen` disponibile nel sistema operativo per generare documentazione completa dei sorgenti in `src/` con configurazione orientata a estrazione completa (`EXTRACT_ALL`, ricorsione directory, supporto membri privati/statici). Lo script deve generare output in `doxygen/` suddiviso per formato: HTML in `doxygen/html`, PDF in `doxygen/pdf` (con produzione del file PDF finale tramite pipeline LaTeX/PDF), Markdown in `doxygen/markdown`.
-- **REQ-037**: Visual diff aliases MUST execute fixed `git difftool -d` mappings: `dwc` MUST execute `git difftool -d HEAD` (working tree vs latest commit), `dcc` MUST execute `git difftool -d HEAD~1 HEAD` (penultimate vs latest commit), and `dr` MUST require exactly two positional git refs (`<ref_a> <ref_b>`) and execute `git difftool -d <ref_a> <ref_b>` forwarding git errors without additional transformations.
-- **REQ-038**: The visual diff aliases MUST include `dwcc` mapped to `git difftool -d HEAD~1` (working tree vs penultimate commit) and `dccc` mapped to `git difftool -d HEAD~2 HEAD` (third-last vs last commit), and both aliases MUST expose explicit help text in global and per-command help outputs.
-- **REQ-039**: Every command `<command>` present in the CLI command dispatch map MUST be implemented by a Python function named exactly `cmd_<command>`, and the dispatch entry for `<command>` MUST reference that exact function symbol.
-- **REQ-045**: The `patch` command MUST merge and push only configured `develop` using `git push origin <develop> --tags`, and MUST NOT merge to or push `master`.
-- **REQ-072**: The `major` and `minor` commands MUST push configured `develop` and configured `master` using `git push origin <branch> --tags` for each pushed branch, and MUST create definitive annotated `v<target>` on configured `master` immediately before master push.
-- **REQ-047**: The `backup` command MUST enforce the same preflight checks and error reporting used by the `major`/`minor`/`patch` workflows, including: current branch equals configured `work`, clean working tree, empty index, and remote-update checks for configured `develop` and `master`.
-- **REQ-048**: The `backup` command MUST merge the configured local `work` branch into the configured local `develop` branch, and MUST push the updated `develop` branch to its configured remote tracking branch.
-- **REQ-049**: On success, the `backup` command MUST checkout back to configured `work` and MUST print a success message stating that all local `work` changes were merged and pushed to the configured remote `develop`.
-- **REQ-071**: When a CLI command is added, modified, or removed in the dispatch map, `README.md` MUST be updated for user-facing usage changes; internal logic-only refactors with unchanged command behavior MUST NOT require README updates.
-- **REQ-074**: The alias `wt` MUST execute `git worktree list`, and `wtl` MUST execute `git worktree list` while forwarding all provided arguments unchanged.
-- **REQ-075**: The alias `wtl` MUST accept and forward `-v`, `--porcelain`, and `-z` options as native `git worktree list` arguments without CLI-side transformation.
-- **REQ-076**: The alias `wtp` MUST execute `git worktree prune` and MUST forward `-n`, `-v`, `--expire <expire>`, and additional git-compatible arguments unchanged.
-- **REQ-077**: The alias `wtr` MUST execute `git worktree remove` and MUST forward `-f`, required `<worktree>`, and additional git-compatible arguments unchanged.
-- **REQ-098**: The CLI MUST expose an `l` alias in `COMMANDS` and `HELP_TEXTS`, and `--help` outputs MUST include `l` in global and per-command help paths.
-- **REQ-099**: The `l` alias MUST render a text-based tree visualization of git commit history by invoking `git log --date-order` with a custom pretty format and processing the output through a vine-based graph algorithm.
-- **REQ-100**: Each `l` output line MUST display columns in fixed order: abbreviated commit hash, author date formatted as `%Y-%m-%d %H:%M`, graph tree segment, author name, ref decoration, commit subject.
-- **REQ-101**: The `l` alias MUST support `--style=<n>` with values: 1 (single-line Unicode, default), 2 (double-line Unicode), 10 (rounded Unicode edges), 15 (bold-line Unicode).
-- **REQ-102**: The `l` alias MUST use configurable graph symbols with defaults: commit `●`, merge `◎`, overpass `═`, root `■`, tip `○`; overridable via `--graph-symbol-commit=<s>`, `--graph-symbol-merge=<s>`, `--graph-symbol-overpass=<s>`, `--graph-symbol-root=<s>`, `--graph-symbol-tip=<s>`.
-- **REQ-103**: The `l` alias MUST apply ANSI color scheme: tree (cyan `\033[0;36m`), hash (magenta `\033[0;35m`), date (blue `\033[0;34m`), author (yellow `\033[0;33m`), tag (bold magenta `\033[1;35m`), default (reset `\033[0m`); `--no-color` MUST disable all ANSI color output.
-- **REQ-104**: The `l` alias MUST support options: `--all` (show all branches and HEAD), `--reverse` (reverse output order), `--abbrev=<n>` (hash abbreviation width 4..40, default auto-detect from `git rev-parse --short HEAD`), `--svdepth=<n>` (maximum subvine merge depth, default 2), `--no-status` (disable working tree status display).
-- **REQ-105**: The `l` alias MUST support `--graph-margin-left=<n>` (left margin columns, default 2) and `--graph-margin-right=<n>` (right margin columns, default 1) controlling spacing around the graph tree segment.
-- **REQ-106**: The `l` alias MUST display working tree status indicators appended to the HEAD ref decoration: `*` (unstaged changes), `+` (staged changes), `$` (stash entries), `%` (untracked files); the status display MUST be disabled when `--no-status` is specified.
-- **REQ-107**: The `l` alias MUST detect and display mid-flow state indicators appended to the working tree status: `|REBASE-i`, `|REBASE-m`, `|REBASE`, `|AM`, `|AM/REBASE`, `|MERGING`, `|CHERRY-PICKING`, `|REVERTING`, `|BISECTING`.
-- **REQ-108**: The `l` alias MUST detect an active interactive rebase state and annotate the ref map with `rebase/next`, `rebase/onto`, and `rebase/new` markers at the corresponding commit SHA positions.
-- **REQ-109**: The `l` alias MUST implement a vine-based graph algorithm with three phases per commit: vine_branch (draw branch convergence connectors), vine_commit (place commit node and assign tip positions), vine_merge (draw merge fan-out connectors and allocate parent vine slots).
-- **REQ-110**: The `l` alias MUST cycle branch colors from a predefined palette (`blue_bold`, `yellow_bold`, `magenta_bold`, `green_bold`, `cyan_bold`) with neighbor-avoidance logic ensuring adjacent branches use distinct colors.
-- **REQ-111**: The `l` alias MUST pass all unrecognized command-line arguments through to the underlying `git log` invocation without modification, enabling standard git-log filtering (e.g., `--author`, `--since`, `--grep`, branch/path specs).
-
-### 3.3 Struttura File Progetto
+### 3.3 Project File Structure
 ```
-├── src/git_alias/
-│   ├── __init__.py          # Versione pacchetto
-│   ├── __main__.py          # Entry point modulo
-│   ├── core.py              # Implementazione principale (66KB)
-│   └── foresta.py           # Motore visualizzazione albero commit
-├── tests/                   # Suite test (77 test case)
-├── doxygen.sh               # Script generazione documentazione Doxygen
-├── doxygen/                 # Output documentazione generata (html/pdf/markdown)
+.
+├── .github/
+│   └── workflows/
+│       └── release-uvx.yml
 ├── docs/
-│   └── requirements.md      # Requisiti esistenti
-├── pyproject.toml           # Configurazione progetto
-├── README.md                # Documentazione
-├── CHANGELOG.md             # Cronologia modifiche
-└── .g.conf                  # Configurazione runtime
+│   ├── REQUIREMENTS.md
+│   ├── REFERENCES.md
+│   └── WORKFLOW.md
+├── src/
+│   └── git_alias/
+│       ├── __init__.py
+│       ├── __main__.py
+│       ├── core.py
+│       └── foresta.py
+├── tests/
+├── pyproject.toml
+├── README.md
+└── CHANGELOG.md
 ```
 
-### 3.4 Organizzazione Componenti
-Il sistema è organizzato attorno al modulo `core.py` che implementa:
-- Dispatcher principale con gestione comandi e fallback
-- alias git implementati come funzioni `cmd_*`
-- Sistema di help con testi descrittivi
-- Gestione configurazione JSON
-- Funzioni diagnostiche per stato repository
-- Wrapper per gestione errori processi esterni
-- Sistema di validazione per operazioni commit/staging
+### 3.4 Component Organization
+- `core.py` implements dispatch, command handlers, config loading/writing, git subprocess wrappers, and release/changelog flows.
+- `foresta.py` implements vine-based text tree rendering for git history (`l` alias).
+- `release-uvx.yml` implements tag-gated CI release build and publication workflow.
+- No explicit performance optimizations identified.
+
+### 3.5 Evidence for Added Requirements
+- **REQ-112** evidence: `.github/workflows/release-uvx.yml` lines 3-6 (tag trigger), lines 25-35 (master containment gate).
+- **REQ-113** evidence: `.github/workflows/release-uvx.yml` lines 50-53 (Python 3.11), line 62 (`python -m build`), lines 64-67 (attestation over `dist/*`).
+- **REQ-114** evidence: `.github/workflows/release-uvx.yml` lines 117-127 (GitHub Release creation, non-draft/non-prerelease, `dist/**/*` assets, changelog body wiring).
+
