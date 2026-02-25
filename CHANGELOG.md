@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.6.1](https://github.com/Ogekuri/G/compare/v0.6.0..v0.6.1) - 2026-02-25
+### ⛰️  Features
+- Add Acknowledgments section in README.md. *(core)*
+- Add 'l' command for text-based commit tree visualization [useReq] *(core)*
+  - Added REQ-098..REQ-111 for tree visualization with vine-based graph algorithm
+  - Created foresta.py module (Perl-to-Python port) with configurable styles,
+  - symbols, colors, margins, and working tree status display
+  - Registered cmd_l in COMMANDS/HELP_TEXTS with full option passthrough to git log
+  - Added CPT-008 for foresta.py module; updated REQ-008 to include 'l'
+  - Added 37 unit tests in test_cmd_l.py covering helpers, styles, symbols, colors
+  - Updated WORKFLOW.md and REFERENCES.md
+
+### 🐛  Bug Fixes
+- Update default module in G.
+
+### 🚜  Changes
+- append unconfigured overview branches [useReq] *(core)*
+  - Update REQ-096 wording and add REQ-115 for section-5 branch ordering.
+  - Implement section 5 to append all non-configured local/remote branches after configured rows.
+  - Add normalization helper for git branch -a parsing and extend branch summary rendering.
+  - Adjust cmd_o tests and add coverage for normalized branch discovery and appended rows.
+  - Update WORKFLOW and regenerate REFERENCES for traceability.
+- support empty conventional scope [useReq] *(core)*
+  - Update REQ-022 and add REQ-115..REQ-117 for empty-module commit format.
+  - Change default_commit_module hardcoded default to empty string.
+  - Accept explicit empty default_commit_module in config load/write paths.
+  - Emit '<type>: <description>' when effective module is empty.
+  - Update conventional and config I/O tests; refresh WORKFLOW and REFERENCES docs.
+
+### 📚  Documentation
+- Recreate SRS in English [useReq] *(requirements)*
+  - Reorganized requirements with RFC 2119 statements.
+  - Preserved existing IDs and appended REQ-112..REQ-114.
+
 ## [0.6.0](https://github.com/Ogekuri/G/compare/v0.5.0..v0.6.0) - 2026-02-24
 ### ⛰️  Features
 - add overview ASCII topology section [useReq] *(core)*
@@ -287,6 +321,7 @@
 - \[0.4.0\]: https://github.com/Ogekuri/G/releases/tag/v0.4.0
 - \[0.5.0\]: https://github.com/Ogekuri/G/releases/tag/v0.5.0
 - \[0.6.0\]: https://github.com/Ogekuri/G/releases/tag/v0.6.0
+- \[0.6.1\]: https://github.com/Ogekuri/G/releases/tag/v0.6.1
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -294,3 +329,4 @@
 [0.4.0]: https://github.com/Ogekuri/G/compare/v0.3.0..v0.4.0
 [0.5.0]: https://github.com/Ogekuri/G/compare/v0.4.0..v0.5.0
 [0.6.0]: https://github.com/Ogekuri/G/compare/v0.5.0..v0.6.0
+[0.6.1]: https://github.com/Ogekuri/G/compare/v0.6.0..v0.6.1
