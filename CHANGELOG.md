@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.6.1](https://github.com/Ogekuri/G/compare/v0.6.0..v0.6.1) - 2026-02-25
+## [0.7.0](https://github.com/Ogekuri/G/compare/v0.6.0..v0.7.0) - 2026-02-25
 ### ⛰️  Features
 - Add Acknowledgments section in README.md. *(core)*
 - Add 'l' command for text-based commit tree visualization [useReq] *(core)*
@@ -16,6 +16,11 @@
 - Update default module in G.
 
 ### 🚜  Changes
+- default to -n 35 with no args [useReq] *(cmd-l)*
+  - Update REQ-111 to require default depth limiting only when l has no parameters.
+  - Implement cmd_l argument injection: use '-n 35' only for empty invocation and preserve provided args unchanged.
+  - Add unit tests validating default injection and non-injection when parameters are provided.
+  - Update WORKFLOW runtime note and regenerate REFERENCES for traceability.
 - append unconfigured overview branches [useReq] *(core)*
   - Update REQ-096 wording and add REQ-115 for section-5 branch ordering.
   - Implement section 5 to append all non-configured local/remote branches after configured rows.
@@ -30,6 +35,39 @@
   - Update conventional and config I/O tests; refresh WORKFLOW and REFERENCES docs.
 
 ### 📚  Documentation
+- Update README.md file.
+- align README overview branch-table behavior [useReq] *(cmd-o)*
+  - Update Feature Highlights and CLI Examples for /home/ogekuri/G                              5f8bd03 [work]
+  - /home/ogekuri/userReq-G-work-20260225142452  5f8bd03 [userReq-G-work-20260225142452]
+  - [35;1m=== 1. WORKING AREA, STAGE & CURRENT BRANCH ===[0m
+  - [97mConfigured branches: [97mWork[97m([38;5;226m⎇ work[0m[97m)[0m, [97mDevelop[97m([38;5;226m⎇ develop[0m[97m)[0m, [97mMaster[97m([38;5;226m⎇ master[0m[97m)[0m[0m
+  - [97mConfigured remotes: [97mRemoteDevelop[97m([38;5;226m⎇ origin/develop[0m[97m)[0m, [97mRemoteMaster[97m([38;5;226m⎇ origin/master[0m[97m)[0m[0m
+  - [97mCurrent Branch: [31;1mCurrent[97m([38;5;226m⎇ userReq-G-work-20260225142452[0m[97m)[0m[0m
+  - [35;1m=== 2. BRANCH DISTANCES (COMMITS) ===[0m
+  - [97m[97mWork[97m([38;5;226m⎇ work[0m[97m)[0m vs [97mDevelop[97m([38;5;226m⎇ develop[0m[97m)[0m[0m | [97mahead 0[0m | [97mbehind 0[0m
+  - [97m[97mWork[97m([38;5;226m⎇ work[0m[97m)[0m vs [97mMaster[97m([38;5;226m⎇ master[0m[97m)[0m[0m | [92m↑ ahead 7[0m | [97mbehind 0[0m
+  - [97;1m--- Server Alignment ---[0m
+  - [97m[97mDevelop[97m([38;5;226m⎇ develop[0m[97m)[0m vs [97mRemoteDevelop[97m([38;5;226m⎇ origin/develop[0m[97m)[0m[0m | [97mahead 0[0m | [97mbehind 0[0m
+  - [97m[97mMaster[97m([38;5;226m⎇ master[0m[97m)[0m vs [97mRemoteMaster[97m([38;5;226m⎇ origin/master[0m[97m)[0m[0m | [97mahead 0[0m | [97mbehind 0[0m
+  - [35;1m=== 3. ACTIVE WORKTREES ===[0m
+  - [35;1m=== 4. QUALITATIVE TOPOLOGY ===[0m
+  - [97mWorkingTree [staged][0m
+  - [97m|[0m
+  - [97m|-- [0m[97mWork[97m([38;5;226m⎇ work[0m[97m)[0m, [97mDevelop[97m([38;5;226m⎇ develop[0m[97m)[0m, [97mRemoteDevelop[97m([38;5;226m⎇ origin/develop[0m[97m)[0m
+  - [97m|-- [0m[97mMaster[97m([38;5;226m⎇ master[0m[97m)[0m, [97mRemoteMaster[97m([38;5;226m⎇ origin/master[0m[97m)[0m
+  - [97m|[0m
+  - [35;1m=== 5. BRANCHES ===[0m
+  - [97m[97mWork[97m([38;5;226m⎇ work[0m[97m)[0m[97m                                                   | [0m[97;1mrelease: Release version 0.6.1[0m[0m
+  - [97m[97mDevelop[97m([38;5;226m⎇ develop[0m[97m)[0m[97m                                             | [0m[97;1mrelease: Release version 0.6.1[0m[0m
+  - [97m[97mMaster[97m([38;5;226m⎇ master[0m[97m)[0m[97m                                               | [0m[97;1mrelease: Release version 0.6.0[0m[0m
+  - [97m[97mRemoteDevelop[97m([38;5;226m⎇ origin/develop[0m[97m)[0m[97m                                | [0m[97;1mrelease: Release version 0.6.1[0m[0m
+  - [97m[97mRemoteMaster[97m([38;5;226m⎇ origin/master[0m[97m)[0m[97m                                  | [0m[97;1mrelease: Release version 0.6.0[0m[0m
+  - [97m[97muserReq-G-work-20260225142452[97m([38;5;226m⎇ userReq-G-work-20260225142452[0m[97m)[0m[97m | [0m[97;1mrelease: Release version 0.6.1[0m[0m
+  - [97m[97m+ work[97m([38;5;226m⎇ + work[0m[97m)[0m[97m                                               | [0m[97;1mn/a[0m[0m
+  - [35;1m=== 6. CURRENT BRANCH STATE ===[0m
+  - [97m## [31;1mCurrent[97m([38;5;226m⎇ userReq-G-work-20260225142452[0m[97m)[0m[0m
+  - [31;1mM [0m README.md.
+  - Document that section  prints configured rows first and appends all other local/remote branches with latest commit subjects.
 - Recreate SRS in English [useReq] *(requirements)*
   - Reorganized requirements with RFC 2119 statements.
   - Preserved existing IDs and appended REQ-112..REQ-114.
@@ -321,7 +359,7 @@
 - \[0.4.0\]: https://github.com/Ogekuri/G/releases/tag/v0.4.0
 - \[0.5.0\]: https://github.com/Ogekuri/G/releases/tag/v0.5.0
 - \[0.6.0\]: https://github.com/Ogekuri/G/releases/tag/v0.6.0
-- \[0.6.1\]: https://github.com/Ogekuri/G/releases/tag/v0.6.1
+- \[0.7.0\]: https://github.com/Ogekuri/G/releases/tag/v0.7.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -329,4 +367,4 @@
 [0.4.0]: https://github.com/Ogekuri/G/compare/v0.3.0..v0.4.0
 [0.5.0]: https://github.com/Ogekuri/G/compare/v0.4.0..v0.5.0
 [0.6.0]: https://github.com/Ogekuri/G/compare/v0.5.0..v0.6.0
-[0.6.1]: https://github.com/Ogekuri/G/compare/v0.6.0..v0.6.1
+[0.7.0]: https://github.com/Ogekuri/G/compare/v0.6.0..v0.7.0
