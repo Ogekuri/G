@@ -60,6 +60,9 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 - Provides an overview alias: `o` prints a structured repository summary with working-tree status, branch divergence/alignment sections, and a branch table that lists configured branches first and then all other local/remote branches with latest commit subjects.
 - Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--include-patch`, `--force-write`, `--print-only`, `--disable-history`).
 - Self-upgrading feature.
+- Include a **quick overview** command `o`:
+[![Flowchart](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/command_o_overview_sample1.png)](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/command_o_overview_sample1.png)- Include **git-foresta** command `l`:
+[![Flowchart](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/commnad_l_git-foresta-sample1.png)](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/commnad_l_git-foresta-sample1.png)
 
 
 ## Quick Start
