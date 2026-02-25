@@ -536,6 +536,7 @@ HELP_TEXTS = {
     "feall": "Fetch new data from origin for all branch.",
     "gp": "Open git commits graph (Git K).",
     "gr": "Open git tags graph (Git K).",
+    "l": "Print commit history as a text-based tree. Options: --all, --no-color, --no-status, --reverse, --abbrev=<n>, --svdepth=<n>, --style=<n>, --graph-margin-left=<n>, --graph-margin-right=<n>, --graph-symbol-commit=<s>, --graph-symbol-merge=<s>, --graph-symbol-overpass=<s>, --graph-symbol-root=<s>, --graph-symbol-tip=<s>.",
     "lb": "Print all branches.",
     "lg": "Print commit history.",
     "lh": "Print last commit details.",
@@ -3168,6 +3169,18 @@ def cmd_str(extra):
             raise
 
 
+## @brief Execute `cmd_l` runtime logic for Git-Alias CLI.
+# @details Delegates to `foresta.run()` which renders a text-based tree visualization
+# of git commit history using a vine-based graph algorithm with configurable styles,
+# symbols, colors, and margins. All unrecognized arguments are passed through to git log.
+# @satisfies REQ-098, REQ-099, REQ-111
+# @param extra {list} Additional CLI arguments forwarded to the foresta engine.
+# @return None.
+def cmd_l(extra):
+    from git_alias import foresta
+    foresta.run(extra)
+
+
 ## @brief Execute `cmd_lb` runtime logic for Git-Alias CLI.
 # @details Executes `cmd_lb` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_lb`.
@@ -3703,6 +3716,7 @@ COMMANDS = {
     "feall": cmd_feall,
     "gp": cmd_gp,
     "gr": cmd_gr,
+    "l": cmd_l,
     "lb": cmd_lb,
     "lg": cmd_lg,
     "lh": cmd_lh,

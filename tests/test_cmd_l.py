@@ -1,0 +1,328 @@
+"""
+@brief Unit tests for the `l` command (text-based tree visualization).
+@details Validates foresta engine helper functions, option parsing,
+COMMANDS/HELP_TEXTS registration, and integration with the CLI dispatcher.
+@satisfies REQ-098, REQ-099, REQ-100, REQ-101, REQ-102, REQ-103, REQ-104,
+REQ-105, REQ-106, REQ-109, REQ-110, REQ-111
+"""
+
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest.mock import MagicMock, patch
+
+from git_alias import core
+from git_alias import foresta
+
+
+class TestLCommandRegistration(unittest.TestCase):
+    """
+    @brief Level 0: Verify `l` is registered in COMMANDS and HELP_TEXTS.
+    @satisfies REQ-098
+    """
+
+    def test_l_in_commands(self):
+        """l MUST be present in COMMANDS dispatch map."""
+        self.assertIn("l", core.COMMANDS)
+
+    def test_l_in_help_texts(self):
+        """l MUST be present in HELP_TEXTS."""
+        self.assertIn("l", core.HELP_TEXTS)
+
+    def test_l_help_text_mentions_options(self):
+        """l help text MUST mention key options."""
+        text = core.HELP_TEXTS["l"]
+        for opt in ("--all", "--style", "--svdepth", "--no-color"):
+            self.assertIn(opt, text)
+
+    def test_l_command_is_cmd_l(self):
+        """l dispatch entry MUST reference cmd_l function symbol."""
+        self.assertIs(core.COMMANDS["l"], core.cmd_l)
+
+
+class TestForestaHelpers(unittest.TestCase):
+    """
+    @brief Level 0: Test pure helper functions from foresta module.
+    """
+
+    def test_maxof(self):
+        self.assertEqual(foresta._maxof(3, 5), 5)
+        self.assertEqual(foresta._maxof(7, 2), 7)
+        self.assertEqual(foresta._maxof(4, 4), 4)
+
+    def test_round_down2_positive_even(self):
+        self.assertEqual(foresta._round_down2(4), 4)
+
+    def test_round_down2_positive_odd(self):
+        self.assertEqual(foresta._round_down2(5), 4)
+
+    def test_round_down2_negative(self):
+        self.assertEqual(foresta._round_down2(-3), -3)
+
+    def test_round_down2_zero(self):
+        self.assertEqual(foresta._round_down2(0), 0)
+
+    def test_str_expand_shorter(self):
+        self.assertEqual(foresta._str_expand("ab", 5), "ab   ")
+
+    def test_str_expand_equal(self):
+        self.assertEqual(foresta._str_expand("abcde", 5), "abcde")
+
+    def test_str_expand_longer(self):
+        self.assertEqual(foresta._str_expand("abcdef", 3), "abcdef")
+
+    def test_remove_trailing_blanks(self):
+        vine = ["a", None, "b", None, None]
+        foresta._remove_trailing_blanks(vine)
+        self.assertEqual(vine, ["a", None, "b"])
+
+    def test_remove_trailing_blanks_all_none(self):
+        vine = [None, None]
+        foresta._remove_trailing_blanks(vine)
+        self.assertEqual(vine, [])
+
+    def test_remove_trailing_blanks_no_none(self):
+        vine = ["a", "b"]
+        foresta._remove_trailing_blanks(vine)
+        self.assertEqual(vine, ["a", "b"])
+
+
+class TestTrgen(unittest.TestCase):
+    """
+    @brief Level 0: Test the symbol translation function generator.
+    @satisfies REQ-102
+    """
+
+    def test_default_symbols(self):
+        tr = foresta._trgen("\u25cf", "\u25ce", "\u2550", "\u25a0", "\u25cb")
+        self.assertEqual(tr("C"), "\u25cf")
+        self.assertEqual(tr("M"), "\u25ce")
+        self.assertEqual(tr("O"), "\u2550")
+        self.assertEqual(tr("r"), "\u25a0")
+        self.assertEqual(tr("t"), "\u25cb")
+
+    def test_custom_symbols(self):
+        tr = foresta._trgen("X", "Y", "Z", "W", "V")
+        self.assertEqual(tr("CMOrt"), "XYZWV")
+
+    def test_passthrough(self):
+        tr = foresta._trgen("X", "Y", "Z", "W", "V")
+        self.assertEqual(tr("I "), "I ")
+
+
+class TestStyleMaps(unittest.TestCase):
+    """
+    @brief Level 0: Verify all four style translation tables exist.
+    @satisfies REQ-101
+    """
+
+    def test_style_1_exists(self):
+        self.assertIn(1, foresta._STYLE_MAPS)
+
+    def test_style_2_exists(self):
+        self.assertIn(2, foresta._STYLE_MAPS)
+
+    def test_style_10_exists(self):
+        self.assertIn(10, foresta._STYLE_MAPS)
+
+    def test_style_15_exists(self):
+        self.assertIn(15, foresta._STYLE_MAPS)
+
+
+class TestColorConstants(unittest.TestCase):
+    """
+    @brief Level 0: Verify required ANSI color entries exist.
+    @satisfies REQ-103
+    """
+
+    def test_semantic_colors(self):
+        for key in ("default", "tree", "hash", "date", "author", "tag"):
+            self.assertIn(key, foresta._COLOR)
+
+    def test_branch_colors_ref(self):
+        expected = ["blue_bold", "yellow_bold", "magenta_bold", "green_bold", "cyan_bold"]
+        self.assertEqual(foresta._BRANCH_COLORS_REF, expected)
+
+    def test_all_branch_colors_in_color_map(self):
+        for c in foresta._BRANCH_COLORS_REF:
+            self.assertIn(c, foresta._COLOR)
+
+
+class TestDefaultSymbols(unittest.TestCase):
+    """
+    @brief Level 0: Verify default graph symbol values.
+    @satisfies REQ-102
+    """
+
+    def test_commit_symbol(self):
+        self.assertEqual(foresta._GRAPH_SYMBOL_COMMIT, "\u25cf")
+
+    def test_merge_symbol(self):
+        self.assertEqual(foresta._GRAPH_SYMBOL_MERGE, "\u25ce")
+
+    def test_overpass_symbol(self):
+        self.assertEqual(foresta._GRAPH_SYMBOL_OVERPASS, "\u2550")
+
+    def test_root_symbol(self):
+        self.assertEqual(foresta._GRAPH_SYMBOL_ROOT, "\u25a0")
+
+    def test_tip_symbol(self):
+        self.assertEqual(foresta._GRAPH_SYMBOL_TIP, "\u25cb")
+
+
+class TestDefaultMargins(unittest.TestCase):
+    """
+    @brief Level 0: Verify default margin values.
+    @satisfies REQ-105
+    """
+
+    def test_left_margin(self):
+        self.assertEqual(foresta._GRAPH_MARGIN_LEFT, 2)
+
+    def test_right_margin(self):
+        self.assertEqual(foresta._GRAPH_MARGIN_RIGHT, 1)
+
+
+class TestBranchColorUpdate(unittest.TestCase):
+    """
+    @brief Level 0: Test branch color neighbor-avoidance cycling.
+    @satisfies REQ-110
+    """
+
+    def test_assign_new_color(self):
+        colors_now = ["", "", ""]
+        colors_ref = ["blue_bold", "yellow_bold", "magenta_bold"]
+        foresta._update_branch_colors("t  ", colors_now, colors_ref)
+        self.assertEqual(colors_now[0], "blue_bold")
+
+    def test_neighbor_avoidance(self):
+        colors_now = ["blue_bold", "", ""]
+        colors_ref = ["blue_bold", "yellow_bold", "magenta_bold"]
+        foresta._update_branch_colors("I t  ", colors_now, colors_ref)
+        # Second slot (index 1) should not match neighbor blue_bold
+        self.assertNotEqual(colors_now[1], "blue_bold")
+
+
+class TestVineCommit(unittest.TestCase):
+    """
+    @brief Level 0: Test vine_commit control string generation.
+    @satisfies REQ-109
+    """
+
+    def test_tip_placement(self):
+        vine = []
+        result = foresta._vine_commit(vine, "abc123", ["parent1"])
+        self.assertIn("t", result)
+        self.assertIn("abc123", vine)
+
+    def test_existing_in_vine(self):
+        vine = ["abc123", None]
+        result = foresta._vine_commit(vine, "abc123", ["parent1"])
+        self.assertIn("C", result)
+
+    def test_root_commit(self):
+        vine = ["abc123"]
+        result = foresta._vine_commit(vine, "abc123", [])
+        self.assertIn("r", result)
+
+    def test_merge_commit(self):
+        vine = ["abc123"]
+        result = foresta._vine_commit(vine, "abc123", ["p1", "p2"])
+        self.assertIn("M", result)
+
+
+class TestVisCommit(unittest.TestCase):
+    """
+    @brief Level 0: Test vis_commit control string processing.
+    """
+
+    def test_trailing_spaces_stripped(self):
+        self.assertEqual(foresta._vis_commit("C  I  "), "C  I")
+
+    def test_suffix_appended(self):
+        self.assertEqual(foresta._vis_commit("C", "x"), "Cx")
+
+
+class TestVisFan(unittest.TestCase):
+    """
+    @brief Level 0: Test vis_fan transformation logic.
+    """
+
+    def test_merge_fan_with_S(self):
+        result = foresta._vis_fan("sDS", "merge")
+        # Left fanout: 's' becomes 'e', 'S' becomes 'B' (branch to right)
+        self.assertIn("e", result)
+
+    def test_branch_fan_swaps_efg_to_xyz(self):
+        result = foresta._vis_fan("sDSDs", "branch")
+        # After branch transformation, efg chars should become xyz
+        for ch in result:
+            self.assertNotIn(ch, "efg")
+
+
+class TestGetStatus(unittest.TestCase):
+    """
+    @brief Level 1: Test working tree status detection with mocked git commands.
+    @satisfies REQ-106, REQ-107
+    """
+
+    @patch("git_alias.foresta._git_command")
+    def test_clean_status(self, mock_cmd):
+        mock_cmd.return_value = ""
+        result = foresta._get_status("/tmp/fake/.git", "/tmp/fake/.git")
+        self.assertEqual(result, "")
+
+    @patch("git_alias.foresta._git_command")
+    def test_dirty_unstaged(self, mock_cmd):
+        def side_effect(args):
+            if args == ["diff", "--shortstat"]:
+                return " 1 file changed"
+            return ""
+        mock_cmd.side_effect = side_effect
+        result = foresta._get_status("/tmp/fake/.git", "/tmp/fake/.git")
+        self.assertIn("*", result)
+
+    @patch("git_alias.foresta._git_command")
+    def test_dirty_staged(self, mock_cmd):
+        def side_effect(args):
+            if args == ["diff", "--shortstat", "--cached"]:
+                return " 1 file changed"
+            return ""
+        mock_cmd.side_effect = side_effect
+        result = foresta._get_status("/tmp/fake/.git", "/tmp/fake/.git")
+        self.assertIn("+", result)
+
+    @patch("git_alias.foresta._git_command")
+    def test_mid_flow_merging(self, mock_cmd):
+        mock_cmd.return_value = ""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            merge_head = os.path.join(tmpdir, "MERGE_HEAD")
+            with open(merge_head, "w") as f:
+                f.write("abc123\n")
+            result = foresta._get_status(tmpdir, tmpdir)
+            self.assertIn("|MERGING", result)
+
+
+class TestReverseOutput(unittest.TestCase):
+    """
+    @brief Level 0: Test reverse output buffer.
+    """
+
+    def test_reverse_order(self):
+        import io
+        stream = io.StringIO()
+        rev = foresta._ReverseOutput(stream)
+        rev.write("line1\nline2\nline3\n")
+        rev.close()
+        output = stream.getvalue()
+        lines = [l for l in output.split("\n") if l]
+        self.assertEqual(lines[0], "line3")
+        self.assertEqual(lines[1], "line2")
+        self.assertEqual(lines[2], "line1")
+
+
+if __name__ == "__main__":
+    unittest.main()

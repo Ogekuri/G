@@ -1,7 +1,7 @@
 ---
 title: "Requisiti di Git-Alias CLI"
 description: "Specifiche dei requisiti software"
-date: "2026-02-24"
+date: "2026-02-25"
 author: "Francesco Rolando"
 scope:
   paths:
@@ -13,7 +13,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 ---
 
 # Requisiti di Git-Alias CLI
-**Versione**: 0.96
+**Versione**: 0.97
 **Autore**: Francesco Rolando
 **Data**: 2026-02-24
 ## Indice
@@ -134,6 +134,7 @@ tags: ["markdown", "requisiti", "git-alias"]
 | 2026-02-24 | 0.94 | Updated conventional commit aliases to normalize description capitalization and enforce trailing period |
 | 2026-02-24 | 0.95 | Refactored configuration contracts to split local repository settings and global user commands with renamed keys and write-only key insertion |
 | 2026-02-24 | 0.96 | Enforced strict local/global config schemas and normalized global key rename from `editor` to `edit_command` |
+| 2026-02-25 | 0.97 | Added `l` command for text-based tree visualization of git commit history with vine-based graph algorithm, configurable styles, symbols, colors, and working tree status display |
 
 ## 1. Introduzione
 Questo documento descrive i requisiti del progetto Git-Alias, un pacchetto CLI che riproduce alias git personalizzati e li espone tramite `git-alias`/`g` e `uvx`. I requisiti sono organizzati per funzioni di progetto, vincoli e requisiti funzionali verificabili.
@@ -173,6 +174,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **CPT-005**:Dipendenze esterne: eseguibili `git`, `gitk`, `uv`/`uvx`.
 - **CPT-006**:Libreria esterna `pathspec` per il matching dei pattern di configurazione.
 - **CPT-007**:Script shell `doxygen.sh` in root progetto per orchestrazione generazione documentazione Doxygen.
+- **CPT-008**:Modulo `foresta.py` con motore di visualizzazione ad albero dei commit git tramite algoritmo vine-based.
 
 ## 3. Requisiti
 ### 3.1 Progettazione e Implementazione
@@ -194,7 +196,7 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-005**: L'alias di commit `cm` deve permettere commit standard senza automatismi aggiuntivi né messaggi precompilati, ma prima di eseguire `git commit` deve verificare (riutilizzando funzioni diagnostiche centralizzate) che (a) non esistano file o modifiche nello working tree ancora da aggiungere all'index/stage, (b) l'index contenga effettivamente modifiche pronte al commit, e (c) l'ultimo commit del branch corrente non sia una `wip: work in progress.` non mergiata. Se l'ultimo commit ha il messaggio `wip: work in progress.` e non è stato ancora portato ne sui rami `develop`/`master` configurati, `cm` deve aggiornare quel commit tramite `git commit --amend` e stampare un messaggio esplicito; in tutti gli altri casi deve creare un nuovo commit e segnalare l'azione eseguita.
 - **REQ-006**: Gli alias di navigazione branch devono consentire checkout mirati (`co`) utilizzando i nomi di branch configurati nel file `.g.conf` (default `work`, `develop`, `master`).
 - **REQ-007**: Gli alias di fetch/pull/push devono eseguire le varianti generiche per il ramo corrente (`fe`, `feall`, `pl`, `pt`, `pu`), senza scorciatoie dedicate ai rami configurati.
-- **REQ-008**: Inspection aliases MUST provide branch, log, and status views via `br`, `lb`, `ck`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`, `str`, `dwc`, `dcc`, `dr`, `ls`, `lsi`, `lsa`.
+- **REQ-008**: Inspection aliases MUST provide branch, log, and status views via `br`, `lb`, `ck`, `l`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`, `str`, `dwc`, `dcc`, `dr`, `ls`, `lsi`, `lsa`.
 - **REQ-079**: The `ls` alias MUST run `git ls-files --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
 - **REQ-080**: The `lsi` alias MUST run `git ls-files --others --ignored --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
 - **REQ-081**: The `lsa` alias MUST run `git ls-files --others --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
@@ -266,13 +268,28 @@ Il progetto fornisce un eseguibile CLI per riprodurre alias git definiti in un f
 - **REQ-075**: The alias `wtl` MUST accept and forward `-v`, `--porcelain`, and `-z` options as native `git worktree list` arguments without CLI-side transformation.
 - **REQ-076**: The alias `wtp` MUST execute `git worktree prune` and MUST forward `-n`, `-v`, `--expire <expire>`, and additional git-compatible arguments unchanged.
 - **REQ-077**: The alias `wtr` MUST execute `git worktree remove` and MUST forward `-f`, required `<worktree>`, and additional git-compatible arguments unchanged.
+- **REQ-098**: The CLI MUST expose an `l` alias in `COMMANDS` and `HELP_TEXTS`, and `--help` outputs MUST include `l` in global and per-command help paths.
+- **REQ-099**: The `l` alias MUST render a text-based tree visualization of git commit history by invoking `git log --date-order` with a custom pretty format and processing the output through a vine-based graph algorithm.
+- **REQ-100**: Each `l` output line MUST display columns in fixed order: abbreviated commit hash, author date formatted as `%Y-%m-%d %H:%M`, graph tree segment, author name, ref decoration, commit subject.
+- **REQ-101**: The `l` alias MUST support `--style=<n>` with values: 1 (single-line Unicode, default), 2 (double-line Unicode), 10 (rounded Unicode edges), 15 (bold-line Unicode).
+- **REQ-102**: The `l` alias MUST use configurable graph symbols with defaults: commit `●`, merge `◎`, overpass `═`, root `■`, tip `○`; overridable via `--graph-symbol-commit=<s>`, `--graph-symbol-merge=<s>`, `--graph-symbol-overpass=<s>`, `--graph-symbol-root=<s>`, `--graph-symbol-tip=<s>`.
+- **REQ-103**: The `l` alias MUST apply ANSI color scheme: tree (cyan `\033[0;36m`), hash (magenta `\033[0;35m`), date (blue `\033[0;34m`), author (yellow `\033[0;33m`), tag (bold magenta `\033[1;35m`), default (reset `\033[0m`); `--no-color` MUST disable all ANSI color output.
+- **REQ-104**: The `l` alias MUST support options: `--all` (show all branches and HEAD), `--reverse` (reverse output order), `--abbrev=<n>` (hash abbreviation width 4..40, default auto-detect from `git rev-parse --short HEAD`), `--svdepth=<n>` (maximum subvine merge depth, default 2), `--no-status` (disable working tree status display).
+- **REQ-105**: The `l` alias MUST support `--graph-margin-left=<n>` (left margin columns, default 2) and `--graph-margin-right=<n>` (right margin columns, default 1) controlling spacing around the graph tree segment.
+- **REQ-106**: The `l` alias MUST display working tree status indicators appended to the HEAD ref decoration: `*` (unstaged changes), `+` (staged changes), `$` (stash entries), `%` (untracked files); the status display MUST be disabled when `--no-status` is specified.
+- **REQ-107**: The `l` alias MUST detect and display mid-flow state indicators appended to the working tree status: `|REBASE-i`, `|REBASE-m`, `|REBASE`, `|AM`, `|AM/REBASE`, `|MERGING`, `|CHERRY-PICKING`, `|REVERTING`, `|BISECTING`.
+- **REQ-108**: The `l` alias MUST detect an active interactive rebase state and annotate the ref map with `rebase/next`, `rebase/onto`, and `rebase/new` markers at the corresponding commit SHA positions.
+- **REQ-109**: The `l` alias MUST implement a vine-based graph algorithm with three phases per commit: vine_branch (draw branch convergence connectors), vine_commit (place commit node and assign tip positions), vine_merge (draw merge fan-out connectors and allocate parent vine slots).
+- **REQ-110**: The `l` alias MUST cycle branch colors from a predefined palette (`blue_bold`, `yellow_bold`, `magenta_bold`, `green_bold`, `cyan_bold`) with neighbor-avoidance logic ensuring adjacent branches use distinct colors.
+- **REQ-111**: The `l` alias MUST pass all unrecognized command-line arguments through to the underlying `git log` invocation without modification, enabling standard git-log filtering (e.g., `--author`, `--since`, `--grep`, branch/path specs).
 
 ### 3.3 Struttura File Progetto
 ```
 ├── src/git_alias/
 │   ├── __init__.py          # Versione pacchetto
 │   ├── __main__.py          # Entry point modulo
-│   └── core.py              # Implementazione principale (66KB)
+│   ├── core.py              # Implementazione principale (66KB)
+│   └── foresta.py           # Motore visualizzazione albero commit
 ├── tests/                   # Suite test (77 test case)
 ├── doxygen.sh               # Script generazione documentazione Doxygen
 ├── doxygen/                 # Output documentazione generata (html/pdf/markdown)
