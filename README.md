@@ -156,3 +156,8 @@ Some CLI examples:
 - `g ver --verbose`: Verifies version consistency with detailed output.
 - `g chver 1.2.3`: Updates the project version to 1.2.3 using `ver_rules`.
 - `g changelog --print-only`: Prints the generated changelog without writing `CHANGELOG.md`.
+
+## Acknowledgments
+
+Special thanks to Jan Engelhardt and Takaaki Kasai, authors of the Perl
+[git-foresta](https://github.com/takaaki-kasai/git-foresta) program, integrated in G.
