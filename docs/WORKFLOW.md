@@ -165,7 +165,7 @@
             - `_iter_versions_in_text(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
         - `cmd_new(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1913`]
-        - `cmd_o(...)`: repository overview flow [`src/git_alias/core.py:2836`]
+        - `cmd_o(...)`: repository overview flow [`src/git_alias/core.py:3055`]
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
           - `get_branch(...)` (`work`, `develop`, `master`) -> `get_config_value(...)`
           - `run_git_text(...)` (`git branch --show-current`) -> `_run_checked(...)`
@@ -186,7 +186,9 @@
           - `_overview_ascii_topology_lines(...)` (chronological-position tree; Work may share hash-group lines with aligned refs while WorkingTree remains dedicated)
             - `_overview_ref_is_available(...)` -> `_run_checked(...)`
             - `run_git_text(...)` (`git rev-parse`, `git merge-base --octopus`, `git rev-list --count`) -> `_run_checked(...)`
-          - `_overview_branch_summary_lines(...)` (aligned section-5 rows with commit subjects)
+          - `_overview_discovered_branch_refs(...)` (collects ordered unique local/remote refs for section-5 append rows)
+            - `run_git_text(...)` (`git branch -a`) -> `_run_checked(...)`
+          - `_overview_branch_summary_lines(...)` (aligned section-5 rows with commit subjects; appends non-configured refs after configured rows)
             - `_overview_ref_latest_subject(...)`
               - `_overview_ref_is_available(...)` -> `_run_checked(...)`
               - `run_git_text(...)` (`git log -1 --pretty=%s`) -> `_run_checked(...)`

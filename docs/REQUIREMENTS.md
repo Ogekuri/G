@@ -150,7 +150,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-093**: MUST the section-4 infographic MUST preserve the overview color contract: purple section title, yellow `(⎇ <name>)` tuples, and white generic text including tree connectors and `WorkingTree` state annotation.
 - **REQ-094**: MUST the `o` alias MUST execute `git worktree list --verbose` in section 3, MUST execute `git status -sb` only when `WorkingTree` state is not `clean`, and in section 6 MUST normalize the status header line from `## <branch>` to `## <Logical>(⎇ <branch>)` using the same color formatting as section-1 `Current Branch`, and MUST render each non-header status line two-character status prefix in bright red (`\033[31;1m`).
 - **REQ-095**: MUST the section-4 `WorkingTree` node MUST display `WorkingTree [<state>]` where `<state>` is the working-tree state string (`clean`, `unstaged`, `staged`, or `mixed`) derived from the same diagnostic function used by `cmd_o`.
-- **REQ-096**: MUST the `o` alias MUST print section `=== 5. BRANCHES ===` as aligned rows for `Work`, `Develop`, `Master`, `RemoteDevelop`, `RemoteMaster`, formatted `<Identifier> | <latest commit subject>`, with commit subject in bright white bold (`\033[97;1m`).
+- **REQ-096**: MUST the `o` alias MUST print section `=== 5. BRANCHES ===` with configured aligned rows for `Work`, `Develop`, `Master`, `RemoteDevelop`, `RemoteMaster`, formatted `<Identifier> | <latest commit subject>`, with commit subject in bright white bold (`\033[97;1m`).
 - **REQ-097**: MUST runtime configuration loading MUST NOT append, persist, or mutate configuration files; file normalization and key insertion MUST occur only when `--write-config` is explicitly executed.
 - **REQ-098**: MUST the CLI MUST expose an `l` alias in `COMMANDS` and `HELP_TEXTS`, and `--help` outputs MUST include `l` in global and per-command help paths.
 - **REQ-099**: MUST the `l` alias MUST render a text-based tree visualization of git commit history by invoking `git log --date-order` with a custom pretty format and processing the output through a vine-based graph algorithm.
@@ -169,6 +169,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-112**: MUST trigger GitHub release workflow `release-uvx.yml` only on pushed tags matching `v<major>.<minor>.<patch>`, and MUST continue release execution only when the tagged commit is contained in `origin/master`.
 - **REQ-113**: MUST build release distributions in GitHub Actions with Python 3.11 using `python -m build`, and MUST attest provenance for `dist/*` artifacts.
 - **REQ-114**: MUST publish a non-draft, non-prerelease GitHub Release for the triggering tag and upload `dist/**/*` assets using changelog content produced by the configured changelog-builder step.
+- **REQ-115**: MUST section `=== 5. BRANCHES ===` append, after configured rows, aligned `<Identifier> | <latest commit subject>` rows for every discovered local or remote branch not already rendered.
 
 ### 3.3 Project File Structure
 ```

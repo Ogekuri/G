@@ -46,6 +46,11 @@ class CmdOverviewTest(unittest.TestCase):
              mock.patch.object(core, "_overview_compare_refs") as compare, \
              mock.patch.object(
                  core,
+                 "_overview_discovered_branch_refs",
+                 return_value=["feature/alpha", "origin/release/1.2.0"],
+             ), \
+             mock.patch.object(
+                 core,
                  "_overview_branch_summary_lines",
                  return_value=[
                      "Work(⎇ work)                    | commit one",
@@ -83,6 +88,7 @@ class CmdOverviewTest(unittest.TestCase):
             master_display=ANY,
             remote_develop_display=ANY,
             remote_master_display=ANY,
+            additional_refs=["feature/alpha", "origin/release/1.2.0"],
         )
         output = out.getvalue()
         normalized_output = re.sub(r"\x1b\[[0-9;]*m", "", output)
@@ -142,6 +148,7 @@ class CmdOverviewTest(unittest.TestCase):
                  "run_git_text",
                  side_effect=[
                      "work",
+                     "* work",
                      "## work\n M tracked.py",
                  ],
              ), \
@@ -270,6 +277,27 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertEqual("n/a", subject)
         run_git_text.assert_not_called()
 
+    ## @brief Verify `_overview_discovered_branch_refs` normalizes and deduplicates refs.
+    # @return None.
+    def test_overview_discovered_branch_refs_normalizes_deduplicates_and_skips_redirects(self):
+        branches_output = "\n".join(
+            [
+                "* work",
+                "  develop",
+                "  remotes/origin/HEAD -> origin/master",
+                "  remotes/origin/master",
+                "  remotes/origin/feature/x",
+                "  remotes/origin/feature/x",
+                "  (HEAD detached at abc1234)",
+            ],
+        )
+        with mock.patch.object(core, "run_git_text", return_value=branches_output):
+            refs = core._overview_discovered_branch_refs()
+        self.assertEqual(
+            ["work", "develop", "origin/master", "origin/feature/x"],
+            refs,
+        )
+
     ## @brief Verify section-5 branch rows are aligned and subject text uses bright white bold.
     # @return None.
     def test_overview_branch_summary_lines_align_and_highlight_subject(self):
@@ -303,6 +331,47 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertIn("Work(⎇ work)", normalized[0])
         self.assertIn("RemoteMaster(⎇ origin/master)", normalized[-1])
         self.assertIn(core.OVERVIEW_COLOR_WHITE_BOLD, lines[0])
+
+    ## @brief Verify section-5 appends non-configured branches after configured rows.
+    # @return None.
+    def test_overview_branch_summary_lines_appends_additional_refs_after_configured_rows(self):
+        with mock.patch.object(
+            core,
+            "_overview_ref_latest_subject",
+            side_effect=[
+                "work-subject",
+                "develop-subject",
+                "master-subject",
+                "remote-develop-subject",
+                "remote-master-subject",
+                "feature-subject",
+                "release-subject",
+            ],
+        ):
+            lines = core._overview_branch_summary_lines(
+                work_ref="work",
+                develop_ref="develop",
+                master_ref="master",
+                remote_develop_ref="origin/develop",
+                remote_master_ref="origin/master",
+                work_display="Work(⎇ work)",
+                develop_display="Develop(⎇ develop)",
+                master_display="Master(⎇ master)",
+                remote_develop_display="RemoteDevelop(⎇ origin/develop)",
+                remote_master_display="RemoteMaster(⎇ origin/master)",
+                additional_refs=[
+                    "work",
+                    "origin/develop",
+                    "feature/foo",
+                    "origin/release/2.0.0",
+                ],
+            )
+        normalized = [re.sub(r"\x1b\[[0-9;]*m", "", line) for line in lines]
+        self.assertEqual(7, len(normalized))
+        self.assertIn("Work(⎇ work)", normalized[0])
+        self.assertIn("RemoteMaster(⎇ origin/master)", normalized[4])
+        self.assertIn("feature/foo(⎇ feature/foo)", normalized[5])
+        self.assertIn("origin/release/2.0.0(⎇ origin/release/2.0.0)", normalized[6])
 
     ## @brief Verify `_overview_ascii_topology_lines` groups all refs with shared hash.
     # @return None.

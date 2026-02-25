@@ -2728,10 +2728,39 @@ def _overview_ref_latest_subject(ref_name: str) -> str:
     return subject if subject else "n/a"
 
 
+## @brief Collect normalized branch refs from `git branch -a` for overview rendering.
+# @details Returns ordered unique branch refs, stripping current-branch marker and
+# `remotes/` prefix and excluding symbolic-ref redirect rows.
+# @return Result emitted by `_overview_discovered_branch_refs` according to command contract.
+def _overview_discovered_branch_refs() -> List[str]:
+    try:
+        branches_text = run_git_text(["branch", "-a"])
+    except RuntimeError:
+        return []
+    refs: List[str] = []
+    seen = set()
+    for branch_line in branches_text.splitlines():
+        ref_name = branch_line.strip()
+        if not ref_name:
+            continue
+        if ref_name.startswith("*"):
+            ref_name = ref_name.lstrip("*").strip()
+        if ref_name.startswith("remotes/"):
+            ref_name = ref_name[len("remotes/") :]
+        if " -> " in ref_name or ref_name.startswith("("):
+            continue
+        if ref_name in seen:
+            continue
+        seen.add(ref_name)
+        refs.append(ref_name)
+    return refs
+
+
 ## @brief Build section-5 aligned branch summary lines for overview output.
 # @details Produces one row for each configured branch/ref identifier using
 # `<Identifier> | <latest commit subject>` formatting, aligned by visible
-# identifier width and with commit subject in bright white bold.
+# identifier width and with commit subject in bright white bold; appends rows
+# for additional branch refs after configured rows.
 # @param work_ref Input parameter consumed by `_overview_branch_summary_lines`.
 # @param develop_ref Input parameter consumed by `_overview_branch_summary_lines`.
 # @param master_ref Input parameter consumed by `_overview_branch_summary_lines`.
@@ -2742,8 +2771,9 @@ def _overview_ref_latest_subject(ref_name: str) -> str:
 # @param master_display Input parameter consumed by `_overview_branch_summary_lines`.
 # @param remote_develop_display Input parameter consumed by `_overview_branch_summary_lines`.
 # @param remote_master_display Input parameter consumed by `_overview_branch_summary_lines`.
+# @param additional_refs Input parameter consumed by `_overview_branch_summary_lines`.
 # @return Result emitted by `_overview_branch_summary_lines` according to command contract.
-# @satisfies REQ-094, REQ-096
+# @satisfies REQ-094, REQ-096, REQ-115
 def _overview_branch_summary_lines(
     work_ref: str,
     develop_ref: str,
@@ -2755,6 +2785,7 @@ def _overview_branch_summary_lines(
     master_display: str,
     remote_develop_display: str,
     remote_master_display: str,
+    additional_refs: Optional[List[str]] = None,
 ) -> List[str]:
     rows = [
         ("Work", work_ref, work_display),
@@ -2763,6 +2794,11 @@ def _overview_branch_summary_lines(
         ("RemoteDevelop", remote_develop_ref, remote_develop_display),
         ("RemoteMaster", remote_master_ref, remote_master_display),
     ]
+    configured_refs = {work_ref, develop_ref, master_ref, remote_develop_ref, remote_master_ref}
+    for ref_name in additional_refs or []:
+        if ref_name in configured_refs:
+            continue
+        rows.append((ref_name, ref_name, _overview_branch_identifier(ref_name, ref_name)))
     label_width = max(len(f"{logical_name}(⎇ {ref_name})") for logical_name, ref_name, _ in rows)
     lines: List[str] = []
     for logical_name, ref_name, display in rows:
@@ -3015,7 +3051,7 @@ def _overview_current_branch_state_lines(current_branch_display: str) -> List[st
 # @details Executes `cmd_o` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_o`.
 # @return Result emitted by `cmd_o` according to command contract.
-# @satisfies REQ-082, REQ-083, REQ-084, REQ-085, REQ-086, REQ-087, REQ-088, REQ-089, REQ-090, REQ-091, REQ-092, REQ-093, REQ-094, REQ-095, REQ-096
+# @satisfies REQ-082, REQ-083, REQ-084, REQ-085, REQ-086, REQ-087, REQ-088, REQ-089, REQ-090, REQ-091, REQ-092, REQ-093, REQ-094, REQ-095, REQ-096, REQ-115
 def cmd_o(extra):
     del extra
     if not is_inside_git_repo():
@@ -3130,6 +3166,7 @@ def cmd_o(extra):
             reset=OVERVIEW_COLOR_RESET,
         )
     )
+    additional_branch_refs = _overview_discovered_branch_refs()
     branch_rows = _overview_branch_summary_lines(
         work_ref=work_branch,
         develop_ref=develop_branch,
@@ -3141,6 +3178,7 @@ def cmd_o(extra):
         master_display=master_display,
         remote_develop_display=remote_develop_display,
         remote_master_display=remote_master_display,
+        additional_refs=additional_branch_refs,
     )
     for row in branch_rows:
         print(f"{OVERVIEW_COLOR_WHITE}{row}{OVERVIEW_COLOR_RESET}")
