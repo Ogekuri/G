@@ -43,6 +43,25 @@ class TestLCommandRegistration(unittest.TestCase):
         self.assertIs(core.COMMANDS["l"], core.cmd_l)
 
 
+class TestLCommandDefaultDepth(unittest.TestCase):
+    """
+    @brief Level 1: Verify `cmd_l` default depth argument wiring.
+    @satisfies REQ-111
+    """
+
+    @patch("git_alias.foresta.run")
+    def test_cmd_l_injects_default_n_35_only_without_args(self, mock_run):
+        """cmd_l MUST inject '-n 35' when invoked without parameters."""
+        core.cmd_l([])
+        mock_run.assert_called_once_with(["-n", "35"])
+
+    @patch("git_alias.foresta.run")
+    def test_cmd_l_preserves_user_args_without_injecting_default_n_35(self, mock_run):
+        """cmd_l MUST NOT inject '-n 35' when user parameters are present."""
+        core.cmd_l(["--all", "--reverse"])
+        mock_run.assert_called_once_with(["--all", "--reverse"])
+
+
 class TestForestaHelpers(unittest.TestCase):
     """
     @brief Level 0: Test pure helper functions from foresta module.

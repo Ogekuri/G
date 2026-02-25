@@ -229,8 +229,8 @@
         - `cmd_str(...)`: remote-status flow [`src/git_alias/core.py:2543`]
           - `run_git_text(...)` -> `_run_checked(...)`
           - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`
-        - `cmd_l(...)`: tree visualization via foresta engine [`src/git_alias/core.py`]
-          - `foresta.run(...)`: parse options, configure engine, run main process loop [`src/git_alias/foresta.py`]
+        - `cmd_l(...)`: tree visualization via foresta engine with default `-n 35` injection when no CLI args are provided [`src/git_alias/core.py`]
+          - `foresta.run(...)`: parse options, configure engine, and execute run loop with received args unchanged [`src/git_alias/foresta.py`]
             - `foresta._get_refs(...)`: build SHA-to-ref mapping [`src/git_alias/foresta.py`]
               - `foresta._git_command(...)`: subprocess git call [`src/git_alias/foresta.py`]
             - `foresta._get_status(...)`: detect dirty flags and mid-flow state [`src/git_alias/foresta.py`]
