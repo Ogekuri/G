@@ -16,7 +16,7 @@ class ConventionalCommitAliasesTest(unittest.TestCase):
         ) as execute:
             core.cmd_fix(["Correzione", "bug"])
         ensure.assert_called_once_with("fix")
-        execute.assert_called_once_with("fix(core): Correzione bug.", "fix")
+        execute.assert_called_once_with("fix: Correzione bug.", "fix")
 
     def test_docs_extracts_scope_from_prefix(self):
         with mock.patch.object(core, "_ensure_commit_ready") as ensure, mock.patch.object(
@@ -40,7 +40,7 @@ class ConventionalCommitAliasesTest(unittest.TestCase):
         ) as execute:
             core.cmd_implement(["Nuova", "feature"])
         ensure.assert_called_once_with("implement")
-        execute.assert_called_once_with("implement(core): Nuova feature.", "implement")
+        execute.assert_called_once_with("implement: Nuova feature.", "implement")
 
     def test_new_capitalizes_first_description_character_unless_numeric(self):
         with mock.patch.object(core, "_ensure_commit_ready"), mock.patch.object(
@@ -55,6 +55,14 @@ class ConventionalCommitAliasesTest(unittest.TestCase):
         ) as execute:
             core.cmd_cover(["core:", "123", "tasks"])
         execute.assert_called_once_with("cover(core): 123 tasks.", "cover")
+
+    def test_revert_omits_scope_when_configured_default_scope_is_empty(self):
+        core.CONFIG["default_commit_module"] = ""
+        with mock.patch.object(core, "_ensure_commit_ready"), mock.patch.object(
+            core, "_execute_commit", return_value=None
+        ) as execute:
+            core.cmd_revert(["ripristino", "stabile"])
+        execute.assert_called_once_with("revert: Ripristino stabile.", "revert")
 
     def test_style_keeps_single_trailing_period_when_present(self):
         with mock.patch.object(core, "_ensure_commit_ready"), mock.patch.object(

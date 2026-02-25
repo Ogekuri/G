@@ -1,3 +1,5 @@
+import contextlib
+import io
 import json
 import tempfile
 import unittest
@@ -116,3 +118,46 @@ class ConfigIOTest(unittest.TestCase):
             self.assertEqual(persisted_global, global_payload)
             self.assertEqual(core.CONFIG["gp_command"], core.DEFAULT_CONFIG["gp_command"])
             self.assertEqual(core.CONFIG["gr_command"], core.DEFAULT_CONFIG["gr_command"])
+
+    def test_load_cli_config_accepts_empty_default_commit_module(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            home = root / "home"
+            local_payload = {
+                "master": "main",
+                "develop": "develop",
+                "work": "work",
+                "default_commit_module": "",
+                "ver_rules": [{"pattern": "README.md", "regex": "x"}],
+            }
+            (root / core.CONFIG_FILENAME).write_text(json.dumps(local_payload), encoding="utf-8")
+            global_path = core.get_global_config_path(home)
+            global_path.parent.mkdir(parents=True, exist_ok=True)
+            global_path.write_text(json.dumps({"edit_command": "vim"}), encoding="utf-8")
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                core.load_cli_config(root, home=home)
+            self.assertEqual(core.CONFIG["default_commit_module"], "")
+            self.assertNotIn("Ignoring default_commit_module", stderr.getvalue())
+
+    def test_write_default_config_keeps_empty_default_commit_module(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            home = root / "home"
+            local_payload = {
+                "master": "main",
+                "develop": "develop",
+                "work": "workbench",
+                "default_commit_module": "",
+                "ver_rules": [{"pattern": "README.md", "regex": "x"}],
+            }
+            (root / core.CONFIG_FILENAME).write_text(json.dumps(local_payload), encoding="utf-8")
+            global_path = core.get_global_config_path(home)
+            global_path.parent.mkdir(parents=True, exist_ok=True)
+            global_path.write_text(json.dumps({"edit_command": "vim"}), encoding="utf-8")
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                config_path = core.write_default_config(root, home=home)
+            local_data = json.loads(config_path.read_text(encoding="utf-8"))
+            self.assertEqual(local_data["default_commit_module"], "")
+            self.assertNotIn("Ignoring default_commit_module", stderr.getvalue())

@@ -85,10 +85,10 @@
     - `main(...)`: CLI dispatch root [`src/git_alias/core.py:3786`]
       - `get_git_root(...)`: resolve repository root path [`src/git_alias/core.py:293`]
         - `_run_checked(...)`: subprocess execution wrapper [`src/git_alias/core.py:588`]
-      - `load_cli_config(...)`: hydrate runtime config map from local `.g.conf` and global `$HOME/.g/g.conf` while ignoring out-of-scope keys in each file [`src/git_alias/core.py:377`]
+      - `load_cli_config(...)`: hydrate runtime config map from local `.g.conf` and global `$HOME/.g/g.conf` while ignoring out-of-scope keys in each file; `default_commit_module` accepts empty-string values as valid [`src/git_alias/core.py:383`]
         - `get_global_config_path(...)`: resolve global config path [`src/git_alias/core.py:322`]
         - `_read_config_object(...)`: parse JSON object safely [`src/git_alias/core.py:331`]
-        - `_apply_config_values(...)`: validate and apply key subsets [`src/git_alias/core.py:355`]
+        - `_apply_config_values(...)`: validate and apply key subsets; preserve empty `default_commit_module` without fallback coercion [`src/git_alias/core.py:355`]
         - `get_config_path(...)`: resolve repository config path [`src/git_alias/core.py:313`]
       - `check_for_newer_version(...)`: optional remote release check and cache handling [`src/git_alias/core.py:187`]
         - `get_cli_version(...)`: parse `__version__` from package init [`src/git_alias/core.py:160`]
@@ -201,8 +201,8 @@
         - `cmd_revert(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1969`]
         - `cmd_misc(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1977`]
         - `cmd_cover(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1985`]
-        - `_run_conventional_commit(...)`: conventional commit helper [`src/git_alias/core.py:1688`]
-          - `_build_conventional_message(...)` -> `_prepare_commit_message(...)`, `get_config_value(...)`, `_normalize_conventional_description(...)`
+        - `_run_conventional_commit(...)`: conventional commit helper [`src/git_alias/core.py:2165`]
+          - `_build_conventional_message(...)` -> `_prepare_commit_message(...)`, `get_config_value(...)`, `_normalize_conventional_description(...)`; emits `<type>: <description>` when effective module is empty, otherwise `<type>(<module>): <description>` [`src/git_alias/core.py:2140`]
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
         - `cmd_co(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:1993`]

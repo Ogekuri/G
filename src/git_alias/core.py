@@ -74,7 +74,7 @@ DEFAULT_CONFIG = {
     "develop": "develop",
     "work": "work",
     "edit_command": "edit",
-    "default_commit_module": "core",
+    "default_commit_module": "",
     "gp_command": DEFAULT_GP_COMMAND,
     "gr_command": DEFAULT_GR_COMMAND,
     "ver_rules": [
@@ -363,6 +363,12 @@ def _apply_config_values(data, keys):
             else:
                 print(f"Ignoring {key}: expected a JSON array.", file=sys.stderr)
             continue
+        if key == "default_commit_module":
+            if isinstance(value, str):
+                CONFIG[key] = value.strip()
+            else:
+                print(f"Ignoring {key}: expected a string.", file=sys.stderr)
+            continue
         if isinstance(value, str) and value.strip():
             CONFIG[key] = value
         else:
@@ -416,6 +422,18 @@ def _write_missing_config_values(config_path, keys, create_parent=False):
                 if key in data:
                     print(f"Ignoring {key}: expected a JSON array.", file=sys.stderr)
                     should_write = True
+            continue
+        if key == "default_commit_module":
+            if isinstance(value, str):
+                normalized_value = value.strip()
+                normalized[key] = normalized_value
+                if value != normalized_value:
+                    should_write = True
+            else:
+                normalized[key] = DEFAULT_CONFIG[key]
+                if key in data:
+                    print(f"Ignoring {key}: expected a string.", file=sys.stderr)
+                should_write = True
             continue
         if isinstance(value, str) and value.strip():
             normalized[key] = value
@@ -2113,6 +2131,8 @@ def _normalize_conventional_description(description: str) -> str:
 
 ## @brief Execute `_build_conventional_message` runtime logic for Git-Alias CLI.
 # @details Executes `_build_conventional_message` using deterministic CLI control-flow and explicit error propagation.
+#          The output format is `<type>: <description>` when the effective module is empty,
+#          otherwise `<type>(<module>): <description>`.
 # @param kind Input parameter consumed by `_build_conventional_message`.
 # @param extra Input parameter consumed by `_build_conventional_message`.
 # @param alias Input parameter consumed by `_build_conventional_message`.
@@ -2126,11 +2146,14 @@ def _build_conventional_message(kind: str, extra, alias: str) -> str:
     else:
         scope = get_config_value("default_commit_module")
         body = text
+    scope = scope.strip() if isinstance(scope, str) else ""
     if not body:
         print(f"git {alias} requires text after the '<module>:' prefix to complete the message.", file=sys.stderr)
         sys.exit(1)
     body = _normalize_conventional_description(body)
-    return f"{kind}({scope}): {body}"
+    if scope:
+        return f"{kind}({scope}): {body}"
+    return f"{kind}: {body}"
 
 
 ## @brief Execute `_run_conventional_commit` runtime logic for Git-Alias CLI.
