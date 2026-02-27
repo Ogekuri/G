@@ -268,6 +268,23 @@ class CmdOverviewTest(unittest.TestCase):
             subject = core._overview_ref_latest_subject("develop")
         self.assertEqual("release version: 0.0.4", subject)
 
+    ## @brief Verify `_overview_ref_latest_subject` strips ANSI escape sequences.
+    # @return None.
+    def test_overview_ref_latest_subject_strips_ansi_sequences(self):
+        polluted_subject = (
+            "20260225142452\x1b[0m\x1b[97m)\x1b[0m\x1b[97m | \x1b[0m\x1b[97;1m"
+            "release: Release version 0.6.1\x1b[0m \x1b[97m+ work\x1b[97m(\x1b[38;5;226m"
+            "⎇ + work\x1b[0m\x1b[97m)\x1b[0m\x1b[97m | \x1b[0m\x1b[97;1mn/a\x1b[0m"
+            " \x1b[35;1m=== 6. CURRENT BRANCH STATE ===\x1b[0m \x1b[97m## \x1b[31;1mCurrent"
+            "\x1b[97m(\x1b[38;5;226m⎇ userReq-G-work-20260225142452\x1b[0m\x1b[97m)\x1b[0m"
+            " \x1b[31;1mM \x1b[0m README.md."
+        )
+        with mock.patch.object(core, "_overview_ref_is_available", return_value=True), \
+             mock.patch.object(core, "run_git_text", return_value=polluted_subject):
+            subject = core._overview_ref_latest_subject("develop")
+        self.assertNotRegex(subject, r"\x1b\[[0-9;]*m")
+        self.assertIn("release: Release version 0.6.1", subject)
+
     ## @brief Verify `_overview_ref_latest_subject` returns `n/a` for unavailable refs.
     # @return None.
     def test_overview_ref_latest_subject_returns_na_for_unavailable_ref(self):
@@ -298,9 +315,9 @@ class CmdOverviewTest(unittest.TestCase):
             refs,
         )
 
-    ## @brief Verify section-5 branch rows are aligned and subject text uses bright white bold.
+    ## @brief Verify section-5 branch rows are aligned and subject text is uncolored.
     # @return None.
-    def test_overview_branch_summary_lines_align_and_highlight_subject(self):
+    def test_overview_branch_summary_lines_align_and_keep_subject_uncolored(self):
         with mock.patch.object(
             core,
             "_overview_ref_latest_subject",
@@ -330,7 +347,7 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertEqual(5, len(normalized))
         self.assertIn("Work(⎇ work)", normalized[0])
         self.assertIn("RemoteMaster(⎇ origin/master)", normalized[-1])
-        self.assertIn(core.OVERVIEW_COLOR_WHITE_BOLD, lines[0])
+        self.assertNotIn(core.OVERVIEW_COLOR_WHITE_BOLD, lines[0])
 
     ## @brief Verify section-5 appends non-configured branches after configured rows.
     # @return None.

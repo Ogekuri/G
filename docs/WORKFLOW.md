@@ -188,10 +188,10 @@
             - `run_git_text(...)` (`git rev-parse`, `git merge-base --octopus`, `git rev-list --count`) -> `_run_checked(...)`
           - `_overview_discovered_branch_refs(...)` (collects ordered unique local/remote refs for section-5 append rows)
             - `run_git_text(...)` (`git branch -a`) -> `_run_checked(...)`
-          - `_overview_branch_summary_lines(...)` (aligned section-5 rows with commit subjects; appends non-configured refs after configured rows)
+          - `_overview_branch_summary_lines(...)` (aligned section-5 rows with uncolored commit subjects; appends non-configured refs after configured rows)
             - `_overview_ref_latest_subject(...)`
               - `_overview_ref_is_available(...)` -> `_run_checked(...)`
-              - `run_git_text(...)` (`git log -1 --pretty=%s`) -> `_run_checked(...)`
+              - `run_git_text(...)` (`git log -1 --pretty=%s`) -> `_run_checked(...)` (ANSI escapes stripped before rendering)
           - `_overview_current_branch_state_lines(...)` (executed only when `worktree_state != clean`; normalizes header and colors each two-character status prefix in bright red)
             - `run_git_text(...)` (`git status -sb`) -> `_run_checked(...)`
         - `cmd_refactor(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1921`]
@@ -208,13 +208,14 @@
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
         - `cmd_co(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:1993`]
-        - `cmd_dr(...)`: wrapper + arg guard -> `_to_args(...)`, `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2001`]
+        - `cmd_dc(...)`: wrapper + arg guard -> `_to_args(...)`, `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2001`]
         - `cmd_dcc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2013`]
         - `cmd_dccc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2021`]
         - `cmd_de(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2029`]
         - `cmd_di(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2037`]
         - `cmd_diyou(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2045`]
         - `cmd_dime(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2053`]
+        - `cmd_dw(...)`: wrapper + arg guard -> `_to_args(...)`, `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2061`]
         - `cmd_dwc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2061`]
         - `cmd_dwcc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2069`]
         - `cmd_ed(...)`: external editor flow [`src/git_alias/core.py:2530`]

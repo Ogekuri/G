@@ -916,11 +916,11 @@ otherwise `<type>(<module>): <description>`.
 - Param: extra Input parameter consumed by `cmd_co`.
 - Return: Result emitted by `cmd_co` according to command contract.
 
-### fn `def cmd_dr(extra)` (L2478-2485)
-- Brief: Execute `cmd_dr` runtime logic for Git-Alias CLI.
-- Details: Executes `cmd_dr` using deterministic CLI control-flow and explicit error propagation.
-- Param: extra Input parameter consumed by `cmd_dr`.
-- Return: Result emitted by `cmd_dr` according to command contract.
+### fn `def cmd_dc(extra)` (L2478-2485)
+- Brief: Execute `cmd_dc` runtime logic for Git-Alias CLI.
+- Details: Executes `cmd_dc` using deterministic CLI control-flow and explicit error propagation.
+- Param: extra Input parameter consumed by `cmd_dc`.
+- Return: Result emitted by `cmd_dc` according to command contract.
 
 ### fn `def cmd_dcc(extra)` (L2490-2493)
 - Brief: Execute `cmd_dcc` runtime logic for Git-Alias CLI.
@@ -958,19 +958,25 @@ otherwise `<type>(<module>): <description>`.
 - Param: extra Input parameter consumed by `cmd_dime`.
 - Return: Result emitted by `cmd_dime` according to command contract.
 
-### fn `def cmd_dwc(extra)` (L2538-2541)
+### fn `def cmd_dw(extra)` (L2538-2548)
+- Brief: Execute `cmd_dw` runtime logic for Git-Alias CLI.
+- Details: Executes `cmd_dw` using deterministic CLI control-flow and explicit error propagation.
+- Param: extra Input parameter consumed by `cmd_dw`.
+- Return: Result emitted by `cmd_dw` according to command contract.
+
+### fn `def cmd_dwc(extra)` (L2551-2554)
 - Brief: Execute `cmd_dwc` runtime logic for Git-Alias CLI.
 - Details: Executes `cmd_dwc` using deterministic CLI control-flow and explicit error propagation.
 - Param: extra Input parameter consumed by `cmd_dwc`.
 - Return: Result emitted by `cmd_dwc` according to command contract.
 
-### fn `def cmd_dwcc(extra)` (L2546-2549)
+### fn `def cmd_dwcc(extra)` (L2561-2564)
 - Brief: Execute `cmd_dwcc` runtime logic for Git-Alias CLI.
 - Details: Executes `cmd_dwcc` using deterministic CLI control-flow and explicit error propagation.
 - Param: extra Input parameter consumed by `cmd_dwcc`.
 - Return: Result emitted by `cmd_dwcc` according to command contract.
 
-### fn `def cmd_ed(extra)` (L2554-2563)
+### fn `def cmd_ed(extra)` (L2569-2578)
 - Brief: Execute `cmd_ed` runtime logic for Git-Alias CLI.
 - Details: Executes `cmd_ed` using deterministic CLI control-flow and explicit error propagation.
 - Param: extra Input parameter consumed by `cmd_ed`.
@@ -1076,7 +1082,7 @@ when the ref is unavailable or the lookup fails.
 - Brief: Build section-5 aligned branch summary lines for overview output.
 - Details: Produces one row for each configured branch/ref identifier using
 `<Identifier> | <latest commit subject>` formatting, aligned by visible
-identifier width and with commit subject in bright white bold; appends rows
+identifier width and with ANSI-stripped uncolored commit subject text; appends rows
 for additional branch refs after configured rows.
 - Param: work_ref Input parameter consumed by `_overview_branch_summary_lines`.
 - Param: develop_ref Input parameter consumed by `_overview_branch_summary_lines`.
@@ -1595,16 +1601,17 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 |`cmd_misc`|fn|pub|2454-2457|def cmd_misc(extra)|
 |`cmd_cover`|fn|pub|2462-2465|def cmd_cover(extra)|
 |`cmd_co`|fn|pub|2470-2473|def cmd_co(extra)|
-|`cmd_dr`|fn|pub|2478-2485|def cmd_dr(extra)|
+|`cmd_dc`|fn|pub|2478-2485|def cmd_dc(extra)|
 |`cmd_dcc`|fn|pub|2490-2493|def cmd_dcc(extra)|
 |`cmd_dccc`|fn|pub|2498-2501|def cmd_dccc(extra)|
 |`cmd_de`|fn|pub|2506-2509|def cmd_de(extra)|
 |`cmd_di`|fn|pub|2514-2517|def cmd_di(extra)|
 |`cmd_diyou`|fn|pub|2522-2525|def cmd_diyou(extra)|
 |`cmd_dime`|fn|pub|2530-2533|def cmd_dime(extra)|
-|`cmd_dwc`|fn|pub|2538-2541|def cmd_dwc(extra)|
-|`cmd_dwcc`|fn|pub|2546-2549|def cmd_dwcc(extra)|
-|`cmd_ed`|fn|pub|2554-2563|def cmd_ed(extra)|
+|`cmd_dw`|fn|pub|2538-2548|def cmd_dw(extra)|
+|`cmd_dwc`|fn|pub|2551-2554|def cmd_dwc(extra)|
+|`cmd_dwcc`|fn|pub|2561-2564|def cmd_dwcc(extra)|
+|`cmd_ed`|fn|pub|2569-2578|def cmd_ed(extra)|
 |`cmd_fe`|fn|pub|2568-2571|def cmd_fe(extra)|
 |`cmd_feall`|fn|pub|2576-2579|def cmd_feall(extra)|
 |`cmd_gp`|fn|pub|2584-2587|def cmd_gp(extra)|
@@ -1978,4 +1985,3 @@ pipeline to produce the tree visualization.
 |`_process`|fn|priv|1123-1141|def _process(|
 |`_lines_iter`|fn|priv|1181-1185|def _lines_iter()|
 |`run`|fn|pub|1332-1499|def run(extra_args: Optional[List[str]] = None) -> None|
-

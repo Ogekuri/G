@@ -62,6 +62,7 @@ VERSION_CLEANUP_REGEXES = [
 ## @brief Constant `VERSION_CLEANUP_PATTERNS` used by CLI runtime paths and policies.
 
 VERSION_CLEANUP_PATTERNS = [re.compile(pattern) for pattern in VERSION_CLEANUP_REGEXES]
+ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 ## @brief Constant `DEFAULT_CONFIG` used by CLI runtime paths and policies.
 ## @brief Constant `DEFAULT_GP_COMMAND` used by CLI runtime paths and policies.
@@ -540,13 +541,14 @@ HELP_TEXTS = {
     "ck": "Check differences.",
     "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
-    "dr": "Run a directory difftool between two refs. Syntax: git dr <ref_a> <ref_b>.",
+    "dc": "Run a directory difftool between two refs. Syntax: git dc <ref_a> <ref_b>.",
     "dcc": "Run a directory difftool between HEAD~1 and HEAD.",
     "dccc": "Run a directory difftool between HEAD~2 and HEAD.",
     "de": "Print last tagged commit details.",
     "di": "Discard current changes on file: git di '<filename>'",
     "dime": "Discard merge changes in favor of their files.",
     "diyou": "Discard merge changes in favor of your files.",
+    "dw": "Run a directory difftool between working tree and a specific ref. Syntax: git dw <ref>.",
     "dwc": "Run a directory difftool between working tree and HEAD.",
     "dwcc": "Run a directory difftool between working tree and HEAD~1.",
     "ed": "Edit a file. Syntax: git ed <filename>.",
@@ -2471,14 +2473,14 @@ def cmd_co(extra):
     return run_git_cmd(["checkout"], extra)
 
 
-## @brief Execute `cmd_dr` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_dr` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_dr`.
-# @return Result emitted by `cmd_dr` according to command contract.
-def cmd_dr(extra):
+## @brief Execute `cmd_dc` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_dc` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_dc`.
+# @return Result emitted by `cmd_dc` according to command contract.
+def cmd_dc(extra):
     args = _to_args(extra)
     if len(args) != 2:
-        print("git dr requires exactly two refs: git dr <ref_a> <ref_b>", file=sys.stderr)
+        print("git dc requires exactly two refs: git dc <ref_a> <ref_b>", file=sys.stderr)
         sys.exit(1)
     return run_git_cmd(["difftool", "-d", args[0], args[1]])
 
@@ -2537,6 +2539,18 @@ def cmd_dime(extra):
 # @return Result emitted by `cmd_dwc` according to command contract.
 def cmd_dwc(extra):
     return run_git_cmd(["difftool", "-d", "HEAD"], extra)
+
+
+## @brief Execute `cmd_dw` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_dw` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_dw`.
+# @return Result emitted by `cmd_dw` according to command contract.
+def cmd_dw(extra):
+    args = _to_args(extra)
+    if len(args) != 1:
+        print("git dw requires exactly one ref: git dw <ref>", file=sys.stderr)
+        sys.exit(1)
+    return run_git_cmd(["difftool", "-d", args[0]])
 
 
 ## @brief Execute `cmd_dwcc` runtime logic for Git-Alias CLI.
@@ -2725,6 +2739,7 @@ def _overview_ref_latest_subject(ref_name: str) -> str:
         subject = run_git_text(["log", "-1", "--pretty=%s", ref_name]).strip()
     except RuntimeError:
         return "n/a"
+    subject = ANSI_ESCAPE_RE.sub("", subject)
     return subject if subject else "n/a"
 
 
@@ -2808,7 +2823,7 @@ def _overview_branch_summary_lines(
         lines.append(
             f"{display}"
             f"{OVERVIEW_COLOR_WHITE}{padding} | {OVERVIEW_COLOR_RESET}"
-            f"{OVERVIEW_COLOR_WHITE_BOLD}{subject}{OVERVIEW_COLOR_RESET}"
+            f"{subject}"
         )
     return lines
 
@@ -3763,7 +3778,7 @@ COMMANDS = {
     "ck": cmd_ck,
     "cm": cmd_cm,
     "co": cmd_co,
-    "dr": cmd_dr,
+    "dc": cmd_dc,
     "dcc": cmd_dcc,
     "dccc": cmd_dccc,
     "de": cmd_de,
@@ -3771,6 +3786,7 @@ COMMANDS = {
     "dime": cmd_dime,
     "diyou": cmd_diyou,
     "docs": cmd_docs,
+    "dw": cmd_dw,
     "dwc": cmd_dwc,
     "dwcc": cmd_dwcc,
     "ed": cmd_ed,
