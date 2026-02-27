@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/Ogekuri/G/compare/v0.7.0..v0.7.1) - 2026-02-27
+### 🐛  Bug Fixes
+- Remove colors from commits.
+
+### 📚  Documentation
+- Update TODO.md file.
+
 ## [0.7.0](https://github.com/Ogekuri/G/compare/v0.6.0..v0.7.0) - 2026-02-25
 ### ⛰️  Features
 - Add Acknowledgments section in README.md. *(core)*
@@ -360,6 +367,7 @@
 - \[0.5.0\]: https://github.com/Ogekuri/G/releases/tag/v0.5.0
 - \[0.6.0\]: https://github.com/Ogekuri/G/releases/tag/v0.6.0
 - \[0.7.0\]: https://github.com/Ogekuri/G/releases/tag/v0.7.0
+- \[0.7.1\]: https://github.com/Ogekuri/G/releases/tag/v0.7.1
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -368,3 +376,4 @@
 [0.5.0]: https://github.com/Ogekuri/G/compare/v0.4.0..v0.5.0
 [0.6.0]: https://github.com/Ogekuri/G/compare/v0.5.0..v0.6.0
 [0.7.0]: https://github.com/Ogekuri/G/compare/v0.6.0..v0.7.0
+[0.7.1]: https://github.com/Ogekuri/G/compare/v0.7.0..v0.7.1
