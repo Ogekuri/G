@@ -134,6 +134,7 @@ Upgrade or remove the Git-Alias CLI:
 
 - `g --upgrade` / `git-alias --upgrade`: Upgrades the tool to the latest version from the GitHub repository.
 - `g --remove` / `git-alias --remove`: Uninstalls the tool.
+- `g --write-config` / `git-alias --write-config`: Inserts missing defaults into repository `.g.conf` and global `$HOME/.g/g.conf`.
 - `g --ver` / `g --version` / `git-alias --ver` / `git-alias --version`: Prints the CLI version.
 - `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
 
@@ -147,6 +148,7 @@ Internal logic-only refactoring that does not change command behavior does not r
 
 Some CLI examples:
 
+- `g`: Prints `Please provide a command or --help` and `Usage: g <command> [options]`.
 - `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
 - `g lg --help`: Shows the help text for the `lg` alias.
 - `g cm "Message"`: Runs `git commit` with the provided message.
@@ -157,7 +159,7 @@ Some CLI examples:
 - `g wtr -f ../repo-worktree`: Runs `git worktree remove -f ../repo-worktree`.
 - `g ls -z`: Lists tracked files using `git ls-files --exclude-standard`.
 - `g lsi -z`: Lists ignored files using `git ls-files -i --exclude-standard`.
-- `g o`: Prints an overview with branch-distance sections plus a `BRANCHES` table showing configured branches first and then all other local/remote branches with latest commit subjects.
+- `g o`: Prints a verbose overview with status, branch distances, active worktrees, and a qualitative ASCII topology tree.
 - `g ver --verbose`: Verifies version consistency with detailed output.
 - `g chver 1.2.3`: Updates the project version to 1.2.3 using `ver_rules`.
 - `g changelog --print-only`: Prints the generated changelog without writing `CHANGELOG.md`.
