@@ -551,6 +551,7 @@ HELP_TEXTS = {
     "dw": "Run a directory difftool between working tree and a specific ref. Syntax: git dw <ref>.",
     "dwc": "Run a directory difftool between working tree and HEAD.",
     "dwcc": "Run a directory difftool between working tree and HEAD~1.",
+    "dwd": "Run a directory difftool between configured work and develop branches.",
     "ed": "Edit a file. Syntax: git ed <filename>.",
     "fe": "Fetch new data of current branch from origin.",
     "feall": "Fetch new data from origin for all branch.",
@@ -2568,6 +2569,17 @@ def cmd_dwcc(extra):
     return run_git_cmd(["difftool", "-d", "HEAD~1"], extra)
 
 
+## @brief Execute `cmd_dwd` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_dwd` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_dwd`.
+# @return Result emitted by `cmd_dwd` according to command contract.
+# @satisfies REQ-119
+def cmd_dwd(extra):
+    work_branch = get_branch("work")
+    develop_branch = get_branch("develop")
+    return run_git_cmd(["difftool", "-d", work_branch, develop_branch], extra)
+
+
 ## @brief Execute `cmd_ed` runtime logic for Git-Alias CLI.
 # @details Executes `cmd_ed` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_ed`.
@@ -3796,6 +3808,7 @@ COMMANDS = {
     "dw": cmd_dw,
     "dwc": cmd_dwc,
     "dwcc": cmd_dwcc,
+    "dwd": cmd_dwd,
     "ed": cmd_ed,
     "fix": cmd_fix,
     "fe": cmd_fe,

@@ -14,12 +14,14 @@ class CmdDiffAliasesTest(unittest.TestCase):
         self.assertIn("dccc", core.COMMANDS)
         self.assertIn("dc", core.COMMANDS)
         self.assertIn("dw", core.COMMANDS)
+        self.assertIn("dwd", core.COMMANDS)
         self.assertIn("dwc", core.HELP_TEXTS)
         self.assertIn("dwcc", core.HELP_TEXTS)
         self.assertIn("dcc", core.HELP_TEXTS)
         self.assertIn("dccc", core.HELP_TEXTS)
         self.assertIn("dc", core.HELP_TEXTS)
         self.assertIn("dw", core.HELP_TEXTS)
+        self.assertIn("dwd", core.HELP_TEXTS)
         self.assertNotIn("dr", core.COMMANDS)
         self.assertNotIn("dr", core.HELP_TEXTS)
 
@@ -72,6 +74,19 @@ class CmdDiffAliasesTest(unittest.TestCase):
         with mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             core.cmd_dw(["v1.0.0"])
             run_git.assert_called_once_with(["difftool", "-d", "v1.0.0"])
+
+    def test_cmd_dwd_runs_difftool_between_configured_work_and_develop(self):
+        with (
+            mock.patch.object(
+                core, "get_branch", side_effect=["feature/work", "integration/develop"]
+            ) as get_branch,
+            mock.patch.object(core, "run_git_cmd", return_value=None) as run_git,
+        ):
+            core.cmd_dwd([])
+            get_branch.assert_has_calls([mock.call("work"), mock.call("develop")])
+            run_git.assert_called_once_with(
+                ["difftool", "-d", "feature/work", "integration/develop"], []
+            )
 
     def test_command_handlers_match_cmd_plus_command_name(self):
         for command, handler in core.COMMANDS.items():
