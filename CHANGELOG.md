@@ -1,8 +1,16 @@
 # Changelog
 
-## [0.7.1](https://github.com/Ogekuri/G/compare/v0.7.0..v0.7.1) - 2026-02-27
+## [0.8.0](https://github.com/Ogekuri/G/compare/v0.7.0..v0.8.0) - 2026-02-28
 ### 🐛  Bug Fixes
 - Remove colors from commits.
+
+### 🚜  Changes
+- switch version inventory to git ls-files [useReq] *(ver)*
+  - update REQ-017 and add REQ-118 for ver_rules pattern constraints
+  - build shared version inventory from git ls-files output
+  - fail ver/chver on unmatched ver_rules patterns with explicit guidance
+  - refresh ver/chver tests for ls-files-driven discovery
+  - update workflow and regenerate references docs
 
 ### 📚  Documentation
 - Update TODO.md file.
@@ -367,7 +375,7 @@
 - \[0.5.0\]: https://github.com/Ogekuri/G/releases/tag/v0.5.0
 - \[0.6.0\]: https://github.com/Ogekuri/G/releases/tag/v0.6.0
 - \[0.7.0\]: https://github.com/Ogekuri/G/releases/tag/v0.7.0
-- \[0.7.1\]: https://github.com/Ogekuri/G/releases/tag/v0.7.1
+- \[0.8.0\]: https://github.com/Ogekuri/G/releases/tag/v0.8.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -376,4 +384,4 @@
 [0.5.0]: https://github.com/Ogekuri/G/compare/v0.4.0..v0.5.0
 [0.6.0]: https://github.com/Ogekuri/G/compare/v0.5.0..v0.6.0
 [0.7.0]: https://github.com/Ogekuri/G/compare/v0.6.0..v0.7.0
-[0.7.1]: https://github.com/Ogekuri/G/compare/v0.7.0..v0.7.1
+[0.8.0]: https://github.com/Ogekuri/G/compare/v0.7.0..v0.8.0
