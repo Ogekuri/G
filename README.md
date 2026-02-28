@@ -55,6 +55,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
   | major | work -> develop -> master | Minor versions only |
 
 - Provides `backup` command to run release preflight checks, merge `work` into `develop`, push `develop`, and return to `work`.
+- Provides visual diff aliases for repository comparisons, including `dwd` for configured `work` vs configured `develop`.
 - Provides worktree aliases: `wt` (`git worktree list`), `wtl` (`git worktree list ...`), `wtp` (`git worktree prune ...`), and `wtr` (`git worktree remove ...`) with full argument passthrough.
 - Provides file listing aliases: `ls` lists tracked files and `lsi` lists ignored files, both with argument passthrough.
 - Provides an overview alias: `o` prints a structured repository summary with working-tree status, branch divergence/alignment sections, and a branch table that lists configured branches first and then all other local/remote branches with latest commit subjects.
@@ -151,6 +152,7 @@ Some CLI examples:
 - `g cm "Message"`: Runs `git commit` with the provided message.
 - `g new api: add endpoint`: Creates `new(api): add endpoint`; omit `api:` to use `.g.conf.default_commit_module`.
 - `g backup`: Merges configured `work` into `develop`, pushes `develop`, and checks out back to `work`.
+- `g dwd`: Runs `git difftool -d <work> <develop>` using configured branch names.
 - `g wt`: Runs `git worktree list`.
 - `g wtr -f ../repo-worktree`: Runs `git worktree remove -f ../repo-worktree`.
 - `g ls -z`: Lists tracked files using `git ls-files --exclude-standard`.
