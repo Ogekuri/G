@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.0](https://github.com/Ogekuri/G/compare/v0.8.0..v0.9.0) - 2026-02-28
+### ⛰️  Features
+- add dwd diff alias and traceability [useReq] *(core)*
+  - append REQ-119 for dwd visual diff behavior
+  - implement cmd_dwd with configured work/develop refs
+  - add tests for dwd dispatch and command execution
+  - update WORKFLOW and regenerate REFERENCES
+
+### 📚  Documentation
+- Update README.md document.
+- document dwd diff alias usage in README [useReq] *(core)*
+  - add feature highlight for dwd visual diff alias\n- add CLI example for g dwd with configured branches
+
 ## [0.8.0](https://github.com/Ogekuri/G/compare/v0.7.0..v0.8.0) - 2026-02-28
 ### 🐛  Bug Fixes
 - Remove colors from commits.
@@ -376,6 +389,7 @@
 - \[0.6.0\]: https://github.com/Ogekuri/G/releases/tag/v0.6.0
 - \[0.7.0\]: https://github.com/Ogekuri/G/releases/tag/v0.7.0
 - \[0.8.0\]: https://github.com/Ogekuri/G/releases/tag/v0.8.0
+- \[0.9.0\]: https://github.com/Ogekuri/G/releases/tag/v0.9.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -385,3 +399,4 @@
 [0.6.0]: https://github.com/Ogekuri/G/compare/v0.5.0..v0.6.0
 [0.7.0]: https://github.com/Ogekuri/G/compare/v0.6.0..v0.7.0
 [0.8.0]: https://github.com/Ogekuri/G/compare/v0.7.0..v0.8.0
+[0.9.0]: https://github.com/Ogekuri/G/compare/v0.8.0..v0.9.0
