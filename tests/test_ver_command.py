@@ -17,6 +17,26 @@ class VerCommandTest(unittest.TestCase):
     def _set_rules(rules):
         core.CONFIG["ver_rules"] = rules
 
+    @staticmethod
+    def _mock_ls_files(root: Path, tracked_files=None):
+        files = tracked_files
+        if files is None:
+            files = sorted(
+                path.relative_to(root).as_posix()
+                for path in root.rglob("*")
+                if path.is_file()
+            )
+        payload = "\n".join(files)
+
+        def _fake_run_git_text(args, cwd=None, check=True):
+            if args != ["ls-files"]:
+                raise AssertionError(f"Unexpected git args: {args}")
+            if cwd != root:
+                raise AssertionError(f"Unexpected cwd: {cwd}")
+            return payload
+
+        return mock.patch.object(core, "run_git_text", side_effect=_fake_run_git_text)
+
     def test_cmd_ver_prints_shared_version(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -29,10 +49,11 @@ class VerCommandTest(unittest.TestCase):
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
-                buffer = io.StringIO()
-                with contextlib.redirect_stdout(buffer):
-                    core.cmd_ver([])
-                self.assertEqual(buffer.getvalue().strip(), "1.2.3")
+                with self._mock_ls_files(root):
+                    buffer = io.StringIO()
+                    with contextlib.redirect_stdout(buffer):
+                        core.cmd_ver([])
+                    self.assertEqual(buffer.getvalue().strip(), "1.2.3")
 
     def test_cmd_ver_anchors_src_glob_at_root(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -51,12 +72,13 @@ class VerCommandTest(unittest.TestCase):
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
-                buffer = io.StringIO()
-                with contextlib.redirect_stdout(buffer):
-                    core.cmd_ver([])
-                self.assertEqual(buffer.getvalue().strip(), "1.2.3")
+                with self._mock_ls_files(root):
+                    buffer = io.StringIO()
+                    with contextlib.redirect_stdout(buffer):
+                        core.cmd_ver([])
+                    self.assertEqual(buffer.getvalue().strip(), "1.2.3")
 
-    def test_cmd_ver_uses_rglob_for_nested_paths(self):
+    def test_cmd_ver_uses_git_ls_files_for_nested_paths(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "src" / "debriddo").mkdir(parents=True)
@@ -69,12 +91,13 @@ class VerCommandTest(unittest.TestCase):
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
-                buffer = io.StringIO()
-                with contextlib.redirect_stdout(buffer):
-                    core.cmd_ver([])
-                self.assertEqual(buffer.getvalue().strip(), "1.2.3")
+                with self._mock_ls_files(root):
+                    buffer = io.StringIO()
+                    with contextlib.redirect_stdout(buffer):
+                        core.cmd_ver([])
+                    self.assertEqual(buffer.getvalue().strip(), "1.2.3")
 
-    def test_cmd_ver_uses_rglob_without_git_ls_files(self):
+    def test_cmd_ver_uses_git_ls_files_inventory(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "src" / "debriddo").mkdir(parents=True)
@@ -86,11 +109,12 @@ class VerCommandTest(unittest.TestCase):
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
-                with mock.patch.object(core.subprocess, "run", side_effect=AssertionError("git ls-files should not be used")):
+                with self._mock_ls_files(root) as ls_files:
                     buffer = io.StringIO()
                     with contextlib.redirect_stdout(buffer):
                         core.cmd_ver([])
                     self.assertEqual(buffer.getvalue().strip(), "1.2.3")
+                self.assertEqual(ls_files.call_count, 1)
 
     def test_cmd_ver_detects_conflict(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -103,15 +127,16 @@ class VerCommandTest(unittest.TestCase):
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
-                err = io.StringIO()
-                with contextlib.redirect_stderr(err):
-                    with self.assertRaises(SystemExit) as ctx:
-                        core.cmd_ver([])
-                self.assertNotEqual(ctx.exception.code, 0)
-                message = err.getvalue()
-                self.assertIn("Version mismatch", message)
-                self.assertIn("module.py", message)
-                self.assertIn("second.py", message)
+                with self._mock_ls_files(root):
+                    err = io.StringIO()
+                    with contextlib.redirect_stderr(err):
+                        with self.assertRaises(SystemExit) as ctx:
+                            core.cmd_ver([])
+                    self.assertNotEqual(ctx.exception.code, 0)
+                    message = err.getvalue()
+                    self.assertIn("Version mismatch", message)
+                    self.assertIn("module.py", message)
+                    self.assertIn("second.py", message)
 
     def test_cmd_ver_errors_on_rule_without_matches(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -124,15 +149,39 @@ class VerCommandTest(unittest.TestCase):
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
-                err = io.StringIO()
-                with contextlib.redirect_stderr(err):
-                    with self.assertRaises(SystemExit) as ctx:
-                        core.cmd_ver([])
-                self.assertNotEqual(ctx.exception.code, 0)
-                message = err.getvalue()
-                self.assertIn("No version matches found", message)
-                self.assertIn("module.py", message)
-                self.assertIn(regex, message)
+                with self._mock_ls_files(root):
+                    err = io.StringIO()
+                    with contextlib.redirect_stderr(err):
+                        with self.assertRaises(SystemExit) as ctx:
+                            core.cmd_ver([])
+                    self.assertNotEqual(ctx.exception.code, 0)
+                    message = err.getvalue()
+                    self.assertIn("No version matches found", message)
+                    self.assertIn("module.py", message)
+                    self.assertIn(regex, message)
+
+    def test_cmd_ver_errors_when_pattern_matches_no_repository_files(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "module.py").write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+            self._set_rules(
+                [
+                    {"pattern": "missing.py", "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'},
+                ]
+            )
+            with mock.patch.object(core, "get_git_root", return_value=root):
+                with self._mock_ls_files(root, tracked_files=["module.py"]):
+                    err = io.StringIO()
+                    with contextlib.redirect_stderr(err):
+                        with self.assertRaises(SystemExit) as ctx:
+                            core.cmd_ver([])
+                    self.assertNotEqual(ctx.exception.code, 0)
+                    message = err.getvalue()
+                    self.assertIn("No files matched the version rule pattern 'missing.py'.", message)
+                    self.assertIn(
+                        "Only repository files reported by git ls-files can be configured in ver_rules.pattern.",
+                        message,
+                    )
 
     def test_cmd_ver_ignores_cached_and_temp_paths(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -156,10 +205,11 @@ class VerCommandTest(unittest.TestCase):
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
-                buffer = io.StringIO()
-                with contextlib.redirect_stdout(buffer):
-                    core.cmd_ver([])
-                self.assertEqual(buffer.getvalue().strip(), "1.2.3")
+                with self._mock_ls_files(root):
+                    buffer = io.StringIO()
+                    with contextlib.redirect_stdout(buffer):
+                        core.cmd_ver([])
+                    self.assertEqual(buffer.getvalue().strip(), "1.2.3")
 
     def test_cmd_ver_verbose_reports_regex_matches(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -172,13 +222,14 @@ class VerCommandTest(unittest.TestCase):
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
-                buffer = io.StringIO()
-                with contextlib.redirect_stdout(buffer):
-                    core.cmd_ver(["--verbose"])
-                output = buffer.getvalue()
-                self.assertIn("Regex match for module.py: yes.", output)
-                self.assertIn("Regex match for notes.py: no.", output)
-                self.assertEqual(output.strip().splitlines()[-1], "1.2.3")
+                with self._mock_ls_files(root):
+                    buffer = io.StringIO()
+                    with contextlib.redirect_stdout(buffer):
+                        core.cmd_ver(["--verbose"])
+                    output = buffer.getvalue()
+                    self.assertIn("Regex match for module.py: yes.", output)
+                    self.assertIn("Regex match for notes.py: no.", output)
+                    self.assertEqual(output.strip().splitlines()[-1], "1.2.3")
 
     def test_cmd_ver_debug_reports_globbing_matches(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -190,13 +241,14 @@ class VerCommandTest(unittest.TestCase):
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
-                buffer = io.StringIO()
-                with contextlib.redirect_stdout(buffer):
-                    core.cmd_ver(["--debug"])
-                output = buffer.getvalue()
-                self.assertIn("Pattern '*.py' matched files:", output)
-                self.assertIn("  module.py", output)
-                self.assertIn("Regex match for module.py: yes.", output)
+                with self._mock_ls_files(root):
+                    buffer = io.StringIO()
+                    with contextlib.redirect_stdout(buffer):
+                        core.cmd_ver(["--debug"])
+                    output = buffer.getvalue()
+                    self.assertIn("Pattern '*.py' matched files:", output)
+                    self.assertIn("  module.py", output)
+                    self.assertIn("Regex match for module.py: yes.", output)
 
     def test_cmd_chver_updates_versions_and_reports_success(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -212,12 +264,37 @@ class VerCommandTest(unittest.TestCase):
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
-                buffer = io.StringIO()
-                with contextlib.redirect_stdout(buffer):
-                    core.cmd_chver(["1.2.4"])
-                self.assertIn("Upgrade completed: version is now 1.2.4.", buffer.getvalue())
+                with self._mock_ls_files(root):
+                    buffer = io.StringIO()
+                    with contextlib.redirect_stdout(buffer):
+                        core.cmd_chver(["1.2.4"])
+                    self.assertIn("Upgrade completed: version is now 1.2.4.", buffer.getvalue())
             self.assertIn('1.2.4', module_path.read_text(encoding="utf-8"))
             self.assertIn('1.2.4', readme_path.read_text(encoding="utf-8"))
+
+    def test_cmd_chver_errors_when_pattern_matches_no_repository_files(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "module.py").write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+            self._set_rules(
+                [
+                    {"pattern": "missing.py", "regex": r'__version__\s*=\s*"(\d+\.\d+\.\d+)"'},
+                ]
+            )
+            with mock.patch.object(core, "get_git_root", return_value=root):
+                with self._mock_ls_files(root, tracked_files=["module.py"]):
+                    err = io.StringIO()
+                    with contextlib.redirect_stderr(err):
+                        with self.assertRaises(SystemExit) as ctx:
+                            core.cmd_chver(["1.2.4"])
+                    self.assertNotEqual(ctx.exception.code, 0)
+                    message = err.getvalue()
+                    self.assertIn("Unable to determine the current version:", message)
+                    self.assertIn("No files matched the version rule pattern 'missing.py'.", message)
+                    self.assertIn(
+                        "Only repository files reported by git ls-files can be configured in ver_rules.pattern.",
+                        message,
+                    )
 
     def test_cmd_chver_builds_version_inventory_once(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -229,10 +306,11 @@ class VerCommandTest(unittest.TestCase):
                 ]
             )
             with mock.patch.object(core, "get_git_root", return_value=root):
-                with mock.patch.object(
-                    core,
-                    "_build_version_file_inventory",
-                    wraps=core._build_version_file_inventory,
-                ) as build_inventory:
-                    core.cmd_chver(["1.2.4"])
-                self.assertEqual(build_inventory.call_count, 1)
+                with self._mock_ls_files(root):
+                    with mock.patch.object(
+                        core,
+                        "_build_version_file_inventory",
+                        wraps=core._build_version_file_inventory,
+                    ) as build_inventory:
+                        core.cmd_chver(["1.2.4"])
+                    self.assertEqual(build_inventory.call_count, 1)

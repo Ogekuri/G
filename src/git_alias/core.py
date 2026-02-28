@@ -1553,24 +1553,30 @@ def _normalize_version_rule_pattern(pattern: str) -> str:
 
 
 ## @brief Build a deduplicated repository file inventory for version rule evaluation.
-# @details Executes a single `rglob("*")` traversal from repository root, filters to files only,
+# @details Executes a single `git ls-files` query from repository root, filters to existing files only,
 #          applies hardcoded exclusion regexes, normalizes relative paths, and deduplicates by resolved path.
 # @param root Repository root path used as traversal anchor.
 # @return List of tuples `(absolute_path, normalized_relative_path)` used by downstream matchers.
 def _build_version_file_inventory(root: Path) -> List[Tuple[Path, str]]:
     inventory: List[Tuple[Path, str]] = []
     seen = set()
-    for path in root.rglob("*"):
-        if not path.is_file():
-            continue
-        relative = path.relative_to(root).as_posix()
-        if _is_version_path_excluded(relative):
-            continue
+    try:
+        tracked_files = run_git_text(["ls-files"], cwd=root)
+    except RuntimeError as exc:
+        raise VersionDetectionError(
+            f"Unable to list repository files with git ls-files: {exc}"
+        ) from None
+    for relative in tracked_files.splitlines():
         normalized_relative = (relative or "").replace("\\", "/").strip()
         if not normalized_relative:
             continue
         if normalized_relative.startswith("./"):
             normalized_relative = normalized_relative[2:]
+        if _is_version_path_excluded(normalized_relative):
+            continue
+        path = root / Path(normalized_relative)
+        if not path.is_file():
+            continue
         resolved = path.resolve()
         if resolved in seen:
             continue
@@ -1672,7 +1678,8 @@ def _prepare_version_rule_contexts(
                 relative_map[file_path] = str(file_path)
         if not files:
             raise VersionDetectionError(
-                f"No files matched the version rule pattern '{pattern}'."
+                f"No files matched the version rule pattern '{pattern}'. Only repository files "
+                "reported by git ls-files can be configured in ver_rules.pattern."
             )
         try:
             compiled = re.compile(expression)

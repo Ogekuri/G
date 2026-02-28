@@ -160,7 +160,7 @@
           - `_determine_canonical_version(...)`
             - `_prepare_version_rule_contexts(...)` -> `_collect_version_files(...)`
               - `_collect_version_files(...)` -> `_normalize_version_rule_pattern(...)`, `_build_version_file_inventory(...)`
-                - `_is_version_path_excluded(...)`
+                - `_build_version_file_inventory(...)` -> `run_git_text(...)`, `_is_version_path_excluded(...)`
             - `_read_version_file_text(...)`
             - `_iter_versions_in_text(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
@@ -283,7 +283,7 @@
           - `_to_args(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
           - `get_version_rules(...)` -> `_load_config_rules(...)`
-          - `_build_version_file_inventory(...)` -> `_is_version_path_excluded(...)`
+          - `_build_version_file_inventory(...)` -> `run_git_text(...)`, `_is_version_path_excluded(...)`
           - `_prepare_version_rule_contexts(...)` -> `_collect_version_files(...)`, `re.compile(...)`
           - `_determine_canonical_version(...)` -> `_read_version_file_text(...)`, `_iter_versions_in_text(...)`
         - `cmd_chver(...)`: version rewrite flow [`src/git_alias/core.py:2576`]
@@ -291,7 +291,7 @@
           - `_parse_semver_tuple(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
           - `get_version_rules(...)` -> `_load_config_rules(...)`
-          - `_build_version_file_inventory(...)` -> `_is_version_path_excluded(...)`
+          - `_build_version_file_inventory(...)` -> `run_git_text(...)`, `_is_version_path_excluded(...)`
           - `_prepare_version_rule_contexts(...)` -> `_collect_version_files(...)`, `re.compile(...)`
           - `_determine_canonical_version(...)` -> `_read_version_file_text(...)`, `_iter_versions_in_text(...)`
           - `_read_version_file_text(...)`
