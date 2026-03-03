@@ -390,6 +390,7 @@
 - \[0.7.0\]: https://github.com/Ogekuri/G/releases/tag/v0.7.0
 - \[0.8.0\]: https://github.com/Ogekuri/G/releases/tag/v0.8.0
 - \[0.9.0\]: https://github.com/Ogekuri/G/releases/tag/v0.9.0
+- \[0.10.0\]: https://github.com/Ogekuri/G/releases/tag/v0.10.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -400,3 +401,4 @@
 [0.7.0]: https://github.com/Ogekuri/G/compare/v0.6.0..v0.7.0
 [0.8.0]: https://github.com/Ogekuri/G/compare/v0.7.0..v0.8.0
 [0.9.0]: https://github.com/Ogekuri/G/compare/v0.8.0..v0.9.0
+[0.10.0]: https://github.com/Ogekuri/G/compare/v0.9.0..v0.10.0
