@@ -171,7 +171,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-113**: MUST build release distributions in GitHub Actions with Python 3.11 using `python -m build`, and MUST attest provenance for `dist/*` artifacts.
 - **REQ-114**: MUST publish a non-draft, non-prerelease GitHub Release for the triggering tag and upload `dist/**/*` assets using changelog content produced by the configured changelog-builder step.
 - **REQ-115**: MUST section `=== 5. BRANCHES ===` append, after configured rows, aligned `<Identifier> | <latest commit subject>` rows for every discovered local or remote branch not already rendered.
-- **REQ-119**: MUST visual diff aliases include `dwd` mapped to `git difftool -d <work> <develop>` using configured branch names from `.g.conf`, and `dwd` MUST expose explicit help text in global and per-command help outputs.
+- **REQ-119**: MUST visual diff aliases include `dcd` mapped to `git difftool -d <develop> <work>`, `dcm` mapped to `git difftool -d <master> <work>`, and `ddm` mapped to `git difftool -d <master> <develop>`, using configured branch names from `.g.conf`; `dcd`, `dcm`, and `ddm` MUST each expose explicit help text in global and per-command help outputs.
 
 ### 3.3 Project File Structure
 ```

@@ -551,7 +551,9 @@ HELP_TEXTS = {
     "dw": "Run a directory difftool between working tree and a specific ref. Syntax: git dw <ref>.",
     "dwc": "Run a directory difftool between working tree and HEAD.",
     "dwcc": "Run a directory difftool between working tree and HEAD~1.",
-    "dwd": "Run a directory difftool between configured work and develop branches.",
+    "dcd": "Run a directory difftool between configured develop and work branches.",
+    "dcm": "Run a directory difftool between configured master and work branches.",
+    "ddm": "Run a directory difftool between configured master and develop branches.",
     "ed": "Edit a file. Syntax: git ed <filename>.",
     "fe": "Fetch new data of current branch from origin.",
     "feall": "Fetch new data from origin for all branch.",
@@ -2567,15 +2569,37 @@ def cmd_dwcc(extra):
     return run_git_cmd(["difftool", "-d", "HEAD~1"], extra)
 
 
-## @brief Execute `cmd_dwd` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_dwd` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_dwd`.
-# @return Result emitted by `cmd_dwd` according to command contract.
+## @brief Execute `cmd_dcd` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_dcd` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_dcd`.
+# @return Result emitted by `cmd_dcd` according to command contract.
 # @satisfies REQ-119
-def cmd_dwd(extra):
-    work_branch = get_branch("work")
+def cmd_dcd(extra):
     develop_branch = get_branch("develop")
-    return run_git_cmd(["difftool", "-d", work_branch, develop_branch], extra)
+    work_branch = get_branch("work")
+    return run_git_cmd(["difftool", "-d", develop_branch, work_branch], extra)
+
+
+## @brief Execute `cmd_dcm` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_dcm` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_dcm`.
+# @return Result emitted by `cmd_dcm` according to command contract.
+# @satisfies REQ-119
+def cmd_dcm(extra):
+    master_branch = get_branch("master")
+    work_branch = get_branch("work")
+    return run_git_cmd(["difftool", "-d", master_branch, work_branch], extra)
+
+
+## @brief Execute `cmd_ddm` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_ddm` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_ddm`.
+# @return Result emitted by `cmd_ddm` according to command contract.
+# @satisfies REQ-119
+def cmd_ddm(extra):
+    master_branch = get_branch("master")
+    develop_branch = get_branch("develop")
+    return run_git_cmd(["difftool", "-d", master_branch, develop_branch], extra)
 
 
 ## @brief Execute `cmd_ed` runtime logic for Git-Alias CLI.
@@ -3798,6 +3822,9 @@ COMMANDS = {
     "dc": cmd_dc,
     "dcc": cmd_dcc,
     "dccc": cmd_dccc,
+    "dcd": cmd_dcd,
+    "dcm": cmd_dcm,
+    "ddm": cmd_ddm,
     "de": cmd_de,
     "di": cmd_di,
     "dime": cmd_dime,
@@ -3806,7 +3833,6 @@ COMMANDS = {
     "dw": cmd_dw,
     "dwc": cmd_dwc,
     "dwcc": cmd_dwcc,
-    "dwd": cmd_dwd,
     "ed": cmd_ed,
     "fix": cmd_fix,
     "fe": cmd_fe,

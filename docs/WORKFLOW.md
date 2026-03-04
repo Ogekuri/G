@@ -218,7 +218,9 @@
         - `cmd_dw(...)`: wrapper + arg guard -> `_to_args(...)`, `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_dwc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_dwcc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
-        - `cmd_dwd(...)`: wrapper -> `get_branch(...)` (`work`, `develop`), `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_dcd(...)`: wrapper -> `get_branch(...)` (`develop`, `work`), `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_dcm(...)`: wrapper -> `get_branch(...)` (`master`, `work`), `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_ddm(...)`: wrapper -> `get_branch(...)` (`master`, `develop`), `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_ed(...)`: external editor flow [`src/git_alias/core.py`]
           - `_to_args(...)`
           - `run_editor_command(...)`

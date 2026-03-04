@@ -920,98 +920,112 @@ otherwise `<type>(<module>): <description>`.
 - @param extra Input parameter consumed by `cmd_co`.
 - @return Result emitted by `cmd_co` according to command contract.
 
-### fn `def cmd_dc(extra)` (L2486-2493)
+### fn `def cmd_dc(extra)` (L2488-2495)
 - @brief Execute `cmd_dc` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dc` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dc`.
 - @return Result emitted by `cmd_dc` according to command contract.
 
-### fn `def cmd_dcc(extra)` (L2498-2501)
+### fn `def cmd_dcc(extra)` (L2500-2503)
 - @brief Execute `cmd_dcc` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dcc` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dcc`.
 - @return Result emitted by `cmd_dcc` according to command contract.
 
-### fn `def cmd_dccc(extra)` (L2506-2509)
+### fn `def cmd_dccc(extra)` (L2508-2511)
 - @brief Execute `cmd_dccc` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dccc` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dccc`.
 - @return Result emitted by `cmd_dccc` according to command contract.
 
-### fn `def cmd_de(extra)` (L2514-2517)
+### fn `def cmd_de(extra)` (L2516-2519)
 - @brief Execute `cmd_de` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_de` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_de`.
 - @return Result emitted by `cmd_de` according to command contract.
 
-### fn `def cmd_di(extra)` (L2522-2525)
+### fn `def cmd_di(extra)` (L2524-2527)
 - @brief Execute `cmd_di` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_di` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_di`.
 - @return Result emitted by `cmd_di` according to command contract.
 
-### fn `def cmd_diyou(extra)` (L2530-2533)
+### fn `def cmd_diyou(extra)` (L2532-2535)
 - @brief Execute `cmd_diyou` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_diyou` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_diyou`.
 - @return Result emitted by `cmd_diyou` according to command contract.
 
-### fn `def cmd_dime(extra)` (L2538-2541)
+### fn `def cmd_dime(extra)` (L2540-2543)
 - @brief Execute `cmd_dime` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dime` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dime`.
 - @return Result emitted by `cmd_dime` according to command contract.
 
-### fn `def cmd_dwc(extra)` (L2546-2549)
+### fn `def cmd_dwc(extra)` (L2548-2551)
 - @brief Execute `cmd_dwc` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dwc` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dwc`.
 - @return Result emitted by `cmd_dwc` according to command contract.
 
-### fn `def cmd_dw(extra)` (L2554-2561)
+### fn `def cmd_dw(extra)` (L2556-2563)
 - @brief Execute `cmd_dw` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dw` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dw`.
 - @return Result emitted by `cmd_dw` according to command contract.
 
-### fn `def cmd_dwcc(extra)` (L2566-2569)
+### fn `def cmd_dwcc(extra)` (L2568-2571)
 - @brief Execute `cmd_dwcc` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dwcc` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dwcc`.
 - @return Result emitted by `cmd_dwcc` according to command contract.
 
-### fn `def cmd_dwd(extra)` (L2575-2580)
-- @brief Execute `cmd_dwd` runtime logic for Git-Alias CLI.
-- @details Executes `cmd_dwd` using deterministic CLI control-flow and explicit error propagation.
-- @param extra Input parameter consumed by `cmd_dwd`.
-- @return Result emitted by `cmd_dwd` according to command contract.
+### fn `def cmd_dcd(extra)` (L2577-2582)
+- @brief Execute `cmd_dcd` runtime logic for Git-Alias CLI.
+- @details Executes `cmd_dcd` using deterministic CLI control-flow and explicit error propagation.
+- @param extra Input parameter consumed by `cmd_dcd`.
+- @return Result emitted by `cmd_dcd` according to command contract.
 - @satisfies REQ-119
 
-### fn `def cmd_ed(extra)` (L2585-2594)
+### fn `def cmd_dcm(extra)` (L2588-2593)
+- @brief Execute `cmd_dcm` runtime logic for Git-Alias CLI.
+- @details Executes `cmd_dcm` using deterministic CLI control-flow and explicit error propagation.
+- @param extra Input parameter consumed by `cmd_dcm`.
+- @return Result emitted by `cmd_dcm` according to command contract.
+- @satisfies REQ-119
+
+### fn `def cmd_ddm(extra)` (L2599-2604)
+- @brief Execute `cmd_ddm` runtime logic for Git-Alias CLI.
+- @details Executes `cmd_ddm` using deterministic CLI control-flow and explicit error propagation.
+- @param extra Input parameter consumed by `cmd_ddm`.
+- @return Result emitted by `cmd_ddm` according to command contract.
+- @satisfies REQ-119
+
+### fn `def cmd_ed(extra)` (L2609-2618)
 - @brief Execute `cmd_ed` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_ed` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_ed`.
 - @return Result emitted by `cmd_ed` according to command contract.
 
-### fn `def cmd_fe(extra)` (L2599-2602)
+### fn `def cmd_fe(extra)` (L2623-2626)
 - @brief Execute `cmd_fe` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_fe` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_fe`.
 - @return Result emitted by `cmd_fe` according to command contract.
 
-### fn `def cmd_feall(extra)` (L2607-2610)
+### fn `def cmd_feall(extra)` (L2631-2634)
 - @brief Execute `cmd_feall` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_feall` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_feall`.
 - @return Result emitted by `cmd_feall` according to command contract.
 
-### fn `def cmd_gp(extra)` (L2615-2618)
+### fn `def cmd_gp(extra)` (L2639-2642)
 - @brief Execute `cmd_gp` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_gp` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_gp`.
 - @return Result emitted by `cmd_gp` according to command contract.
 
-### fn `def cmd_gr(extra)` (L2623-2626)
+### fn `def cmd_gr(extra)` (L2647-2650)
 - @brief Execute `cmd_gr` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_gr` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_gr`.
@@ -1612,23 +1626,25 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 |`cmd_revert`|fn|pub|2454-2457|def cmd_revert(extra)|
 |`cmd_misc`|fn|pub|2462-2465|def cmd_misc(extra)|
 |`cmd_cover`|fn|pub|2470-2473|def cmd_cover(extra)|
-|`cmd_co`|fn|pub|2478-2481|def cmd_co(extra)|
-|`cmd_dc`|fn|pub|2486-2493|def cmd_dc(extra)|
-|`cmd_dcc`|fn|pub|2498-2501|def cmd_dcc(extra)|
-|`cmd_dccc`|fn|pub|2506-2509|def cmd_dccc(extra)|
-|`cmd_de`|fn|pub|2514-2517|def cmd_de(extra)|
-|`cmd_di`|fn|pub|2522-2525|def cmd_di(extra)|
-|`cmd_diyou`|fn|pub|2530-2533|def cmd_diyou(extra)|
-|`cmd_dime`|fn|pub|2538-2541|def cmd_dime(extra)|
-|`cmd_dwc`|fn|pub|2546-2549|def cmd_dwc(extra)|
-|`cmd_dw`|fn|pub|2554-2561|def cmd_dw(extra)|
-|`cmd_dwcc`|fn|pub|2566-2569|def cmd_dwcc(extra)|
-|`cmd_dwd`|fn|pub|2575-2580|def cmd_dwd(extra)|
-|`cmd_ed`|fn|pub|2585-2594|def cmd_ed(extra)|
-|`cmd_fe`|fn|pub|2599-2602|def cmd_fe(extra)|
-|`cmd_feall`|fn|pub|2607-2610|def cmd_feall(extra)|
-|`cmd_gp`|fn|pub|2615-2618|def cmd_gp(extra)|
-|`cmd_gr`|fn|pub|2623-2626|def cmd_gr(extra)|
+|`cmd_co`|fn|pub|2480-2483|def cmd_co(extra)|
+|`cmd_dc`|fn|pub|2488-2495|def cmd_dc(extra)|
+|`cmd_dcc`|fn|pub|2500-2503|def cmd_dcc(extra)|
+|`cmd_dccc`|fn|pub|2508-2511|def cmd_dccc(extra)|
+|`cmd_de`|fn|pub|2516-2519|def cmd_de(extra)|
+|`cmd_di`|fn|pub|2524-2527|def cmd_di(extra)|
+|`cmd_diyou`|fn|pub|2532-2535|def cmd_diyou(extra)|
+|`cmd_dime`|fn|pub|2540-2543|def cmd_dime(extra)|
+|`cmd_dwc`|fn|pub|2548-2551|def cmd_dwc(extra)|
+|`cmd_dw`|fn|pub|2556-2563|def cmd_dw(extra)|
+|`cmd_dwcc`|fn|pub|2568-2571|def cmd_dwcc(extra)|
+|`cmd_dcd`|fn|pub|2577-2582|def cmd_dcd(extra)|
+|`cmd_dcm`|fn|pub|2588-2593|def cmd_dcm(extra)|
+|`cmd_ddm`|fn|pub|2599-2604|def cmd_ddm(extra)|
+|`cmd_ed`|fn|pub|2609-2618|def cmd_ed(extra)|
+|`cmd_fe`|fn|pub|2623-2626|def cmd_fe(extra)|
+|`cmd_feall`|fn|pub|2631-2634|def cmd_feall(extra)|
+|`cmd_gp`|fn|pub|2639-2642|def cmd_gp(extra)|
+|`cmd_gr`|fn|pub|2647-2650|def cmd_gr(extra)|
 |`OVERVIEW_COLOR_RESET`|var|pub|2628||
 |`OVERVIEW_COLOR_SECTION_PURPLE`|var|pub|2630||
 |`OVERVIEW_COLOR_AHEAD`|var|pub|2632||
@@ -2015,4 +2031,3 @@ rendering stages, and writes normalized lines to the configured output stream.
 |`_process`|fn|priv|1143-1161|def _process(|
 |`_lines_iter`|fn|priv|1178-1182|def _lines_iter()|
 |`run`|fn|pub|1329-1496|def run(extra_args: Optional[List[str]] = None) -> None|
-
