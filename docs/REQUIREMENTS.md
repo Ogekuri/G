@@ -135,7 +135,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-077**: MUST the alias `wtr` MUST execute `git worktree remove` and MUST forward `-f`, required `<worktree>`, and additional git-compatible arguments unchanged.
 - **REQ-078**: MUST changelog markdown MUST render one top-level bullet per commit; multiline description lines MUST become consecutive indented sub-bullets; renderer MUST NOT insert blank separator lines between consecutive top-level commit bullets.
 - **REQ-079**: MUST the `ls` alias MUST run `git ls-files --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
-- **REQ-080**: MUST the `lsi` alias MUST run `git ls-files --others --ignored --exclude-standard`, MUST filter output by excluding paths where any path component matches any entry in `LSI_DEFAULT_EXCLUDED_DIRS`, and MUST pass any additional arguments to the git command unchanged.
+- **REQ-080**: MUST the `lsi` alias MUST run `git ls-files --others --ignored --exclude-standard`, MUST filter output by excluding paths where any path component matches any entry in `LSI_DEFAULT_EXCLUDED_DIRS` or ends with any suffix in `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES`, and MUST pass any additional arguments to the git command unchanged.
 - **REQ-081**: MUST the `lsa` alias MUST run `git ls-files --others --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
 - **REQ-082**: MUST the CLI MUST expose an `o` alias in `COMMANDS` and `HELP_TEXTS`, and `--help` outputs MUST include `o` in global and per-command help paths.
 - **REQ-083**: MUST the `o` alias MUST terminate with non-zero exit when executed outside a Git repository and MUST print an explicit English error message to stderr.
@@ -173,7 +173,8 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-115**: MUST section `=== 5. BRANCHES ===` append, after configured rows, aligned `<Identifier> | <latest commit subject>` rows for every discovered local or remote branch not already rendered.
 - **REQ-119**: MUST visual diff aliases include `dcd` mapped to `git difftool -d <develop> <work>`, `dcm` mapped to `git difftool -d <master> <work>`, and `ddm` mapped to `git difftool -d <master> <develop>`, using configured branch names from `.g.conf`; `dcd`, `dcm`, and `ddm` MUST each expose explicit help text in global and per-command help outputs.
 - **REQ-120**: MUST define `LSI_DEFAULT_EXCLUDED_DIRS` as a `frozenset` containing: `.cache`, `.claude`, `.codex`, `.eslintcache`, `.gemini`, `.git`, `.github`, `.kiro`, `.mypy_cache`, `.npm`, `.opencode`, `.parcel-cache`, `.pytest_cache`, `.ruff_cache`, `.sass-cache`, `.terragrunt-cache`, `.tox`, `.venv`, `.vscode`, `__pycache__`, `build`, `dist`, `htmlcov`, `node_modules`, `temp`, `tmp`, `venv`.
-- **REQ-121**: MUST the `lsi` alias MUST accept `--include-all` flag; when present, MUST bypass `LSI_DEFAULT_EXCLUDED_DIRS` filtering and print all ignored files unfiltered.
+- **REQ-121**: MUST the `lsi` alias MUST accept `--include-all` flag; when present, MUST bypass `LSI_DEFAULT_EXCLUDED_DIRS` and `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` filtering and print all ignored files unfiltered.
+- **REQ-122**: MUST define `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` as a `tuple` containing: `.egg-info`.
 
 ### 3.3 Project File Structure
 ```

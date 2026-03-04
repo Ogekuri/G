@@ -714,8 +714,8 @@ RESET_HELP = """
 RESET_HELP_COMMANDS = {"rs", "rshrd", "rskep", "rsmix", "rsmrg", "rssft"}
 
 ## @brief Default directory/file names excluded from `lsi` output.
-# @details Immutable set of first-path-component names that `cmd_lsi` filters out
-# by default. Filtering is bypassed when `--include-all` is passed.
+# @details Immutable set of path-component names that `cmd_lsi` filters out
+# by default via exact-match. Filtering is bypassed when `--include-all` is passed.
 # @satisfies REQ-120
 LSI_DEFAULT_EXCLUDED_DIRS = frozenset(
     {
@@ -748,6 +748,13 @@ LSI_DEFAULT_EXCLUDED_DIRS = frozenset(
         "venv",
     }
 )
+
+## @brief Default directory-name suffixes excluded from `lsi` output.
+# @details Tuple of suffix strings that `cmd_lsi` uses for suffix-match filtering
+# on each path component. A path component ending with any suffix in this tuple
+# is excluded. Filtering is bypassed when `--include-all` is passed.
+# @satisfies REQ-122
+LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES = (".egg-info",)
 
 
 ## @brief Execute `_to_args` runtime logic for Git-Alias CLI.
@@ -3590,10 +3597,13 @@ def cmd_ls(extra):
 ## @brief Execute `cmd_lsi` runtime logic for Git-Alias CLI.
 # @details Runs `git ls-files --others --ignored --exclude-standard` and filters
 # output by excluding paths where any path component matches any entry in
-# `LSI_DEFAULT_EXCLUDED_DIRS`. When `--include-all` is present in @p extra,
-# filtering is bypassed and all output is printed. Additional arguments
-# are forwarded to the underlying git command unchanged. Path component
-# matching uses `frozenset.intersection` for O(min(n,m)) lookup per line.
+# `LSI_DEFAULT_EXCLUDED_DIRS` (exact match) or ends with any suffix in
+# `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` (suffix match). When `--include-all`
+# is present in @p extra, both filtering mechanisms are bypassed and all
+# output is printed. Additional arguments are forwarded to the underlying
+# git command unchanged. Exact-match uses `frozenset.intersection` for
+# O(min(n,m)) lookup per line; suffix-match iterates path components
+# against the suffix tuple via `str.endswith`.
 # @param extra List[str] CLI arguments passed after the alias name.
 # @return None. Filtered output is printed to stdout.
 # @satisfies REQ-080, REQ-121
@@ -3610,8 +3620,11 @@ def cmd_lsi(extra):
         return None
     for line in output.splitlines():
         parts = line.split("/")
-        if not LSI_DEFAULT_EXCLUDED_DIRS.intersection(parts):
-            print(line)
+        if LSI_DEFAULT_EXCLUDED_DIRS.intersection(parts):
+            continue
+        if any(p.endswith(s) for p in parts for s in LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES):
+            continue
+        print(line)
     return None
 
 

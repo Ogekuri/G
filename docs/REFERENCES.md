@@ -32,7 +32,7 @@ import sys
 
 ---
 
-# core.py | Python | 4248L | 233 symbols | 18 imports | 1028 comments
+# core.py | Python | 4261L | 234 symbols | 18 imports | 1036 comments
 > Path: `src/git_alias/core.py`
 
 ## Imports
@@ -218,51 +218,57 @@ the provided default command template.
 - @brief Constant `RESET_HELP_COMMANDS` used by CLI runtime paths and policies.
 - var `LSI_DEFAULT_EXCLUDED_DIRS = frozenset(` (L720)
 - @brief Default directory/file names excluded from `lsi` output.
-- @details Immutable set of first-path-component names that `cmd_lsi` filters out
-by default. Filtering is bypassed when `--include-all` is passed.
+- @details Immutable set of path-component names that `cmd_lsi` filters out
+by default via exact-match. Filtering is bypassed when `--include-all` is passed.
 - @satisfies REQ-120
-### fn `def _to_args(extra)` `priv` (L757-760)
+- var `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES = (".egg-info",)` (L757)
+- @brief Default directory-name suffixes excluded from `lsi` output.
+- @details Tuple of suffix strings that `cmd_lsi` uses for suffix-match filtering
+on each path component. A path component ending with any suffix in this tuple
+is excluded. Filtering is bypassed when `--include-all` is passed.
+- @satisfies REQ-122
+### fn `def _to_args(extra)` `priv` (L764-767)
 - @brief Execute `_to_args` runtime logic for Git-Alias CLI.
 - @details Executes `_to_args` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `_to_args`.
 - @return Result emitted by `_to_args` according to command contract.
 
-### class `class CommandExecutionError(RuntimeError)` : RuntimeError (L763-804)
+### class `class CommandExecutionError(RuntimeError)` : RuntimeError (L770-811)
 - @brief Class `CommandExecutionError` models a typed runtime container/error boundary.
 - @brief Execute `__init__` runtime logic for Git-Alias CLI.
 - @details Captures subprocess execution metadata and exposes normalized human-readable failure text.
 - @param self Input parameter consumed by `__init__`.
 - @param exc Input parameter consumed by `__init__`.
-- fn `def __init__(self, exc: subprocess.CalledProcessError)` `priv` (L768-775)
+- fn `def __init__(self, exc: subprocess.CalledProcessError)` `priv` (L775-782)
   - @brief Execute `__init__` runtime logic for Git-Alias CLI.
   - @param self Input parameter consumed by `__init__`.
   - @param exc Input parameter consumed by `__init__`.
   - @return Result emitted by `__init__` according to command contract.
-- fn `def _format_message(self) -> str` `priv` (L779-789)
+- fn `def _format_message(self) -> str` `priv` (L786-796)
   - @brief Execute `_format_message` runtime logic for Git-Alias CLI.
   - @param self Input parameter consumed by `_format_message`.
   - @return Result emitted by `_format_message` according to command contract.
-- fn `def _decode_stream(data) -> str` `priv` (L794-804)
+- fn `def _decode_stream(data) -> str` `priv` (L801-811)
   - @brief Execute `_decode_stream` runtime logic for Git-Alias CLI.
   - @param data Input parameter consumed by `_decode_stream`.
   - @return Result emitted by `_decode_stream` according to command contract.
 
-### fn `def _run_checked(*popenargs, **kwargs)` `priv` (L810-817)
+### fn `def _run_checked(*popenargs, **kwargs)` `priv` (L817-824)
 - @brief Execute `_run_checked` runtime logic for Git-Alias CLI.
 - @details Executes `_run_checked` using deterministic CLI control-flow and explicit error propagation.
 - @param *popenargs Input parameter consumed by `_run_checked`.
 - @param **kwargs Input parameter consumed by `_run_checked`.
 - @return Result emitted by `_run_checked` according to command contract.
 
-### class `class VersionDetectionError(RuntimeError)` : RuntimeError (L820-823)
+### class `class VersionDetectionError(RuntimeError)` : RuntimeError (L827-830)
 - @brief Class `VersionDetectionError` models a typed runtime container/error boundary.
 - @details Represents deterministic failures encountered while resolving semantic versions from repository files.
 
-### class `class ReleaseError(RuntimeError)` : RuntimeError (L826-829)
+### class `class ReleaseError(RuntimeError)` : RuntimeError (L833-836)
 - @brief Class `ReleaseError` models a typed runtime container/error boundary.
 - @details Represents release-flow precondition or orchestration failures.
 
-### fn `def run_git_cmd(base_args, extra=None, cwd=None, **kwargs)` (L837-841)
+### fn `def run_git_cmd(base_args, extra=None, cwd=None, **kwargs)` (L844-848)
 - @brief Execute `run_git_cmd` runtime logic for Git-Alias CLI.
 - @details Executes `run_git_cmd` using deterministic CLI control-flow and explicit error propagation.
 - @param base_args Input parameter consumed by `run_git_cmd`.
@@ -271,21 +277,21 @@ by default. Filtering is bypassed when `--include-all` is passed.
 - @param **kwargs Input parameter consumed by `run_git_cmd`.
 - @return Result emitted by `run_git_cmd` according to command contract.
 
-### fn `def capture_git_output(base_args, cwd=None)` (L847-853)
+### fn `def capture_git_output(base_args, cwd=None)` (L854-860)
 - @brief Execute `capture_git_output` runtime logic for Git-Alias CLI.
 - @details Executes `capture_git_output` using deterministic CLI control-flow and explicit error propagation.
 - @param base_args Input parameter consumed by `capture_git_output`.
 - @param cwd Input parameter consumed by `capture_git_output`.
 - @return Result emitted by `capture_git_output` according to command contract.
 
-### fn `def run_command(cmd, cwd=None)` (L859-862)
+### fn `def run_command(cmd, cwd=None)` (L866-869)
 - @brief Execute `run_command` runtime logic for Git-Alias CLI.
 - @details Executes `run_command` using deterministic CLI control-flow and explicit error propagation.
 - @param cmd Input parameter consumed by `run_command`.
 - @param cwd Input parameter consumed by `run_command`.
 - @return Result emitted by `run_command` according to command contract.
 
-### fn `def run_git_text(args, cwd=None, check=True)` (L869-886)
+### fn `def run_git_text(args, cwd=None, check=True)` (L876-893)
 - @brief Execute `run_git_text` runtime logic for Git-Alias CLI.
 - @details Executes `run_git_text` using deterministic CLI control-flow and explicit error propagation.
 - @param args Input parameter consumed by `run_git_text`.
@@ -293,115 +299,115 @@ by default. Filtering is bypassed when `--include-all` is passed.
 - @param check Input parameter consumed by `run_git_text`.
 - @return Result emitted by `run_git_text` according to command contract.
 
-### fn `def run_shell(command, cwd=None)` (L892-895)
+### fn `def run_shell(command, cwd=None)` (L899-902)
 - @brief Execute `run_shell` runtime logic for Git-Alias CLI.
 - @details Executes `run_shell` using deterministic CLI control-flow and explicit error propagation.
 - @param command Input parameter consumed by `run_shell`.
 - @param cwd Input parameter consumed by `run_shell`.
 - @return Result emitted by `run_shell` according to command contract.
 
-### fn `def _git_status_lines()` `priv` (L899-911)
+### fn `def _git_status_lines()` `priv` (L906-918)
 - @brief Execute `_git_status_lines` runtime logic for Git-Alias CLI.
 - @details Executes `_git_status_lines` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `_git_status_lines` according to command contract.
 
-### fn `def has_unstaged_changes(status_lines=None)` (L916-927)
+### fn `def has_unstaged_changes(status_lines=None)` (L923-934)
 - @brief Execute `has_unstaged_changes` runtime logic for Git-Alias CLI.
 - @details Executes `has_unstaged_changes` using deterministic CLI control-flow and explicit error propagation.
 - @param status_lines Input parameter consumed by `has_unstaged_changes`.
 - @return Result emitted by `has_unstaged_changes` according to command contract.
 
-### fn `def has_staged_changes(status_lines=None)` (L932-941)
+### fn `def has_staged_changes(status_lines=None)` (L939-948)
 - @brief Execute `has_staged_changes` runtime logic for Git-Alias CLI.
 - @details Executes `has_staged_changes` using deterministic CLI control-flow and explicit error propagation.
 - @param status_lines Input parameter consumed by `has_staged_changes`.
 - @return Result emitted by `has_staged_changes` according to command contract.
 
-- var `WIP_MESSAGE_RE = re.compile(r"^wip: work in progress\.$")` (L947)
+- var `WIP_MESSAGE_RE = re.compile(r"^wip: work in progress\.$")` (L954)
 - @brief Constant `WIP_MESSAGE_RE` used by CLI runtime paths and policies.
-### fn `def _refresh_remote_refs()` `priv` (L953-964)
+### fn `def _refresh_remote_refs()` `priv` (L960-971)
 - @brief Execute `_refresh_remote_refs` runtime logic for Git-Alias CLI.
 - @details Executes `_refresh_remote_refs` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `_refresh_remote_refs` according to command contract.
 
-### fn `def _branch_remote_divergence(branch_key, remote="origin")` `priv` (L970-990)
+### fn `def _branch_remote_divergence(branch_key, remote="origin")` `priv` (L977-997)
 - @brief Execute `_branch_remote_divergence` runtime logic for Git-Alias CLI.
 - @details Executes `_branch_remote_divergence` using deterministic CLI control-flow and explicit error propagation.
 - @param branch_key Input parameter consumed by `_branch_remote_divergence`.
 - @param remote Input parameter consumed by `_branch_remote_divergence`.
 - @return Result emitted by `_branch_remote_divergence` according to command contract.
 
-### fn `def has_remote_branch_updates(branch_key, remote="origin")` (L996-1000)
+### fn `def has_remote_branch_updates(branch_key, remote="origin")` (L1003-1007)
 - @brief Execute `has_remote_branch_updates` runtime logic for Git-Alias CLI.
 - @details Executes `has_remote_branch_updates` using deterministic CLI control-flow and explicit error propagation.
 - @param branch_key Input parameter consumed by `has_remote_branch_updates`.
 - @param remote Input parameter consumed by `has_remote_branch_updates`.
 - @return Result emitted by `has_remote_branch_updates` according to command contract.
 
-### fn `def has_remote_develop_updates()` (L1004-1007)
+### fn `def has_remote_develop_updates()` (L1011-1014)
 - @brief Execute `has_remote_develop_updates` runtime logic for Git-Alias CLI.
 - @details Executes `has_remote_develop_updates` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `has_remote_develop_updates` according to command contract.
 
-### fn `def has_remote_master_updates()` (L1011-1014)
+### fn `def has_remote_master_updates()` (L1018-1021)
 - @brief Execute `has_remote_master_updates` runtime logic for Git-Alias CLI.
 - @details Executes `has_remote_master_updates` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `has_remote_master_updates` according to command contract.
 
-### fn `def _head_commit_message()` `priv` (L1018-1024)
+### fn `def _head_commit_message()` `priv` (L1025-1031)
 - @brief Execute `_head_commit_message` runtime logic for Git-Alias CLI.
 - @details Executes `_head_commit_message` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `_head_commit_message` according to command contract.
 
-### fn `def _head_commit_hash()` `priv` (L1028-1034)
+### fn `def _head_commit_hash()` `priv` (L1035-1041)
 - @brief Execute `_head_commit_hash` runtime logic for Git-Alias CLI.
 - @details Executes `_head_commit_hash` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `_head_commit_hash` according to command contract.
 
-### fn `def _commit_exists_in_branch(commit_hash, branch_name)` `priv` (L1040-1052)
+### fn `def _commit_exists_in_branch(commit_hash, branch_name)` `priv` (L1047-1059)
 - @brief Execute `_commit_exists_in_branch` runtime logic for Git-Alias CLI.
 - @details Executes `_commit_exists_in_branch` using deterministic CLI control-flow and explicit error propagation.
 - @param commit_hash Input parameter consumed by `_commit_exists_in_branch`.
 - @param branch_name Input parameter consumed by `_commit_exists_in_branch`.
 - @return Result emitted by `_commit_exists_in_branch` according to command contract.
 
-### fn `def _should_amend_existing_commit()` `priv` (L1056-1071)
+### fn `def _should_amend_existing_commit()` `priv` (L1063-1078)
 - @brief Execute `_should_amend_existing_commit` runtime logic for Git-Alias CLI.
 - @details Executes `_should_amend_existing_commit` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `_should_amend_existing_commit` according to command contract.
 
-### fn `def is_inside_git_repo()` (L1075-1082)
+### fn `def is_inside_git_repo()` (L1082-1089)
 - @brief Execute `is_inside_git_repo` runtime logic for Git-Alias CLI.
 - @details Executes `is_inside_git_repo` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `is_inside_git_repo` according to command contract.
 
-### class `class TagInfo` (L1087-1095)
+### class `class TagInfo` (L1094-1102)
 - @brief Class `TagInfo` models a typed runtime container/error boundary.
 - @brief Store raw tag name including `v` prefix when present.
 - @brief Store ISO date string used for changelog section headers.
 - @details Encapsulates tag identity, tag date, and resolved Git object identifier for changelog assembly.
 
-- var `DELIM = "\x1f"` (L1098)
+- var `DELIM = "\x1f"` (L1105)
 - @brief Constant `DELIM` used by CLI runtime paths and policies.
-- var `RECORD = "\x1e"` (L1101)
+- var `RECORD = "\x1e"` (L1108)
 - @brief Constant `RECORD` used by CLI runtime paths and policies.
-- var `SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")` (L1117)
+- var `SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")` (L1124)
 - @brief Constant `SEMVER_RE` used by CLI runtime paths and policies.
-- var `SECTION_EMOJI = {` (L1120)
+- var `SECTION_EMOJI = {` (L1127)
 - @brief Constant `SECTION_EMOJI` used by CLI runtime paths and policies.
-### fn `def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[int, int, int]]` `priv` (L1138-1141)
+### fn `def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[int, int, int]]` `priv` (L1145-1148)
 - @brief Execute `_tag_semver_tuple` runtime logic for Git-Alias CLI.
 - @details Executes `_tag_semver_tuple` using deterministic CLI control-flow and explicit error propagation.
 - @param tag_name Input parameter consumed by `_tag_semver_tuple`.
 - @return Result emitted by `_tag_semver_tuple` according to command contract.
 
-### fn `def _latest_supported_tag_name(tags: List[TagInfo]) -> Optional[str]` `priv` (L1146-1149)
+### fn `def _latest_supported_tag_name(tags: List[TagInfo]) -> Optional[str]` `priv` (L1153-1156)
 - @brief Execute `_latest_supported_tag_name` runtime logic for Git-Alias CLI.
 - @details Executes `_latest_supported_tag_name` using deterministic CLI control-flow and explicit error propagation.
 - @param tags Input parameter consumed by `_latest_supported_tag_name`.
 - @return Result emitted by `_latest_supported_tag_name` according to command contract.
 
-### fn `def _is_minor_release_tag(tag_name: str) -> bool` `priv` (L1157-1164)
+### fn `def _is_minor_release_tag(tag_name: str) -> bool` `priv` (L1164-1171)
 - @brief Predicate: tag is a minor release.
 - @details Returns `True` when `tag_name` is a semver tag where `patch==0` AND `(major>=1 OR minor>=1)`,
 i.e. version `>=0.1.0` with no patch component.
@@ -410,7 +416,7 @@ Patch releases (`patch>0`) and pre-0.1.0 tags (`0.0.x`) return `False`.
 - @return `True` iff tag represents a minor release; `False` otherwise.
 - @satisfies REQ-018, REQ-040
 
-### fn `def _latest_patch_tag_after(` `priv` (L1173-1174)
+### fn `def _latest_patch_tag_after(` `priv` (L1180-1181)
 - @brief Locate the chronologically latest patch tag after a given minor release.
 - @details Scans `all_tags` (sorted chronologically, ascending) for tags that are NOT minor releases
 and appear after `last_minor` in the list. When `last_minor` is `None`, scans all tags.
@@ -420,14 +426,14 @@ Returns the last qualifying `TagInfo` (most recent), or `None` if no patch exist
 - @return Most recent `TagInfo` that is not a minor release and appears after `last_minor`, or `None`.
 - @satisfies REQ-040
 
-### fn `def list_tags_sorted_by_date(` (L1192-1193)
+### fn `def list_tags_sorted_by_date(` (L1199-1200)
 - @brief Execute `list_tags_sorted_by_date` runtime logic for Git-Alias CLI.
 - @details Executes `list_tags_sorted_by_date` using deterministic CLI control-flow and explicit error propagation.
 - @param repo_root Input parameter consumed by `list_tags_sorted_by_date`.
 - @param merged_ref Input parameter consumed by `list_tags_sorted_by_date`.
 - @return Result emitted by `list_tags_sorted_by_date` according to command contract.
 
-### fn `def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]` (L1223-1234)
+### fn `def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]` (L1230-1241)
 - @brief Execute `git_log_subjects` runtime logic for Git-Alias CLI.
 - @details Executes `git_log_subjects` using deterministic CLI control-flow and explicit error propagation.
 Reads full commit messages (subject + body) to preserve multiline conventional descriptions.
@@ -435,14 +441,14 @@ Reads full commit messages (subject + body) to preserve multiline conventional d
 - @param rev_range Input parameter consumed by `git_log_subjects`.
 - @return Result emitted by `git_log_subjects` according to command contract.
 
-### fn `def parse_conventional_commit(` (L1240-1241)
+### fn `def parse_conventional_commit(` (L1247-1248)
 - @brief Execute `parse_conventional_commit` runtime logic for Git-Alias CLI.
 - @details Parses a conventional-commit header with optional scope and optional breaking marker (`!`),
 then returns extracted type/scope/breaking/description fields for changelog rendering.
 - @param message Raw commit message text (subject and optional body).
 - @return Tuple `(type, scope, breaking, description)` when message is parseable; otherwise `None`.
 
-### fn `def _format_changelog_description(desc: str) -> List[str]` `priv` (L1261-1274)
+### fn `def _format_changelog_description(desc: str) -> List[str]` `priv` (L1268-1281)
 - @brief Execute `_format_changelog_description` runtime logic for Git-Alias CLI.
 - @details Normalizes a commit description for markdown list rendering while preserving logical lines.
 Removes `Co-authored-by:` trailer lines, drops empty lines, and strips leading markdown-list
@@ -450,7 +456,7 @@ markers from continuation lines so multiline descriptions can be rendered as nes
 - @param desc Parsed commit description.
 - @return Ordered non-empty description lines ready for markdown rendering.
 
-### fn `def categorize_commit(subject: str) -> Tuple[Optional[str], str]` (L1282-1311)
+### fn `def categorize_commit(subject: str) -> Tuple[Optional[str], str]` (L1289-1318)
 - @brief Execute `categorize_commit` runtime logic for Git-Alias CLI.
 - @details Parses a conventional commit message and maps it to a changelog section and formatted entry line.
 Entry format: `- <description> *(<scope>)*` when scope is present; `- <description>` otherwise.
@@ -459,19 +465,19 @@ When the breaking marker is present, the first description line is prefixed with
 - @param subject Conventional commit message string.
 - @return Tuple `(section, line)`: `section` is the changelog section name or `None` if type is unmapped or ignored; `line` is the formatted entry string or `""` when section is `None`.
 
-### fn `def _extract_release_version(subject: str) -> Optional[str]` `priv` (L1316-1326)
+### fn `def _extract_release_version(subject: str) -> Optional[str]` `priv` (L1323-1333)
 - @brief Execute `_extract_release_version` runtime logic for Git-Alias CLI.
 - @details Executes `_extract_release_version` using deterministic CLI control-flow and explicit error propagation.
 - @param subject Input parameter consumed by `_extract_release_version`.
 - @return Result emitted by `_extract_release_version` according to command contract.
 
-### fn `def _is_release_marker_commit(subject: str) -> bool` `priv` (L1331-1334)
+### fn `def _is_release_marker_commit(subject: str) -> bool` `priv` (L1338-1341)
 - @brief Execute `_is_release_marker_commit` runtime logic for Git-Alias CLI.
 - @details Executes `_is_release_marker_commit` using deterministic CLI control-flow and explicit error propagation.
 - @param subject Input parameter consumed by `_is_release_marker_commit`.
 - @return Result emitted by `_is_release_marker_commit` according to command contract.
 
-### fn `def generate_section_for_range(` (L1343-1348)
+### fn `def generate_section_for_range(` (L1350-1355)
 - @brief Execute `generate_section_for_range` runtime logic for Git-Alias CLI.
 - @details Executes `generate_section_for_range` using deterministic CLI control-flow and explicit error propagation.
 - @param repo_root Input parameter consumed by `generate_section_for_range`.
@@ -481,7 +487,7 @@ When the breaking marker is present, the first description line is prefixed with
 - @param expected_version Input parameter consumed by `generate_section_for_range`.
 - @return Result emitted by `generate_section_for_range` according to command contract.
 
-### fn `def _get_remote_name_for_branch(branch_name: str, repo_root: Path) -> str` `priv` (L1396-1404)
+### fn `def _get_remote_name_for_branch(branch_name: str, repo_root: Path) -> str` `priv` (L1403-1411)
 - @brief Resolve the git remote name configured for a given branch.
 - @details Queries `git config branch.<branch_name>.remote` via a local git command.
 Returns `origin` as fallback when the config key is absent or the command fails.
@@ -491,7 +497,7 @@ No network operations are performed.
 - @return Remote name string; never empty (falls back to `"origin"`).
 - @satisfies REQ-046
 
-### fn `def _extract_owner_repo(remote_url: str) -> Optional[Tuple[str, str]]` `priv` (L1411-1435)
+### fn `def _extract_owner_repo(remote_url: str) -> Optional[Tuple[str, str]]` `priv` (L1418-1442)
 - @brief Resolve the normalized HTTPS base URL from the master branch's configured remote.
 - @details Parses both SSH (`git@<host>:<owner>/<repo>[.git]`) and HTTPS
 (`https://<host>/<owner>/<repo>[.git]`) formats and extracts `<owner>` and `<repo>`
@@ -499,7 +505,7 @@ through deterministic string parsing.
 - @param remote_url Raw git remote URL string.
 - @return Tuple `(owner, repo)` when parsing succeeds; otherwise `None`.
 
-### fn `def _canonical_origin_base(repo_root: Path) -> Optional[str]` `priv` (L1445-1460)
+### fn `def _canonical_origin_base(repo_root: Path) -> Optional[str]` `priv` (L1452-1467)
 - @brief Resolve normalized GitHub URL base from the master-branch configured remote.
 - @details Determines remote name using `_get_remote_name_for_branch` with the configured
 master branch, then executes local `git remote get-url <remote>` command.
@@ -510,7 +516,7 @@ No network operation is performed; all data is derived from local git metadata.
 - @return Normalized HTTPS base URL string (no trailing `.git`), or `None` on failure.
 - @satisfies REQ-043, REQ-046
 
-### fn `def get_origin_compare_url(` (L1467-1468)
+### fn `def get_origin_compare_url(` (L1474-1475)
 - @brief Execute `get_origin_compare_url` runtime logic for Git-Alias CLI.
 - @details Executes `get_origin_compare_url` using deterministic CLI control-flow and explicit error propagation.
 - @param base_url Input parameter consumed by `get_origin_compare_url`.
@@ -518,14 +524,14 @@ No network operation is performed; all data is derived from local git metadata.
 - @param tag Input parameter consumed by `get_origin_compare_url`.
 - @return Result emitted by `get_origin_compare_url` according to command contract.
 
-### fn `def get_release_page_url(base_url: Optional[str], tag: str) -> Optional[str]` (L1482-1487)
+### fn `def get_release_page_url(base_url: Optional[str], tag: str) -> Optional[str]` (L1489-1494)
 - @brief Execute `get_release_page_url` runtime logic for Git-Alias CLI.
 - @details Executes `get_release_page_url` using deterministic CLI control-flow and explicit error propagation.
 - @param base_url Input parameter consumed by `get_release_page_url`.
 - @param tag Input parameter consumed by `get_release_page_url`.
 - @return Result emitted by `get_release_page_url` according to command contract.
 
-### fn `def build_history_section(` (L1495-1499)
+### fn `def build_history_section(` (L1502-1506)
 - @brief Execute `build_history_section` runtime logic for Git-Alias CLI.
 - @details Executes `build_history_section` using deterministic CLI control-flow and explicit error propagation.
 - @param repo_root Input parameter consumed by `build_history_section`.
@@ -534,7 +540,7 @@ No network operation is performed; all data is derived from local git metadata.
 - @param include_unreleased_link Input parameter consumed by `build_history_section`.
 - @return Result emitted by `build_history_section` according to command contract.
 
-### fn `def generate_changelog_document(` (L1543-1544)
+### fn `def generate_changelog_document(` (L1550-1551)
 - @brief Generate the full CHANGELOG.md document from repository tags and commits.
 - @details Groups commits by minor release (semver where `patch=0` AND version `>=0.1.0`).
 By default only minor releases appear; the document body is empty when none exist.
@@ -551,23 +557,23 @@ corresponding changelog sections. History generation can be disabled by flag.
 - @return Complete `CHANGELOG.md` string content, terminated with a newline.
 - @satisfies REQ-018, REQ-040, REQ-041, REQ-043, REQ-068, REQ-069, REQ-070
 
-### class `class VersionRuleContext` `@dataclass(frozen=True)` (L1616-1623)
+### class `class VersionRuleContext` `@dataclass(frozen=True)` (L1623-1630)
 
-### fn `def _normalize_version_rule_pattern(pattern: str) -> str` `priv` (L1629-1640)
+### fn `def _normalize_version_rule_pattern(pattern: str) -> str` `priv` (L1636-1647)
 - @brief Normalize a `ver_rules` pattern to the internal pathspec matching form.
 - @details Converts separators to POSIX style, strips leading `./`, and anchors patterns containing `/`
 to repository root by prefixing `/` when missing, preserving REQ-017 semantics.
 - @param pattern Input pattern string from configuration.
 - @return Normalized pathspec-compatible pattern string; empty string when input is blank.
 
-### fn `def _build_version_file_inventory(root: Path) -> List[Tuple[Path, str]]` `priv` (L1646-1673)
+### fn `def _build_version_file_inventory(root: Path) -> List[Tuple[Path, str]]` `priv` (L1653-1680)
 - @brief Build a deduplicated repository file inventory for version rule evaluation.
 - @details Executes a single `git ls-files` query from repository root, filters to existing files only,
 applies hardcoded exclusion regexes, normalizes relative paths, and deduplicates by resolved path.
 - @param root Repository root path used as traversal anchor.
 - @return List of tuples `(absolute_path, normalized_relative_path)` used by downstream matchers.
 
-### fn `def _collect_version_files(root, pattern, *, inventory=None)` `priv` (L1681-1704)
+### fn `def _collect_version_files(root, pattern, *, inventory=None)` `priv` (L1688-1711)
 - @brief Execute `_collect_version_files` runtime logic for Git-Alias CLI.
 - @details Executes `_collect_version_files` using deterministic CLI control-flow and explicit error propagation.
 Uses precomputed inventory when provided to avoid repeated repository traversals.
@@ -576,20 +582,20 @@ Uses precomputed inventory when provided to avoid repeated repository traversals
 - @param inventory Optional precomputed `(path, normalized_relative_path)` list.
 - @return Result emitted by `_collect_version_files` according to command contract.
 
-### fn `def _is_version_path_excluded(relative_path: str) -> bool` `priv` (L1709-1712)
+### fn `def _is_version_path_excluded(relative_path: str) -> bool` `priv` (L1716-1719)
 - @brief Execute `_is_version_path_excluded` runtime logic for Git-Alias CLI.
 - @details Executes `_is_version_path_excluded` using deterministic CLI control-flow and explicit error propagation.
 - @param relative_path Input parameter consumed by `_is_version_path_excluded`.
 - @return Result emitted by `_is_version_path_excluded` according to command contract.
 
-### fn `def _iter_versions_in_text(text, compiled_regexes)` `priv` (L1718-1729)
+### fn `def _iter_versions_in_text(text, compiled_regexes)` `priv` (L1725-1736)
 - @brief Execute `_iter_versions_in_text` runtime logic for Git-Alias CLI.
 - @details Executes `_iter_versions_in_text` using deterministic CLI control-flow and explicit error propagation.
 - @param text Input parameter consumed by `_iter_versions_in_text`.
 - @param compiled_regexes Input parameter consumed by `_iter_versions_in_text`.
 - @return Result emitted by `_iter_versions_in_text` according to command contract.
 
-### fn `def _read_version_file_text(` `priv` (L1736-1737)
+### fn `def _read_version_file_text(` `priv` (L1743-1744)
 - @brief Read and cache UTF-8 text content for a version-managed file.
 - @details Loads file content with UTF-8 decoding; falls back to `errors="ignore"` on decode failures.
 Emits deterministic stderr diagnostics on I/O failure and returns `None` for caller-managed skip logic.
@@ -597,7 +603,7 @@ Emits deterministic stderr diagnostics on I/O failure and returns `None` for cal
 - @param text_cache Optional mutable cache keyed by `Path` to avoid duplicate reads across phases.
 - @return File text payload or `None` when file cannot be read.
 
-### fn `def _prepare_version_rule_contexts(` `priv` (L1761-1762)
+### fn `def _prepare_version_rule_contexts(` `priv` (L1768-1769)
 - @brief Build reusable per-rule contexts for canonical version evaluation workflows.
 - @details Resolves matched files and compiled regex for each `(pattern, regex)` rule exactly once.
 Preserves error contracts for unmatched patterns and invalid regex declarations.
@@ -607,7 +613,7 @@ Preserves error contracts for unmatched patterns and invalid regex declarations.
 - @return Ordered list of `VersionRuleContext` objects aligned to input rule order.
 - @throws VersionDetectionError when a rule matches no files or contains an invalid regex.
 
-### fn `def _determine_canonical_version(` `priv` (L1805-1812)
+### fn `def _determine_canonical_version(` `priv` (L1812-1819)
 - @brief Execute `_determine_canonical_version` runtime logic for Git-Alias CLI.
 - @details Executes `_determine_canonical_version` using deterministic CLI control-flow and explicit error propagation.
 - @param root Input parameter consumed by `_determine_canonical_version`.
@@ -618,13 +624,13 @@ Preserves error contracts for unmatched patterns and invalid regex declarations.
 - @param text_cache Optional mutable cache keyed by file path to avoid duplicate reads.
 - @return Result emitted by `_determine_canonical_version` according to command contract.
 
-### fn `def _parse_semver_tuple(text: str) -> Optional[Tuple[int, int, int]]` `priv` (L1865-1871)
+### fn `def _parse_semver_tuple(text: str) -> Optional[Tuple[int, int, int]]` `priv` (L1872-1878)
 - @brief Execute `_parse_semver_tuple` runtime logic for Git-Alias CLI.
 - @details Executes `_parse_semver_tuple` using deterministic CLI control-flow and explicit error propagation.
 - @param text Input parameter consumed by `_parse_semver_tuple`.
 - @return Result emitted by `_parse_semver_tuple` according to command contract.
 
-### fn `def _replace_versions_in_text(text, compiled_regex, replacement)` `priv` (L1878-1893)
+### fn `def _replace_versions_in_text(text, compiled_regex, replacement)` `priv` (L1885-1900)
 - @brief Execute `_replace_versions_in_text` runtime logic for Git-Alias CLI.
 - @details Executes `_replace_versions_in_text` using deterministic CLI control-flow and explicit error propagation.
 - @param text Input parameter consumed by `_replace_versions_in_text`.
@@ -632,42 +638,42 @@ Preserves error contracts for unmatched patterns and invalid regex declarations.
 - @param replacement Input parameter consumed by `_replace_versions_in_text`.
 - @return Result emitted by `_replace_versions_in_text` according to command contract.
 
-### fn `def _current_branch_name()` `priv` (L1897-1909)
+### fn `def _current_branch_name()` `priv` (L1904-1916)
 - @brief Execute `_current_branch_name` runtime logic for Git-Alias CLI.
 - @details Executes `_current_branch_name` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `_current_branch_name` according to command contract.
 
-### fn `def _ref_exists(ref_name)` `priv` (L1914-1923)
+### fn `def _ref_exists(ref_name)` `priv` (L1921-1930)
 - @brief Execute `_ref_exists` runtime logic for Git-Alias CLI.
 - @details Executes `_ref_exists` using deterministic CLI control-flow and explicit error propagation.
 - @param ref_name Input parameter consumed by `_ref_exists`.
 - @return Result emitted by `_ref_exists` according to command contract.
 
-### fn `def _local_branch_exists(branch_name)` `priv` (L1928-1931)
+### fn `def _local_branch_exists(branch_name)` `priv` (L1935-1938)
 - @brief Execute `_local_branch_exists` runtime logic for Git-Alias CLI.
 - @details Executes `_local_branch_exists` using deterministic CLI control-flow and explicit error propagation.
 - @param branch_name Input parameter consumed by `_local_branch_exists`.
 - @return Result emitted by `_local_branch_exists` according to command contract.
 
-### fn `def _remote_branch_exists(branch_name)` `priv` (L1936-1939)
+### fn `def _remote_branch_exists(branch_name)` `priv` (L1943-1946)
 - @brief Execute `_remote_branch_exists` runtime logic for Git-Alias CLI.
 - @details Executes `_remote_branch_exists` using deterministic CLI control-flow and explicit error propagation.
 - @param branch_name Input parameter consumed by `_remote_branch_exists`.
 - @return Result emitted by `_remote_branch_exists` according to command contract.
 
-### fn `def _ensure_release_prerequisites()` `priv` (L1943-1992)
+### fn `def _ensure_release_prerequisites()` `priv` (L1950-1999)
 - @brief Execute `_ensure_release_prerequisites` runtime logic for Git-Alias CLI.
 - @details Executes `_ensure_release_prerequisites` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `_ensure_release_prerequisites` according to command contract.
 
-### fn `def _bump_semver_version(current_version, level)` `priv` (L1998-2018)
+### fn `def _bump_semver_version(current_version, level)` `priv` (L2005-2025)
 - @brief Execute `_bump_semver_version` runtime logic for Git-Alias CLI.
 - @details Executes `_bump_semver_version` using deterministic CLI control-flow and explicit error propagation.
 - @param current_version Input parameter consumed by `_bump_semver_version`.
 - @param level Input parameter consumed by `_bump_semver_version`.
 - @return Result emitted by `_bump_semver_version` according to command contract.
 
-### fn `def _run_release_step(level, step_name, action)` `priv` (L2025-2051)
+### fn `def _run_release_step(level, step_name, action)` `priv` (L2032-2058)
 - @brief Execute `_run_release_step` runtime logic for Git-Alias CLI.
 - @details Executes `_run_release_step` using deterministic CLI control-flow and explicit error propagation.
 - @param level Input parameter consumed by `_run_release_step`.
@@ -675,20 +681,20 @@ Preserves error contracts for unmatched patterns and invalid regex declarations.
 - @param action Input parameter consumed by `_run_release_step`.
 - @return Result emitted by `_run_release_step` according to command contract.
 
-### fn `def _create_release_commit_for_flow(target_version)` `priv` (L2056-2061)
+### fn `def _create_release_commit_for_flow(target_version)` `priv` (L2063-2068)
 - @brief Execute `_create_release_commit_for_flow` runtime logic for Git-Alias CLI.
 - @details Executes release-flow first-commit creation with WIP amend semantics reused from `_execute_commit`.
 - @param target_version Input parameter consumed by `_create_release_commit_for_flow`.
 - @return Result emitted by `_create_release_commit_for_flow` according to command contract.
 
-### fn `def _push_branch_with_tags(branch_name)` `priv` (L2067-2071)
+### fn `def _push_branch_with_tags(branch_name)` `priv` (L2074-2078)
 - @brief Execute `_push_branch_with_tags` runtime logic for Git-Alias CLI.
 - @details Pushes the specified local branch to `origin` using an explicit branch refspec and
 includes `--tags` in the same push command.
 - @param branch_name Local branch name resolved from configured release branches.
 - @return Result emitted by `run_git_cmd` according to command contract.
 
-### fn `def _execute_release_flow(level, changelog_args=None)` `priv` (L2087-2178)
+### fn `def _execute_release_flow(level, changelog_args=None)` `priv` (L2094-2185)
 - @brief Execute `_execute_release_flow` runtime logic for Git-Alias CLI.
 - @details Orchestrates the full release pipeline for `major`, `minor`, and `patch` levels.
 Branch integration is level-dependent (REQ-045):
@@ -705,7 +711,7 @@ with `--tags`.
 - @return None; raises `ReleaseError` or `VersionDetectionError` on failure.
 - @satisfies REQ-026, REQ-045
 
-### fn `def _execute_backup_flow()` `priv` (L2186-2203)
+### fn `def _execute_backup_flow()` `priv` (L2193-2210)
 - @brief Execute `_execute_backup_flow` runtime logic for Git-Alias CLI.
 - @details Executes the `backup` workflow by reusing the release preflight checks, then
 fast-forward merges configured `work` into configured `develop`, pushes `develop`
@@ -714,48 +720,48 @@ an explicit success confirmation.
 - @return None; raises `ReleaseError` on preflight or workflow failure.
 - @satisfies REQ-047, REQ-048, REQ-049
 
-### fn `def _run_release_command(level, changelog_args=None)` `priv` (L2209-2224)
+### fn `def _run_release_command(level, changelog_args=None)` `priv` (L2216-2231)
 - @brief Execute `_run_release_command` runtime logic for Git-Alias CLI.
 - @details Executes `_run_release_command` using deterministic CLI control-flow and explicit error propagation.
 - @param level Input parameter consumed by `_run_release_command`.
 - @param changelog_args Input parameter consumed by `_run_release_command`.
 - @return Result emitted by `_run_release_command` according to command contract.
 
-### fn `def _run_backup_command()` `priv` (L2229-2236)
+### fn `def _run_backup_command()` `priv` (L2236-2243)
 - @brief Execute `_run_backup_command` runtime logic for Git-Alias CLI.
 - @details Runs the `backup` workflow with the same error propagation strategy used by release commands.
 - @return None; exits with status 1 on `ReleaseError`.
 - @satisfies REQ-047, REQ-048, REQ-049
 
-### fn `def _run_reset_with_help(base_args, extra)` `priv` (L2242-2249)
+### fn `def _run_reset_with_help(base_args, extra)` `priv` (L2249-2256)
 - @brief Execute `_run_reset_with_help` runtime logic for Git-Alias CLI.
 - @details Executes `_run_reset_with_help` using deterministic CLI control-flow and explicit error propagation.
 - @param base_args Input parameter consumed by `_run_reset_with_help`.
 - @param extra Input parameter consumed by `_run_reset_with_help`.
 - @return Result emitted by `_run_reset_with_help` according to command contract.
 
-### fn `def _reject_extra_arguments(extra, alias)` `priv` (L2255-2261)
+### fn `def _reject_extra_arguments(extra, alias)` `priv` (L2262-2268)
 - @brief Execute `_reject_extra_arguments` runtime logic for Git-Alias CLI.
 - @details Executes `_reject_extra_arguments` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `_reject_extra_arguments`.
 - @param alias Input parameter consumed by `_reject_extra_arguments`.
 - @return Result emitted by `_reject_extra_arguments` according to command contract.
 
-### fn `def _parse_release_flags(extra, alias)` `priv` (L2267-2287)
+### fn `def _parse_release_flags(extra, alias)` `priv` (L2274-2294)
 - @brief Execute `_parse_release_flags` runtime logic for Git-Alias CLI.
 - @details Executes `_parse_release_flags` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `_parse_release_flags`.
 - @param alias Input parameter consumed by `_parse_release_flags`.
 - @return Result emitted by `_parse_release_flags` according to command contract.
 
-### fn `def _prepare_commit_message(extra, alias)` `priv` (L2293-2303)
+### fn `def _prepare_commit_message(extra, alias)` `priv` (L2300-2310)
 - @brief Execute `_prepare_commit_message` runtime logic for Git-Alias CLI.
 - @details Executes `_prepare_commit_message` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `_prepare_commit_message`.
 - @param alias Input parameter consumed by `_prepare_commit_message`.
 - @return Result emitted by `_prepare_commit_message` according to command contract.
 
-### fn `def _normalize_conventional_description(description: str) -> str` `priv` (L2310-2320)
+### fn `def _normalize_conventional_description(description: str) -> str` `priv` (L2317-2327)
 - @brief Normalize conventional commit description formatting.
 - @details Applies canonical description normalization for conventional aliases:
 uppercases the first character unless it is numeric and appends a trailing
@@ -763,7 +769,7 @@ period when missing.
 - @param description Input parameter consumed by `_normalize_conventional_description`.
 - @return Result emitted by `_normalize_conventional_description` according to command contract.
 
-### fn `def _build_conventional_message(kind: str, extra, alias: str) -> str` `priv` (L2329-2350)
+### fn `def _build_conventional_message(kind: str, extra, alias: str) -> str` `priv` (L2336-2357)
 - @brief Execute `_build_conventional_message` runtime logic for Git-Alias CLI.
 - @details Executes `_build_conventional_message` using deterministic CLI control-flow and explicit error propagation.
 The output format is `<type>: <description>` when the effective module is empty,
@@ -773,7 +779,7 @@ otherwise `<type>(<module>): <description>`.
 - @param alias Input parameter consumed by `_build_conventional_message`.
 - @return Result emitted by `_build_conventional_message` according to command contract.
 
-### fn `def _run_conventional_commit(kind: str, alias: str, extra)` `priv` (L2357-2362)
+### fn `def _run_conventional_commit(kind: str, alias: str, extra)` `priv` (L2364-2369)
 - @brief Execute `_run_conventional_commit` runtime logic for Git-Alias CLI.
 - @details Executes `_run_conventional_commit` using deterministic CLI control-flow and explicit error propagation.
 - @param kind Input parameter consumed by `_run_conventional_commit`.
@@ -781,7 +787,7 @@ otherwise `<type>(<module>): <description>`.
 - @param extra Input parameter consumed by `_run_conventional_commit`.
 - @return Result emitted by `_run_conventional_commit` according to command contract.
 
-### fn `def _execute_commit(message, alias, allow_amend=True)` `priv` (L2369-2401)
+### fn `def _execute_commit(message, alias, allow_amend=True)` `priv` (L2376-2408)
 - @brief Execute `_execute_commit` runtime logic for Git-Alias CLI.
 - @details Executes `_execute_commit` using deterministic CLI control-flow and explicit error propagation.
 - @param message Input parameter consumed by `_execute_commit`.
@@ -789,274 +795,274 @@ otherwise `<type>(<module>): <description>`.
 - @param allow_amend Input parameter consumed by `_execute_commit`.
 - @return Result emitted by `_execute_commit` according to command contract.
 
-### fn `def upgrade_self()` (L2405-2418)
+### fn `def upgrade_self()` (L2412-2425)
 - @brief Execute `upgrade_self` runtime logic for Git-Alias CLI.
 - @details Executes `upgrade_self` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `upgrade_self` according to command contract.
 
-### fn `def remove_self()` (L2422-2425)
+### fn `def remove_self()` (L2429-2432)
 - @brief Execute `remove_self` runtime logic for Git-Alias CLI.
 - @details Executes `remove_self` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `remove_self` according to command contract.
 
-### fn `def cmd_aa(extra)` (L2430-2437)
+### fn `def cmd_aa(extra)` (L2437-2444)
 - @brief Execute `cmd_aa` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_aa` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_aa`.
 - @return Result emitted by `cmd_aa` according to command contract.
 
-### fn `def cmd_ra(extra)` (L2442-2465)
+### fn `def cmd_ra(extra)` (L2449-2472)
 - @brief Execute `cmd_ra` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_ra` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_ra`.
 - @return Result emitted by `cmd_ra` according to command contract.
 
-### fn `def cmd_ar(extra)` (L2470-2486)
+### fn `def cmd_ar(extra)` (L2477-2493)
 - @brief Execute `cmd_ar` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_ar` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_ar`.
 - @return Result emitted by `cmd_ar` according to command contract.
 
-### fn `def cmd_br(extra)` (L2491-2494)
+### fn `def cmd_br(extra)` (L2498-2501)
 - @brief Execute `cmd_br` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_br` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_br`.
 - @return Result emitted by `cmd_br` according to command contract.
 
-### fn `def cmd_bd(extra)` (L2499-2502)
+### fn `def cmd_bd(extra)` (L2506-2509)
 - @brief Execute `cmd_bd` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_bd` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_bd`.
 - @return Result emitted by `cmd_bd` according to command contract.
 
-### fn `def cmd_ck(extra)` (L2507-2510)
+### fn `def cmd_ck(extra)` (L2514-2517)
 - @brief Execute `cmd_ck` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_ck` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_ck`.
 - @return Result emitted by `cmd_ck` according to command contract.
 
-### fn `def _ensure_commit_ready(alias)` `priv` (L2515-2528)
+### fn `def _ensure_commit_ready(alias)` `priv` (L2522-2535)
 - @brief Execute `_ensure_commit_ready` runtime logic for Git-Alias CLI.
 - @details Executes `_ensure_commit_ready` using deterministic CLI control-flow and explicit error propagation.
 - @param alias Input parameter consumed by `_ensure_commit_ready`.
 - @return Result emitted by `_ensure_commit_ready` according to command contract.
 
-### fn `def cmd_cm(extra)` (L2533-2538)
+### fn `def cmd_cm(extra)` (L2540-2545)
 - @brief Execute `cmd_cm` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_cm` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_cm`.
 - @return Result emitted by `cmd_cm` according to command contract.
 
-### fn `def cmd_wip(extra)` (L2543-2555)
+### fn `def cmd_wip(extra)` (L2550-2562)
 - @brief Execute `cmd_wip` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_wip` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_wip`.
 - @return Result emitted by `cmd_wip` according to command contract.
 
-### fn `def cmd_release(extra)` (L2560-2582)
+### fn `def cmd_release(extra)` (L2567-2589)
 - @brief Execute `cmd_release` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_release` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_release`.
 - @return Result emitted by `cmd_release` according to command contract.
 
-### fn `def cmd_new(extra)` (L2587-2590)
+### fn `def cmd_new(extra)` (L2594-2597)
 - @brief Execute `cmd_new` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_new` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_new`.
 - @return Result emitted by `cmd_new` according to command contract.
 
-### fn `def cmd_refactor(extra)` (L2595-2598)
+### fn `def cmd_refactor(extra)` (L2602-2605)
 - @brief Execute `cmd_refactor` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_refactor` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_refactor`.
 - @return Result emitted by `cmd_refactor` according to command contract.
 
-### fn `def cmd_fix(extra)` (L2603-2606)
+### fn `def cmd_fix(extra)` (L2610-2613)
 - @brief Execute `cmd_fix` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_fix` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_fix`.
 - @return Result emitted by `cmd_fix` according to command contract.
 
-### fn `def cmd_change(extra)` (L2611-2614)
+### fn `def cmd_change(extra)` (L2618-2621)
 - @brief Execute `cmd_change` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_change` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_change`.
 - @return Result emitted by `cmd_change` according to command contract.
 
-### fn `def cmd_implement(extra)` (L2619-2622)
+### fn `def cmd_implement(extra)` (L2626-2629)
 - @brief Execute `cmd_implement` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_implement` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_implement`.
 - @return Result emitted by `cmd_implement` according to command contract.
 
-### fn `def cmd_docs(extra)` (L2627-2630)
+### fn `def cmd_docs(extra)` (L2634-2637)
 - @brief Execute `cmd_docs` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_docs` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_docs`.
 - @return Result emitted by `cmd_docs` according to command contract.
 
-### fn `def cmd_style(extra)` (L2635-2638)
+### fn `def cmd_style(extra)` (L2642-2645)
 - @brief Execute `cmd_style` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_style` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_style`.
 - @return Result emitted by `cmd_style` according to command contract.
 
-### fn `def cmd_revert(extra)` (L2643-2646)
+### fn `def cmd_revert(extra)` (L2650-2653)
 - @brief Execute `cmd_revert` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_revert` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_revert`.
 - @return Result emitted by `cmd_revert` according to command contract.
 
-### fn `def cmd_misc(extra)` (L2651-2654)
+### fn `def cmd_misc(extra)` (L2658-2661)
 - @brief Execute `cmd_misc` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_misc` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_misc`.
 - @return Result emitted by `cmd_misc` according to command contract.
 
-### fn `def cmd_cover(extra)` (L2659-2662)
+### fn `def cmd_cover(extra)` (L2666-2669)
 - @brief Execute `cmd_cover` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_cover` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_cover`.
 - @return Result emitted by `cmd_cover` according to command contract.
 
-### fn `def cmd_co(extra)` (L2667-2670)
+### fn `def cmd_co(extra)` (L2674-2677)
 - @brief Execute `cmd_co` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_co` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_co`.
 - @return Result emitted by `cmd_co` according to command contract.
 
-### fn `def cmd_dc(extra)` (L2675-2684)
+### fn `def cmd_dc(extra)` (L2682-2691)
 - @brief Execute `cmd_dc` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dc` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dc`.
 - @return Result emitted by `cmd_dc` according to command contract.
 
-### fn `def cmd_dcc(extra)` (L2689-2692)
+### fn `def cmd_dcc(extra)` (L2696-2699)
 - @brief Execute `cmd_dcc` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dcc` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dcc`.
 - @return Result emitted by `cmd_dcc` according to command contract.
 
-### fn `def cmd_dccc(extra)` (L2697-2700)
+### fn `def cmd_dccc(extra)` (L2704-2707)
 - @brief Execute `cmd_dccc` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dccc` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dccc`.
 - @return Result emitted by `cmd_dccc` according to command contract.
 
-### fn `def cmd_de(extra)` (L2705-2708)
+### fn `def cmd_de(extra)` (L2712-2715)
 - @brief Execute `cmd_de` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_de` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_de`.
 - @return Result emitted by `cmd_de` according to command contract.
 
-### fn `def cmd_di(extra)` (L2713-2716)
+### fn `def cmd_di(extra)` (L2720-2723)
 - @brief Execute `cmd_di` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_di` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_di`.
 - @return Result emitted by `cmd_di` according to command contract.
 
-### fn `def cmd_diyou(extra)` (L2721-2724)
+### fn `def cmd_diyou(extra)` (L2728-2731)
 - @brief Execute `cmd_diyou` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_diyou` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_diyou`.
 - @return Result emitted by `cmd_diyou` according to command contract.
 
-### fn `def cmd_dime(extra)` (L2729-2732)
+### fn `def cmd_dime(extra)` (L2736-2739)
 - @brief Execute `cmd_dime` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dime` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dime`.
 - @return Result emitted by `cmd_dime` according to command contract.
 
-### fn `def cmd_dwc(extra)` (L2737-2740)
+### fn `def cmd_dwc(extra)` (L2744-2747)
 - @brief Execute `cmd_dwc` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dwc` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dwc`.
 - @return Result emitted by `cmd_dwc` according to command contract.
 
-### fn `def cmd_dw(extra)` (L2745-2752)
+### fn `def cmd_dw(extra)` (L2752-2759)
 - @brief Execute `cmd_dw` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dw` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dw`.
 - @return Result emitted by `cmd_dw` according to command contract.
 
-### fn `def cmd_dwcc(extra)` (L2757-2760)
+### fn `def cmd_dwcc(extra)` (L2764-2767)
 - @brief Execute `cmd_dwcc` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dwcc` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dwcc`.
 - @return Result emitted by `cmd_dwcc` according to command contract.
 
-### fn `def cmd_dcd(extra)` (L2766-2771)
+### fn `def cmd_dcd(extra)` (L2773-2778)
 - @brief Execute `cmd_dcd` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dcd` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dcd`.
 - @return Result emitted by `cmd_dcd` according to command contract.
 - @satisfies REQ-119
 
-### fn `def cmd_dcm(extra)` (L2777-2782)
+### fn `def cmd_dcm(extra)` (L2784-2789)
 - @brief Execute `cmd_dcm` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_dcm` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_dcm`.
 - @return Result emitted by `cmd_dcm` according to command contract.
 - @satisfies REQ-119
 
-### fn `def cmd_ddm(extra)` (L2788-2793)
+### fn `def cmd_ddm(extra)` (L2795-2800)
 - @brief Execute `cmd_ddm` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_ddm` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_ddm`.
 - @return Result emitted by `cmd_ddm` according to command contract.
 - @satisfies REQ-119
 
-### fn `def cmd_ed(extra)` (L2798-2807)
+### fn `def cmd_ed(extra)` (L2805-2814)
 - @brief Execute `cmd_ed` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_ed` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_ed`.
 - @return Result emitted by `cmd_ed` according to command contract.
 
-### fn `def cmd_fe(extra)` (L2812-2815)
+### fn `def cmd_fe(extra)` (L2819-2822)
 - @brief Execute `cmd_fe` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_fe` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_fe`.
 - @return Result emitted by `cmd_fe` according to command contract.
 
-### fn `def cmd_feall(extra)` (L2820-2823)
+### fn `def cmd_feall(extra)` (L2827-2830)
 - @brief Execute `cmd_feall` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_feall` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_feall`.
 - @return Result emitted by `cmd_feall` according to command contract.
 
-### fn `def cmd_gp(extra)` (L2828-2833)
+### fn `def cmd_gp(extra)` (L2835-2840)
 - @brief Execute `cmd_gp` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_gp` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_gp`.
 - @return Result emitted by `cmd_gp` according to command contract.
 
-### fn `def cmd_gr(extra)` (L2838-2843)
+### fn `def cmd_gr(extra)` (L2845-2850)
 - @brief Execute `cmd_gr` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_gr` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_gr`.
 - @return Result emitted by `cmd_gr` according to command contract.
 
-- var `OVERVIEW_COLOR_RESET = "\033[0m"` (L2845)
+- var `OVERVIEW_COLOR_RESET = "\033[0m"` (L2852)
 - @brief Constant `OVERVIEW_COLOR_RESET` used by CLI runtime paths and policies.
-- var `OVERVIEW_COLOR_SECTION_PURPLE = "\033[35;1m"` (L2847)
+- var `OVERVIEW_COLOR_SECTION_PURPLE = "\033[35;1m"` (L2854)
 - @brief Constant `OVERVIEW_COLOR_SECTION_PURPLE` used by CLI runtime paths and policies.
-- var `OVERVIEW_COLOR_AHEAD = "\033[92m"` (L2849)
+- var `OVERVIEW_COLOR_AHEAD = "\033[92m"` (L2856)
 - @brief Constant `OVERVIEW_COLOR_AHEAD` used by CLI runtime paths and policies.
-- var `OVERVIEW_COLOR_BEHIND = "\033[31;1m"` (L2851)
+- var `OVERVIEW_COLOR_BEHIND = "\033[31;1m"` (L2858)
 - @brief Constant `OVERVIEW_COLOR_BEHIND` used by CLI runtime paths and policies.
-- var `OVERVIEW_COLOR_LABEL = "\033[38;5;226m"` (L2853)
+- var `OVERVIEW_COLOR_LABEL = "\033[38;5;226m"` (L2860)
 - @brief Constant `OVERVIEW_COLOR_LABEL` used by CLI runtime paths and policies.
-- var `OVERVIEW_COLOR_WHITE = "\033[97m"` (L2855)
+- var `OVERVIEW_COLOR_WHITE = "\033[97m"` (L2862)
 - @brief Constant `OVERVIEW_COLOR_WHITE` used by CLI runtime paths and policies.
-- var `OVERVIEW_COLOR_WHITE_BOLD = "\033[97;1m"` (L2857)
+- var `OVERVIEW_COLOR_WHITE_BOLD = "\033[97;1m"` (L2864)
 - @brief Constant `OVERVIEW_COLOR_WHITE_BOLD` used by CLI runtime paths and policies.
-- var `OVERVIEW_SECTION_TEMPLATE = "{color}=== {title} ==={reset}"` (L2859)
+- var `OVERVIEW_SECTION_TEMPLATE = "{color}=== {title} ==={reset}"` (L2866)
 - @brief Constant `OVERVIEW_SECTION_TEMPLATE` used by CLI runtime paths and policies.
-- var `OVERVIEW_SUBSECTION_TEMPLATE = "{color}--- {title} ---{reset}"` (L2861)
+- var `OVERVIEW_SUBSECTION_TEMPLATE = "{color}--- {title} ---{reset}"` (L2868)
 - @brief Constant `OVERVIEW_SUBSECTION_TEMPLATE` used by CLI runtime paths and policies.
-- var `OVERVIEW_DISTANCE_TEMPLATE = "{text_color}{label}{reset} | {ahead} | {behind}"` (L2863)
+- var `OVERVIEW_DISTANCE_TEMPLATE = "{text_color}{label}{reset} | {ahead} | {behind}"` (L2870)
 - @brief Constant `OVERVIEW_DISTANCE_TEMPLATE` used by CLI runtime paths and policies.
-### fn `def _overview_branch_identifier(` `priv` (L2872-2875)
+### fn `def _overview_branch_identifier(` `priv` (L2879-2882)
 - @brief Execute `_overview_branch_identifier` runtime logic for Git-Alias CLI.
 - @details Executes `_overview_branch_identifier` using deterministic CLI control-flow and explicit error propagation.
 - @param logical_name Input parameter consumed by `_overview_branch_identifier`.
@@ -1064,13 +1070,13 @@ otherwise `<type>(<module>): <description>`.
 - @param prefix_color Input parameter consumed by `_overview_branch_identifier`.
 - @return Result emitted by `_overview_branch_identifier` according to command contract.
 
-### fn `def _overview_work_prefix_color(worktree_state: str) -> str` `priv` (L2889-2896)
+### fn `def _overview_work_prefix_color(worktree_state: str) -> str` `priv` (L2896-2903)
 - @brief Execute `_overview_work_prefix_color` runtime logic for Git-Alias CLI.
 - @details Executes `_overview_work_prefix_color` using deterministic CLI control-flow and explicit error propagation.
 - @param worktree_state Input parameter consumed by `_overview_work_prefix_color`.
 - @return Result emitted by `_overview_work_prefix_color` according to command contract.
 
-### fn `def _overview_logical_branch_name(` `priv` (L2904-2908)
+### fn `def _overview_logical_branch_name(` `priv` (L2911-2915)
 - @brief Execute `_overview_logical_branch_name` runtime logic for Git-Alias CLI.
 - @details Executes `_overview_logical_branch_name` using deterministic CLI control-flow and explicit error propagation.
 - @param current_branch Input parameter consumed by `_overview_logical_branch_name`.
@@ -1079,7 +1085,7 @@ otherwise `<type>(<module>): <description>`.
 - @param master_branch Input parameter consumed by `_overview_logical_branch_name`.
 - @return Result emitted by `_overview_logical_branch_name` according to command contract.
 
-### fn `def _overview_current_branch_display(` `priv` (L2927-2932)
+### fn `def _overview_current_branch_display(` `priv` (L2934-2939)
 - @brief Execute `_overview_current_branch_display` runtime logic for Git-Alias CLI.
 - @details Executes `_overview_current_branch_display` using deterministic CLI control-flow and explicit error propagation.
 - @param current_branch Input parameter consumed by `_overview_current_branch_display`.
@@ -1089,26 +1095,26 @@ otherwise `<type>(<module>): <description>`.
 - @param worktree_state Input parameter consumed by `_overview_current_branch_display`.
 - @return Result emitted by `_overview_current_branch_display` according to command contract.
 
-### fn `def _overview_ref_is_available(ref_name: str) -> bool` `priv` (L2954-2963)
+### fn `def _overview_ref_is_available(ref_name: str) -> bool` `priv` (L2961-2970)
 - @brief Execute `_overview_ref_is_available` runtime logic for Git-Alias CLI.
 - @details Executes `_overview_ref_is_available` using deterministic CLI control-flow and explicit error propagation.
 - @param ref_name Input parameter consumed by `_overview_ref_is_available`.
 - @return Result emitted by `_overview_ref_is_available` according to command contract.
 
-### fn `def _overview_ref_latest_subject(ref_name: str) -> str` `priv` (L2969-2979)
+### fn `def _overview_ref_latest_subject(ref_name: str) -> str` `priv` (L2976-2986)
 - @brief Resolve latest commit subject for an overview ref.
 - @details Returns the `%s` subject of `git log -1` for the input ref, or `n/a`
 when the ref is unavailable or the lookup fails.
 - @param ref_name Input parameter consumed by `_overview_ref_latest_subject`.
 - @return Result emitted by `_overview_ref_latest_subject` according to command contract.
 
-### fn `def _overview_discovered_branch_refs() -> List[str]` `priv` (L2984-3007)
+### fn `def _overview_discovered_branch_refs() -> List[str]` `priv` (L2991-3014)
 - @brief Collect normalized branch refs from `git branch -a` for overview rendering.
 - @details Returns ordered unique branch refs, stripping current-branch marker and
 `remotes/` prefix and excluding symbolic-ref redirect rows.
 - @return Result emitted by `_overview_discovered_branch_refs` according to command contract.
 
-### fn `def _overview_branch_summary_lines(` `priv` (L3026-3037)
+### fn `def _overview_branch_summary_lines(` `priv` (L3033-3044)
 - @brief Build section-5 aligned branch summary lines for overview output.
 - @details Produces one row for each configured branch/ref identifier using
 `<Identifier> | <latest commit subject>` formatting, aligned by visible
@@ -1128,27 +1134,27 @@ for additional branch refs after configured rows.
 - @return Result emitted by `_overview_branch_summary_lines` according to command contract.
 - @satisfies REQ-094, REQ-096, REQ-115
 
-### fn `def _overview_relation_state(ahead: int, behind: int) -> str` `priv` (L3080-3089)
+### fn `def _overview_relation_state(ahead: int, behind: int) -> str` `priv` (L3087-3096)
 - @brief Execute `_overview_relation_state` runtime logic for Git-Alias CLI.
 - @details Executes `_overview_relation_state` using deterministic CLI control-flow and explicit error propagation.
 - @param ahead Input parameter consumed by `_overview_relation_state`.
 - @param behind Input parameter consumed by `_overview_relation_state`.
 - @return Result emitted by `_overview_relation_state` according to command contract.
 
-### fn `def _overview_worktree_state(status_lines=None) -> str` `priv` (L3094-3106)
+### fn `def _overview_worktree_state(status_lines=None) -> str` `priv` (L3101-3113)
 - @brief Execute `_overview_worktree_state` runtime logic for Git-Alias CLI.
 - @details Executes `_overview_worktree_state` using deterministic CLI control-flow and explicit error propagation.
 - @param status_lines Input parameter consumed by `_overview_worktree_state`.
 - @return Result emitted by `_overview_worktree_state` according to command contract.
 
-### fn `def _overview_distance_text(is_ahead: bool, count: int) -> str` `priv` (L3112-3120)
+### fn `def _overview_distance_text(is_ahead: bool, count: int) -> str` `priv` (L3119-3127)
 - @brief Execute `_overview_distance_text` runtime logic for Git-Alias CLI.
 - @details Executes `_overview_distance_text` using deterministic CLI control-flow and explicit error propagation.
 - @param is_ahead Input parameter consumed by `_overview_distance_text`.
 - @param count Input parameter consumed by `_overview_distance_text`.
 - @return Result emitted by `_overview_distance_text` according to command contract.
 
-### fn `def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> str` `priv` (L3127-3169)
+### fn `def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> str` `priv` (L3134-3176)
 - @brief Execute `_overview_compare_refs` runtime logic for Git-Alias CLI.
 - @details Executes `_overview_compare_refs` using deterministic CLI control-flow and explicit error propagation.
 - @param base_ref Input parameter consumed by `_overview_compare_refs`.
@@ -1156,7 +1162,7 @@ for additional branch refs after configured rows.
 - @param label Input parameter consumed by `_overview_compare_refs`.
 - @return Result emitted by `_overview_compare_refs` according to command contract.
 
-### fn `def _overview_ascii_topology_lines(` `priv` (L3190-3201)
+### fn `def _overview_ascii_topology_lines(` `priv` (L3197-3208)
 - @brief Build chronological-position topology tree from actual commit positions.
 - @details Resolves commit hashes for each ref, computes commit counts from
 octopus merge-base, groups refs sharing the same hash on one output line,
@@ -1178,7 +1184,7 @@ subprocess calls where R is the number of available refs.
 - @return {List[str]} Rendered topology lines with ANSI color codes.
 - @satisfies REQ-089, REQ-090, REQ-091, REQ-092, REQ-093, REQ-095
 
-### fn `def _overview_current_branch_state_lines(current_branch_display: str) -> List[str]` `priv` (L3293-3312)
+### fn `def _overview_current_branch_state_lines(current_branch_display: str) -> List[str]` `priv` (L3300-3319)
 - @brief Build normalized section-6 status lines for overview output.
 - @details Executes `git status -sb`, rewrites the header line from
 `## <branch>` to `## <Logical>(⎇ <branch>)` with the same color formatting
@@ -1187,21 +1193,21 @@ used by section-1 current-branch output, and preserves all other lines.
 - @return {List[str]} Result emitted by `_overview_current_branch_state_lines` according to command contract.
 - @satisfies REQ-094
 
-### fn `def cmd_o(extra)` (L3318-3472)
+### fn `def cmd_o(extra)` (L3325-3479)
 - @brief Execute `cmd_o` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_o` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_o`.
 - @return Result emitted by `cmd_o` according to command contract.
 - @satisfies REQ-082, REQ-083, REQ-084, REQ-085, REQ-086, REQ-087, REQ-088, REQ-089, REQ-090, REQ-091, REQ-092, REQ-093, REQ-094, REQ-095, REQ-096, REQ-115
 
-### fn `def cmd_str(extra)` (L3477-3506)
+### fn `def cmd_str(extra)` (L3484-3513)
 - @brief Execute `cmd_str` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_str` using deterministic CLI control-flow and explicit error propagation.
 - @details Query git remotes with transport metadata.
 - @param extra Input parameter consumed by `cmd_str`.
 - @return Result emitted by `cmd_str` according to command contract.
 
-### fn `def cmd_l(extra)` (L3515-3521)
+### fn `def cmd_l(extra)` (L3522-3528)
 - @brief Execute `cmd_l` runtime logic for Git-Alias CLI.
 - @details Delegates to `foresta.run()` which renders a text-based tree visualization
 of git commit history using a vine-based graph algorithm with configurable styles,
@@ -1211,214 +1217,217 @@ user arguments; otherwise forwards provided arguments unchanged.
 - @return None.
 - @satisfies REQ-098, REQ-099, REQ-111
 
-### fn `def cmd_lb(extra)` (L3526-3529)
+### fn `def cmd_lb(extra)` (L3533-3536)
 - @brief Execute `cmd_lb` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_lb` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_lb`.
 - @return Result emitted by `cmd_lb` according to command contract.
 
-### fn `def cmd_lg(extra)` (L3534-3547)
+### fn `def cmd_lg(extra)` (L3541-3554)
 - @brief Execute `cmd_lg` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_lg` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_lg`.
 - @return Result emitted by `cmd_lg` according to command contract.
 
-### fn `def cmd_lh(extra)` (L3552-3555)
+### fn `def cmd_lh(extra)` (L3559-3562)
 - @brief Execute `cmd_lh` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_lh` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_lh`.
 - @return Result emitted by `cmd_lh` according to command contract.
 
-### fn `def cmd_ll(extra)` (L3560-3572)
+### fn `def cmd_ll(extra)` (L3567-3579)
 - @brief Execute `cmd_ll` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_ll` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_ll`.
 - @return Result emitted by `cmd_ll` according to command contract.
 
-### fn `def cmd_lm(extra)` (L3577-3580)
+### fn `def cmd_lm(extra)` (L3584-3587)
 - @brief Execute `cmd_lm` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_lm` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_lm`.
 - @return Result emitted by `cmd_lm` according to command contract.
 
-### fn `def cmd_ls(extra)` (L3586-3589)
+### fn `def cmd_ls(extra)` (L3593-3596)
 - @brief Execute `cmd_ls` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_ls` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_ls`.
 - @return Result emitted by `cmd_ls` according to command contract.
 - @satisfies REQ-079
 
-### fn `def cmd_lsi(extra)` (L3600-3617)
+### fn `def cmd_lsi(extra)` (L3610-3630)
 - @brief Execute `cmd_lsi` runtime logic for Git-Alias CLI.
 - @details Runs `git ls-files --others --ignored --exclude-standard` and filters
 output by excluding paths where any path component matches any entry in
-`LSI_DEFAULT_EXCLUDED_DIRS`. When `--include-all` is present in @p extra,
-filtering is bypassed and all output is printed. Additional arguments
-are forwarded to the underlying git command unchanged. Path component
-matching uses `frozenset.intersection` for O(min(n,m)) lookup per line.
+`LSI_DEFAULT_EXCLUDED_DIRS` (exact match) or ends with any suffix in
+`LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` (suffix match). When `--include-all`
+is present in @p extra, both filtering mechanisms are bypassed and all
+output is printed. Additional arguments are forwarded to the underlying
+git command unchanged. Exact-match uses `frozenset.intersection` for
+O(min(n,m)) lookup per line; suffix-match iterates path components
+against the suffix tuple via `str.endswith`.
 - @param extra List[str] CLI arguments passed after the alias name.
 - @return None. Filtered output is printed to stdout.
 - @satisfies REQ-080, REQ-121
 
-### fn `def cmd_lsa(extra)` (L3623-3626)
+### fn `def cmd_lsa(extra)` (L3636-3639)
 - @brief Execute `cmd_lsa` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_lsa` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_lsa`.
 - @return Result emitted by `cmd_lsa` according to command contract.
 - @satisfies REQ-081
 
-### fn `def cmd_lt(extra)` (L3632-3651)
+### fn `def cmd_lt(extra)` (L3645-3664)
 - @brief Execute `cmd_lt` runtime logic for Git-Alias CLI.
 - @details Enumerates tags via `git tag -l`, resolves containing refs via `git branch -a --contains <tag>`,
 trims branch markers/prefixes from git output, and prints deterministic `<tag>: <branch_1>, <branch_2>, ...` lines.
 - @param extra Input parameter consumed by `cmd_lt`.
 - @return Result emitted by `cmd_lt` according to command contract.
 
-### fn `def cmd_me(extra)` (L3656-3659)
+### fn `def cmd_me(extra)` (L3669-3672)
 - @brief Execute `cmd_me` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_me` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_me`.
 - @return Result emitted by `cmd_me` according to command contract.
 
-### fn `def cmd_pl(extra)` (L3664-3667)
+### fn `def cmd_pl(extra)` (L3677-3680)
 - @brief Execute `cmd_pl` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_pl` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_pl`.
 - @return Result emitted by `cmd_pl` according to command contract.
 
-### fn `def cmd_pt(extra)` (L3672-3675)
+### fn `def cmd_pt(extra)` (L3685-3688)
 - @brief Execute `cmd_pt` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_pt` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_pt`.
 - @return Result emitted by `cmd_pt` according to command contract.
 
-### fn `def cmd_pu(extra)` (L3680-3683)
+### fn `def cmd_pu(extra)` (L3693-3696)
 - @brief Execute `cmd_pu` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_pu` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_pu`.
 - @return Result emitted by `cmd_pu` according to command contract.
 
-### fn `def cmd_rf(extra)` (L3688-3691)
+### fn `def cmd_rf(extra)` (L3701-3704)
 - @brief Execute `cmd_rf` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_rf` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_rf`.
 - @return Result emitted by `cmd_rf` according to command contract.
 
-### fn `def cmd_rmtg(extra)` (L3696-3706)
+### fn `def cmd_rmtg(extra)` (L3709-3719)
 - @brief Execute `cmd_rmtg` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_rmtg` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_rmtg`.
 - @return Result emitted by `cmd_rmtg` according to command contract.
 
-### fn `def cmd_rmloc(extra)` (L3711-3714)
+### fn `def cmd_rmloc(extra)` (L3724-3727)
 - @brief Execute `cmd_rmloc` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_rmloc` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_rmloc`.
 - @return Result emitted by `cmd_rmloc` according to command contract.
 
-### fn `def cmd_rmstg(extra)` (L3719-3722)
+### fn `def cmd_rmstg(extra)` (L3732-3735)
 - @brief Execute `cmd_rmstg` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_rmstg` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_rmstg`.
 - @return Result emitted by `cmd_rmstg` according to command contract.
 
-### fn `def cmd_rmunt(extra)` (L3727-3730)
+### fn `def cmd_rmunt(extra)` (L3740-3743)
 - @brief Execute `cmd_rmunt` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_rmunt` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_rmunt`.
 - @return Result emitted by `cmd_rmunt` according to command contract.
 
-### fn `def cmd_rs(extra)` (L3735-3738)
+### fn `def cmd_rs(extra)` (L3748-3751)
 - @brief Execute `cmd_rs` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_rs` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_rs`.
 - @return Result emitted by `cmd_rs` according to command contract.
 
-### fn `def cmd_rssft(extra)` (L3743-3746)
+### fn `def cmd_rssft(extra)` (L3756-3759)
 - @brief Execute `cmd_rssft` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_rssft` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_rssft`.
 - @return Result emitted by `cmd_rssft` according to command contract.
 
-### fn `def cmd_rsmix(extra)` (L3751-3754)
+### fn `def cmd_rsmix(extra)` (L3764-3767)
 - @brief Execute `cmd_rsmix` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_rsmix` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_rsmix`.
 - @return Result emitted by `cmd_rsmix` according to command contract.
 
-### fn `def cmd_rshrd(extra)` (L3759-3762)
+### fn `def cmd_rshrd(extra)` (L3772-3775)
 - @brief Execute `cmd_rshrd` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_rshrd` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_rshrd`.
 - @return Result emitted by `cmd_rshrd` according to command contract.
 
-### fn `def cmd_rsmrg(extra)` (L3767-3770)
+### fn `def cmd_rsmrg(extra)` (L3780-3783)
 - @brief Execute `cmd_rsmrg` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_rsmrg` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_rsmrg`.
 - @return Result emitted by `cmd_rsmrg` according to command contract.
 
-### fn `def cmd_rskep(extra)` (L3775-3778)
+### fn `def cmd_rskep(extra)` (L3788-3791)
 - @brief Execute `cmd_rskep` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_rskep` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_rskep`.
 - @return Result emitted by `cmd_rskep` according to command contract.
 
-### fn `def cmd_st(extra)` (L3783-3786)
+### fn `def cmd_st(extra)` (L3796-3799)
 - @brief Execute `cmd_st` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_st` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_st`.
 - @return Result emitted by `cmd_st` according to command contract.
 
-### fn `def cmd_tg(extra)` (L3791-3794)
+### fn `def cmd_tg(extra)` (L3804-3807)
 - @brief Execute `cmd_tg` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_tg` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_tg`.
 - @return Result emitted by `cmd_tg` according to command contract.
 
-### fn `def cmd_unstg(extra)` (L3799-3802)
+### fn `def cmd_unstg(extra)` (L3812-3815)
 - @brief Execute `cmd_unstg` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_unstg` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_unstg`.
 - @return Result emitted by `cmd_unstg` according to command contract.
 
-### fn `def cmd_wt(extra)` (L3807-3810)
+### fn `def cmd_wt(extra)` (L3820-3823)
 - @brief Execute `cmd_wt` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_wt` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_wt`.
 - @return Result emitted by `cmd_wt` according to command contract.
 
-### fn `def cmd_wtl(extra)` (L3815-3818)
+### fn `def cmd_wtl(extra)` (L3828-3831)
 - @brief Execute `cmd_wtl` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_wtl` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_wtl`.
 - @return Result emitted by `cmd_wtl` according to command contract.
 
-### fn `def cmd_wtp(extra)` (L3823-3826)
+### fn `def cmd_wtp(extra)` (L3836-3839)
 - @brief Execute `cmd_wtp` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_wtp` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_wtp`.
 - @return Result emitted by `cmd_wtp` according to command contract.
 
-### fn `def cmd_wtr(extra)` (L3831-3834)
+### fn `def cmd_wtr(extra)` (L3844-3847)
 - @brief Execute `cmd_wtr` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_wtr` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_wtr`.
 - @return Result emitted by `cmd_wtr` according to command contract.
 
-### fn `def cmd_ver(extra)` (L3839-3865)
+### fn `def cmd_ver(extra)` (L3852-3878)
 - @brief Execute `cmd_ver` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_ver` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_ver`.
 - @return Result emitted by `cmd_ver` according to command contract.
 
-### fn `def cmd_chver(extra)` (L3870-3953)
+### fn `def cmd_chver(extra)` (L3883-3966)
 - @brief Execute `cmd_chver` runtime logic for Git-Alias CLI.
 - @details Executes `cmd_chver` using deterministic CLI control-flow and explicit error propagation.
 - @param extra Input parameter consumed by `cmd_chver`.
 - @return Result emitted by `cmd_chver` according to command contract.
 
-### fn `def cmd_major(extra)` (L3962-3966)
+### fn `def cmd_major(extra)` (L3975-3979)
 - @brief CLI entry-point for the `major` release subcommand.
 - @details Increments the major semver index (resets minor and patch to 0), merges and pushes
 to both configured `develop` and `master` branches, regenerates changelog via a
@@ -1428,7 +1437,7 @@ immediately before pushing `master` with `--tags`.
 - @return None; delegates to `_run_release_command("major", ...)`.
 - @satisfies REQ-026, REQ-045
 
-### fn `def cmd_minor(extra)` (L3975-3979)
+### fn `def cmd_minor(extra)` (L3988-3992)
 - @brief CLI entry-point for the `minor` release subcommand.
 - @details Increments the minor semver index (resets patch to 0), merges and pushes to both
 configured `develop` and `master` branches, regenerates changelog via a temporary local
@@ -1438,7 +1447,7 @@ pushing `master` with `--tags`.
 - @return None; delegates to `_run_release_command("minor", ...)`.
 - @satisfies REQ-026, REQ-045
 
-### fn `def cmd_patch(extra)` (L3988-3992)
+### fn `def cmd_patch(extra)` (L4001-4005)
 - @brief CLI entry-point for the `patch` release subcommand.
 - @details Increments the patch semver index, merges and pushes to configured `develop` only
 (MUST NOT merge or push to `master`), regenerates changelog via a temporary local tag
@@ -1448,7 +1457,7 @@ pushing `develop` with `--tags`; `--include-patch` is auto-included.
 - @return None; delegates to `_run_release_command("patch", ...)`.
 - @satisfies REQ-026, REQ-045
 
-### fn `def cmd_backup(extra)` (L4000-4010)
+### fn `def cmd_backup(extra)` (L4013-4023)
 - @brief CLI entry-point for the `backup` workflow subcommand.
 - @details Runs the same preflight checks used by `major`/`minor`/`patch`, then integrates the
 configured `work` branch into the configured `develop` branch and pushes `develop`
@@ -1457,7 +1466,7 @@ to its remote tracking branch before returning to `work`.
 - @return None; delegates to `_run_backup_command()`.
 - @satisfies REQ-047, REQ-048, REQ-049
 
-### fn `def cmd_changelog(extra)` (L4020-4057)
+### fn `def cmd_changelog(extra)` (L4033-4070)
 - @brief CLI entry-point for the `changelog` subcommand.
 - @details Parses flags, delegates to `generate_changelog_document`, and writes or prints the result.
 Accepted flags: `--include-patch`, `--force-write`, `--print-only`,
@@ -1468,21 +1477,21 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 - @return None; side-effects: writes `CHANGELOG.md` to disk or prints to stdout.
 - @satisfies REQ-018, REQ-040, REQ-041, REQ-043
 
-- var `COMMANDS = {` (L4060)
+- var `COMMANDS = {` (L4073)
 - @brief Constant `COMMANDS` used by CLI runtime paths and policies.
-### fn `def print_command_help(name, width=None)` (L4147-4154)
+### fn `def print_command_help(name, width=None)` (L4160-4167)
 - @brief Execute `print_command_help` runtime logic for Git-Alias CLI.
 - @details Executes `print_command_help` using deterministic CLI control-flow and explicit error propagation.
 - @param name Input parameter consumed by `print_command_help`.
 - @param width Input parameter consumed by `print_command_help`.
 - @return Result emitted by `print_command_help` according to command contract.
 
-### fn `def print_all_help()` (L4158-4192)
+### fn `def print_all_help()` (L4171-4205)
 - @brief Execute `print_all_help` runtime logic for Git-Alias CLI.
 - @details Executes `print_all_help` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `print_all_help` according to command contract.
 
-### fn `def main(argv=None, *, check_updates: bool = True)` (L4198-4248)
+### fn `def main(argv=None, *, check_updates: bool = True)` (L4211-4261)
 - @brief Execute `main` runtime logic for Git-Alias CLI.
 - @details Executes `main` using deterministic CLI control-flow and explicit error propagation.
 - @param argv Input parameter consumed by `main`.
@@ -1532,199 +1541,200 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 |`HELP_TEXTS`|var|pub|549||
 |`RESET_HELP_COMMANDS`|var|pub|714||
 |`LSI_DEFAULT_EXCLUDED_DIRS`|var|pub|720||
-|`_to_args`|fn|priv|757-760|def _to_args(extra)|
-|`CommandExecutionError`|class|pub|763-804|class CommandExecutionError(RuntimeError)|
-|`CommandExecutionError.__init__`|fn|priv|768-775|def __init__(self, exc: subprocess.CalledProcessError)|
-|`CommandExecutionError._format_message`|fn|priv|779-789|def _format_message(self) -> str|
-|`CommandExecutionError._decode_stream`|fn|priv|794-804|def _decode_stream(data) -> str|
-|`_run_checked`|fn|priv|810-817|def _run_checked(*popenargs, **kwargs)|
-|`VersionDetectionError`|class|pub|820-823|class VersionDetectionError(RuntimeError)|
-|`ReleaseError`|class|pub|826-829|class ReleaseError(RuntimeError)|
-|`run_git_cmd`|fn|pub|837-841|def run_git_cmd(base_args, extra=None, cwd=None, **kwargs)|
-|`capture_git_output`|fn|pub|847-853|def capture_git_output(base_args, cwd=None)|
-|`run_command`|fn|pub|859-862|def run_command(cmd, cwd=None)|
-|`run_git_text`|fn|pub|869-886|def run_git_text(args, cwd=None, check=True)|
-|`run_shell`|fn|pub|892-895|def run_shell(command, cwd=None)|
-|`_git_status_lines`|fn|priv|899-911|def _git_status_lines()|
-|`has_unstaged_changes`|fn|pub|916-927|def has_unstaged_changes(status_lines=None)|
-|`has_staged_changes`|fn|pub|932-941|def has_staged_changes(status_lines=None)|
-|`WIP_MESSAGE_RE`|var|pub|947||
-|`_refresh_remote_refs`|fn|priv|953-964|def _refresh_remote_refs()|
-|`_branch_remote_divergence`|fn|priv|970-990|def _branch_remote_divergence(branch_key, remote="origin")|
-|`has_remote_branch_updates`|fn|pub|996-1000|def has_remote_branch_updates(branch_key, remote="origin")|
-|`has_remote_develop_updates`|fn|pub|1004-1007|def has_remote_develop_updates()|
-|`has_remote_master_updates`|fn|pub|1011-1014|def has_remote_master_updates()|
-|`_head_commit_message`|fn|priv|1018-1024|def _head_commit_message()|
-|`_head_commit_hash`|fn|priv|1028-1034|def _head_commit_hash()|
-|`_commit_exists_in_branch`|fn|priv|1040-1052|def _commit_exists_in_branch(commit_hash, branch_name)|
-|`_should_amend_existing_commit`|fn|priv|1056-1071|def _should_amend_existing_commit()|
-|`is_inside_git_repo`|fn|pub|1075-1082|def is_inside_git_repo()|
-|`TagInfo`|class|pub|1087-1095|class TagInfo|
-|`DELIM`|var|pub|1098||
-|`RECORD`|var|pub|1101||
-|`SEMVER_RE`|var|pub|1117||
-|`SECTION_EMOJI`|var|pub|1120||
-|`_tag_semver_tuple`|fn|priv|1138-1141|def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[in...|
-|`_latest_supported_tag_name`|fn|priv|1146-1149|def _latest_supported_tag_name(tags: List[TagInfo]) -> Op...|
-|`_is_minor_release_tag`|fn|priv|1157-1164|def _is_minor_release_tag(tag_name: str) -> bool|
-|`_latest_patch_tag_after`|fn|priv|1173-1174|def _latest_patch_tag_after(|
-|`list_tags_sorted_by_date`|fn|pub|1192-1193|def list_tags_sorted_by_date(|
-|`git_log_subjects`|fn|pub|1223-1234|def git_log_subjects(repo_root: Path, rev_range: str) -> ...|
-|`parse_conventional_commit`|fn|pub|1240-1241|def parse_conventional_commit(|
-|`_format_changelog_description`|fn|priv|1261-1274|def _format_changelog_description(desc: str) -> List[str]|
-|`categorize_commit`|fn|pub|1282-1311|def categorize_commit(subject: str) -> Tuple[Optional[str...|
-|`_extract_release_version`|fn|priv|1316-1326|def _extract_release_version(subject: str) -> Optional[str]|
-|`_is_release_marker_commit`|fn|priv|1331-1334|def _is_release_marker_commit(subject: str) -> bool|
-|`generate_section_for_range`|fn|pub|1343-1348|def generate_section_for_range(|
-|`_get_remote_name_for_branch`|fn|priv|1396-1404|def _get_remote_name_for_branch(branch_name: str, repo_ro...|
-|`_extract_owner_repo`|fn|priv|1411-1435|def _extract_owner_repo(remote_url: str) -> Optional[Tupl...|
-|`_canonical_origin_base`|fn|priv|1445-1460|def _canonical_origin_base(repo_root: Path) -> Optional[str]|
-|`get_origin_compare_url`|fn|pub|1467-1468|def get_origin_compare_url(|
-|`get_release_page_url`|fn|pub|1482-1487|def get_release_page_url(base_url: Optional[str], tag: st...|
-|`build_history_section`|fn|pub|1495-1499|def build_history_section(|
-|`generate_changelog_document`|fn|pub|1543-1544|def generate_changelog_document(|
-|`VersionRuleContext`|class|pub|1616-1623|class VersionRuleContext|
-|`_normalize_version_rule_pattern`|fn|priv|1629-1640|def _normalize_version_rule_pattern(pattern: str) -> str|
-|`_build_version_file_inventory`|fn|priv|1646-1673|def _build_version_file_inventory(root: Path) -> List[Tup...|
-|`_collect_version_files`|fn|priv|1681-1704|def _collect_version_files(root, pattern, *, inventory=None)|
-|`_is_version_path_excluded`|fn|priv|1709-1712|def _is_version_path_excluded(relative_path: str) -> bool|
-|`_iter_versions_in_text`|fn|priv|1718-1729|def _iter_versions_in_text(text, compiled_regexes)|
-|`_read_version_file_text`|fn|priv|1736-1737|def _read_version_file_text(|
-|`_prepare_version_rule_contexts`|fn|priv|1761-1762|def _prepare_version_rule_contexts(|
-|`_determine_canonical_version`|fn|priv|1805-1812|def _determine_canonical_version(|
-|`_parse_semver_tuple`|fn|priv|1865-1871|def _parse_semver_tuple(text: str) -> Optional[Tuple[int,...|
-|`_replace_versions_in_text`|fn|priv|1878-1893|def _replace_versions_in_text(text, compiled_regex, repla...|
-|`_current_branch_name`|fn|priv|1897-1909|def _current_branch_name()|
-|`_ref_exists`|fn|priv|1914-1923|def _ref_exists(ref_name)|
-|`_local_branch_exists`|fn|priv|1928-1931|def _local_branch_exists(branch_name)|
-|`_remote_branch_exists`|fn|priv|1936-1939|def _remote_branch_exists(branch_name)|
-|`_ensure_release_prerequisites`|fn|priv|1943-1992|def _ensure_release_prerequisites()|
-|`_bump_semver_version`|fn|priv|1998-2018|def _bump_semver_version(current_version, level)|
-|`_run_release_step`|fn|priv|2025-2051|def _run_release_step(level, step_name, action)|
-|`_create_release_commit_for_flow`|fn|priv|2056-2061|def _create_release_commit_for_flow(target_version)|
-|`_push_branch_with_tags`|fn|priv|2067-2071|def _push_branch_with_tags(branch_name)|
-|`_execute_release_flow`|fn|priv|2087-2178|def _execute_release_flow(level, changelog_args=None)|
-|`_execute_backup_flow`|fn|priv|2186-2203|def _execute_backup_flow()|
-|`_run_release_command`|fn|priv|2209-2224|def _run_release_command(level, changelog_args=None)|
-|`_run_backup_command`|fn|priv|2229-2236|def _run_backup_command()|
-|`_run_reset_with_help`|fn|priv|2242-2249|def _run_reset_with_help(base_args, extra)|
-|`_reject_extra_arguments`|fn|priv|2255-2261|def _reject_extra_arguments(extra, alias)|
-|`_parse_release_flags`|fn|priv|2267-2287|def _parse_release_flags(extra, alias)|
-|`_prepare_commit_message`|fn|priv|2293-2303|def _prepare_commit_message(extra, alias)|
-|`_normalize_conventional_description`|fn|priv|2310-2320|def _normalize_conventional_description(description: str)...|
-|`_build_conventional_message`|fn|priv|2329-2350|def _build_conventional_message(kind: str, extra, alias: ...|
-|`_run_conventional_commit`|fn|priv|2357-2362|def _run_conventional_commit(kind: str, alias: str, extra)|
-|`_execute_commit`|fn|priv|2369-2401|def _execute_commit(message, alias, allow_amend=True)|
-|`upgrade_self`|fn|pub|2405-2418|def upgrade_self()|
-|`remove_self`|fn|pub|2422-2425|def remove_self()|
-|`cmd_aa`|fn|pub|2430-2437|def cmd_aa(extra)|
-|`cmd_ra`|fn|pub|2442-2465|def cmd_ra(extra)|
-|`cmd_ar`|fn|pub|2470-2486|def cmd_ar(extra)|
-|`cmd_br`|fn|pub|2491-2494|def cmd_br(extra)|
-|`cmd_bd`|fn|pub|2499-2502|def cmd_bd(extra)|
-|`cmd_ck`|fn|pub|2507-2510|def cmd_ck(extra)|
-|`_ensure_commit_ready`|fn|priv|2515-2528|def _ensure_commit_ready(alias)|
-|`cmd_cm`|fn|pub|2533-2538|def cmd_cm(extra)|
-|`cmd_wip`|fn|pub|2543-2555|def cmd_wip(extra)|
-|`cmd_release`|fn|pub|2560-2582|def cmd_release(extra)|
-|`cmd_new`|fn|pub|2587-2590|def cmd_new(extra)|
-|`cmd_refactor`|fn|pub|2595-2598|def cmd_refactor(extra)|
-|`cmd_fix`|fn|pub|2603-2606|def cmd_fix(extra)|
-|`cmd_change`|fn|pub|2611-2614|def cmd_change(extra)|
-|`cmd_implement`|fn|pub|2619-2622|def cmd_implement(extra)|
-|`cmd_docs`|fn|pub|2627-2630|def cmd_docs(extra)|
-|`cmd_style`|fn|pub|2635-2638|def cmd_style(extra)|
-|`cmd_revert`|fn|pub|2643-2646|def cmd_revert(extra)|
-|`cmd_misc`|fn|pub|2651-2654|def cmd_misc(extra)|
-|`cmd_cover`|fn|pub|2659-2662|def cmd_cover(extra)|
-|`cmd_co`|fn|pub|2667-2670|def cmd_co(extra)|
-|`cmd_dc`|fn|pub|2675-2684|def cmd_dc(extra)|
-|`cmd_dcc`|fn|pub|2689-2692|def cmd_dcc(extra)|
-|`cmd_dccc`|fn|pub|2697-2700|def cmd_dccc(extra)|
-|`cmd_de`|fn|pub|2705-2708|def cmd_de(extra)|
-|`cmd_di`|fn|pub|2713-2716|def cmd_di(extra)|
-|`cmd_diyou`|fn|pub|2721-2724|def cmd_diyou(extra)|
-|`cmd_dime`|fn|pub|2729-2732|def cmd_dime(extra)|
-|`cmd_dwc`|fn|pub|2737-2740|def cmd_dwc(extra)|
-|`cmd_dw`|fn|pub|2745-2752|def cmd_dw(extra)|
-|`cmd_dwcc`|fn|pub|2757-2760|def cmd_dwcc(extra)|
-|`cmd_dcd`|fn|pub|2766-2771|def cmd_dcd(extra)|
-|`cmd_dcm`|fn|pub|2777-2782|def cmd_dcm(extra)|
-|`cmd_ddm`|fn|pub|2788-2793|def cmd_ddm(extra)|
-|`cmd_ed`|fn|pub|2798-2807|def cmd_ed(extra)|
-|`cmd_fe`|fn|pub|2812-2815|def cmd_fe(extra)|
-|`cmd_feall`|fn|pub|2820-2823|def cmd_feall(extra)|
-|`cmd_gp`|fn|pub|2828-2833|def cmd_gp(extra)|
-|`cmd_gr`|fn|pub|2838-2843|def cmd_gr(extra)|
-|`OVERVIEW_COLOR_RESET`|var|pub|2845||
-|`OVERVIEW_COLOR_SECTION_PURPLE`|var|pub|2847||
-|`OVERVIEW_COLOR_AHEAD`|var|pub|2849||
-|`OVERVIEW_COLOR_BEHIND`|var|pub|2851||
-|`OVERVIEW_COLOR_LABEL`|var|pub|2853||
-|`OVERVIEW_COLOR_WHITE`|var|pub|2855||
-|`OVERVIEW_COLOR_WHITE_BOLD`|var|pub|2857||
-|`OVERVIEW_SECTION_TEMPLATE`|var|pub|2859||
-|`OVERVIEW_SUBSECTION_TEMPLATE`|var|pub|2861||
-|`OVERVIEW_DISTANCE_TEMPLATE`|var|pub|2863||
-|`_overview_branch_identifier`|fn|priv|2872-2875|def _overview_branch_identifier(|
-|`_overview_work_prefix_color`|fn|priv|2889-2896|def _overview_work_prefix_color(worktree_state: str) -> str|
-|`_overview_logical_branch_name`|fn|priv|2904-2908|def _overview_logical_branch_name(|
-|`_overview_current_branch_display`|fn|priv|2927-2932|def _overview_current_branch_display(|
-|`_overview_ref_is_available`|fn|priv|2954-2963|def _overview_ref_is_available(ref_name: str) -> bool|
-|`_overview_ref_latest_subject`|fn|priv|2969-2979|def _overview_ref_latest_subject(ref_name: str) -> str|
-|`_overview_discovered_branch_refs`|fn|priv|2984-3007|def _overview_discovered_branch_refs() -> List[str]|
-|`_overview_branch_summary_lines`|fn|priv|3026-3037|def _overview_branch_summary_lines(|
-|`_overview_relation_state`|fn|priv|3080-3089|def _overview_relation_state(ahead: int, behind: int) -> str|
-|`_overview_worktree_state`|fn|priv|3094-3106|def _overview_worktree_state(status_lines=None) -> str|
-|`_overview_distance_text`|fn|priv|3112-3120|def _overview_distance_text(is_ahead: bool, count: int) -...|
-|`_overview_compare_refs`|fn|priv|3127-3169|def _overview_compare_refs(base_ref: str, target_ref: str...|
-|`_overview_ascii_topology_lines`|fn|priv|3190-3201|def _overview_ascii_topology_lines(|
-|`_overview_current_branch_state_lines`|fn|priv|3293-3312|def _overview_current_branch_state_lines(current_branch_d...|
-|`cmd_o`|fn|pub|3318-3472|def cmd_o(extra)|
-|`cmd_str`|fn|pub|3477-3506|def cmd_str(extra)|
-|`cmd_l`|fn|pub|3515-3521|def cmd_l(extra)|
-|`cmd_lb`|fn|pub|3526-3529|def cmd_lb(extra)|
-|`cmd_lg`|fn|pub|3534-3547|def cmd_lg(extra)|
-|`cmd_lh`|fn|pub|3552-3555|def cmd_lh(extra)|
-|`cmd_ll`|fn|pub|3560-3572|def cmd_ll(extra)|
-|`cmd_lm`|fn|pub|3577-3580|def cmd_lm(extra)|
-|`cmd_ls`|fn|pub|3586-3589|def cmd_ls(extra)|
-|`cmd_lsi`|fn|pub|3600-3617|def cmd_lsi(extra)|
-|`cmd_lsa`|fn|pub|3623-3626|def cmd_lsa(extra)|
-|`cmd_lt`|fn|pub|3632-3651|def cmd_lt(extra)|
-|`cmd_me`|fn|pub|3656-3659|def cmd_me(extra)|
-|`cmd_pl`|fn|pub|3664-3667|def cmd_pl(extra)|
-|`cmd_pt`|fn|pub|3672-3675|def cmd_pt(extra)|
-|`cmd_pu`|fn|pub|3680-3683|def cmd_pu(extra)|
-|`cmd_rf`|fn|pub|3688-3691|def cmd_rf(extra)|
-|`cmd_rmtg`|fn|pub|3696-3706|def cmd_rmtg(extra)|
-|`cmd_rmloc`|fn|pub|3711-3714|def cmd_rmloc(extra)|
-|`cmd_rmstg`|fn|pub|3719-3722|def cmd_rmstg(extra)|
-|`cmd_rmunt`|fn|pub|3727-3730|def cmd_rmunt(extra)|
-|`cmd_rs`|fn|pub|3735-3738|def cmd_rs(extra)|
-|`cmd_rssft`|fn|pub|3743-3746|def cmd_rssft(extra)|
-|`cmd_rsmix`|fn|pub|3751-3754|def cmd_rsmix(extra)|
-|`cmd_rshrd`|fn|pub|3759-3762|def cmd_rshrd(extra)|
-|`cmd_rsmrg`|fn|pub|3767-3770|def cmd_rsmrg(extra)|
-|`cmd_rskep`|fn|pub|3775-3778|def cmd_rskep(extra)|
-|`cmd_st`|fn|pub|3783-3786|def cmd_st(extra)|
-|`cmd_tg`|fn|pub|3791-3794|def cmd_tg(extra)|
-|`cmd_unstg`|fn|pub|3799-3802|def cmd_unstg(extra)|
-|`cmd_wt`|fn|pub|3807-3810|def cmd_wt(extra)|
-|`cmd_wtl`|fn|pub|3815-3818|def cmd_wtl(extra)|
-|`cmd_wtp`|fn|pub|3823-3826|def cmd_wtp(extra)|
-|`cmd_wtr`|fn|pub|3831-3834|def cmd_wtr(extra)|
-|`cmd_ver`|fn|pub|3839-3865|def cmd_ver(extra)|
-|`cmd_chver`|fn|pub|3870-3953|def cmd_chver(extra)|
-|`cmd_major`|fn|pub|3962-3966|def cmd_major(extra)|
-|`cmd_minor`|fn|pub|3975-3979|def cmd_minor(extra)|
-|`cmd_patch`|fn|pub|3988-3992|def cmd_patch(extra)|
-|`cmd_backup`|fn|pub|4000-4010|def cmd_backup(extra)|
-|`cmd_changelog`|fn|pub|4020-4057|def cmd_changelog(extra)|
-|`COMMANDS`|var|pub|4060||
-|`print_command_help`|fn|pub|4147-4154|def print_command_help(name, width=None)|
-|`print_all_help`|fn|pub|4158-4192|def print_all_help()|
-|`main`|fn|pub|4198-4248|def main(argv=None, *, check_updates: bool = True)|
+|`LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES`|var|pub|757||
+|`_to_args`|fn|priv|764-767|def _to_args(extra)|
+|`CommandExecutionError`|class|pub|770-811|class CommandExecutionError(RuntimeError)|
+|`CommandExecutionError.__init__`|fn|priv|775-782|def __init__(self, exc: subprocess.CalledProcessError)|
+|`CommandExecutionError._format_message`|fn|priv|786-796|def _format_message(self) -> str|
+|`CommandExecutionError._decode_stream`|fn|priv|801-811|def _decode_stream(data) -> str|
+|`_run_checked`|fn|priv|817-824|def _run_checked(*popenargs, **kwargs)|
+|`VersionDetectionError`|class|pub|827-830|class VersionDetectionError(RuntimeError)|
+|`ReleaseError`|class|pub|833-836|class ReleaseError(RuntimeError)|
+|`run_git_cmd`|fn|pub|844-848|def run_git_cmd(base_args, extra=None, cwd=None, **kwargs)|
+|`capture_git_output`|fn|pub|854-860|def capture_git_output(base_args, cwd=None)|
+|`run_command`|fn|pub|866-869|def run_command(cmd, cwd=None)|
+|`run_git_text`|fn|pub|876-893|def run_git_text(args, cwd=None, check=True)|
+|`run_shell`|fn|pub|899-902|def run_shell(command, cwd=None)|
+|`_git_status_lines`|fn|priv|906-918|def _git_status_lines()|
+|`has_unstaged_changes`|fn|pub|923-934|def has_unstaged_changes(status_lines=None)|
+|`has_staged_changes`|fn|pub|939-948|def has_staged_changes(status_lines=None)|
+|`WIP_MESSAGE_RE`|var|pub|954||
+|`_refresh_remote_refs`|fn|priv|960-971|def _refresh_remote_refs()|
+|`_branch_remote_divergence`|fn|priv|977-997|def _branch_remote_divergence(branch_key, remote="origin")|
+|`has_remote_branch_updates`|fn|pub|1003-1007|def has_remote_branch_updates(branch_key, remote="origin")|
+|`has_remote_develop_updates`|fn|pub|1011-1014|def has_remote_develop_updates()|
+|`has_remote_master_updates`|fn|pub|1018-1021|def has_remote_master_updates()|
+|`_head_commit_message`|fn|priv|1025-1031|def _head_commit_message()|
+|`_head_commit_hash`|fn|priv|1035-1041|def _head_commit_hash()|
+|`_commit_exists_in_branch`|fn|priv|1047-1059|def _commit_exists_in_branch(commit_hash, branch_name)|
+|`_should_amend_existing_commit`|fn|priv|1063-1078|def _should_amend_existing_commit()|
+|`is_inside_git_repo`|fn|pub|1082-1089|def is_inside_git_repo()|
+|`TagInfo`|class|pub|1094-1102|class TagInfo|
+|`DELIM`|var|pub|1105||
+|`RECORD`|var|pub|1108||
+|`SEMVER_RE`|var|pub|1124||
+|`SECTION_EMOJI`|var|pub|1127||
+|`_tag_semver_tuple`|fn|priv|1145-1148|def _tag_semver_tuple(tag_name: str) -> Optional[Tuple[in...|
+|`_latest_supported_tag_name`|fn|priv|1153-1156|def _latest_supported_tag_name(tags: List[TagInfo]) -> Op...|
+|`_is_minor_release_tag`|fn|priv|1164-1171|def _is_minor_release_tag(tag_name: str) -> bool|
+|`_latest_patch_tag_after`|fn|priv|1180-1181|def _latest_patch_tag_after(|
+|`list_tags_sorted_by_date`|fn|pub|1199-1200|def list_tags_sorted_by_date(|
+|`git_log_subjects`|fn|pub|1230-1241|def git_log_subjects(repo_root: Path, rev_range: str) -> ...|
+|`parse_conventional_commit`|fn|pub|1247-1248|def parse_conventional_commit(|
+|`_format_changelog_description`|fn|priv|1268-1281|def _format_changelog_description(desc: str) -> List[str]|
+|`categorize_commit`|fn|pub|1289-1318|def categorize_commit(subject: str) -> Tuple[Optional[str...|
+|`_extract_release_version`|fn|priv|1323-1333|def _extract_release_version(subject: str) -> Optional[str]|
+|`_is_release_marker_commit`|fn|priv|1338-1341|def _is_release_marker_commit(subject: str) -> bool|
+|`generate_section_for_range`|fn|pub|1350-1355|def generate_section_for_range(|
+|`_get_remote_name_for_branch`|fn|priv|1403-1411|def _get_remote_name_for_branch(branch_name: str, repo_ro...|
+|`_extract_owner_repo`|fn|priv|1418-1442|def _extract_owner_repo(remote_url: str) -> Optional[Tupl...|
+|`_canonical_origin_base`|fn|priv|1452-1467|def _canonical_origin_base(repo_root: Path) -> Optional[str]|
+|`get_origin_compare_url`|fn|pub|1474-1475|def get_origin_compare_url(|
+|`get_release_page_url`|fn|pub|1489-1494|def get_release_page_url(base_url: Optional[str], tag: st...|
+|`build_history_section`|fn|pub|1502-1506|def build_history_section(|
+|`generate_changelog_document`|fn|pub|1550-1551|def generate_changelog_document(|
+|`VersionRuleContext`|class|pub|1623-1630|class VersionRuleContext|
+|`_normalize_version_rule_pattern`|fn|priv|1636-1647|def _normalize_version_rule_pattern(pattern: str) -> str|
+|`_build_version_file_inventory`|fn|priv|1653-1680|def _build_version_file_inventory(root: Path) -> List[Tup...|
+|`_collect_version_files`|fn|priv|1688-1711|def _collect_version_files(root, pattern, *, inventory=None)|
+|`_is_version_path_excluded`|fn|priv|1716-1719|def _is_version_path_excluded(relative_path: str) -> bool|
+|`_iter_versions_in_text`|fn|priv|1725-1736|def _iter_versions_in_text(text, compiled_regexes)|
+|`_read_version_file_text`|fn|priv|1743-1744|def _read_version_file_text(|
+|`_prepare_version_rule_contexts`|fn|priv|1768-1769|def _prepare_version_rule_contexts(|
+|`_determine_canonical_version`|fn|priv|1812-1819|def _determine_canonical_version(|
+|`_parse_semver_tuple`|fn|priv|1872-1878|def _parse_semver_tuple(text: str) -> Optional[Tuple[int,...|
+|`_replace_versions_in_text`|fn|priv|1885-1900|def _replace_versions_in_text(text, compiled_regex, repla...|
+|`_current_branch_name`|fn|priv|1904-1916|def _current_branch_name()|
+|`_ref_exists`|fn|priv|1921-1930|def _ref_exists(ref_name)|
+|`_local_branch_exists`|fn|priv|1935-1938|def _local_branch_exists(branch_name)|
+|`_remote_branch_exists`|fn|priv|1943-1946|def _remote_branch_exists(branch_name)|
+|`_ensure_release_prerequisites`|fn|priv|1950-1999|def _ensure_release_prerequisites()|
+|`_bump_semver_version`|fn|priv|2005-2025|def _bump_semver_version(current_version, level)|
+|`_run_release_step`|fn|priv|2032-2058|def _run_release_step(level, step_name, action)|
+|`_create_release_commit_for_flow`|fn|priv|2063-2068|def _create_release_commit_for_flow(target_version)|
+|`_push_branch_with_tags`|fn|priv|2074-2078|def _push_branch_with_tags(branch_name)|
+|`_execute_release_flow`|fn|priv|2094-2185|def _execute_release_flow(level, changelog_args=None)|
+|`_execute_backup_flow`|fn|priv|2193-2210|def _execute_backup_flow()|
+|`_run_release_command`|fn|priv|2216-2231|def _run_release_command(level, changelog_args=None)|
+|`_run_backup_command`|fn|priv|2236-2243|def _run_backup_command()|
+|`_run_reset_with_help`|fn|priv|2249-2256|def _run_reset_with_help(base_args, extra)|
+|`_reject_extra_arguments`|fn|priv|2262-2268|def _reject_extra_arguments(extra, alias)|
+|`_parse_release_flags`|fn|priv|2274-2294|def _parse_release_flags(extra, alias)|
+|`_prepare_commit_message`|fn|priv|2300-2310|def _prepare_commit_message(extra, alias)|
+|`_normalize_conventional_description`|fn|priv|2317-2327|def _normalize_conventional_description(description: str)...|
+|`_build_conventional_message`|fn|priv|2336-2357|def _build_conventional_message(kind: str, extra, alias: ...|
+|`_run_conventional_commit`|fn|priv|2364-2369|def _run_conventional_commit(kind: str, alias: str, extra)|
+|`_execute_commit`|fn|priv|2376-2408|def _execute_commit(message, alias, allow_amend=True)|
+|`upgrade_self`|fn|pub|2412-2425|def upgrade_self()|
+|`remove_self`|fn|pub|2429-2432|def remove_self()|
+|`cmd_aa`|fn|pub|2437-2444|def cmd_aa(extra)|
+|`cmd_ra`|fn|pub|2449-2472|def cmd_ra(extra)|
+|`cmd_ar`|fn|pub|2477-2493|def cmd_ar(extra)|
+|`cmd_br`|fn|pub|2498-2501|def cmd_br(extra)|
+|`cmd_bd`|fn|pub|2506-2509|def cmd_bd(extra)|
+|`cmd_ck`|fn|pub|2514-2517|def cmd_ck(extra)|
+|`_ensure_commit_ready`|fn|priv|2522-2535|def _ensure_commit_ready(alias)|
+|`cmd_cm`|fn|pub|2540-2545|def cmd_cm(extra)|
+|`cmd_wip`|fn|pub|2550-2562|def cmd_wip(extra)|
+|`cmd_release`|fn|pub|2567-2589|def cmd_release(extra)|
+|`cmd_new`|fn|pub|2594-2597|def cmd_new(extra)|
+|`cmd_refactor`|fn|pub|2602-2605|def cmd_refactor(extra)|
+|`cmd_fix`|fn|pub|2610-2613|def cmd_fix(extra)|
+|`cmd_change`|fn|pub|2618-2621|def cmd_change(extra)|
+|`cmd_implement`|fn|pub|2626-2629|def cmd_implement(extra)|
+|`cmd_docs`|fn|pub|2634-2637|def cmd_docs(extra)|
+|`cmd_style`|fn|pub|2642-2645|def cmd_style(extra)|
+|`cmd_revert`|fn|pub|2650-2653|def cmd_revert(extra)|
+|`cmd_misc`|fn|pub|2658-2661|def cmd_misc(extra)|
+|`cmd_cover`|fn|pub|2666-2669|def cmd_cover(extra)|
+|`cmd_co`|fn|pub|2674-2677|def cmd_co(extra)|
+|`cmd_dc`|fn|pub|2682-2691|def cmd_dc(extra)|
+|`cmd_dcc`|fn|pub|2696-2699|def cmd_dcc(extra)|
+|`cmd_dccc`|fn|pub|2704-2707|def cmd_dccc(extra)|
+|`cmd_de`|fn|pub|2712-2715|def cmd_de(extra)|
+|`cmd_di`|fn|pub|2720-2723|def cmd_di(extra)|
+|`cmd_diyou`|fn|pub|2728-2731|def cmd_diyou(extra)|
+|`cmd_dime`|fn|pub|2736-2739|def cmd_dime(extra)|
+|`cmd_dwc`|fn|pub|2744-2747|def cmd_dwc(extra)|
+|`cmd_dw`|fn|pub|2752-2759|def cmd_dw(extra)|
+|`cmd_dwcc`|fn|pub|2764-2767|def cmd_dwcc(extra)|
+|`cmd_dcd`|fn|pub|2773-2778|def cmd_dcd(extra)|
+|`cmd_dcm`|fn|pub|2784-2789|def cmd_dcm(extra)|
+|`cmd_ddm`|fn|pub|2795-2800|def cmd_ddm(extra)|
+|`cmd_ed`|fn|pub|2805-2814|def cmd_ed(extra)|
+|`cmd_fe`|fn|pub|2819-2822|def cmd_fe(extra)|
+|`cmd_feall`|fn|pub|2827-2830|def cmd_feall(extra)|
+|`cmd_gp`|fn|pub|2835-2840|def cmd_gp(extra)|
+|`cmd_gr`|fn|pub|2845-2850|def cmd_gr(extra)|
+|`OVERVIEW_COLOR_RESET`|var|pub|2852||
+|`OVERVIEW_COLOR_SECTION_PURPLE`|var|pub|2854||
+|`OVERVIEW_COLOR_AHEAD`|var|pub|2856||
+|`OVERVIEW_COLOR_BEHIND`|var|pub|2858||
+|`OVERVIEW_COLOR_LABEL`|var|pub|2860||
+|`OVERVIEW_COLOR_WHITE`|var|pub|2862||
+|`OVERVIEW_COLOR_WHITE_BOLD`|var|pub|2864||
+|`OVERVIEW_SECTION_TEMPLATE`|var|pub|2866||
+|`OVERVIEW_SUBSECTION_TEMPLATE`|var|pub|2868||
+|`OVERVIEW_DISTANCE_TEMPLATE`|var|pub|2870||
+|`_overview_branch_identifier`|fn|priv|2879-2882|def _overview_branch_identifier(|
+|`_overview_work_prefix_color`|fn|priv|2896-2903|def _overview_work_prefix_color(worktree_state: str) -> str|
+|`_overview_logical_branch_name`|fn|priv|2911-2915|def _overview_logical_branch_name(|
+|`_overview_current_branch_display`|fn|priv|2934-2939|def _overview_current_branch_display(|
+|`_overview_ref_is_available`|fn|priv|2961-2970|def _overview_ref_is_available(ref_name: str) -> bool|
+|`_overview_ref_latest_subject`|fn|priv|2976-2986|def _overview_ref_latest_subject(ref_name: str) -> str|
+|`_overview_discovered_branch_refs`|fn|priv|2991-3014|def _overview_discovered_branch_refs() -> List[str]|
+|`_overview_branch_summary_lines`|fn|priv|3033-3044|def _overview_branch_summary_lines(|
+|`_overview_relation_state`|fn|priv|3087-3096|def _overview_relation_state(ahead: int, behind: int) -> str|
+|`_overview_worktree_state`|fn|priv|3101-3113|def _overview_worktree_state(status_lines=None) -> str|
+|`_overview_distance_text`|fn|priv|3119-3127|def _overview_distance_text(is_ahead: bool, count: int) -...|
+|`_overview_compare_refs`|fn|priv|3134-3176|def _overview_compare_refs(base_ref: str, target_ref: str...|
+|`_overview_ascii_topology_lines`|fn|priv|3197-3208|def _overview_ascii_topology_lines(|
+|`_overview_current_branch_state_lines`|fn|priv|3300-3319|def _overview_current_branch_state_lines(current_branch_d...|
+|`cmd_o`|fn|pub|3325-3479|def cmd_o(extra)|
+|`cmd_str`|fn|pub|3484-3513|def cmd_str(extra)|
+|`cmd_l`|fn|pub|3522-3528|def cmd_l(extra)|
+|`cmd_lb`|fn|pub|3533-3536|def cmd_lb(extra)|
+|`cmd_lg`|fn|pub|3541-3554|def cmd_lg(extra)|
+|`cmd_lh`|fn|pub|3559-3562|def cmd_lh(extra)|
+|`cmd_ll`|fn|pub|3567-3579|def cmd_ll(extra)|
+|`cmd_lm`|fn|pub|3584-3587|def cmd_lm(extra)|
+|`cmd_ls`|fn|pub|3593-3596|def cmd_ls(extra)|
+|`cmd_lsi`|fn|pub|3610-3630|def cmd_lsi(extra)|
+|`cmd_lsa`|fn|pub|3636-3639|def cmd_lsa(extra)|
+|`cmd_lt`|fn|pub|3645-3664|def cmd_lt(extra)|
+|`cmd_me`|fn|pub|3669-3672|def cmd_me(extra)|
+|`cmd_pl`|fn|pub|3677-3680|def cmd_pl(extra)|
+|`cmd_pt`|fn|pub|3685-3688|def cmd_pt(extra)|
+|`cmd_pu`|fn|pub|3693-3696|def cmd_pu(extra)|
+|`cmd_rf`|fn|pub|3701-3704|def cmd_rf(extra)|
+|`cmd_rmtg`|fn|pub|3709-3719|def cmd_rmtg(extra)|
+|`cmd_rmloc`|fn|pub|3724-3727|def cmd_rmloc(extra)|
+|`cmd_rmstg`|fn|pub|3732-3735|def cmd_rmstg(extra)|
+|`cmd_rmunt`|fn|pub|3740-3743|def cmd_rmunt(extra)|
+|`cmd_rs`|fn|pub|3748-3751|def cmd_rs(extra)|
+|`cmd_rssft`|fn|pub|3756-3759|def cmd_rssft(extra)|
+|`cmd_rsmix`|fn|pub|3764-3767|def cmd_rsmix(extra)|
+|`cmd_rshrd`|fn|pub|3772-3775|def cmd_rshrd(extra)|
+|`cmd_rsmrg`|fn|pub|3780-3783|def cmd_rsmrg(extra)|
+|`cmd_rskep`|fn|pub|3788-3791|def cmd_rskep(extra)|
+|`cmd_st`|fn|pub|3796-3799|def cmd_st(extra)|
+|`cmd_tg`|fn|pub|3804-3807|def cmd_tg(extra)|
+|`cmd_unstg`|fn|pub|3812-3815|def cmd_unstg(extra)|
+|`cmd_wt`|fn|pub|3820-3823|def cmd_wt(extra)|
+|`cmd_wtl`|fn|pub|3828-3831|def cmd_wtl(extra)|
+|`cmd_wtp`|fn|pub|3836-3839|def cmd_wtp(extra)|
+|`cmd_wtr`|fn|pub|3844-3847|def cmd_wtr(extra)|
+|`cmd_ver`|fn|pub|3852-3878|def cmd_ver(extra)|
+|`cmd_chver`|fn|pub|3883-3966|def cmd_chver(extra)|
+|`cmd_major`|fn|pub|3975-3979|def cmd_major(extra)|
+|`cmd_minor`|fn|pub|3988-3992|def cmd_minor(extra)|
+|`cmd_patch`|fn|pub|4001-4005|def cmd_patch(extra)|
+|`cmd_backup`|fn|pub|4013-4023|def cmd_backup(extra)|
+|`cmd_changelog`|fn|pub|4033-4070|def cmd_changelog(extra)|
+|`COMMANDS`|var|pub|4073||
+|`print_command_help`|fn|pub|4160-4167|def print_command_help(name, width=None)|
+|`print_all_help`|fn|pub|4171-4205|def print_all_help()|
+|`main`|fn|pub|4211-4261|def main(argv=None, *, check_updates: bool = True)|
 
 
 ---

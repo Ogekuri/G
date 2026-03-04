@@ -195,6 +195,52 @@ class CmdLsiTest(unittest.TestCase):
         calls = [c.args[0] for c in mock_print.call_args_list]
         self.assertEqual(calls, ["src/main.py", "docs/guide.md"])
 
+    ## @brief Verify `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` is a tuple with exactly 1 entry.
+    # @return None.
+    # @satisfies REQ-122
+    def test_lsi_default_excluded_dir_suffixes_is_tuple(self):
+        self.assertIsInstance(core.LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES, tuple)
+        self.assertEqual(len(core.LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES), 1)
+
+    ## @brief Verify `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` contains `.egg-info`.
+    # @return None.
+    # @satisfies REQ-122
+    def test_lsi_default_excluded_dir_suffixes_entries(self):
+        self.assertIn(".egg-info", core.LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES)
+
+    ## @brief Verify `cmd_lsi` filters paths with suffix-matched directory components.
+    # @details Ensures paths containing components ending with `.egg-info`
+    # (e.g., `mypackage.egg-info/PKG-INFO`) are excluded at any path depth,
+    # while non-matching paths pass through.
+    # @return None.
+    # @satisfies REQ-080, REQ-122
+    def test_cmd_lsi_filters_egg_info_directories(self):
+        git_output = (
+            "mypackage.egg-info/PKG-INFO\n"
+            "mypackage.egg-info/SOURCES.txt\n"
+            "src/vendor/other.egg-info/top_level.txt\n"
+            "src/main.py\n"
+            "setup.py"
+        )
+        with mock.patch.object(core, "run_git_text", return_value=git_output):
+            with mock.patch("builtins.print") as mock_print:
+                core.cmd_lsi([])
+        calls = [c.args[0] for c in mock_print.call_args_list]
+        self.assertEqual(calls, ["src/main.py", "setup.py"])
+
+    ## @brief Verify `cmd_lsi --include-all` bypasses suffix-based filtering.
+    # @details Ensures `--include-all` bypasses both exact-match and suffix-match
+    # filtering by delegating directly to `run_git_cmd`.
+    # @return None.
+    # @satisfies REQ-121, REQ-122
+    def test_cmd_lsi_include_all_bypasses_suffix_filter(self):
+        with mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
+            core.cmd_lsi(["--include-all"])
+        run_git.assert_called_once_with(
+            ["ls-files", "--others", "--ignored", "--exclude-standard"],
+            [],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
