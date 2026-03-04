@@ -3589,10 +3589,11 @@ def cmd_ls(extra):
 
 ## @brief Execute `cmd_lsi` runtime logic for Git-Alias CLI.
 # @details Runs `git ls-files --others --ignored --exclude-standard` and filters
-# output by excluding paths whose first component matches any entry in
+# output by excluding paths where any path component matches any entry in
 # `LSI_DEFAULT_EXCLUDED_DIRS`. When `--include-all` is present in @p extra,
 # filtering is bypassed and all output is printed. Additional arguments
-# are forwarded to the underlying git command unchanged.
+# are forwarded to the underlying git command unchanged. Path component
+# matching uses `frozenset.intersection` for O(min(n,m)) lookup per line.
 # @param extra List[str] CLI arguments passed after the alias name.
 # @return None. Filtered output is printed to stdout.
 # @satisfies REQ-080, REQ-121
@@ -3608,8 +3609,8 @@ def cmd_lsi(extra):
     if not output:
         return None
     for line in output.splitlines():
-        first_component = line.split("/", 1)[0]
-        if first_component not in LSI_DEFAULT_EXCLUDED_DIRS:
+        parts = line.split("/")
+        if not LSI_DEFAULT_EXCLUDED_DIRS.intersection(parts):
             print(line)
     return None
 

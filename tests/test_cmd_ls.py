@@ -72,7 +72,7 @@ class CmdLsiTest(unittest.TestCase):
         }
         self.assertEqual(core.LSI_DEFAULT_EXCLUDED_DIRS, expected)
 
-    ## @brief Verify `cmd_lsi` filters out lines whose first path component is excluded.
+    ## @brief Verify `cmd_lsi` filters out lines where any path component is excluded.
     # @return None.
     # @satisfies REQ-080
     def test_cmd_lsi_filters_excluded_dirs(self):
@@ -131,7 +131,7 @@ class CmdLsiTest(unittest.TestCase):
             [],
         )
 
-    ## @brief Verify `cmd_lsi` prints paths not matching any excluded first component.
+    ## @brief Verify `cmd_lsi` prints paths with no excluded component at any depth.
     # @return None.
     # @satisfies REQ-080
     def test_cmd_lsi_allows_non_excluded_paths(self):
@@ -171,6 +171,29 @@ class CmdLsiTest(unittest.TestCase):
             with mock.patch("builtins.print") as mock_print:
                 core.cmd_lsi([])
         mock_print.assert_called_once_with("src/app.py")
+
+    ## @brief Verify `cmd_lsi` filters paths containing excluded dirs at any depth.
+    # @details Ensures paths like `tests/__pycache__/module.pyc`,
+    # `src/pkg/node_modules/dep/index.js`, and `lib/.mypy_cache/data.json`
+    # are excluded even when the excluded component is not the first path segment.
+    # Non-excluded deep paths pass through unchanged.
+    # @return None.
+    # @satisfies REQ-080
+    def test_cmd_lsi_filters_nested_excluded_dirs(self):
+        git_output = (
+            "tests/__pycache__/module.pyc\n"
+            "src/pkg/node_modules/dep/index.js\n"
+            "lib/.mypy_cache/data.json\n"
+            "src/aibar/providers/__pycache__/init.cpython.pyc\n"
+            "vendor/tools/.venv/bin/activate\n"
+            "src/main.py\n"
+            "docs/guide.md"
+        )
+        with mock.patch.object(core, "run_git_text", return_value=git_output):
+            with mock.patch("builtins.print") as mock_print:
+                core.cmd_lsi([])
+        calls = [c.args[0] for c in mock_print.call_args_list]
+        self.assertEqual(calls, ["src/main.py", "docs/guide.md"])
 
 
 if __name__ == "__main__":

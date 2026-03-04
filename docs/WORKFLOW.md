@@ -252,7 +252,7 @@
         - `cmd_ll(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_lm(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_ls(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
-        - `cmd_lsi(...)`: `_to_args(extra)` -> if `--include-all`: `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`; else: `run_git_text(...)` -> `_run_checked(...)` -> filter lines by `LSI_DEFAULT_EXCLUDED_DIRS` -> `print(...)` [`src/git_alias/core.py`]
+        - `cmd_lsi(...)`: `_to_args(extra)` -> if `--include-all`: `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`; else: `run_git_text(...)` -> `_run_checked(...)` -> filter lines by any path component against `LSI_DEFAULT_EXCLUDED_DIRS` -> `print(...)` [`src/git_alias/core.py`]
         - `cmd_lsa(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_lt(...)`: tag visibility flow -> `capture_git_output(...)` (`git tag -l`) -> `_to_args(...)` -> `_run_checked(...)`; per tag `capture_git_output(...)` (`git branch -a --contains <tag>`) -> `_run_checked(...)` -> stdout formatter [`src/git_alias/core.py`]
         - `cmd_me(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
