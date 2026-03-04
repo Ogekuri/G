@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.11.0](https://github.com/Ogekuri/G/compare/v0.10.0..v0.11.0) - 2026-03-04
+### ⛰️  Features
+- Implement new commands.
+- Update .req/models.json file.
+
+### 🐛  Bug Fixes
+- Include .req directory to support worktree.
+
+### 🚜  Changes
+- enforce Doxygen metadata coverage [useReq] *(core)*
+  - update REQ-036 to require Doxygen coverage aligned to REFERENCES index
+  - normalize Doxygen tags in core.py and foresta.py declarations
+  - regenerate docs/REFERENCES.md from source metadata
+  - verify req static-check and full test suite pass
+
+### 📚  Documentation
+- normalize workflow evidence paths [useReq] *(workflow)*
+  - update docs/WORKFLOW.md runtime model references to file-level evidence
+  - keep execution-unit IDs and call-trace structure stable
+  - preserve process/thread model and communication-edge semantics
+
 ## [0.9.0](https://github.com/Ogekuri/G/compare/v0.8.0..v0.9.0) - 2026-02-28
 ### ⛰️  Features
 - add dwd diff alias and traceability [useReq] *(core)*
@@ -391,6 +412,7 @@
 - \[0.8.0\]: https://github.com/Ogekuri/G/releases/tag/v0.8.0
 - \[0.9.0\]: https://github.com/Ogekuri/G/releases/tag/v0.9.0
 - \[0.10.0\]: https://github.com/Ogekuri/G/releases/tag/v0.10.0
+- \[0.11.0\]: https://github.com/Ogekuri/G/releases/tag/v0.11.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -402,3 +424,4 @@
 [0.8.0]: https://github.com/Ogekuri/G/compare/v0.7.0..v0.8.0
 [0.9.0]: https://github.com/Ogekuri/G/compare/v0.8.0..v0.9.0
 [0.10.0]: https://github.com/Ogekuri/G/compare/v0.9.0..v0.10.0
+[0.11.0]: https://github.com/Ogekuri/G/compare/v0.10.0..v0.11.0
