@@ -130,6 +130,7 @@ _GRAPH_SYMBOL_TIP = "\u25cb"  # ○
 def _maxof(x: int, y: int) -> int:
     """
     @brief Return the greater of two integers.
+    @details Performs a single conditional comparison and returns the larger operand.
     @param x {int} First operand.
     @param y {int} Second operand.
     @return {int} max(x, y).
@@ -140,6 +141,7 @@ def _maxof(x: int, y: int) -> int:
 def _round_down2(i: int) -> int:
     """
     @brief Round down to the nearest even number.
+    @details Preserves negative values; for non-negative values clears the least-significant bit.
     @param i {int} Input integer.
     @return {int} Nearest even number <= i; returns i unchanged if negative.
     """
@@ -151,6 +153,7 @@ def _round_down2(i: int) -> int:
 def _str_expand(s: str, length: int) -> str:
     """
     @brief Expand string to at least the given length with spaces.
+    @details Appends trailing spaces only when the current length is smaller than the target.
     @param s {str} Input string.
     @param length {int} Minimum required length.
     @return {str} String padded with trailing spaces if shorter than length.
@@ -163,6 +166,7 @@ def _str_expand(s: str, length: int) -> str:
 def _remove_trailing_blanks(vine: list) -> None:
     """
     @brief Remove trailing None entries from vine array in place.
+    @details Pops elements from the tail while the last slot is `None`.
     @param vine {list} Column array of expected parent commit IDs.
     @return None. Mutates vine in place.
     """
@@ -175,6 +179,16 @@ def _remove_trailing_blanks(vine: list) -> None:
 # ---------------------------------------------------------------------------
 
 
+## @brief Build a character translation function for graph control codes.
+# @details Maps single-character control codes C/M/O/r/t to the configured graph symbols.
+#          Uses a chained replace pipeline because `str.translate` does not support
+#          multi-codepoint replacement targets.
+# @param sym_commit {str} Replacement for 'C' (commit marker).
+# @param sym_merge {str} Replacement for 'M' (merge marker).
+# @param sym_overpass {str} Replacement for 'O' (overpass marker).
+# @param sym_root {str} Replacement for 'r' (root marker).
+# @param sym_tip {str} Replacement for 't' (tip marker).
+# @return {Callable[[str], str]} Translator closure that maps control strings to rendered symbols.
 def _trgen(
     sym_commit: str,
     sym_merge: str,
@@ -182,19 +196,11 @@ def _trgen(
     sym_root: str,
     sym_tip: str,
 ):
-    """
-    @brief Build a character translation function for graph control codes.
-    @details Maps single-character control codes C/M/O/r/t to the configured
-    graph symbols. Uses str.replace chain since Python's str.translate
-    does not support multi-codepoint replacement targets.
-    @param sym_commit {str} Replacement for 'C' (commit).
-    @param sym_merge {str} Replacement for 'M' (merge).
-    @param sym_overpass {str} Replacement for 'O' (overpass).
-    @param sym_root {str} Replacement for 'r' (root).
-    @param sym_tip {str} Replacement for 't' (tip).
-    @return {callable} Function (str) -> str performing the translation.
-    """
-
+    ## @brief Translate graph control markers into configured symbol glyphs.
+    # @details Applies deterministic single-character substitutions for commit, merge,
+    #          overpass, root, and tip tokens.
+    # @param s {str} Graph control-string segment to transform.
+    # @return {str} Transformed control string with configured symbols.
     def translate(s: str) -> str:
         s = s.replace("C", sym_commit)
         s = s.replace("M", sym_merge)
@@ -214,6 +220,7 @@ def _trgen(
 def _git_command(args: List[str], cwd: Optional[str] = None) -> str:
     """
     @brief Execute a git command and return stripped stdout.
+    @details Invokes `subprocess.run(..., check=True)` and propagates non-zero exits as `CalledProcessError`.
     @param args {List[str]} Git sub-command and arguments.
     @param cwd {Optional[str]} Working directory override.
     @return {str} Stripped stdout text.
@@ -230,15 +237,14 @@ def _git_command(args: List[str], cwd: Optional[str] = None) -> str:
     return result.stdout.strip()
 
 
+## @brief Open a git command subprocess with piped stdout for streaming.
+# @details Spawns `git <args>` with text-mode stdout/stderr pipes and optional working-directory override.
+# @param args {List[str]} Git sub-command tokens forwarded without transformation.
+# @param cwd {Optional[str]} Optional command working directory.
+# @return {subprocess.Popen} Process handle with readable stdout pipe.
 def _git_command_output_pipe(
     args: List[str], cwd: Optional[str] = None
 ) -> subprocess.Popen:
-    """
-    @brief Open a git command with piped stdout for streaming.
-    @param args {List[str]} Git sub-command and arguments.
-    @param cwd {Optional[str]} Working directory override.
-    @return {subprocess.Popen} Process with stdout pipe.
-    """
     return subprocess.Popen(
         ["git"] + args,
         stdout=subprocess.PIPE,
@@ -335,6 +341,7 @@ def _get_status(repo_path: str, git_dir: str) -> str:
 def _get_next_pick(lines: List[str], start: int) -> Optional[str]:
     """
     @brief Parse rebase-todo file lines to find the next pick target.
+    @details Skips comments/blank lines and returns the second token from the first actionable row.
     @param lines {List[str]} Lines from git-rebase-todo.
     @param start {int} Starting line index.
     @return {Optional[str]} Short SHA of next pick target, or None.
@@ -348,17 +355,15 @@ def _get_next_pick(lines: List[str], start: int) -> Optional[str]:
     return None
 
 
+## @brief Build a SHA-to-ref mapping from repository references and HEAD state.
+# @details Parses `git show-ref`, resolves annotated tags to target commits, and conditionally
+#          augments the map with active rebase markers (`rebase/next`, `rebase/onto`, `rebase/new`).
+# @satisfies REQ-108
+# @param show_rebase {bool} Enables inclusion of rebase markers when true.
+# @return {Dict[str, List[str]]} Map from full commit SHA to rendered ref labels.
 def _get_refs(
     show_rebase: bool = True,
 ) -> Dict[str, List[str]]:
-    """
-    @brief Build a SHA-to-ref-names mapping from git show-ref and HEAD.
-    @details Resolves annotated tags to their target commit SHAs.
-    Detects active rebase state and adds rebase/next, rebase/onto, rebase/new.
-    @satisfies REQ-108
-    @param show_rebase {bool} Whether to include rebase markers.
-    @return {Dict[str, List[str]]} Mapping of full SHA to list of ref names.
-    """
     refs: Dict[str, List[str]] = {}
 
     try:
@@ -446,6 +451,22 @@ def _get_refs(
 # ---------------------------------------------------------------------------
 
 
+## @brief Draw branch fan topology when a commit SHA appears in multiple vine columns.
+# @details Scans vine slots for duplicate commit references, emits a branch fan line when needed,
+#          and preserves branch-color continuity via `_vis_post`.
+# @satisfies REQ-109
+# @param vine {list} Mutable vine columns storing expected parent SHAs.
+# @param rev {str} Current commit SHA.
+# @param color {Dict[str,str]} ANSI color token map.
+# @param hash_width {int} Width of abbreviated hash column.
+# @param date_width {int} Width of formatted date column.
+# @param graph_margin_left {int} Left-side graph margin.
+# @param style {int} Active graph style identifier.
+# @param reverse_order {bool} Indicates reverse rendering order.
+# @param graph_symbol_tr {Callable[[str], str]} Graph control-code translator.
+# @param branch_colors_now {List[str]} Current branch color assignments.
+# @param branch_colors_ref {List[str]} Allowed branch color palette.
+# @return {Optional[str]} Rendered branch line or None if no duplicate SHA columns exist.
 def _vine_branch(
     vine: list,
     rev: str,
@@ -459,25 +480,6 @@ def _vine_branch(
     branch_colors_now: List[str],
     branch_colors_ref: List[str],
 ) -> Optional[str]:
-    """
-    @brief Draw branching vine matrix between commit K and K^.
-    @details Scans the vine array for multiple occurrences of rev. When found,
-    produces a branch fan visualization line. First match on even index becomes
-    the master 'S' node; subsequent matches become subordinate 's' nodes.
-    @satisfies REQ-109
-    @param vine {list} Column array of expected parent IDs.
-    @param rev {str} Current commit SHA.
-    @param color {Dict[str,str]} ANSI color map.
-    @param hash_width {int} Hash column width.
-    @param date_width {int} Date column width.
-    @param graph_margin_left {int} Left margin columns.
-    @param style {int} Visual style number.
-    @param reverse_order {bool} Whether output is reversed.
-    @param graph_symbol_tr {callable} Symbol translation function.
-    @param branch_colors_now {List[str]} Current branch color state.
-    @param branch_colors_ref {List[str]} Reference branch color palette.
-    @return {Optional[str]} Formatted line to print, or None if no branch.
-    """
     matched = 0
     master = False
     ret = ""
@@ -567,6 +569,24 @@ def _vine_commit(vine: list, rev: str, parents: List[str]) -> str:
     return ret
 
 
+## @brief Draw merge fan topology and update vine state across commit parents.
+# @details For single-parent commits the vine is only advanced; for merge commits a fan visualization
+#          is generated, using lookahead heuristics to preserve adjacent branch continuity.
+# @satisfies REQ-109
+# @param vine {list} Mutable vine columns storing expected parent SHAs.
+# @param rev {str} Current commit SHA.
+# @param next_sha {List[Optional[str]]} Lookahead SHAs used for branch-placement heuristics.
+# @param parents {list} Mutable parent SHA list for merge fan rendering.
+# @param color {Dict[str,str]} ANSI color token map.
+# @param hash_width {int} Width of abbreviated hash column.
+# @param date_width {int} Width of formatted date column.
+# @param graph_margin_left {int} Left-side graph margin.
+# @param style {int} Active graph style identifier.
+# @param reverse_order {bool} Indicates reverse rendering order.
+# @param graph_symbol_tr {Callable[[str], str]} Graph control-code translator.
+# @param branch_colors_now {List[str]} Current branch color assignments.
+# @param branch_colors_ref {List[str]} Allowed branch color palette.
+# @return {Optional[str]} Rendered merge line or None when no explicit merge line is emitted.
 def _vine_merge(
     vine: list,
     rev: str,
@@ -582,27 +602,6 @@ def _vine_merge(
     branch_colors_now: List[str],
     branch_colors_ref: List[str],
 ) -> Optional[str]:
-    """
-    @brief Draw merge vine matrix between commit K and K^parents.
-    @details For single-parent commits, just updates the vine. For merges,
-    produces a fan visualization showing how parent branches merge.
-    Uses subvine lookahead to place previously-seen branches adjacently.
-    @satisfies REQ-109
-    @param vine {list} Column array of expected parent IDs.
-    @param rev {str} Current commit SHA.
-    @param next_sha {List[Optional[str]]} Next commit SHAs from lookahead.
-    @param parents {list} Parent SHA list (mutable; entries may be spliced).
-    @param color {Dict[str,str]} ANSI color map.
-    @param hash_width {int} Hash column width.
-    @param date_width {int} Date column width.
-    @param graph_margin_left {int} Left margin columns.
-    @param style {int} Visual style number.
-    @param reverse_order {bool} Whether output is reversed.
-    @param graph_symbol_tr {callable} Symbol translation function.
-    @param branch_colors_now {List[str]} Current branch color state.
-    @param branch_colors_ref {List[str]} Reference branch color palette.
-    @return {Optional[str]} Formatted merge line to print, or None.
-    """
     orig_vine = -1
     for i in range(len(vine)):
         if vine[i] == rev:
@@ -739,6 +738,7 @@ def _vine_merge(
 def _vis_commit(s: str, f: Optional[str] = None) -> str:
     """
     @brief Post-process commit control string.
+    @details Trims trailing spaces and appends the optional suffix segment when provided.
     @param s {str} Raw control string from vine_commit.
     @param f {Optional[str]} Optional suffix.
     @return {str} Trimmed control string.
@@ -776,6 +776,10 @@ def _vis_fan(s: str, fan_type: str) -> str:
         s = s[:first_s] + new_middle + s[last_s + 1 :]
 
     # Transform ODODO.. sequences into contiguous overpass
+    ## @brief Expand matched overpass control segments to contiguous overpass markers.
+    # @details Converts regex match groups for `O[DO]+O` into equal-length `O...O` spans.
+    # @param m {re.Match[str]} Regex match object for the overpass control segment.
+    # @return {str} Replacement string composed only of `O` markers.
     def _overpass_replace(m):
         return "O" * len(m.group(0))
 
@@ -824,6 +828,7 @@ def _vis_fan(s: str, fan_type: str) -> str:
 def _vis_fan2L(left: str) -> str:
     """
     @brief Transform left side of fan visualization.
+    @details Converts leading `s` to `e` and remaining `s` markers to `f`.
     @param left {str} Left portion of control string.
     @return {str} Transformed left portion.
     """
@@ -836,6 +841,7 @@ def _vis_fan2L(left: str) -> str:
 def _vis_fan2R(right: str) -> str:
     """
     @brief Transform right side of fan visualization.
+    @details Converts trailing `s` to `g` and remaining `s` markers to `f`.
     @param right {str} Right portion of control string.
     @return {str} Transformed right portion.
     """
@@ -867,6 +873,16 @@ _STYLE_MAPS = {
 }
 
 
+## @brief Convert graph control-string tokens into styled Unicode output.
+# @details Applies optional space-filling after commit markers, reverse-order fan transformation,
+#          style-specific Unicode translation, and final graph-symbol replacement.
+# @satisfies REQ-101
+# @param s {str} Graph control-string line.
+# @param spc {bool} Enables post-commit-space fill when true.
+# @param style {int} Style selector (`1`, `2`, `10`, `15`).
+# @param reverse_order {bool} Enables reverse fan transformation when true.
+# @param graph_symbol_tr {Callable[[str], str]} Control-to-symbol translator function.
+# @return {str} Rendered graph line with selected style and symbols.
 def _vis_xfrm(
     s: str,
     spc: bool,
@@ -874,18 +890,6 @@ def _vis_xfrm(
     reverse_order: bool,
     graph_symbol_tr,
 ) -> str:
-    """
-    @brief Apply style transformation to control string.
-    @details Maps control characters to Unicode box-drawing characters based
-    on the active style. Handles space filling for commit lines and
-    reverse-order edge swapping.
-    @param s {str} Control string.
-    @param spc {bool} Whether to fill spaces after commit marker.
-    @param style {int} Visual style number (1, 2, 10, 15).
-    @param reverse_order {bool} Whether output order is reversed.
-    @param graph_symbol_tr {callable} Symbol translation function.
-    @return {str} Unicode-rendered graph string.
-    """
     if spc:
         # Fill spaces after commit/tip/root markers with '*'
         match = re.search(r"[Ctr]", s)
@@ -909,6 +913,18 @@ def _vis_xfrm(
     return graph_symbol_tr(s)
 
 
+## @brief Post-process graph control strings with style transform and branch coloring.
+# @details Applies `_vis_xfrm` to graph/control suffix segments, preserves ANSI spans, and injects
+#          branch-color-specific commit glyph coloring based on tracked branch state.
+# @param s {str} Primary graph control string.
+# @param f {Optional[str]} Optional suffix containing refs/message text.
+# @param style {int} Active graph style identifier.
+# @param reverse_order {bool} Indicates reverse rendering order.
+# @param graph_symbol_tr {Callable[[str], str]} Graph control-code translator.
+# @param color {Dict[str,str]} ANSI color token map (empty in no-color mode).
+# @param branch_colors_now {List[str]} Current branch color assignments.
+# @param branch_colors_ref {List[str]} Allowed branch color palette.
+# @return {str} Final rendered line with style transformation and ANSI colors.
 def _vis_post(
     s: str,
     f: Optional[str],
@@ -919,20 +935,6 @@ def _vis_post(
     branch_colors_now: List[str],
     branch_colors_ref: List[str],
 ) -> str:
-    """
-    @brief Post-process vine graphic with style transform and coloring.
-    @details Applies vis_xfrm to the main string and optional suffix,
-    handles filler replacement and branch-color-aware commit symbol coloring.
-    @param s {str} Main graph control string.
-    @param f {Optional[str]} Optional ref/message suffix (may contain ANSI).
-    @param style {int} Visual style number.
-    @param reverse_order {bool} Whether output is reversed.
-    @param graph_symbol_tr {callable} Symbol translation function.
-    @param color {Dict[str,str]} ANSI color map (empty dict if no-color).
-    @param branch_colors_now {List[str]} Current branch color assignments.
-    @param branch_colors_ref {List[str]} Reference branch color palette.
-    @return {str} Formatted graph string with ANSI colors.
-    """
     # Update branch color assignments before transforming
     _update_branch_colors(s, branch_colors_now, branch_colors_ref)
 
@@ -992,22 +994,19 @@ def _vis_post(
     return tree_code + s + default_code
 
 
+## @brief Update branch-color assignments using current vine control-string content.
+# @details Scans even vine slots for branch indicators (`e`, `f`, `g`, `t`) and assigns colors
+#          from the reference palette while avoiding immediate neighbor color collisions.
+# @satisfies REQ-110
+# @param s {str} Vine control string for the current rendered line.
+# @param branch_colors_now {List[str]} Mutable current branch-color assignments.
+# @param branch_colors_ref {List[str]} Fixed branch-color palette.
+# @return None. Mutates `branch_colors_now` in place.
 def _update_branch_colors(
     s: str,
     branch_colors_now: List[str],
     branch_colors_ref: List[str],
 ) -> None:
-    """
-    @brief Update branch color assignments based on the current control string.
-    @details Examines even-index characters in the control string. When a new
-    branch indicator (e/f/g/t) is found, assigns a color from the reference
-    palette that differs from both neighbors, ensuring visual distinctness.
-    @satisfies REQ-110
-    @param s {str} Control string from vine algorithm.
-    @param branch_colors_now {List[str]} Current color assignments (mutated).
-    @param branch_colors_ref {List[str]} Reference color palette.
-    @return None. Mutates branch_colors_now in place.
-    """
     # Extract odd-indexed characters (even vine slots)
     s_arr_odd = [s[i] for i in range(0, len(s), 2)]
 
@@ -1043,18 +1042,16 @@ def _update_branch_colors(
 # ---------------------------------------------------------------------------
 
 
+## @brief Read one commit-log line plus bounded lookahead for subvine processing.
+# @details Maintains a rolling prefetch buffer and returns the current line with up to
+#          `max_count - 1` subsequent entries for merge lookahead heuristics.
+# @param lines_iter {Iterator[str]} Iterator yielding raw git-log lines.
+# @param buffer {list} Mutable rolling prefetch buffer.
+# @param max_count {int} Maximum total items in returned block.
+# @return {Tuple[Optional[str], List[Optional[str]]]} Current line and lookahead list.
 def _get_line_block(
     lines_iter, buffer: list, max_count: int
 ) -> Tuple[Optional[str], List[Optional[str]]]:
-    """
-    @brief Read a block of lines for subvine lookahead.
-    @details Maintains a rolling buffer of upcoming lines. Returns the next
-    line plus up to max_count-1 lookahead lines for subvine depth analysis.
-    @param lines_iter Iterator over git log output lines.
-    @param buffer {list} Rolling buffer of pre-read lines.
-    @param max_count {int} Maximum block size (subvine_depth + 1).
-    @return {Tuple[Optional[str], List[Optional[str]]]} Current line and lookahead.
-    """
     while len(buffer) < max_count:
         try:
             x = next(lines_iter)
@@ -1120,6 +1117,29 @@ class _ReverseOutput:
 # ---------------------------------------------------------------------------
 
 
+## @brief Stream git log commits, render vine graph lines, and emit final output.
+# @details Opens a `git log` pipe, iterates commits, executes vine_branch/vine_commit/vine_merge
+#          rendering stages, and writes normalized lines to the configured output stream.
+# @satisfies REQ-099, REQ-100, REQ-109
+# @param refs {Dict[str,List[str]]} SHA-to-reference mapping.
+# @param status {str} Working-tree status token set.
+# @param show_status {bool} Enables status markers in HEAD decorations.
+# @param pretty_fmt {str} Git pretty-format expression.
+# @param argv {List[str]} Additional passthrough arguments for `git log`.
+# @param color {Dict[str,str]} ANSI color token map.
+# @param hash_width {int} Width of hash output column.
+# @param date_width {int} Width of date output column.
+# @param date_format {str} Datetime format string for commit dates.
+# @param graph_margin_left {int} Left graph margin width.
+# @param graph_margin_right {int} Right graph margin width.
+# @param subvine_depth {int} Maximum subvine lookahead depth.
+# @param style {int} Active graph style identifier.
+# @param reverse_order {bool} Enables reverse commit-output ordering.
+# @param graph_symbol_tr {Callable[[str], str]} Graph symbol translator function.
+# @param output_stream {IO[str]} Destination stream for rendered lines.
+# @param branch_colors_now {List[str]} Mutable current branch-color state.
+# @param branch_colors_ref {List[str]} Fixed branch-color palette.
+# @return None.
 def _process(
     refs: Dict[str, List[str]],
     status: str,
@@ -1140,32 +1160,6 @@ def _process(
     branch_colors_now: List[str],
     branch_colors_ref: List[str],
 ) -> None:
-    """
-    @brief Main processing loop: read git log, render tree, write output.
-    @details Opens a git log pipe with the configured format, iterates over
-    commits, and for each commit executes the vine_branch/vine_commit/vine_merge
-    pipeline to produce the tree visualization.
-    @satisfies REQ-099, REQ-100, REQ-109
-    @param refs {Dict[str,List[str]]} SHA-to-ref mapping.
-    @param status {str} Working tree status string.
-    @param show_status {bool} Whether to display status near HEAD.
-    @param pretty_fmt {str} Git pretty format string.
-    @param argv {List[str]} Additional arguments for git log.
-    @param color {Dict[str,str]} ANSI color map.
-    @param hash_width {int} Hash column width.
-    @param date_width {int} Date column width.
-    @param date_format {str} strftime format for dates.
-    @param graph_margin_left {int} Left margin columns.
-    @param graph_margin_right {int} Right margin columns.
-    @param subvine_depth {int} Maximum subvine lookahead depth.
-    @param style {int} Visual style number.
-    @param reverse_order {bool} Whether to reverse output.
-    @param graph_symbol_tr {callable} Symbol translation function.
-    @param output_stream Output stream for writing.
-    @param branch_colors_now {List[str]} Current branch color assignments.
-    @param branch_colors_ref {List[str]} Reference branch color palette.
-    @return None.
-    """
     vine: list = []
     proc = _git_command_output_pipe(
         [
@@ -1178,6 +1172,9 @@ def _process(
 
     buffer: list = []
 
+    ## @brief Yield streamed git-log lines from subprocess stdout.
+    # @details Wraps `proc.stdout` iteration to keep generator creation local to `_process`.
+    # @return {Iterator[str]} Iterator emitting raw log lines including trailing newlines.
     def _lines_iter():
         assert proc.stdout is not None
         for raw_line in proc.stdout:

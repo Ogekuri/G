@@ -705,6 +705,7 @@ def _to_args(extra):
 
 
 ## @brief Class `CommandExecutionError` models a typed runtime container/error boundary.
+# @details Captures subprocess execution metadata and exposes normalized human-readable failure text.
 class CommandExecutionError(RuntimeError):
     ## @brief Execute `__init__` runtime logic for Git-Alias CLI.
     # @param self Input parameter consumed by `__init__`.
@@ -761,11 +762,13 @@ def _run_checked(*popenargs, **kwargs):
 
 
 ## @brief Class `VersionDetectionError` models a typed runtime container/error boundary.
+# @details Represents deterministic failures encountered while resolving semantic versions from repository files.
 class VersionDetectionError(RuntimeError):
     pass
 
 
 ## @brief Class `ReleaseError` models a typed runtime container/error boundary.
+# @details Represents release-flow precondition or orchestration failures.
 class ReleaseError(RuntimeError):
     pass
 
@@ -1518,11 +1521,6 @@ def generate_changelog_document(repo_root: Path, include_patch: bool, disable_hi
     return "\n".join(lines).rstrip() + "\n"
 
 
-## @brief Execute `_collect_version_files` runtime logic for Git-Alias CLI.
-# @details Executes `_collect_version_files` using deterministic CLI control-flow and explicit error propagation.
-# @param root Input parameter consumed by `_collect_version_files`.
-# @param pattern Input parameter consumed by `_collect_version_files`.
-# @return Result emitted by `_collect_version_files` according to command contract.
 ## @brief Store resolved per-rule context for version discovery and matching.
 # @details Encapsulates immutable artifacts required across detect/update/verify phases:
 #          compiled regex, resolved file list, and pre-rendered relative-path map for stable debug output.
