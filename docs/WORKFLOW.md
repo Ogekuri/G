@@ -73,67 +73,67 @@
 ## Execution Units
 ### PROC:main
 - Entrypoint(s):
-  - `git_alias.__main__::<module_guard>`: module entrypoint forwarding process exit code [`src/git_alias/__main__.py:10-11`]
-  - `main(argv=None, *, check_updates=True)`: primary CLI dispatcher [`src/git_alias/core.py:3786-3836`]
+  - `git_alias.__main__::<module_guard>`: module entrypoint forwarding process exit code [`src/git_alias/__main__.py`]
+  - `main(argv=None, *, check_updates=True)`: primary CLI dispatcher [`src/git_alias/core.py`]
 - Lifecycle/trigger:
   - Start: OS invokes Python module entrypoint (`python -m git_alias`) or console entrypoint calling `main(...)`.
   - Stop: returns from `main(...)` for non-error flows or terminates via `sys.exit(...)` on validation/command failures.
   - Loop/block: no long-running loop; single-shot command execution.
   - Threads: no explicit threads detected in `src/` (`threading`/`Thread` creation absent).
 - Internal Call-Trace Tree:
-  - `__main__::<module_guard>(...)`: module execution bridge [`src/git_alias/__main__.py:10-11`]
-    - `main(...)`: CLI dispatch root [`src/git_alias/core.py:3786`]
-      - `get_git_root(...)`: resolve repository root path [`src/git_alias/core.py:293`]
-        - `_run_checked(...)`: subprocess execution wrapper [`src/git_alias/core.py:588`]
-      - `load_cli_config(...)`: hydrate runtime config map from local `.g.conf` and global `$HOME/.g/g.conf` while ignoring out-of-scope keys in each file; `default_commit_module` accepts empty-string values as valid [`src/git_alias/core.py:383`]
-        - `get_global_config_path(...)`: resolve global config path [`src/git_alias/core.py:322`]
-        - `_read_config_object(...)`: parse JSON object safely [`src/git_alias/core.py:331`]
-        - `_apply_config_values(...)`: validate and apply key subsets; preserve empty `default_commit_module` without fallback coercion [`src/git_alias/core.py:355`]
-        - `get_config_path(...)`: resolve repository config path [`src/git_alias/core.py:313`]
-      - `check_for_newer_version(...)`: optional remote release check and cache handling [`src/git_alias/core.py:187`]
-        - `get_cli_version(...)`: parse `__version__` from package init [`src/git_alias/core.py:160`]
-        - `_parse_semver_tuple(...)`: semantic version parser [`src/git_alias/core.py:1360`]
-        - `_normalize_semver_text(...)`: strip leading `v` tag prefix [`src/git_alias/core.py:176`]
-      - `print_all_help(...)`: global help output path [`src/git_alias/core.py:3746`]
-        - `get_cli_version(...)`: include runtime version in usage header [`src/git_alias/core.py:160`]
-        - `print_command_help(...)`: print per-command help rows [`src/git_alias/core.py:3736`]
-      - `print_command_help(...)`: per-command help path [`src/git_alias/core.py:3736`]
-      - `write_default_config(...)`: normalize local/global config files to strict key scopes [`src/git_alias/core.py:443`]
-        - `_write_missing_config_values(...)`: keep only allowed keys, fill defaults, and rename global `editor` to `edit_command` [`src/git_alias/core.py:396`]
-        - `get_config_path(...)`: resolve repository target [`src/git_alias/core.py:313`]
-        - `get_global_config_path(...)`: resolve global target [`src/git_alias/core.py:322`]
-      - `upgrade_self(...)`: self-upgrade action [`src/git_alias/core.py:1733`]
-        - `_run_checked(...)`: spawn `uv tool install ...` [`src/git_alias/core.py:588`]
-      - `remove_self(...)`: self-remove action [`src/git_alias/core.py:1750`]
-        - `_run_checked(...)`: spawn `uv tool uninstall ...` [`src/git_alias/core.py:588`]
-      - `run_git_cmd(...)`: fallback path when command not registered in `COMMANDS` [`src/git_alias/core.py:613`]
-        - `_to_args(...)`: normalize optional arg list [`src/git_alias/core.py:536`]
-        - `_run_checked(...)`: spawn `git` process [`src/git_alias/core.py:588`]
+  - `__main__::<module_guard>(...)`: module execution bridge [`src/git_alias/__main__.py`]
+    - `main(...)`: CLI dispatch root [`src/git_alias/core.py`]
+      - `get_git_root(...)`: resolve repository root path [`src/git_alias/core.py`]
+        - `_run_checked(...)`: subprocess execution wrapper [`src/git_alias/core.py`]
+      - `load_cli_config(...)`: hydrate runtime config map from local `.g.conf` and global `$HOME/.g/g.conf` while ignoring out-of-scope keys in each file; `default_commit_module` accepts empty-string values as valid [`src/git_alias/core.py`]
+        - `get_global_config_path(...)`: resolve global config path [`src/git_alias/core.py`]
+        - `_read_config_object(...)`: parse JSON object safely [`src/git_alias/core.py`]
+        - `_apply_config_values(...)`: validate and apply key subsets; preserve empty `default_commit_module` without fallback coercion [`src/git_alias/core.py`]
+        - `get_config_path(...)`: resolve repository config path [`src/git_alias/core.py`]
+      - `check_for_newer_version(...)`: optional remote release check and cache handling [`src/git_alias/core.py`]
+        - `get_cli_version(...)`: parse `__version__` from package init [`src/git_alias/core.py`]
+        - `_parse_semver_tuple(...)`: semantic version parser [`src/git_alias/core.py`]
+        - `_normalize_semver_text(...)`: strip leading `v` tag prefix [`src/git_alias/core.py`]
+      - `print_all_help(...)`: global help output path [`src/git_alias/core.py`]
+        - `get_cli_version(...)`: include runtime version in usage header [`src/git_alias/core.py`]
+        - `print_command_help(...)`: print per-command help rows [`src/git_alias/core.py`]
+      - `print_command_help(...)`: per-command help path [`src/git_alias/core.py`]
+      - `write_default_config(...)`: normalize local/global config files to strict key scopes [`src/git_alias/core.py`]
+        - `_write_missing_config_values(...)`: keep only allowed keys, fill defaults, and rename global `editor` to `edit_command` [`src/git_alias/core.py`]
+        - `get_config_path(...)`: resolve repository target [`src/git_alias/core.py`]
+        - `get_global_config_path(...)`: resolve global target [`src/git_alias/core.py`]
+      - `upgrade_self(...)`: self-upgrade action [`src/git_alias/core.py`]
+        - `_run_checked(...)`: spawn `uv tool install ...` [`src/git_alias/core.py`]
+      - `remove_self(...)`: self-remove action [`src/git_alias/core.py`]
+        - `_run_checked(...)`: spawn `uv tool uninstall ...` [`src/git_alias/core.py`]
+      - `run_git_cmd(...)`: fallback path when command not registered in `COMMANDS` [`src/git_alias/core.py`]
+        - `_to_args(...)`: normalize optional arg list [`src/git_alias/core.py`]
+        - `_run_checked(...)`: spawn `git` process [`src/git_alias/core.py`]
       - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py:3144-3217`, `src/git_alias/core.py:3309-3319`]
-        - `cmd_aa(...)`: stage all changed files [`src/git_alias/core.py:1758`]
+        - `cmd_aa(...)`: stage all changed files [`src/git_alias/core.py`]
           - `_git_status_lines(...)` -> `_run_checked(...)`
           - `has_unstaged_changes(...)` -> `_git_status_lines(...)`
           - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`
-        - `cmd_ra(...)`: mixed reset guard flow [`src/git_alias/core.py:1770`]
+        - `cmd_ra(...)`: mixed reset guard flow [`src/git_alias/core.py`]
           - `_to_args(...)`
           - `print_command_help(...)`
           - `get_branch(...)` -> `get_config_value(...)`
           - `_current_branch_name(...)` -> `_run_checked(...)`
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
           - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`
-        - `cmd_ar(...)`: archive + gzip flow [`src/git_alias/core.py:1798`]
+        - `cmd_ar(...)`: archive + gzip flow [`src/git_alias/core.py`]
           - `_to_args(...)`
           - `get_branch(...)` -> `get_config_value(...)`
           - `capture_git_output(...)` -> `_run_checked(...)`
           - `_run_checked(...)` (gzip invocation)
-        - `cmd_br(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:1817`]
-        - `cmd_bd(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:1825`]
-        - `cmd_ck(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:1833`]
-        - `_ensure_commit_ready(...)`: commit precondition guard [`src/git_alias/core.py:1841`]
+        - `cmd_br(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_bd(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_ck(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `_ensure_commit_ready(...)`: commit precondition guard [`src/git_alias/core.py`]
           - `_git_status_lines(...)` -> `_run_checked(...)`
           - `has_unstaged_changes(...)` -> `_git_status_lines(...)`
           - `has_staged_changes(...)` -> `_git_status_lines(...)`
-        - `cmd_cm(...)`: standard commit flow [`src/git_alias/core.py:1859`]
+        - `cmd_cm(...)`: standard commit flow [`src/git_alias/core.py`]
           - `_prepare_commit_message(...)` -> `_to_args(...)`, `print_command_help(...)`
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
           - `_execute_commit(...)`
@@ -146,12 +146,12 @@
             - `_git_status_lines(...)` -> `_run_checked(...)`
             - `has_unstaged_changes(...)` -> `_git_status_lines(...)`
             - `has_staged_changes(...)` -> `_git_status_lines(...)`
-        - `cmd_wip(...)`: WIP commit flow [`src/git_alias/core.py:1869`]
+        - `cmd_wip(...)`: WIP commit flow [`src/git_alias/core.py`]
           - `_to_args(...)`
           - `print_command_help(...)`
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
-        - `cmd_release(...)`: release commit flow [`src/git_alias/core.py:2056`]
+        - `cmd_release(...)`: release commit flow [`src/git_alias/core.py`]
           - `_to_args(...)`
           - `print_command_help(...)`
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
@@ -164,8 +164,8 @@
             - `_read_version_file_text(...)`
             - `_iter_versions_in_text(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
-        - `cmd_new(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1913`]
-        - `cmd_o(...)`: repository overview flow [`src/git_alias/core.py:3055`]
+        - `cmd_new(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
+        - `cmd_o(...)`: repository overview flow [`src/git_alias/core.py`]
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
           - `get_branch(...)` (`work`, `develop`, `master`) -> `get_config_value(...)`
           - `run_git_text(...)` (`git branch --show-current`) -> `_run_checked(...)`
@@ -194,41 +194,41 @@
               - `run_git_text(...)` (`git log -1 --pretty=%s`) -> `_run_checked(...)` (ANSI escapes stripped before rendering)
           - `_overview_current_branch_state_lines(...)` (executed only when `worktree_state != clean`; normalizes header and colors each two-character status prefix in bright red)
             - `run_git_text(...)` (`git status -sb`) -> `_run_checked(...)`
-        - `cmd_refactor(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1921`]
-        - `cmd_fix(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1929`]
-        - `cmd_change(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1937`]
-        - `cmd_implement(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1945`]
-        - `cmd_docs(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1953`]
-        - `cmd_style(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1961`]
-        - `cmd_revert(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1969`]
-        - `cmd_misc(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1977`]
-        - `cmd_cover(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py:1985`]
-        - `_run_conventional_commit(...)`: conventional commit helper [`src/git_alias/core.py:2165`]
-          - `_build_conventional_message(...)` -> `_prepare_commit_message(...)`, `get_config_value(...)`, `_normalize_conventional_description(...)`; emits `<type>: <description>` when effective module is empty, otherwise `<type>(<module>): <description>` [`src/git_alias/core.py:2140`]
+        - `cmd_refactor(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
+        - `cmd_fix(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
+        - `cmd_change(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
+        - `cmd_implement(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
+        - `cmd_docs(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
+        - `cmd_style(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
+        - `cmd_revert(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
+        - `cmd_misc(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
+        - `cmd_cover(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
+        - `_run_conventional_commit(...)`: conventional commit helper [`src/git_alias/core.py`]
+          - `_build_conventional_message(...)` -> `_prepare_commit_message(...)`, `get_config_value(...)`, `_normalize_conventional_description(...)`; emits `<type>: <description>` when effective module is empty, otherwise `<type>(<module>): <description>` [`src/git_alias/core.py`]
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
-        - `cmd_co(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:1993`]
-        - `cmd_dc(...)`: wrapper + arg guard -> `_to_args(...)`, `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2001`]
-        - `cmd_dcc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2013`]
-        - `cmd_dccc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2021`]
-        - `cmd_de(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2029`]
-        - `cmd_di(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2037`]
-        - `cmd_diyou(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2045`]
-        - `cmd_dime(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2053`]
-        - `cmd_dw(...)`: wrapper + arg guard -> `_to_args(...)`, `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2061`]
-        - `cmd_dwc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2061`]
-        - `cmd_dwcc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2069`]
-        - `cmd_dwd(...)`: wrapper -> `get_branch(...)` (`work`, `develop`), `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2577`]
-        - `cmd_ed(...)`: external editor flow [`src/git_alias/core.py:2530`]
+        - `cmd_co(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_dc(...)`: wrapper + arg guard -> `_to_args(...)`, `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_dcc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_dccc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_de(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_di(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_diyou(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_dime(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_dw(...)`: wrapper + arg guard -> `_to_args(...)`, `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_dwc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_dwcc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_dwd(...)`: wrapper -> `get_branch(...)` (`work`, `develop`), `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_ed(...)`: external editor flow [`src/git_alias/core.py`]
           - `_to_args(...)`
           - `run_editor_command(...)`
             - `_editor_base_command(...)` -> `get_editor(...)` -> `get_config_value(...)`
             - `run_command(...)` -> `_run_checked(...)`
-        - `cmd_fe(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2091`]
-        - `cmd_feall(...)`: `cmd_fe(...)` + `_to_args(...)` [`src/git_alias/core.py:2099`]
-        - `cmd_gp(...)`: GUI wrapper -> `_config_command_parts(...)`, `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2538`]
-        - `cmd_gr(...)`: GUI wrapper -> `_config_command_parts(...)`, `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2546`]
-        - `cmd_str(...)`: remote-status flow [`src/git_alias/core.py:2543`]
+        - `cmd_fe(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_feall(...)`: `cmd_fe(...)` + `_to_args(...)` [`src/git_alias/core.py`]
+        - `cmd_gp(...)`: GUI wrapper -> `_config_command_parts(...)`, `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_gr(...)`: GUI wrapper -> `_config_command_parts(...)`, `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_str(...)`: remote-status flow [`src/git_alias/core.py`]
           - `run_git_text(...)` -> `_run_checked(...)`
           - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`
         - `cmd_l(...)`: tree visualization via foresta engine with default `-n 35` injection when no CLI args are provided [`src/git_alias/core.py`]
@@ -244,50 +244,50 @@
               - `foresta._vine_merge(...)`: draw merge fan-out connectors [`src/git_alias/foresta.py`]
               - `foresta._vis_post(...)` -> `foresta._vis_xfrm(...)`: visual transform pipeline [`src/git_alias/foresta.py`]
               - `foresta._update_branch_colors(...)`: branch color cycling [`src/git_alias/foresta.py`]
-        - `cmd_lb(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2157`]
-        - `cmd_lg(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2165`]
-        - `cmd_lh(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2183`]
-        - `cmd_ll(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2191`]
-        - `cmd_lm(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2505`]
-        - `cmd_ls(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2515`]
-        - `cmd_lsi(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2524`]
-        - `cmd_lsa(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2536`]
-        - `cmd_lt(...)`: tag visibility flow -> `capture_git_output(...)` (`git tag -l`) -> `_to_args(...)` -> `_run_checked(...)`; per tag `capture_git_output(...)` (`git branch -a --contains <tag>`) -> `_run_checked(...)` -> stdout formatter [`src/git_alias/core.py:2545`]
-        - `cmd_me(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2224`]
-        - `cmd_pl(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2232`]
-        - `cmd_pt(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2240`]
-        - `cmd_pu(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2248`]
-        - `cmd_rf(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2256`]
-        - `cmd_rmtg(...)`: tag delete flow [`src/git_alias/core.py:2264`]
+        - `cmd_lb(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_lg(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_lh(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_ll(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_lm(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_ls(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_lsi(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_lsa(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_lt(...)`: tag visibility flow -> `capture_git_output(...)` (`git tag -l`) -> `_to_args(...)` -> `_run_checked(...)`; per tag `capture_git_output(...)` (`git branch -a --contains <tag>`) -> `_run_checked(...)` -> stdout formatter [`src/git_alias/core.py`]
+        - `cmd_me(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_pl(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_pt(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_pu(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_rf(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_rmtg(...)`: tag delete flow [`src/git_alias/core.py`]
           - `_to_args(...)`
           - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`
-        - `cmd_rmloc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2279`]
-        - `cmd_rmstg(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2287`]
-        - `cmd_rmunt(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2295`]
-        - `cmd_rs(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py:2303`]
-        - `cmd_rssft(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py:2311`]
-        - `cmd_rsmix(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py:2319`]
-        - `cmd_rshrd(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py:2327`]
-        - `cmd_rsmrg(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py:2335`]
-        - `cmd_rskep(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py:2343`]
-        - `_run_reset_with_help(...)`: reset helper [`src/git_alias/core.py:1834`]
+        - `cmd_rmloc(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_rmstg(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_rmunt(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_rs(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py`]
+        - `cmd_rssft(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py`]
+        - `cmd_rsmix(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py`]
+        - `cmd_rshrd(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py`]
+        - `cmd_rsmrg(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py`]
+        - `cmd_rskep(...)`: `_run_reset_with_help(...)` [`src/git_alias/core.py`]
+        - `_run_reset_with_help(...)`: reset helper [`src/git_alias/core.py`]
           - `_to_args(...)`
           - `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)`
-        - `cmd_st(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2351`]
-        - `cmd_tg(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2359`]
-        - `cmd_unstg(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py:2367`]
+        - `cmd_st(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_tg(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_unstg(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_wt(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_wtl(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_wtp(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_wtr(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
-        - `cmd_ver(...)`: version validation flow [`src/git_alias/core.py:2545`]
+        - `cmd_ver(...)`: version validation flow [`src/git_alias/core.py`]
           - `_to_args(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
           - `get_version_rules(...)` -> `_load_config_rules(...)`
           - `_build_version_file_inventory(...)` -> `run_git_text(...)`, `_is_version_path_excluded(...)`
           - `_prepare_version_rule_contexts(...)` -> `_collect_version_files(...)`, `re.compile(...)`
           - `_determine_canonical_version(...)` -> `_read_version_file_text(...)`, `_iter_versions_in_text(...)`
-        - `cmd_chver(...)`: version rewrite flow [`src/git_alias/core.py:2576`]
+        - `cmd_chver(...)`: version rewrite flow [`src/git_alias/core.py`]
           - `_to_args(...)`
           - `_parse_semver_tuple(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
@@ -298,10 +298,10 @@
           - `_read_version_file_text(...)`
           - `_replace_versions_in_text(...)`
           - `_determine_canonical_version(...)` (verification pass; reuses prepared contexts and cache)
-        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py:2734`]
+        - `cmd_major(...)`: release pipeline entry [`src/git_alias/core.py`]
           - `_parse_release_flags(...)` -> `_to_args(...)`
           - `_run_release_command(...)`
-            - `_execute_release_flow(...)` [`src/git_alias/core.py:1739`]
+            - `_execute_release_flow(...)` [`src/git_alias/core.py`]
               - `_ensure_release_prerequisites(...)`
                 - `get_branch(...)` -> `get_config_value(...)`
                 - `_local_branch_exists(...)` -> `_ref_exists(...)`
@@ -339,32 +339,32 @@
               - `_run_release_step(...)` shared post-integration steps:
                 - `cmd_co(...)` (return to work)
                 - `cmd_de(...)`
-        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py:2747`]
-        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/tag/push and creates definitive tag on develop before `push --tags` [`src/git_alias/core.py:2760`]
-        - `cmd_backup(...)`: backup workflow entry [`src/git_alias/core.py:2772`]
-          - `_run_backup_command(...)` [`src/git_alias/core.py:1835`]
-            - `_execute_backup_flow(...)`: merge/push work->develop, then return to work [`src/git_alias/core.py:1794`]
+        - `cmd_minor(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)` [`src/git_alias/core.py`]
+        - `cmd_patch(...)`: same internal path as `cmd_major(...)` via `_run_release_command(...)`; skips master branch merge/tag/push and creates definitive tag on develop before `push --tags` [`src/git_alias/core.py`]
+        - `cmd_backup(...)`: backup workflow entry [`src/git_alias/core.py`]
+          - `_run_backup_command(...)` [`src/git_alias/core.py`]
+            - `_execute_backup_flow(...)`: merge/push work->develop, then return to work [`src/git_alias/core.py`]
               - `_ensure_release_prerequisites(...)`: shared release preflight checks and error contracts
               - `_run_release_step(...)` shared step wrapper:
                 - `cmd_co(...)` (checkout develop)
                 - `cmd_me(...)` (merge work into develop)
                 - `run_git_cmd(...)` (push develop)
                 - `cmd_co(...)` (return to work)
-        - `cmd_changelog(...)`: changelog generation flow with optional `--disable-history` gating [`src/git_alias/core.py:2889`]
+        - `cmd_changelog(...)`: changelog generation flow with optional `--disable-history` gating [`src/git_alias/core.py`]
           - `print_command_help(...)`
           - `is_inside_git_repo(...)` -> `run_git_text(...)` -> `_run_checked(...)`
           - `get_git_root(...)` -> `_run_checked(...)`
-            - `generate_changelog_document(...)` [`src/git_alias/core.py:1297`]
+            - `generate_changelog_document(...)` [`src/git_alias/core.py`]
             - `list_tags_sorted_by_date(...)` -> `run_git_text(...)` -> `_run_checked(...)`
-              - `_canonical_origin_base(...)`: resolves GitHub template base from master-branch remote using local git metadata only [`src/git_alias/core.py:1203`]
-              - `get_branch(...)`: reads master branch name from CONFIG [`src/git_alias/core.py:104`]
-                - `_get_remote_name_for_branch(...)`: queries `git config branch.<master>.remote`; falls back to `origin` [`src/git_alias/core.py:1154`]
+              - `_canonical_origin_base(...)`: resolves GitHub template base from master-branch remote using local git metadata only [`src/git_alias/core.py`]
+              - `get_branch(...)`: reads master branch name from CONFIG [`src/git_alias/core.py`]
+                - `_get_remote_name_for_branch(...)`: queries `git config branch.<master>.remote`; falls back to `origin` [`src/git_alias/core.py`]
                 - `run_git_text(...)` -> `_run_checked(...)`
               - `run_git_text(...)` -> `_run_checked(...)`: fetches remote URL via `git remote get-url <remote>` (local only)
-               - `_extract_owner_repo(...)`: parse SSH/HTTPS remote URL into `<owner>/<repo>` components [`src/git_alias/core.py:1169`]
-            - `_is_minor_release_tag(...)` [`src/git_alias/core.py:933`]: filter minor releases from all tags
+               - `_extract_owner_repo(...)`: parse SSH/HTTPS remote URL into `<owner>/<repo>` components [`src/git_alias/core.py`]
+            - `_is_minor_release_tag(...)` [`src/git_alias/core.py`]: filter minor releases from all tags
               - `_tag_semver_tuple(...)` -> `_parse_semver_tuple(...)`
-            - `_latest_patch_tag_after(...)` [`src/git_alias/core.py:949`]: locate latest patch tag (when `include_patch=True`); result also appended to `history_tags` for `build_history_section`
+            - `_latest_patch_tag_after(...)` [`src/git_alias/core.py`]: locate latest patch tag (when `include_patch=True`); result also appended to `history_tags` for `build_history_section`
               - `_is_minor_release_tag(...)`
             - `generate_section_for_range(...)`
               - `git_log_subjects(...)` -> `run_git_text(...)` -> `_run_checked(...)`: reads full commit messages (`%B`) for multiline descriptions
@@ -374,12 +374,12 @@
                 - `_format_changelog_description(...)`: removes `Co-authored-by:` trailer lines, removes empty lines, strips leading markdown-list markers from continuation lines, and preserves multiline payload for nested markdown bullets
               - Section renderer behavior: one top-level bullet per commit, multiline continuation lines as consecutive indented bullets, and no blank separator lines between commit bullets
             - `build_history_section(...)`: receives only changelog-body tags (minor tags; plus latest patch when `include_patch=True`); executed only when `disable_history=False`
-              - `_canonical_origin_base(...)`: same call-tree as above [`src/git_alias/core.py:1203`]
+              - `_canonical_origin_base(...)`: same call-tree as above [`src/git_alias/core.py`]
               - `get_release_page_url(...)`
               - `get_origin_compare_url(...)`
 - External Boundaries:
   - OS subprocess execution (`subprocess.run`, `subprocess.Popen`) for `git`, `uv`, `gzip`, `gitk`, and configured editor binaries [`src/git_alias/core.py:673-678`, `src/git_alias/core.py:1899-1904`, `src/git_alias/core.py:1828-1846`, `src/git_alias/core.py:2530-2538`]
-  - HTTP GET to GitHub Releases API via `urlopen` for version checks [`src/git_alias/core.py:221-234`]
+  - HTTP GET to GitHub Releases API via `urlopen` for version checks [`src/git_alias/core.py`]
   - File I/O: config file read/write and changelog/version file rewrites [`src/git_alias/core.py:313-451`, `src/git_alias/core.py:2449-2472`, `src/git_alias/core.py:2545-2553`]
 
 ### PROC:git
@@ -391,22 +391,22 @@
   - Loop/block: blocking wait for process completion per invocation.
   - Threads: no explicit threads detected from repository-managed spawn logic.
 - Internal Call-Trace Tree:
-  - `run_git_cmd(...)`: normalized wrapper for most alias commands [`src/git_alias/core.py:613`]
-    - `_to_args(...)`: normalize option tail [`src/git_alias/core.py:536`]
-    - `_run_checked(...)`: spawn `git` and raise typed failures [`src/git_alias/core.py:588`]
-  - `run_git_text(...)`: capture textual `git` output [`src/git_alias/core.py:643`]
+  - `run_git_cmd(...)`: normalized wrapper for most alias commands [`src/git_alias/core.py`]
+    - `_to_args(...)`: normalize option tail [`src/git_alias/core.py`]
+    - `_run_checked(...)`: spawn `git` and raise typed failures [`src/git_alias/core.py`]
+  - `run_git_text(...)`: capture textual `git` output [`src/git_alias/core.py`]
     - `_run_checked(...)`
-  - `capture_git_output(...)`: capture stdout helper [`src/git_alias/core.py:623`]
+  - `capture_git_output(...)`: capture stdout helper [`src/git_alias/core.py`]
     - `_run_checked(...)`
-  - `_git_status_lines(...)`: status parser source [`src/git_alias/core.py:673`]
+  - `_git_status_lines(...)`: status parser source [`src/git_alias/core.py`]
     - `_run_checked(...)`
 - External Boundaries:
   - External `git` executable and repository state outside Python runtime control.
 
 ### PROC:uv
 - Entrypoint(s):
-  - `upgrade_self(...)` [`src/git_alias/core.py:1733`]
-  - `remove_self(...)` [`src/git_alias/core.py:1750`]
+  - `upgrade_self(...)` [`src/git_alias/core.py`]
+  - `remove_self(...)` [`src/git_alias/core.py`]
 - Lifecycle/trigger:
   - Start: management flags `--upgrade` / `--remove` in `main(...)`.
   - Stop: exits when `uv` command completes.
@@ -422,7 +422,7 @@
 
 ### PROC:gzip
 - Entrypoint(s):
-  - `cmd_ar(...)` archive pipeline [`src/git_alias/core.py:1798-1810`]
+  - `cmd_ar(...)` archive pipeline [`src/git_alias/core.py`]
 - Lifecycle/trigger:
   - Start: command `ar` triggers tar stream + gzip subprocess pipeline.
   - Stop: exits after consuming archive stream and writing output file.
@@ -437,7 +437,7 @@
 
 ### PROC:editor
 - Entrypoint(s):
-  - `cmd_ed(...)` [`src/git_alias/core.py:2530-2538`]
+  - `cmd_ed(...)` [`src/git_alias/core.py`]
 - Lifecycle/trigger:
   - Start: alias `ed` with one-or-more file paths.
   - Stop: one subprocess completion per file path.
@@ -454,8 +454,8 @@
 
 ### PROC:gitk
 - Entrypoint(s):
-  - `cmd_gp(...)` [`src/git_alias/core.py:2538-2539`]
-  - `cmd_gr(...)` [`src/git_alias/core.py:2546-2547`]
+  - `cmd_gp(...)` [`src/git_alias/core.py`]
+  - `cmd_gr(...)` [`src/git_alias/core.py`]
 - Lifecycle/trigger:
   - Start: aliases `gp` / `gr`.
   - Stop: exits when configured viewer process terminates.
@@ -475,7 +475,7 @@
 
 ### PROC:gha-release-uvx
 - Entrypoint(s):
-  - Workflow trigger `on.push.tags: "v*"` [`.github/workflows/release-uvx.yml:3-6`]
+  - Workflow trigger `on.push.tags: "v*"` [`.github/workflows/release-uvx.yml`]
 - Lifecycle/trigger:
   - Start: GitHub-hosted runner starts job `build-release` on matching tag push.
   - Stop: workflow ends after final release asset upload step.
@@ -484,31 +484,31 @@
 - Internal Call-Trace Tree:
   - No internal function nodes detected under `.github/workflows/`; file is declarative workflow YAML.
 - External Boundaries:
-  - GitHub Actions marketplace actions (`actions/checkout`, `actions/setup-python`, `astral-sh/setup-uv`, `actions/attest-build-provenance`, `softprops/action-gh-release`) and shell commands (`uv pip install`, `python -m build`) [`.github/workflows/release-uvx.yml:18-47`]
+  - GitHub Actions marketplace actions (`actions/checkout`, `actions/setup-python`, `astral-sh/setup-uv`, `actions/attest-build-provenance`, `softprops/action-gh-release`) and shell commands (`uv pip install`, `python -m build`) [`.github/workflows/release-uvx.yml`]
 
 ## Communication Edges
 - EDGE: PROC:main -> PROC:git
   - Mechanism: OS subprocess spawn (`subprocess.run` / `subprocess.Popen`)
   - Endpoint/Channel: process argv + stdio streams
   - Payload/Data-Shape: `List[str]` git argv (`["git", ...]`), optional stdin commit message text, captured stdout/stderr strings
-  - Evidence: `run_git_cmd` [`src/git_alias/core.py:613-616`], `run_git_text` [`src/git_alias/core.py:643-658`], `_git_status_lines` [`src/git_alias/core.py:673-683`], `cmd_ar` [`src/git_alias/core.py:1803-1810`]
+  - Evidence: `run_git_cmd` [`src/git_alias/core.py`], `run_git_text` [`src/git_alias/core.py`], `_git_status_lines` [`src/git_alias/core.py`], `cmd_ar` [`src/git_alias/core.py`]
 - EDGE: PROC:main -> PROC:uv
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv + stdio
   - Payload/Data-Shape: fixed argv sequences for install/uninstall (`["uv", "tool", ...]`)
-  - Evidence: `upgrade_self` [`src/git_alias/core.py:1733-1744`], `remove_self` [`src/git_alias/core.py:1750-1751`]
+  - Evidence: `upgrade_self` [`src/git_alias/core.py`], `remove_self` [`src/git_alias/core.py`]
 - EDGE: PROC:main -> PROC:gzip
   - Mechanism: OS subprocess spawn with pipe-based IPC
   - Endpoint/Channel: `archive_proc.stdout` pipe -> `gzip` stdin, output file handle for stdout
   - Payload/Data-Shape: tar byte stream transformed to gzip byte stream
-  - Evidence: `cmd_ar` [`src/git_alias/core.py:1804-1809`]
+  - Evidence: `cmd_ar` [`src/git_alias/core.py`]
 - EDGE: PROC:main -> PROC:editor
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv from configured editor command
   - Payload/Data-Shape: command parts (`List[str]`) + expanded file path argument(s)
-  - Evidence: `_editor_base_command` [`src/git_alias/core.py:458-470`], `run_editor_command` [`src/git_alias/core.py:477-478`], `cmd_ed` [`src/git_alias/core.py:2530-2538`]
+  - Evidence: `_editor_base_command` [`src/git_alias/core.py`], `run_editor_command` [`src/git_alias/core.py`], `cmd_ed` [`src/git_alias/core.py`]
 - EDGE: PROC:main -> PROC:gitk
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv + inherited stdio
   - Payload/Data-Shape: configured viewer argument vector (`List[str]`) plus forwarded CLI extras
-  - Evidence: `_config_command_parts` [`src/git_alias/core.py:466-493`], `cmd_gp` [`src/git_alias/core.py:2538-2539`], `cmd_gr` [`src/git_alias/core.py:2546-2547`], `run_command` [`src/git_alias/core.py:755-756`]
+  - Evidence: `_config_command_parts` [`src/git_alias/core.py`], `cmd_gp` [`src/git_alias/core.py`], `cmd_gr` [`src/git_alias/core.py`], `run_command` [`src/git_alias/core.py`]
