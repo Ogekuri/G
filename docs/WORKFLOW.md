@@ -109,7 +109,7 @@
       - `run_git_cmd(...)`: fallback path when command not registered in `COMMANDS` [`src/git_alias/core.py`]
         - `_to_args(...)`: normalize optional arg list [`src/git_alias/core.py`]
         - `_run_checked(...)`: spawn `git` process [`src/git_alias/core.py`]
-      - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py:3144-3217`, `src/git_alias/core.py:3309-3319`]
+      - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py:3150-3223`, `src/git_alias/core.py:3315-3325`]
         - `cmd_aa(...)`: stage all changed files [`src/git_alias/core.py`]
           - `_git_status_lines(...)` -> `_run_checked(...)`
           - `has_unstaged_changes(...)` -> `_git_status_lines(...)`
@@ -380,13 +380,13 @@
               - `get_release_page_url(...)`
               - `get_origin_compare_url(...)`
 - External Boundaries:
-  - OS subprocess execution (`subprocess.run`, `subprocess.Popen`) for `git`, `uv`, `gzip`, `gitk`, and configured editor binaries [`src/git_alias/core.py:673-678`, `src/git_alias/core.py:1899-1904`, `src/git_alias/core.py:1828-1846`, `src/git_alias/core.py:2530-2538`]
+  - OS subprocess execution (`subprocess.run`, `subprocess.Popen`) for `git`, `uv`, `gzip`, `gitk`, and configured editor binaries [`src/git_alias/core.py:673-678`, `src/git_alias/core.py:1905-1910`, `src/git_alias/core.py:1834-1852`, `src/git_alias/core.py:2536-2544`]
   - HTTP GET to GitHub Releases API via `urlopen` for version checks [`src/git_alias/core.py`]
-  - File I/O: config file read/write and changelog/version file rewrites [`src/git_alias/core.py:313-451`, `src/git_alias/core.py:2449-2472`, `src/git_alias/core.py:2545-2553`]
+  - File I/O: config file read/write and changelog/version file rewrites [`src/git_alias/core.py:313-451`, `src/git_alias/core.py:2455-2478`, `src/git_alias/core.py:2551-2559`]
 
 ### PROC:git
 - Entrypoint(s):
-  - Spawned from `run_git_cmd(...)`, `run_git_text(...)`, `capture_git_output(...)`, `_git_status_lines(...)`, `_current_branch_name(...)`, `_commit_exists_in_branch(...)`, `_ref_exists(...)`, and `cmd_ar(...)` archive path [`src/git_alias/core.py:613-616`, `src/git_alias/core.py:643-658`, `src/git_alias/core.py:623-625`, `src/git_alias/core.py:673-683`, `src/git_alias/core.py:1392-1399`, `src/git_alias/core.py:812-822`, `src/git_alias/core.py:1409-1416`, `src/git_alias/core.py:1803-1804`]
+  - Spawned from `run_git_cmd(...)`, `run_git_text(...)`, `capture_git_output(...)`, `_git_status_lines(...)`, `_current_branch_name(...)`, `_commit_exists_in_branch(...)`, `_ref_exists(...)`, and `cmd_ar(...)` archive path [`src/git_alias/core.py:613-616`, `src/git_alias/core.py:643-658`, `src/git_alias/core.py:623-625`, `src/git_alias/core.py:673-683`, `src/git_alias/core.py:1398-1405`, `src/git_alias/core.py:818-828`, `src/git_alias/core.py:1415-1422`, `src/git_alias/core.py:1809-1810`]
 - Lifecycle/trigger:
   - Start: spawned on-demand by CLI command helper wrappers.
   - Stop: synchronous completion per invocation; exit status propagated by `_run_checked(...)`.

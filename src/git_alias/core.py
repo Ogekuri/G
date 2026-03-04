@@ -720,10 +720,16 @@ RESET_HELP_COMMANDS = {"rs", "rshrd", "rskep", "rsmix", "rsmrg", "rssft"}
 LSI_DEFAULT_EXCLUDED_DIRS = frozenset(
     {
         ".cache",
+        ".claude",
+        ".codex",
         ".eslintcache",
+        ".gemini",
         ".git",
+        ".github",
+        ".kiro",
         ".mypy_cache",
         ".npm",
+        ".opencode",
         ".parcel-cache",
         ".pytest_cache",
         ".ruff_cache",
