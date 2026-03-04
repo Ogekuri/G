@@ -79,8 +79,11 @@ DEFAULT_CONFIG = {
     "gp_command": DEFAULT_GP_COMMAND,
     "gr_command": DEFAULT_GR_COMMAND,
     "ver_rules": [
-        {"pattern": "README.md", "regex": r'\s*\((\d+\.\d+\.\d+)\)\n'},
-        {"pattern": "src/**/*.py", "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?'},
+        {"pattern": "README.md", "regex": r"\s*\((\d+\.\d+\.\d+)\)\n"},
+        {
+            "pattern": "src/**/*.py",
+            "regex": r'__version__\s*=\s*["\']?(\d+\.\d+\.\d+)["\']?',
+        },
         {"pattern": "pyproject.toml", "regex": r'\bversion\s*=\s*"(\d+\.\d+\.\d+)"'},
     ],
 }
@@ -207,19 +210,19 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
     current = _parse_semver_tuple(get_cli_version())
     if current is None:
         return
-    
+
     # @details Reuse non-expired cache payload before any online request.
     cache_valid = False
     if VERSION_CHECK_CACHE_FILE.exists():
         try:
-            with open(VERSION_CHECK_CACHE_FILE, 'r') as f:
+            with open(VERSION_CHECK_CACHE_FILE, "r") as f:
                 cache_data = json.load(f)
-            expires_str = cache_data.get('expires', '')
+            expires_str = cache_data.get("expires", "")
             if expires_str:
                 expires = datetime.fromisoformat(expires_str)
                 if datetime.now() < expires:
                     # @details Emit upgrade warning when cached latest version is newer.
-                    cached_latest = cache_data.get('latest_version', '')
+                    cached_latest = cache_data.get("latest_version", "")
                     latest = _parse_semver_tuple(cached_latest)
                     if latest and latest > current:
                         current_text = "{}.{}.{}".format(*current)
@@ -232,11 +235,11 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
         except Exception:
             # @details Ignore cache read failures because version checks are non-blocking.
             pass
-    
+
     if cache_valid:
         # @details Skip network request when cache entry is valid.
         return
-    
+
     # @details Execute online release lookup when cache is absent or expired.
     request = Request(
         GITHUB_LATEST_RELEASE_API,
@@ -252,7 +255,11 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
     except Exception:
         return
     try:
-        payload_text = payload_bytes.decode("utf-8") if isinstance(payload_bytes, (bytes, bytearray)) else str(payload_bytes)
+        payload_text = (
+            payload_bytes.decode("utf-8")
+            if isinstance(payload_bytes, (bytes, bytearray))
+            else str(payload_bytes)
+        )
         data = json.loads(payload_text)
     except Exception:
         return
@@ -263,21 +270,23 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
     latest = _parse_semver_tuple(latest_text)
     if latest is None:
         return
-    
+
     # @details Persist fresh release-check payload with TTL metadata.
     try:
         cache_data = {
             "last_check": datetime.now().isoformat(),
             "current_version": "{}.{}.{}".format(*current),
             "latest_version": latest_text,
-            "expires": (datetime.now() + timedelta(hours=VERSION_CHECK_TTL_HOURS)).isoformat()
+            "expires": (
+                datetime.now() + timedelta(hours=VERSION_CHECK_TTL_HOURS)
+            ).isoformat(),
         }
-        with open(VERSION_CHECK_CACHE_FILE, 'w') as f:
+        with open(VERSION_CHECK_CACHE_FILE, "w") as f:
             json.dump(cache_data, f)
     except Exception:
         # @details Ignore cache write failures because command execution must continue.
         pass
-    
+
     # @details Emit upgrade hint when fetched latest version is newer than current.
     if latest > current:
         current_text = "{}.{}.{}".format(*current)
@@ -407,7 +416,11 @@ def _write_missing_config_values(config_path, keys, create_parent=False):
     if create_parent:
         config_path.parent.mkdir(parents=True, exist_ok=True)
     should_write = False
-    if keys == GLOBAL_CONFIG_KEYS and "edit_command" not in data and isinstance(data.get("editor"), str):
+    if (
+        keys == GLOBAL_CONFIG_KEYS
+        and "edit_command" not in data
+        and isinstance(data.get("editor"), str)
+    ):
         legacy_editor = data.get("editor", "").strip()
         if legacy_editor:
             data["edit_command"] = legacy_editor
@@ -460,7 +473,9 @@ def _write_missing_config_values(config_path, keys, create_parent=False):
 # @param home Input parameter consumed by `write_default_config`.
 # @return Result emitted by `write_default_config` according to command contract.
 def write_default_config(root=None, home=None):
-    local_config_path = _write_missing_config_values(get_config_path(root), LOCAL_CONFIG_KEYS)
+    local_config_path = _write_missing_config_values(
+        get_config_path(root), LOCAL_CONFIG_KEYS
+    )
     global_config_path = _write_missing_config_values(
         get_global_config_path(home),
         GLOBAL_CONFIG_KEYS,
@@ -528,6 +543,7 @@ def _config_command_parts(key: str, default_command: str) -> List[str]:
         return default_parts
     return parts
 
+
 ## @brief Constant `HELP_TEXTS` used by CLI runtime paths and policies.
 
 HELP_TEXTS = {
@@ -566,7 +582,7 @@ HELP_TEXTS = {
     "ll": "Print latest full commit hash.",
     "lm": "Print all merges.",
     "ls": "List tracked files using git ls-files.",
-    "lsi": "List ignored files using git ls-files.",
+    "lsi": "List ignored files using git ls-files. Options: --include-all (show all, skip default directory filter).",
     "lsa": "List untracked files using git ls-files.",
     "lt": "Print tags with containing branches.",
     "major": "Release a new major version from the work branch. Options: --include-patch.",
@@ -697,6 +713,36 @@ RESET_HELP = """
 
 RESET_HELP_COMMANDS = {"rs", "rshrd", "rskep", "rsmix", "rsmrg", "rssft"}
 
+## @brief Default directory/file names excluded from `lsi` output.
+# @details Immutable set of first-path-component names that `cmd_lsi` filters out
+# by default. Filtering is bypassed when `--include-all` is passed.
+# @satisfies REQ-120
+LSI_DEFAULT_EXCLUDED_DIRS = frozenset(
+    {
+        ".cache",
+        ".eslintcache",
+        ".git",
+        ".mypy_cache",
+        ".npm",
+        ".parcel-cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".sass-cache",
+        ".terragrunt-cache",
+        ".tox",
+        ".venv",
+        ".vscode",
+        "__pycache__",
+        "build",
+        "dist",
+        "htmlcov",
+        "node_modules",
+        "temp",
+        "tmp",
+        "venv",
+    }
+)
+
 
 ## @brief Execute `_to_args` runtime logic for Git-Alias CLI.
 # @details Executes `_to_args` using deterministic CLI control-flow and explicit error propagation.
@@ -793,7 +839,9 @@ def run_git_cmd(base_args, extra=None, cwd=None, **kwargs):
 # @param cwd Input parameter consumed by `capture_git_output`.
 # @return Result emitted by `capture_git_output` according to command contract.
 def capture_git_output(base_args, cwd=None):
-    result = _run_checked(["git"] + list(base_args), cwd=cwd, stdout=subprocess.PIPE, text=True)
+    result = _run_checked(
+        ["git"] + list(base_args), cwd=cwd, stdout=subprocess.PIPE, text=True
+    )
     return result.stdout.strip()
 
 
@@ -918,7 +966,9 @@ def _branch_remote_divergence(branch_key, remote="origin"):
     branch = get_branch(branch_key)
     upstream = f"{remote}/{branch}"
     try:
-        counts = run_git_text(["rev-list", "--left-right", "--count", f"{branch}...{upstream}"])
+        counts = run_git_text(
+            ["rev-list", "--left-right", "--count", f"{branch}...{upstream}"]
+        )
     except RuntimeError:
         return (0, 0)
     parts = counts.strip().split()
@@ -1074,6 +1124,7 @@ SECTION_EMOJI = {
     "Cover Requirements": "🎯",
 }
 
+
 ## @brief Execute `_tag_semver_tuple` runtime logic for Git-Alias CLI.
 # @details Executes `_tag_semver_tuple` using deterministic CLI control-flow and explicit error propagation.
 # @param tag_name Input parameter consumed by `_tag_semver_tuple`.
@@ -1113,12 +1164,16 @@ def _is_minor_release_tag(tag_name: str) -> bool:
 # @param last_minor The last minor-release `TagInfo` to anchor the search; `None` means no minor exists.
 # @return Most recent `TagInfo` that is not a minor release and appears after `last_minor`, or `None`.
 # @satisfies REQ-040
-def _latest_patch_tag_after(all_tags: List[TagInfo], last_minor: Optional[TagInfo]) -> Optional[TagInfo]:
+def _latest_patch_tag_after(
+    all_tags: List[TagInfo], last_minor: Optional[TagInfo]
+) -> Optional[TagInfo]:
     if last_minor is None:
         candidates = all_tags
     else:
-        idx = next((i for i, t in enumerate(all_tags) if t.name == last_minor.name), None)
-        candidates = all_tags[idx + 1:] if idx is not None else []
+        idx = next(
+            (i for i, t in enumerate(all_tags) if t.name == last_minor.name), None
+        )
+        candidates = all_tags[idx + 1 :] if idx is not None else []
     patch_tags = [t for t in candidates if not _is_minor_release_tag(t.name)]
     return patch_tags[-1] if patch_tags else None
 
@@ -1128,7 +1183,9 @@ def _latest_patch_tag_after(all_tags: List[TagInfo], last_minor: Optional[TagInf
 # @param repo_root Input parameter consumed by `list_tags_sorted_by_date`.
 # @param merged_ref Input parameter consumed by `list_tags_sorted_by_date`.
 # @return Result emitted by `list_tags_sorted_by_date` according to command contract.
-def list_tags_sorted_by_date(repo_root: Path, merged_ref: Optional[str] = None) -> List[TagInfo]:
+def list_tags_sorted_by_date(
+    repo_root: Path, merged_ref: Optional[str] = None
+) -> List[TagInfo]:
     fmt = f"%(refname:strip=2){DELIM}%(creatordate:short){DELIM}%(objectname)"
     args = ["for-each-ref", "--sort=creatordate", f"--format={fmt}"]
     if merged_ref:
@@ -1145,7 +1202,9 @@ def list_tags_sorted_by_date(repo_root: Path, merged_ref: Optional[str] = None) 
         name, date_s, obj = parts
         if not _SEMVER_TAG_RE.match(name):
             continue
-        tags.append(TagInfo(name=name, iso_date=date_s or "unknown-date", object_name=obj))
+        tags.append(
+            TagInfo(name=name, iso_date=date_s or "unknown-date", object_name=obj)
+        )
     return tags
 
 
@@ -1172,7 +1231,9 @@ def git_log_subjects(repo_root: Path, rev_range: str) -> List[str]:
 #          then returns extracted type/scope/breaking/description fields for changelog rendering.
 # @param message Raw commit message text (subject and optional body).
 # @return Tuple `(type, scope, breaking, description)` when message is parseable; otherwise `None`.
-def parse_conventional_commit(message: str) -> Optional[Tuple[str, Optional[str], bool, str]]:
+def parse_conventional_commit(
+    message: str,
+) -> Optional[Tuple[str, Optional[str], bool, str]]:
     match = _CONVENTIONAL_RE.match(message.strip())
     if not match:
         return None
@@ -1193,7 +1254,9 @@ def parse_conventional_commit(message: str) -> Optional[Tuple[str, Optional[str]
 # @return Ordered non-empty description lines ready for markdown rendering.
 def _format_changelog_description(desc: str) -> List[str]:
     lines = [line.strip() for line in desc.strip().splitlines()]
-    filtered_lines = [line for line in lines if not re.match(r"^Co-authored-by:.*$", line)]
+    filtered_lines = [
+        line for line in lines if not re.match(r"^Co-authored-by:.*$", line)
+    ]
     non_empty_lines = [line for line in filtered_lines if line]
     if not non_empty_lines:
         return []
@@ -1271,7 +1334,13 @@ def _is_release_marker_commit(subject: str) -> bool:
 # @param rev_range Input parameter consumed by `generate_section_for_range`.
 # @param expected_version Input parameter consumed by `generate_section_for_range`.
 # @return Result emitted by `generate_section_for_range` according to command contract.
-def generate_section_for_range(repo_root: Path, title: str, date_s: str, rev_range: str, expected_version: Optional[str] = None) -> Optional[str]:
+def generate_section_for_range(
+    repo_root: Path,
+    title: str,
+    date_s: str,
+    rev_range: str,
+    expected_version: Optional[str] = None,
+) -> Optional[str]:
     subjects = git_log_subjects(repo_root, rev_range)
     buckets: Dict[str, List[str]] = defaultdict(list)
     for subj in subjects:
@@ -1371,7 +1440,9 @@ def _canonical_origin_base(repo_root: Path) -> Optional[str]:
     master_branch = get_branch("master")
     remote = _get_remote_name_for_branch(master_branch, repo_root)
     try:
-        url = run_git_text(["remote", "get-url", remote], cwd=repo_root, check=True).strip()
+        url = run_git_text(
+            ["remote", "get-url", remote], cwd=repo_root, check=True
+        ).strip()
     except RuntimeError:
         return None
     owner_repo = _extract_owner_repo(url)
@@ -1387,7 +1458,9 @@ def _canonical_origin_base(repo_root: Path) -> Optional[str]:
 # @param prev_tag Input parameter consumed by `get_origin_compare_url`.
 # @param tag Input parameter consumed by `get_origin_compare_url`.
 # @return Result emitted by `get_origin_compare_url` according to command contract.
-def get_origin_compare_url(base_url: Optional[str], prev_tag: Optional[str], tag: str) -> Optional[str]:
+def get_origin_compare_url(
+    base_url: Optional[str], prev_tag: Optional[str], tag: str
+) -> Optional[str]:
     if not base_url:
         return None
     if prev_tag:
@@ -1461,7 +1534,9 @@ def build_history_section(
 # @param disable_history When `True`, omit `# History` section from output.
 # @return Complete `CHANGELOG.md` string content, terminated with a newline.
 # @satisfies REQ-018, REQ-040, REQ-041, REQ-043, REQ-068, REQ-069, REQ-070
-def generate_changelog_document(repo_root: Path, include_patch: bool, disable_history: bool = False) -> str:
+def generate_changelog_document(
+    repo_root: Path, include_patch: bool, disable_history: bool = False
+) -> str:
     all_tags = list_tags_sorted_by_date(repo_root)
     origin_base = _canonical_origin_base(repo_root)
     lines: List[str] = ["# Changelog", ""]
@@ -1473,7 +1548,9 @@ def generate_changelog_document(repo_root: Path, include_patch: bool, disable_hi
         latest_patch = _latest_patch_tag_after(all_tags, last_minor)
         if latest_patch:
             rev_range = (
-                f"{last_minor.name}..{latest_patch.name}" if last_minor else latest_patch.name
+                f"{last_minor.name}..{latest_patch.name}"
+                if last_minor
+                else latest_patch.name
             )
             display = latest_patch.name.lstrip("v")
             compare_url = get_origin_compare_url(
@@ -1491,7 +1568,9 @@ def generate_changelog_document(repo_root: Path, include_patch: bool, disable_hi
                 lines.append(section)
     prev_included: Optional[str] = None
     for tag in minor_tags:
-        rev_range = tag.name if prev_included is None else f"{prev_included}..{tag.name}"
+        rev_range = (
+            tag.name if prev_included is None else f"{prev_included}..{tag.name}"
+        )
         display = tag.name.lstrip("v")
         compare_url = get_origin_compare_url(origin_base, prev_included, tag.name)
         title = f"[{display}]({compare_url})" if compare_url else display
@@ -1600,10 +1679,16 @@ def _collect_version_files(root, pattern, *, inventory=None):
         return files
     # @details Apply pathspec matcher to preserve configured GitIgnore-like semantics.
     spec = pathspec.PathSpec.from_lines("gitignore", [normalized_pattern])
-    candidates = inventory if inventory is not None else _build_version_file_inventory(root)
+    candidates = (
+        inventory if inventory is not None else _build_version_file_inventory(root)
+    )
     for path, normalized_relative in candidates:
         matches = spec.match_file(normalized_relative)
-        if not matches and normalized_pattern.startswith("/") and not normalized_relative.startswith("/"):
+        if (
+            not matches
+            and normalized_pattern.startswith("/")
+            and not normalized_relative.startswith("/")
+        ):
             matches = spec.match_file(f"/{normalized_relative}")
         if matches:
             files.append(path)
@@ -1642,7 +1727,9 @@ def _iter_versions_in_text(text, compiled_regexes):
 # @param file_path Absolute path of the file to read.
 # @param text_cache Optional mutable cache keyed by `Path` to avoid duplicate reads across phases.
 # @return File text payload or `None` when file cannot be read.
-def _read_version_file_text(file_path: Path, text_cache: Optional[Dict[Path, str]] = None) -> Optional[str]:
+def _read_version_file_text(
+    file_path: Path, text_cache: Optional[Dict[Path, str]] = None
+) -> Optional[str]:
     if text_cache is not None and file_path in text_cache:
         return text_cache[file_path]
     try:
@@ -1718,7 +1805,11 @@ def _determine_canonical_version(
     contexts: Optional[List[VersionRuleContext]] = None,
     text_cache: Optional[Dict[Path, str]] = None,
 ):
-    active_contexts = contexts if contexts is not None else _prepare_version_rule_contexts(root, rules)
+    active_contexts = (
+        contexts
+        if contexts is not None
+        else _prepare_version_rule_contexts(root, rules)
+    )
     canonical = None
     canonical_file = None
     for context in active_contexts:
@@ -1737,7 +1828,9 @@ def _determine_canonical_version(
             versions = list(_iter_versions_in_text(text, [context.compiled_regex]))
             if verbose:
                 match_state = "yes" if versions else "no"
-                print(f"Regex match for {context.relative_map[file_path]}: {match_state}.")
+                print(
+                    f"Regex match for {context.relative_map[file_path]}: {match_state}."
+                )
             if versions:
                 matched_in_rule = True
             for version in versions:
@@ -1753,7 +1846,9 @@ def _determine_canonical_version(
                 f"No version matches found for rule pattern '{context.pattern}' with regex '{context.expression}'."
             )
     if canonical is None:
-        raise VersionDetectionError("No version string matched the configured rule list.")
+        raise VersionDetectionError(
+            "No version string matched the configured rule list."
+        )
     return canonical
 
 
@@ -1780,7 +1875,7 @@ def _replace_versions_in_text(text, compiled_regex, replacement):
     count = 0
     for match in compiled_regex.finditer(text):
         span = match.span(1) if match.groups() else match.span(0)
-        pieces.append(text[last_index:span[0]])
+        pieces.append(text[last_index : span[0]])
         pieces.append(replacement)
         last_index = span[1]
         count += 1
@@ -1843,27 +1938,49 @@ def _ensure_release_prerequisites():
     master_branch = get_branch("master")
     develop_branch = get_branch("develop")
     work_branch = get_branch("work")
-    missing_local = [name for name in (master_branch, develop_branch, work_branch) if not _local_branch_exists(name)]
+    missing_local = [
+        name
+        for name in (master_branch, develop_branch, work_branch)
+        if not _local_branch_exists(name)
+    ]
     if missing_local:
         joined = ", ".join(missing_local)
-        raise ReleaseError(f"Unable to run release command: missing local branches {joined}.")
+        raise ReleaseError(
+            f"Unable to run release command: missing local branches {joined}."
+        )
     _refresh_remote_refs()
-    missing_remote = [name for name in (master_branch, develop_branch) if not _remote_branch_exists(name)]
+    missing_remote = [
+        name
+        for name in (master_branch, develop_branch)
+        if not _remote_branch_exists(name)
+    ]
     if missing_remote:
         joined = ", ".join(missing_remote)
-        raise ReleaseError(f"Unable to run release command: missing remote branches {joined}.")
+        raise ReleaseError(
+            f"Unable to run release command: missing remote branches {joined}."
+        )
     if has_remote_branch_updates("master"):
-        raise ReleaseError(f"Remote branch {master_branch} has pending updates. Please pull them first.")
+        raise ReleaseError(
+            f"Remote branch {master_branch} has pending updates. Please pull them first."
+        )
     if has_remote_branch_updates("develop"):
-        raise ReleaseError(f"Remote branch {develop_branch} has pending updates. Please pull them first.")
+        raise ReleaseError(
+            f"Remote branch {develop_branch} has pending updates. Please pull them first."
+        )
     current_branch = _current_branch_name()
     if current_branch != work_branch:
-        raise ReleaseError(f"Release commands must be executed from the {work_branch} branch (current: {current_branch}).")
+        raise ReleaseError(
+            f"Release commands must be executed from the {work_branch} branch (current: {current_branch})."
+        )
     status = _git_status_lines()
     if has_unstaged_changes(status):
-        raise ReleaseError("Working tree changes detected. Clean or stage them before running a release.")
+        raise ReleaseError(
+            "Working tree changes detected. Clean or stage them before running a release."
+        )
     if has_staged_changes(status):
-        raise ReleaseError("Staging area is not empty. Complete or reset pending commits before running a release.")
+        raise ReleaseError(
+            "Staging area is not empty. Complete or reset pending commits before running a release."
+        )
     return {"master": master_branch, "develop": develop_branch, "work": work_branch}
 
 
@@ -1875,7 +1992,9 @@ def _ensure_release_prerequisites():
 def _bump_semver_version(current_version, level):
     parts = _parse_semver_tuple(current_version)
     if parts is None:
-        raise ReleaseError(f"The current version '{current_version}' is not a valid semantic version.")
+        raise ReleaseError(
+            f"The current version '{current_version}' is not a valid semantic version."
+        )
     major, minor, patch = parts
     if level == "major":
         major += 1
@@ -1910,12 +2029,18 @@ def _run_release_step(level, step_name, action):
     except CommandExecutionError as exc:
         err_text = CommandExecutionError._decode_stream(exc.stderr).strip()
         message = err_text if err_text else str(exc)
-        raise ReleaseError(f"\n--- {label} Step '{step_name}' failed: {message} ---") from None
+        raise ReleaseError(
+            f"\n--- {label} Step '{step_name}' failed: {message} ---"
+        ) from None
     except SystemExit as exc:
         code = exc.code if isinstance(exc.code, int) else 1
-        raise ReleaseError(f"\n--- {label} Step '{step_name}' failed: command exited with status {code} ---") from None
+        raise ReleaseError(
+            f"\n--- {label} Step '{step_name}' failed: command exited with status {code} ---"
+        ) from None
     except Exception as exc:
-        raise ReleaseError(f"\n--- {label} Step '{step_name}' failed: {exc} ---") from None
+        raise ReleaseError(
+            f"\n--- {label} Step '{step_name}' failed: {exc} ---"
+        ) from None
 
 
 ## @brief Execute `_create_release_commit_for_flow` runtime logic for Git-Alias CLI.
@@ -1957,7 +2082,9 @@ def _execute_release_flow(level, changelog_args=None):
     branches = _ensure_release_prerequisites()
     rules = get_version_rules()
     if not rules:
-        raise ReleaseError("No version rules configured. Cannot compute the next version.")
+        raise ReleaseError(
+            "No version rules configured. Cannot compute the next version."
+        )
     root = get_git_root()
     current_version = _determine_canonical_version(root, rules)
     target_version = _bump_semver_version(current_version, level)
@@ -1974,12 +2101,32 @@ def _execute_release_flow(level, changelog_args=None):
     print()
     _run_release_step(level, "update versions", lambda: cmd_chver([target_version]))
     _run_release_step(level, "stage files", lambda: run_git_cmd(["add", "--all"]))
-    _run_release_step(level, "create release commit", lambda: _create_release_commit_for_flow(target_version))
-    _run_release_step(level, "create temporary changelog tag", lambda: cmd_tg([release_message, release_tag]))
-    _run_release_step(level, "regenerate changelog", lambda: cmd_changelog(changelog_flags))
-    _run_release_step(level, "delete temporary changelog tag", lambda: run_git_cmd(["tag", "--delete", release_tag]))
-    _run_release_step(level, "stage changelog", lambda: run_git_cmd(["add", "CHANGELOG.md"]))
-    _run_release_step(level, "amend release commit", lambda: run_git_cmd(["commit", "--amend", "--no-edit"]))
+    _run_release_step(
+        level,
+        "create release commit",
+        lambda: _create_release_commit_for_flow(target_version),
+    )
+    _run_release_step(
+        level,
+        "create temporary changelog tag",
+        lambda: cmd_tg([release_message, release_tag]),
+    )
+    _run_release_step(
+        level, "regenerate changelog", lambda: cmd_changelog(changelog_flags)
+    )
+    _run_release_step(
+        level,
+        "delete temporary changelog tag",
+        lambda: run_git_cmd(["tag", "--delete", release_tag]),
+    )
+    _run_release_step(
+        level, "stage changelog", lambda: run_git_cmd(["add", "CHANGELOG.md"])
+    )
+    _run_release_step(
+        level,
+        "amend release commit",
+        lambda: run_git_cmd(["commit", "--amend", "--no-edit"]),
+    )
 
     work_branch = branches["work"]
     develop_branch = branches["develop"]
@@ -1988,14 +2135,36 @@ def _execute_release_flow(level, changelog_args=None):
     _run_release_step(level, "checkout develop", lambda: cmd_co([develop_branch]))
     _run_release_step(level, "merge work into develop", lambda: cmd_me([work_branch]))
     if level == "patch":
-        _run_release_step(level, "tag release on develop", lambda: cmd_tg([release_message, release_tag]))
-        _run_release_step(level, "push develop with tags", lambda: _push_branch_with_tags(develop_branch))
+        _run_release_step(
+            level,
+            "tag release on develop",
+            lambda: cmd_tg([release_message, release_tag]),
+        )
+        _run_release_step(
+            level,
+            "push develop with tags",
+            lambda: _push_branch_with_tags(develop_branch),
+        )
     else:
-        _run_release_step(level, "push develop with tags", lambda: _push_branch_with_tags(develop_branch))
+        _run_release_step(
+            level,
+            "push develop with tags",
+            lambda: _push_branch_with_tags(develop_branch),
+        )
         _run_release_step(level, "checkout master", lambda: cmd_co([master_branch]))
-        _run_release_step(level, "merge develop into master", lambda: cmd_me([develop_branch]))
-        _run_release_step(level, "tag release on master", lambda: cmd_tg([release_message, release_tag]))
-        _run_release_step(level, "push master with tags", lambda: _push_branch_with_tags(master_branch))
+        _run_release_step(
+            level, "merge develop into master", lambda: cmd_me([develop_branch])
+        )
+        _run_release_step(
+            level,
+            "tag release on master",
+            lambda: cmd_tg([release_message, release_tag]),
+        )
+        _run_release_step(
+            level,
+            "push master with tags",
+            lambda: _push_branch_with_tags(master_branch),
+        )
     _run_release_step(level, "return to work", lambda: cmd_co([work_branch]))
     _run_release_step(level, "show release details", lambda: cmd_de([]))
     print(f"Release {target_version} completed successfully.")
@@ -2017,7 +2186,9 @@ def _execute_backup_flow():
     print()
     _run_release_step(level, "checkout develop", lambda: cmd_co([develop_branch]))
     _run_release_step(level, "merge work into develop", lambda: cmd_me([work_branch]))
-    _run_release_step(level, "push develop", lambda: run_git_cmd(["push", "origin", develop_branch]))
+    _run_release_step(
+        level, "push develop", lambda: run_git_cmd(["push", "origin", develop_branch])
+    )
     _run_release_step(level, "return to work", lambda: cmd_co([work_branch]))
     print(
         f"Backup completed successfully: all local '{work_branch}' changes were merged and pushed to remote '{develop_branch}'."
@@ -2095,7 +2266,9 @@ def _parse_release_flags(extra, alias):
     unknown = [arg for arg in args if arg not in allowed]
     if unknown:
         joined = ", ".join(unknown)
-        print(f"git {alias} accepts only --include-patch (got {joined}).", file=sys.stderr)
+        print(
+            f"git {alias} accepts only --include-patch (got {joined}).", file=sys.stderr
+        )
         sys.exit(1)
     deduped = []
     seen = set()
@@ -2158,7 +2331,10 @@ def _build_conventional_message(kind: str, extra, alias: str) -> str:
         body = text
     scope = scope.strip() if isinstance(scope, str) else ""
     if not body:
-        print(f"git {alias} requires text after the '<module>:' prefix to complete the message.", file=sys.stderr)
+        print(
+            f"git {alias} requires text after the '<module>:' prefix to complete the message.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     body = _normalize_conventional_description(body)
     if scope:
@@ -2209,7 +2385,10 @@ def _execute_commit(message, alias, allow_amend=True):
             )
             sys.exit(exc.returncode or 1)
         if not has_staged_changes(status_lines):
-            print(f"Unable to run git {alias}: the staging area is empty.", file=sys.stderr)
+            print(
+                f"Unable to run git {alias}: the staging area is empty.",
+                file=sys.stderr,
+            )
             sys.exit(exc.returncode or 1)
         raise
 
@@ -2290,7 +2469,9 @@ def cmd_ar(extra):
     archive_cmd = ["git", "archive", master_branch, "--prefix=/"] + args
     with subprocess.Popen(archive_cmd, stdout=subprocess.PIPE) as archive_proc:
         with open(filename, "wb") as output_io:
-            gzip_proc = _run_checked(["gzip"], stdin=archive_proc.stdout, stdout=output_io)
+            gzip_proc = _run_checked(
+                ["gzip"], stdin=archive_proc.stdout, stdout=output_io
+            )
         if archive_proc.stdout is not None:
             archive_proc.stdout.close()
         archive_proc.wait()
@@ -2488,7 +2669,9 @@ def cmd_co(extra):
 def cmd_dc(extra):
     args = _to_args(extra)
     if len(args) != 2:
-        print("git dc requires exactly two refs: git dc <ref_a> <ref_b>", file=sys.stderr)
+        print(
+            "git dc requires exactly two refs: git dc <ref_a> <ref_b>", file=sys.stderr
+        )
         sys.exit(1)
     return run_git_cmd(["difftool", "-d", args[0], args[1]])
 
@@ -2637,7 +2820,9 @@ def cmd_feall(extra):
 # @param extra Input parameter consumed by `cmd_gp`.
 # @return Result emitted by `cmd_gp` according to command contract.
 def cmd_gp(extra):
-    return run_command(_config_command_parts("gp_command", DEFAULT_GP_COMMAND) + _to_args(extra))
+    return run_command(
+        _config_command_parts("gp_command", DEFAULT_GP_COMMAND) + _to_args(extra)
+    )
 
 
 ## @brief Execute `cmd_gr` runtime logic for Git-Alias CLI.
@@ -2645,7 +2830,9 @@ def cmd_gp(extra):
 # @param extra Input parameter consumed by `cmd_gr`.
 # @return Result emitted by `cmd_gr` according to command contract.
 def cmd_gr(extra):
-    return run_command(_config_command_parts("gr_command", DEFAULT_GR_COMMAND) + _to_args(extra))
+    return run_command(
+        _config_command_parts("gr_command", DEFAULT_GR_COMMAND) + _to_args(extra)
+    )
 
 
 ## @brief Constant `OVERVIEW_COLOR_RESET` used by CLI runtime paths and policies.
@@ -2850,12 +3037,22 @@ def _overview_branch_summary_lines(
         ("RemoteDevelop", remote_develop_ref, remote_develop_display),
         ("RemoteMaster", remote_master_ref, remote_master_display),
     ]
-    configured_refs = {work_ref, develop_ref, master_ref, remote_develop_ref, remote_master_ref}
+    configured_refs = {
+        work_ref,
+        develop_ref,
+        master_ref,
+        remote_develop_ref,
+        remote_master_ref,
+    }
     for ref_name in additional_refs or []:
         if ref_name in configured_refs:
             continue
-        rows.append((ref_name, ref_name, _overview_branch_identifier(ref_name, ref_name)))
-    label_width = max(len(f"{logical_name}(⎇ {ref_name})") for logical_name, ref_name, _ in rows)
+        rows.append(
+            (ref_name, ref_name, _overview_branch_identifier(ref_name, ref_name))
+        )
+    label_width = max(
+        len(f"{logical_name}(⎇ {ref_name})") for logical_name, ref_name, _ in rows
+    )
     lines: List[str] = []
     for logical_name, ref_name, display in rows:
         label_text = f"{logical_name}(⎇ {ref_name})"
@@ -2922,7 +3119,9 @@ def _overview_distance_text(is_ahead: bool, count: int) -> str:
 # @param label Input parameter consumed by `_overview_compare_refs`.
 # @return Result emitted by `_overview_compare_refs` according to command contract.
 def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> str:
-    if not _overview_ref_is_available(base_ref) or not _overview_ref_is_available(target_ref):
+    if not _overview_ref_is_available(base_ref) or not _overview_ref_is_available(
+        target_ref
+    ):
         unavailable = f"{OVERVIEW_COLOR_WHITE}n/a{OVERVIEW_COLOR_RESET}"
         print(
             OVERVIEW_DISTANCE_TEMPLATE.format(
@@ -3038,7 +3237,9 @@ def _overview_ascii_topology_lines(
         else:
             positions[name] = 0
     work_pos = positions.get("Work", 0)
-    wt_sort_key = float(work_pos) + 0.5 if worktree_state != "clean" else float(work_pos)
+    wt_sort_key = (
+        float(work_pos) + 0.5 if worktree_state != "clean" else float(work_pos)
+    )
     wt_text = (
         f"{OVERVIEW_COLOR_WHITE}WorkingTree [{worktree_state}]{OVERVIEW_COLOR_RESET}"
     )
@@ -3111,7 +3312,10 @@ def _overview_current_branch_state_lines(current_branch_display: str) -> List[st
 def cmd_o(extra):
     del extra
     if not is_inside_git_repo():
-        print("Error: The overview command must be executed inside a Git repository.", file=sys.stderr)
+        print(
+            "Error: The overview command must be executed inside a Git repository.",
+            file=sys.stderr,
+        )
         sys.exit(2)
     work_branch = get_branch("work")
     develop_branch = get_branch("develop")
@@ -3128,7 +3332,9 @@ def cmd_o(extra):
     )
     develop_display = _overview_branch_identifier("Develop", develop_branch)
     master_display = _overview_branch_identifier("Master", master_branch)
-    remote_develop_display = _overview_branch_identifier("RemoteDevelop", remote_develop)
+    remote_develop_display = _overview_branch_identifier(
+        "RemoteDevelop", remote_develop
+    )
     remote_master_display = _overview_branch_identifier("RemoteMaster", remote_master)
     current_branch_display = _overview_current_branch_display(
         current_branch=current_branch,
@@ -3144,9 +3350,15 @@ def cmd_o(extra):
             reset=OVERVIEW_COLOR_RESET,
         )
     )
-    print(f"{OVERVIEW_COLOR_WHITE}Configured branches: {work_display}, {develop_display}, {master_display}{OVERVIEW_COLOR_RESET}")
-    print(f"{OVERVIEW_COLOR_WHITE}Configured remotes: {remote_develop_display}, {remote_master_display}{OVERVIEW_COLOR_RESET}")
-    print(f"{OVERVIEW_COLOR_WHITE}Current Branch: {current_branch_display}{OVERVIEW_COLOR_RESET}")
+    print(
+        f"{OVERVIEW_COLOR_WHITE}Configured branches: {work_display}, {develop_display}, {master_display}{OVERVIEW_COLOR_RESET}"
+    )
+    print(
+        f"{OVERVIEW_COLOR_WHITE}Configured remotes: {remote_develop_display}, {remote_master_display}{OVERVIEW_COLOR_RESET}"
+    )
+    print(
+        f"{OVERVIEW_COLOR_WHITE}Current Branch: {current_branch_display}{OVERVIEW_COLOR_RESET}"
+    )
     print()
     print(
         OVERVIEW_SECTION_TEMPLATE.format(
@@ -3260,7 +3472,7 @@ def cmd_str(extra):
     # @details Query git remotes with transport metadata.
     result = run_git_text(["remote", "-v"])
     lines = result.strip().split("\n")
-    
+
     # @details Deduplicate remote names from `git remote -v` rows.
     remotes = set()
     for line in lines:
@@ -3269,13 +3481,13 @@ def cmd_str(extra):
             if parts:
                 remote_name = parts[0]
                 remotes.add(remote_name)
-    
+
     # @details Print normalized remote name inventory.
     print("Remotes found:")
     for remote in sorted(remotes):
         print(f"  {remote}")
     print()
-    
+
     # @details Print detailed status for each unique remote.
     for remote in sorted(remotes):
         print(f"--- Status for '{remote}' ---")
@@ -3296,6 +3508,7 @@ def cmd_str(extra):
 # @return None.
 def cmd_l(extra):
     from git_alias import foresta
+
     args = list(extra) if extra else ["-n", "35"]
     foresta.run(args)
 
@@ -3369,15 +3582,30 @@ def cmd_ls(extra):
 
 
 ## @brief Execute `cmd_lsi` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_lsi` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_lsi`.
-# @return Result emitted by `cmd_lsi` according to command contract.
-# @satisfies REQ-080
+# @details Runs `git ls-files --others --ignored --exclude-standard` and filters
+# output by excluding paths whose first component matches any entry in
+# `LSI_DEFAULT_EXCLUDED_DIRS`. When `--include-all` is present in @p extra,
+# filtering is bypassed and all output is printed. Additional arguments
+# are forwarded to the underlying git command unchanged.
+# @param extra List[str] CLI arguments passed after the alias name.
+# @return None. Filtered output is printed to stdout.
+# @satisfies REQ-080, REQ-121
 def cmd_lsi(extra):
-    return run_git_cmd(
-        ["ls-files", "--others", "--ignored", "--exclude-standard"],
-        extra,
-    )
+    args = _to_args(extra)
+    include_all = "--include-all" in args
+    if include_all:
+        args = [a for a in args if a != "--include-all"]
+    git_args = ["ls-files", "--others", "--ignored", "--exclude-standard", *args]
+    if include_all:
+        return run_git_cmd(git_args, [])
+    output = run_git_text(git_args)
+    if not output:
+        return None
+    for line in output.splitlines():
+        first_component = line.split("/", 1)[0]
+        if first_component not in LSI_DEFAULT_EXCLUDED_DIRS:
+            print(line)
+    return None
 
 
 ## @brief Execute `cmd_lsa` runtime logic for Git-Alias CLI.
@@ -3461,7 +3689,7 @@ def cmd_rf(extra):
 def cmd_rmtg(extra):
     args = _to_args(extra)
     if not args:
-        print("usage: git rmtg \"<tag>\"", file=sys.stderr)
+        print('usage: git rmtg "<tag>"', file=sys.stderr)
         sys.exit(1)
     tag = args[0]
     tail = args[1:]
@@ -3640,7 +3868,10 @@ def cmd_chver(extra):
     requested = args[0].strip()
     target_tuple = _parse_semver_tuple(requested)
     if not target_tuple:
-        print("Please provide the version in the format <major>.<minor>.<patch> (e.g. 1.2.3).", file=sys.stderr)
+        print(
+            "Please provide the version in the format <major>.<minor>.<patch> (e.g. 1.2.3).",
+            file=sys.stderr,
+        )
         sys.exit(1)
     root = get_git_root()
     rules = get_version_rules()
@@ -3662,7 +3893,10 @@ def cmd_chver(extra):
         sys.exit(1)
     current_tuple = _parse_semver_tuple(current)
     if current_tuple is None:
-        print(f"The current version '{current}' is not a valid semantic version.", file=sys.stderr)
+        print(
+            f"The current version '{current}' is not a valid semantic version.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     if requested == current:
         print(f"The project version is already {current}.")
@@ -3674,7 +3908,9 @@ def cmd_chver(extra):
             text = _read_version_file_text(file_path, text_cache=text_cache)
             if text is None:
                 continue
-            new_text, count = _replace_versions_in_text(text, context.compiled_regex, requested)
+            new_text, count = _replace_versions_in_text(
+                text, context.compiled_regex, requested
+            )
             if count:
                 try:
                     file_path.write_text(new_text, encoding="utf-8")
@@ -3684,7 +3920,10 @@ def cmd_chver(extra):
                 text_cache[file_path] = new_text
                 replacements += count
     if replacements == 0:
-        print("No version entries were updated. Ensure ver_rules match the desired files.", file=sys.stderr)
+        print(
+            "No version entries were updated. Ensure ver_rules match the desired files.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     try:
         confirmed = _determine_canonical_version(
@@ -3776,7 +4015,9 @@ def cmd_changelog(extra):
     parser.add_argument("--force-write", dest="force_write", action="store_true")
     parser.add_argument("--include-patch", dest="include_patch", action="store_true")
     parser.add_argument("--print-only", action="store_true")
-    parser.add_argument("--disable-history", dest="disable_history", action="store_true")
+    parser.add_argument(
+        "--disable-history", dest="disable_history", action="store_true"
+    )
     parser.add_argument("--help", action="store_true")
     try:
         args = parser.parse_args(list(extra))
@@ -3790,7 +4031,9 @@ def cmd_changelog(extra):
         print("Error: run g changelog inside a Git repository.", file=sys.stderr)
         sys.exit(2)
     repo_root = get_git_root()
-    content = generate_changelog_document(repo_root, args.include_patch, args.disable_history)
+    content = generate_changelog_document(
+        repo_root, args.include_patch, args.disable_history
+    )
     if args.print_only:
         print(content, end="")
         return
@@ -3803,6 +4046,7 @@ def cmd_changelog(extra):
         sys.exit(1)
     destination.write_text(content, encoding="utf-8")
     print(f"\nGenerated file: {destination}")
+
 
 ## @brief Constant `COMMANDS` used by CLI runtime paths and policies.
 
@@ -3887,6 +4131,7 @@ COMMANDS = {
     "style": cmd_style,
 }
 
+
 ## @brief Execute `print_command_help` runtime logic for Git-Alias CLI.
 # @details Executes `print_command_help` using deterministic CLI control-flow and explicit error propagation.
 # @param name Input parameter consumed by `print_command_help`.
@@ -3898,6 +4143,7 @@ def print_command_help(name, width=None):
         print(f"{name} - {description}")
     else:
         print(f"{name.ljust(width)} - {description}")
+
 
 ## @brief Execute `print_all_help` runtime logic for Git-Alias CLI.
 # @details Executes `print_all_help` using deterministic CLI control-flow and explicit error propagation.
