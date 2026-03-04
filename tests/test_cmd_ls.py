@@ -30,12 +30,12 @@ class CmdLsTest(unittest.TestCase):
 ## @brief Test suite for `cmd_lsi` filtering and `--include-all` behaviors.
 # @details Validates REQ-080 (default filtering), REQ-120 (constant), REQ-121 (--include-all).
 class CmdLsiTest(unittest.TestCase):
-    ## @brief Verify `LSI_DEFAULT_EXCLUDED_DIRS` is a frozenset with exactly 21 entries.
+    ## @brief Verify `LSI_DEFAULT_EXCLUDED_DIRS` is a frozenset with exactly 27 entries.
     # @return None.
     # @satisfies REQ-120
     def test_lsi_default_excluded_dirs_is_frozenset(self):
         self.assertIsInstance(core.LSI_DEFAULT_EXCLUDED_DIRS, frozenset)
-        self.assertEqual(len(core.LSI_DEFAULT_EXCLUDED_DIRS), 21)
+        self.assertEqual(len(core.LSI_DEFAULT_EXCLUDED_DIRS), 27)
 
     ## @brief Verify `LSI_DEFAULT_EXCLUDED_DIRS` contains all required entries.
     # @return None.
@@ -43,10 +43,16 @@ class CmdLsiTest(unittest.TestCase):
     def test_lsi_default_excluded_dirs_entries(self):
         expected = {
             ".cache",
+            ".claude",
+            ".codex",
             ".eslintcache",
+            ".gemini",
             ".git",
+            ".github",
+            ".kiro",
             ".mypy_cache",
             ".npm",
+            ".opencode",
             ".parcel-cache",
             ".pytest_cache",
             ".ruff_cache",
@@ -145,6 +151,26 @@ class CmdLsiTest(unittest.TestCase):
             with mock.patch("builtins.print") as mock_print:
                 core.cmd_lsi([])
         mock_print.assert_called_once_with("keep.txt")
+
+    ## @brief Verify `cmd_lsi` filters newly added AI-tooling and CI directories.
+    # @details Ensures `.claude`, `.codex`, `.gemini`, `.github`, `.kiro`, `.opencode`
+    # are filtered by default while non-excluded paths pass through.
+    # @return None.
+    # @satisfies REQ-080, REQ-120
+    def test_cmd_lsi_filters_ai_tooling_directories(self):
+        git_output = (
+            ".claude/settings.json\n"
+            ".codex/config.yml\n"
+            ".gemini/rules.md\n"
+            ".github/workflows/ci.yml\n"
+            ".kiro/specs/task.md\n"
+            ".opencode/config.json\n"
+            "src/app.py"
+        )
+        with mock.patch.object(core, "run_git_text", return_value=git_output):
+            with mock.patch("builtins.print") as mock_print:
+                core.cmd_lsi([])
+        mock_print.assert_called_once_with("src/app.py")
 
 
 if __name__ == "__main__":
