@@ -53,7 +53,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **CPT-001**: MUST implement CLI dispatch and alias runtime behavior in `src/git_alias/core.py`.
 - **CPT-002**: MUST provide package entrypoints through `src/git_alias/__main__.py` and console scripts `git-alias` and `g`.
 - **CPT-003**: MUST include automated tests under `tests/` covering user-visible command contracts.
-- **CPT-004**: MUST use Python standard libraries including `os`, `shlex`, `subprocess`, `sys`, `datetime`, and `pathlib` in runtime logic.
+- **CPT-004**: MUST keep dependency manifests (`requirements.txt` and `pyproject.toml` or `setup.py`) synchronized and limited to packages strictly required for runtime execution or package build operations.
 - **CPT-005**: MUST invoke external executables `git`, `gitk`, and `uv`/`uvx` for delegated operations.
 - **CPT-006**: MUST use `pathspec` for gitignore-style pattern matching in version rules processing.
 - **CPT-007**: MUST include root-level `doxygen.sh` to orchestrate Doxygen documentation generation.

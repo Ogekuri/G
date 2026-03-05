@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68.0.0", "wheel", "build"]
+requires = ["setuptools>=68.0.0", "wheel>=0.41.0", "build>=1.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -21,6 +21,8 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Topic :: Software Development :: Configuration Management",
 ]
+
+dependencies = ["pathspec"]
 
 [project.urls]
 Homepage = "https://github.com/Ogekuri/G"
