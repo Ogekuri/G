@@ -1547,6 +1547,12 @@ def build_history_section(
 # @param disable_history When `True`, omit `# History` section from output.
 # @return Complete `CHANGELOG.md` string content, terminated with a newline.
 # @satisfies REQ-018, REQ-040, REQ-041, REQ-043, REQ-068, REQ-069, REQ-070
+## @brief Execute `generate_changelog_document` runtime logic for Git-Alias CLI.
+# @details Executes `generate_changelog_document` using deterministic CLI control-flow and explicit error propagation.
+# @param repo_root Input parameter consumed by `generate_changelog_document`.
+# @param include_patch Input parameter consumed by `generate_changelog_document`.
+# @param disable_history Input parameter consumed by `generate_changelog_document`.
+# @return Result emitted by `generate_changelog_document` according to command contract.
 def generate_changelog_document(
     repo_root: Path, include_patch: bool, disable_history: bool = False
 ) -> str:
@@ -2091,6 +2097,11 @@ def _push_branch_with_tags(branch_name):
 # @param changelog_args Optional list of extra changelog flags forwarded alongside `--force-write`.
 # @return None; raises `ReleaseError` or `VersionDetectionError` on failure.
 # @satisfies REQ-026, REQ-045
+## @brief Execute `_execute_release_flow` runtime logic for Git-Alias CLI.
+# @details Executes `_execute_release_flow` using deterministic CLI control-flow and explicit error propagation.
+# @param level Input parameter consumed by `_execute_release_flow`.
+# @param changelog_args Input parameter consumed by `_execute_release_flow`.
+# @return Result emitted by `_execute_release_flow` according to command contract.
 def _execute_release_flow(level, changelog_args=None):
     branches = _ensure_release_prerequisites()
     rules = get_version_rules()
@@ -2366,6 +2377,12 @@ def _build_conventional_message(kind: str, extra, alias: str) -> str:
 # @exception SystemExit Exit code 1 on message validation failure or no-data failure.
 # @satisfies REQ-022, DES-007
 # @see _build_conventional_message, _ensure_commit_ready_with_stage, _execute_commit, cmd_aa
+## @brief Execute `_run_conventional_commit` runtime logic for Git-Alias CLI.
+# @details Executes `_run_conventional_commit` using deterministic CLI control-flow and explicit error propagation.
+# @param kind Input parameter consumed by `_run_conventional_commit`.
+# @param alias Input parameter consumed by `_run_conventional_commit`.
+# @param extra Input parameter consumed by `_run_conventional_commit`.
+# @return Result emitted by `_run_conventional_commit` according to command contract.
 def _run_conventional_commit(kind: str, alias: str, extra):
     message = _build_conventional_message(kind, extra, alias)
     _ensure_commit_ready_with_stage(alias)
@@ -2551,6 +2568,10 @@ def _ensure_commit_ready(alias):
 # @exception SystemExit Exit code 1 when both working-tree and staging have no committable data.
 # @satisfies REQ-021, REQ-022, DES-007
 # @see _ensure_commit_ready, cmd_aa, has_staged_changes, has_unstaged_changes
+## @brief Execute `_ensure_commit_ready_with_stage` runtime logic for Git-Alias CLI.
+# @details Executes `_ensure_commit_ready_with_stage` using deterministic CLI control-flow and explicit error propagation.
+# @param alias Input parameter consumed by `_ensure_commit_ready_with_stage`.
+# @return Result emitted by `_ensure_commit_ready_with_stage` according to command contract.
 def _ensure_commit_ready_with_stage(alias):
     status_lines = _git_status_lines()
     staged = has_staged_changes(status_lines)
@@ -3068,6 +3089,20 @@ def _overview_discovered_branch_refs() -> List[str]:
 # @param additional_refs Input parameter consumed by `_overview_branch_summary_lines`.
 # @return Result emitted by `_overview_branch_summary_lines` according to command contract.
 # @satisfies REQ-094, REQ-096, REQ-115
+## @brief Execute `_overview_branch_summary_lines` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_branch_summary_lines` using deterministic CLI control-flow and explicit error propagation.
+# @param work_ref Input parameter consumed by `_overview_branch_summary_lines`.
+# @param develop_ref Input parameter consumed by `_overview_branch_summary_lines`.
+# @param master_ref Input parameter consumed by `_overview_branch_summary_lines`.
+# @param remote_develop_ref Input parameter consumed by `_overview_branch_summary_lines`.
+# @param remote_master_ref Input parameter consumed by `_overview_branch_summary_lines`.
+# @param work_display Input parameter consumed by `_overview_branch_summary_lines`.
+# @param develop_display Input parameter consumed by `_overview_branch_summary_lines`.
+# @param master_display Input parameter consumed by `_overview_branch_summary_lines`.
+# @param remote_develop_display Input parameter consumed by `_overview_branch_summary_lines`.
+# @param remote_master_display Input parameter consumed by `_overview_branch_summary_lines`.
+# @param additional_refs Input parameter consumed by `_overview_branch_summary_lines`.
+# @return Result emitted by `_overview_branch_summary_lines` according to command contract.
 def _overview_branch_summary_lines(
     work_ref: str,
     develop_ref: str,
@@ -3232,6 +3267,20 @@ def _overview_compare_refs(base_ref: str, target_ref: str, label: str) -> str:
 # @param worktree_state {str} Working tree state (clean/unstaged/staged/mixed).
 # @return {List[str]} Rendered topology lines with ANSI color codes.
 # @satisfies REQ-089, REQ-090, REQ-091, REQ-092, REQ-093, REQ-095
+## @brief Execute `_overview_ascii_topology_lines` runtime logic for Git-Alias CLI.
+# @details Executes `_overview_ascii_topology_lines` using deterministic CLI control-flow and explicit error propagation.
+# @param work_ref Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param develop_ref Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param master_ref Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param remote_develop_ref Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param remote_master_ref Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param work_display Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param develop_display Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param master_display Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param remote_develop_display Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param remote_master_display Input parameter consumed by `_overview_ascii_topology_lines`.
+# @param worktree_state Input parameter consumed by `_overview_ascii_topology_lines`.
+# @return Result emitted by `_overview_ascii_topology_lines` according to command contract.
 def _overview_ascii_topology_lines(
     work_ref: str,
     develop_ref: str,
@@ -3645,6 +3694,10 @@ def cmd_ls(extra):
 # @param extra List[str] CLI arguments passed after the alias name.
 # @return None. Filtered output is printed to stdout.
 # @satisfies REQ-080, REQ-121
+## @brief Execute `cmd_lsi` runtime logic for Git-Alias CLI.
+# @details Executes `cmd_lsi` using deterministic CLI control-flow and explicit error propagation.
+# @param extra Input parameter consumed by `cmd_lsi`.
+# @return Result emitted by `cmd_lsi` according to command contract.
 def cmd_lsi(extra):
     args = _to_args(extra)
     include_all = "--include-all" in args

@@ -467,6 +467,20 @@ def _get_refs(
 # @param branch_colors_now {List[str]} Current branch color assignments.
 # @param branch_colors_ref {List[str]} Allowed branch color palette.
 # @return {Optional[str]} Rendered branch line or None if no duplicate SHA columns exist.
+## @brief Execute `_vine_branch` graph-processing logic for Foresta rendering.
+# @details Executes `_vine_branch` as deterministic commit-graph transformation/output logic.
+# @param vine Input parameter consumed by `_vine_branch`.
+# @param rev Input parameter consumed by `_vine_branch`.
+# @param color Input parameter consumed by `_vine_branch`.
+# @param hash_width Input parameter consumed by `_vine_branch`.
+# @param date_width Input parameter consumed by `_vine_branch`.
+# @param graph_margin_left Input parameter consumed by `_vine_branch`.
+# @param style Input parameter consumed by `_vine_branch`.
+# @param reverse_order Input parameter consumed by `_vine_branch`.
+# @param graph_symbol_tr Input parameter consumed by `_vine_branch`.
+# @param branch_colors_now Input parameter consumed by `_vine_branch`.
+# @param branch_colors_ref Input parameter consumed by `_vine_branch`.
+# @return Result emitted by `_vine_branch` according to command contract.
 def _vine_branch(
     vine: list,
     rev: str,
@@ -587,6 +601,22 @@ def _vine_commit(vine: list, rev: str, parents: List[str]) -> str:
 # @param branch_colors_now {List[str]} Current branch color assignments.
 # @param branch_colors_ref {List[str]} Allowed branch color palette.
 # @return {Optional[str]} Rendered merge line or None when no explicit merge line is emitted.
+## @brief Execute `_vine_merge` graph-processing logic for Foresta rendering.
+# @details Executes `_vine_merge` as deterministic commit-graph transformation/output logic.
+# @param vine Input parameter consumed by `_vine_merge`.
+# @param rev Input parameter consumed by `_vine_merge`.
+# @param next_sha Input parameter consumed by `_vine_merge`.
+# @param parents Input parameter consumed by `_vine_merge`.
+# @param color Input parameter consumed by `_vine_merge`.
+# @param hash_width Input parameter consumed by `_vine_merge`.
+# @param date_width Input parameter consumed by `_vine_merge`.
+# @param graph_margin_left Input parameter consumed by `_vine_merge`.
+# @param style Input parameter consumed by `_vine_merge`.
+# @param reverse_order Input parameter consumed by `_vine_merge`.
+# @param graph_symbol_tr Input parameter consumed by `_vine_merge`.
+# @param branch_colors_now Input parameter consumed by `_vine_merge`.
+# @param branch_colors_ref Input parameter consumed by `_vine_merge`.
+# @return Result emitted by `_vine_merge` according to command contract.
 def _vine_merge(
     vine: list,
     rev: str,
@@ -925,6 +955,17 @@ def _vis_xfrm(
 # @param branch_colors_now {List[str]} Current branch color assignments.
 # @param branch_colors_ref {List[str]} Allowed branch color palette.
 # @return {str} Final rendered line with style transformation and ANSI colors.
+## @brief Execute `_vis_post` graph-processing logic for Foresta rendering.
+# @details Executes `_vis_post` as deterministic commit-graph transformation/output logic.
+# @param s Input parameter consumed by `_vis_post`.
+# @param f Input parameter consumed by `_vis_post`.
+# @param style Input parameter consumed by `_vis_post`.
+# @param reverse_order Input parameter consumed by `_vis_post`.
+# @param graph_symbol_tr Input parameter consumed by `_vis_post`.
+# @param color Input parameter consumed by `_vis_post`.
+# @param branch_colors_now Input parameter consumed by `_vis_post`.
+# @param branch_colors_ref Input parameter consumed by `_vis_post`.
+# @return Result emitted by `_vis_post` according to command contract.
 def _vis_post(
     s: str,
     f: Optional[str],
@@ -1140,6 +1181,27 @@ class _ReverseOutput:
 # @param branch_colors_now {List[str]} Mutable current branch-color state.
 # @param branch_colors_ref {List[str]} Fixed branch-color palette.
 # @return None.
+## @brief Execute `_process` graph-processing logic for Foresta rendering.
+# @details Executes `_process` as deterministic commit-graph transformation/output logic.
+# @param refs Input parameter consumed by `_process`.
+# @param status Input parameter consumed by `_process`.
+# @param show_status Input parameter consumed by `_process`.
+# @param pretty_fmt Input parameter consumed by `_process`.
+# @param argv Input parameter consumed by `_process`.
+# @param color Input parameter consumed by `_process`.
+# @param hash_width Input parameter consumed by `_process`.
+# @param date_width Input parameter consumed by `_process`.
+# @param date_format Input parameter consumed by `_process`.
+# @param graph_margin_left Input parameter consumed by `_process`.
+# @param graph_margin_right Input parameter consumed by `_process`.
+# @param subvine_depth Input parameter consumed by `_process`.
+# @param style Input parameter consumed by `_process`.
+# @param reverse_order Input parameter consumed by `_process`.
+# @param graph_symbol_tr Input parameter consumed by `_process`.
+# @param output_stream Input parameter consumed by `_process`.
+# @param branch_colors_now Input parameter consumed by `_process`.
+# @param branch_colors_ref Input parameter consumed by `_process`.
+# @return Result emitted by `_process` according to command contract.
 def _process(
     refs: Dict[str, List[str]],
     status: str,
