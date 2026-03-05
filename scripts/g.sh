@@ -50,26 +50,56 @@ if [ -z "$PROJECT_ROOT" ]; then
     exit 1
 fi
 
+###############################################################################
+## @brief Resolve virtual environment and dependency metadata paths.
+## @details Defines canonical locations for `.venv`, dependency file, and persisted
+##          dependency fingerprint used to detect requirements changes.
+## @satisfies CPT-004 CPT-009
+###############################################################################
 VENVDIR="${BASE_DIR}/.venv"
-#echo ${VENVDIR}
+REQUIREMENTS_FILE="${BASE_DIR}/requirements.txt"
+REQUIREMENTS_HASH_FILE="${VENVDIR}/.requirements.sha256"
 
-# Se non c'è il ${VENVDIR} lo crea
+###############################################################################
+## @brief Compute deterministic requirements fingerprint.
+## @details Returns SHA-256 digest for the current requirements file content.
+## @satisfies CPT-009
+###############################################################################
+compute_requirements_hash() {
+    sha256sum "${REQUIREMENTS_FILE}" | awk '{print $1}'
+}
+
+###############################################################################
+## @brief Synchronize `.venv` packages with requirements file.
+## @details Compares current requirements hash with persisted hash and runs
+##          `pip install -r` only when dependency entries changed.
+## @satisfies CPT-004 CPT-009
+###############################################################################
+sync_venv_requirements() {
+    current_hash="$(compute_requirements_hash)"
+    previous_hash=""
+    if [ -f "${REQUIREMENTS_HASH_FILE}" ]; then
+        previous_hash="$(cat "${REQUIREMENTS_HASH_FILE}")"
+    fi
+
+    if [ "${current_hash}" != "${previous_hash}" ]; then
+        echo -n "Install python requirements ..."
+        "${VENVDIR}/bin/pip" install -r "${REQUIREMENTS_FILE}" >/dev/null
+        printf "%s" "${current_hash}" > "${REQUIREMENTS_HASH_FILE}"
+        echo "done."
+    fi
+}
+
+# Create virtual environment when missing.
 if ! [ -d "${VENVDIR}/" ]; then
-  echo -n "Create virtual environment ..."
-  mkdir ${VENVDIR}/
-  virtualenv --python=python3 ${VENVDIR}/ >/dev/null
-  echo "done."
-
-  # Install requirements
-  source ${VENVDIR}/bin/activate
-
-  echo -n "Install python requirements ..."
-  ${VENVDIR}/bin/pip install -r "${BASE_DIR}/requirements.txt" >/dev/null
-  echo "done." 
-else
-  # echo "Virtual environment found."
-  source ${VENVDIR}/bin/activate
+    echo -n "Create virtual environment ..."
+    mkdir -p "${VENVDIR}/"
+    virtualenv --python=python3 "${VENVDIR}/" >/dev/null
+    echo "done."
 fi
+
+source "${VENVDIR}/bin/activate"
+sync_venv_requirements
 
 # Execute application:
 PYTHONPATH="${BASE_DIR}/src:${PYTHONPATH}" \

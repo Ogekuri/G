@@ -9,6 +9,14 @@
   - Defining Files:
     - `src/git_alias/__main__.py`
     - `src/git_alias/core.py`
+- ID: PROC:launcher-g-sh
+  - Type: Process
+  - Parent Process: null
+  - Role: Bash launcher that prepares `.venv`, synchronizes dependency installs, and executes Python CLI entrypoint
+  - Entrypoint Symbols:
+    - `scripts/g.sh::<module_body>`
+  - Defining Files:
+    - `scripts/g.sh`
 - ID: PROC:git
   - Type: Process
   - Parent Process: null
@@ -71,6 +79,21 @@
     - `.github/workflows/release-uvx.yml`
 
 ## Execution Units
+### PROC:launcher-g-sh
+- Entrypoint(s):
+  - `scripts/g.sh::<module_body>`: launcher script that initializes runtime paths, ensures `.venv` exists, syncs dependencies against `requirements.txt`, and `exec`-chains into Python CLI [`scripts/g.sh`]
+- Lifecycle/trigger:
+  - Start: OS invokes `scripts/g.sh` as executable entrypoint.
+  - Stop: process is replaced by `.venv/bin/python3` via `exec` after dependency synchronization.
+  - Loop/block: single-shot shell sequence with conditional dependency synchronization.
+  - Threads: no explicit threads detected in `scripts/g.sh`.
+- Internal Call-Trace Tree:
+  - `scripts/g.sh::<module_body>(...)`: runtime launcher flow [`scripts/g.sh`]
+    - `compute_requirements_hash(...)`: compute SHA-256 fingerprint for `requirements.txt` [`scripts/g.sh`]
+    - `sync_venv_requirements(...)`: compare persisted hash and run `pip install -r requirements.txt` only when the fingerprint changes [`scripts/g.sh`]
+- External Boundaries:
+  - External commands `git`, `virtualenv`, `sha256sum`, `awk`, `pip`, and shell `source`/`exec` operations.
+
 ### PROC:main
 - Entrypoint(s):
   - `git_alias.__main__::<module_guard>`: module entrypoint forwarding process exit code [`src/git_alias/__main__.py`]
@@ -494,6 +517,11 @@
   - GitHub Actions marketplace actions (`actions/checkout`, `actions/setup-python`, `astral-sh/setup-uv`, `actions/attest-build-provenance`, `softprops/action-gh-release`) and shell commands (`uv pip install`, `python -m build`) [`.github/workflows/release-uvx.yml`]
 
 ## Communication Edges
+- EDGE: PROC:launcher-g-sh -> PROC:main
+  - Mechanism: process replacement via shell `exec`
+  - Endpoint/Channel: inherited environment plus forwarded CLI argv
+  - Payload/Data-Shape: `PYTHONPATH`-extended environment and argument vector `List[str]` passed to `main(...)`
+  - Evidence: `scripts/g.sh`
 - EDGE: PROC:main -> PROC:git
   - Mechanism: OS subprocess spawn (`subprocess.run` / `subprocess.Popen`)
   - Endpoint/Channel: process argv + stdio streams

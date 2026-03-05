@@ -116,6 +116,26 @@ class DependencyManifestsTest(unittest.TestCase):
             runtime_dependencies.union(build_dependencies),
         )
 
+    ## @brief Verify launcher script hashes requirements and syncs `.venv` when changed.
+    # @return None.
+    # @satisfies CPT-009
+    def test_g_script_hash_based_venv_sync_contract(self):
+        script_path = self.REPO_ROOT / "scripts" / "g.sh"
+        script_text = script_path.read_text()
+
+        self.assertIn(
+            'REQUIREMENTS_HASH_FILE="${VENVDIR}/.requirements.sha256"',
+            script_text,
+        )
+        self.assertIn('current_hash="$(compute_requirements_hash)"', script_text)
+        self.assertIn('if [ "${current_hash}" != "${previous_hash}" ]; then', script_text)
+        self.assertIn(
+            '"${VENVDIR}/bin/pip" install -r "${REQUIREMENTS_FILE}" >/dev/null',
+            script_text,
+        )
+        self.assertIn('source "${VENVDIR}/bin/activate"', script_text)
+        self.assertIn('sync_venv_requirements', script_text)
+
 
 if __name__ == "__main__":
     unittest.main()

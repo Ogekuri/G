@@ -53,11 +53,12 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **CPT-001**: MUST implement CLI dispatch and alias runtime behavior in `src/git_alias/core.py`.
 - **CPT-002**: MUST provide package entrypoints through `src/git_alias/__main__.py` and console scripts `git-alias` and `g`.
 - **CPT-003**: MUST include automated tests under `tests/` covering user-visible command contracts.
-- **CPT-004**: MUST keep dependency manifests (`requirements.txt` and `pyproject.toml` or `setup.py`) synchronized and limited to packages strictly required for runtime execution or package build operations.
+- **CPT-004**: MUST treat `requirements.txt` as canonical dependency inventory and keep `pyproject.toml` or `setup.py` synchronized with it, with all listed packages limited to runtime execution or package build operations.
 - **CPT-005**: MUST invoke external executables `git`, `gitk`, and `uv`/`uvx` for delegated operations.
 - **CPT-006**: MUST use `pathspec` for gitignore-style pattern matching in version rules processing.
 - **CPT-007**: MUST include root-level `doxygen.sh` to orchestrate Doxygen documentation generation.
 - **CPT-008**: MUST include `src/git_alias/foresta.py` implementing text-based commit tree visualization.
+- **CPT-009**: MUST refresh project `.venv` from `requirements.txt` whenever dependency entries are added or removed in `requirements.txt`.
 
 ## 3. Software Requirements
 ### 3.1 Design and Implementation
