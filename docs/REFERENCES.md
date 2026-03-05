@@ -2083,23 +2083,9 @@ rendering stages, and writes normalized lines to the configured output stream.
 
 ---
 
-# g.sh | Bash | 106L | 2 symbols | 0 imports | 20 comments
+# g.sh | Bash | 78L | 0 symbols | 0 imports | 42 comments
 > Path: `scripts/g.sh`
 
 ## Definitions
 
-### fn `compute_requirements_hash` (shell)
-- @brief Compute deterministic dependency fingerprint from `requirements.txt`.
-- @details Uses `sha256sum` and `awk` to emit stable hash text used as sync sentinel.
-- @return SHA-256 digest string for `requirements.txt`.
-
-### fn `sync_venv_requirements` (shell)
-- @brief Synchronize `.venv` package set with canonical requirements inventory.
-- @details Compares current fingerprint against `.venv/.requirements.sha256` and executes `pip install -r requirements.txt` only when fingerprints differ, then persists updated fingerprint.
-- @return No explicit return value; shell function exits with command status.
-
-## Symbols Table
-| Symbol | Kind | Visibility | Lines | Signature |
-| --- | --- | --- | --- | --- |
-|`compute_requirements_hash`|fn|priv|68-70|compute_requirements_hash()|
-|`sync_venv_requirements`|fn|priv|78-91|sync_venv_requirements()|
+- No shell functions are declared; launcher behavior is implemented in module body flow.

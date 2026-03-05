@@ -12,7 +12,7 @@
 - ID: PROC:launcher-g-sh
   - Type: Process
   - Parent Process: null
-  - Role: Bash launcher that prepares `.venv`, synchronizes dependency installs, and executes Python CLI entrypoint
+  - Role: Bash launcher that prepares `.venv` and executes Python CLI entrypoint
   - Entrypoint Symbols:
     - `scripts/g.sh::<module_body>`
   - Defining Files:
@@ -81,18 +81,16 @@
 ## Execution Units
 ### PROC:launcher-g-sh
 - Entrypoint(s):
-  - `scripts/g.sh::<module_body>`: launcher script that initializes runtime paths, ensures `.venv` exists, syncs dependencies against `requirements.txt`, and `exec`-chains into Python CLI [`scripts/g.sh`]
+  - `scripts/g.sh::<module_body>`: launcher script that initializes runtime paths, creates `.venv` when missing, installs dependencies during first environment creation, and `exec`-chains into Python CLI [`scripts/g.sh`]
 - Lifecycle/trigger:
   - Start: OS invokes `scripts/g.sh` as executable entrypoint.
-  - Stop: process is replaced by `.venv/bin/python3` via `exec` after dependency synchronization.
+  - Stop: process is replaced by `.venv/bin/python3` via `exec` after optional first-time dependency installation.
   - Loop/block: single-shot shell sequence with conditional dependency synchronization.
   - Threads: no explicit threads detected in `scripts/g.sh`.
 - Internal Call-Trace Tree:
-  - `scripts/g.sh::<module_body>(...)`: runtime launcher flow [`scripts/g.sh`]
-    - `compute_requirements_hash(...)`: compute SHA-256 fingerprint for `requirements.txt` [`scripts/g.sh`]
-    - `sync_venv_requirements(...)`: compare persisted hash and run `pip install -r requirements.txt` only when the fingerprint changes [`scripts/g.sh`]
+  - `scripts/g.sh::<module_body>(...)`: runtime launcher flow with conditional `.venv` creation, first-time `pip install -r requirements.txt`, and final `exec` handoff [`scripts/g.sh`]
 - External Boundaries:
-  - External commands `git`, `virtualenv`, `sha256sum`, `awk`, `pip`, and shell `source`/`exec` operations.
+  - External commands `git`, `virtualenv`, `pip`, and shell `source`/`exec` operations.
 
 ### PROC:main
 - Entrypoint(s):

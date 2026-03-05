@@ -58,7 +58,6 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **CPT-006**: MUST use `pathspec` for gitignore-style pattern matching in version rules processing.
 - **CPT-007**: MUST include root-level `doxygen.sh` to orchestrate Doxygen documentation generation.
 - **CPT-008**: MUST include `src/git_alias/foresta.py` implementing text-based commit tree visualization.
-- **CPT-009**: MUST refresh project `.venv` from `requirements.txt` whenever dependency entries are added or removed in `requirements.txt`.
 
 ## 3. Software Requirements
 ### 3.1 Design and Implementation
