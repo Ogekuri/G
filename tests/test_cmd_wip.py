@@ -12,9 +12,15 @@ class CmdWipTest(unittest.TestCase):
         core.CONFIG.update(core.DEFAULT_CONFIG)
 
     def test_cmd_wip_creates_new_commit_when_not_amending(self):
-        with mock.patch.object(core, "_git_status_lines", return_value=["A  file"]), mock.patch.object(
-            core, "_should_amend_existing_commit", return_value=(False, "Unit test: new commit")
-        ), mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
+        with (
+            mock.patch.object(core, "_git_status_lines", return_value=["A  file"]),
+            mock.patch.object(
+                core,
+                "_should_amend_existing_commit",
+                return_value=(False, "Unit test: new commit"),
+            ),
+            mock.patch.object(core, "run_git_cmd", return_value=None) as run_git,
+        ):
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
                 core.cmd_wip([])
@@ -26,9 +32,15 @@ class CmdWipTest(unittest.TestCase):
             self.assertIn("Creating a new commit", buffer.getvalue())
 
     def test_cmd_wip_uses_amend_when_requested(self):
-        with mock.patch.object(core, "_git_status_lines", return_value=["A  file"]), mock.patch.object(
-            core, "_should_amend_existing_commit", return_value=(True, "Unit test: amend")
-        ), mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
+        with (
+            mock.patch.object(core, "_git_status_lines", return_value=["A  file"]),
+            mock.patch.object(
+                core,
+                "_should_amend_existing_commit",
+                return_value=(True, "Unit test: amend"),
+            ),
+            mock.patch.object(core, "run_git_cmd", return_value=None) as run_git,
+        ):
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
                 core.cmd_wip([])
@@ -47,9 +59,17 @@ class CmdWipTest(unittest.TestCase):
         command_error = core.CommandExecutionError(
             subprocess.CalledProcessError(1, ["git", "commit"])
         )
-        with mock.patch.object(core, "_git_status_lines", side_effect=status_side_effect), mock.patch.object(
-            core, "_should_amend_existing_commit", return_value=(False, "Unit test: new commit")
-        ), mock.patch.object(core, "run_git_cmd", side_effect=command_error):
+        with (
+            mock.patch.object(
+                core, "_git_status_lines", side_effect=status_side_effect
+            ),
+            mock.patch.object(
+                core,
+                "_should_amend_existing_commit",
+                return_value=(False, "Unit test: new commit"),
+            ),
+            mock.patch.object(core, "run_git_cmd", side_effect=command_error),
+        ):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
@@ -58,9 +78,10 @@ class CmdWipTest(unittest.TestCase):
             self.assertIn("Unable to run git wip", stderr.getvalue())
 
     def test_cmd_wip_help_does_not_run_checks(self):
-        with mock.patch.object(core, "_ensure_commit_ready") as ensure, mock.patch.object(
-            core, "run_git_cmd"
-        ) as run_git:
+        with (
+            mock.patch.object(core, "_ensure_commit_ready") as ensure,
+            mock.patch.object(core, "run_git_cmd") as run_git,
+        ):
             stdout = io.StringIO()
             with contextlib.redirect_stdout(stdout):
                 core.cmd_wip(["--help"])
@@ -75,3 +96,47 @@ class CmdWipTest(unittest.TestCase):
                 with self.assertRaises(SystemExit):
                     core.cmd_wip(["unexpected"])
             self.assertIn("does not accept positional arguments", err.getvalue())
+
+    def test_cmd_wip_auto_stages_when_staging_empty_and_working_tree_dirty(self):
+        # Arrange: unstaged changes only (working-tree dirty, staging empty).
+        # _git_status_lines called once inside _ensure_commit_ready_with_stage,
+        # then cmd_aa calls _git_status_lines again (has_unstaged_changes check).
+        status_side_effect = [
+            [" M file"],  # _ensure_commit_ready_with_stage: staged=False, unstaged=True
+            [" M file"],  # cmd_aa -> has_unstaged_changes check
+        ]
+        with (
+            mock.patch.object(
+                core, "_git_status_lines", side_effect=status_side_effect
+            ),
+            mock.patch.object(
+                core,
+                "_should_amend_existing_commit",
+                return_value=(False, "Unit test: new commit"),
+            ),
+            mock.patch.object(core, "run_git_cmd", return_value=None) as run_git,
+        ):
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer):
+                core.cmd_wip([])
+        # First run_git_cmd call must be "git add --all" (from cmd_aa), second is the commit.
+        calls = run_git.call_args_list
+        self.assertEqual(calls[0], mock.call(["add", "--all"], []))
+        self.assertEqual(
+            calls[1],
+            mock.call(["commit", "-F", "-"], input="wip: work in progress.", text=True),
+        )
+
+    def test_cmd_wip_fails_when_both_staging_and_working_tree_are_empty(self):
+        # Arrange: completely clean repository — nothing staged, nothing unstaged.
+        with mock.patch.object(core, "_git_status_lines", return_value=[]):
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                with self.assertRaises(SystemExit) as ctx:
+                    core.cmd_wip([])
+        self.assertEqual(ctx.exception.code, 1)
+        self.assertIn("no changes to commit", stderr.getvalue())
+
+
+if __name__ == "__main__":
+    unittest.main()

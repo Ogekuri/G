@@ -67,7 +67,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **DES-004**: MUST print an explicit message plus full help and exit non-zero when invoked without arguments.
 - **DES-005**: MUST compose complex aliases by reusing simpler alias functions when overlapping behavior exists.
 - **DES-006**: MUST the executable MUST load `.g.conf` for `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`, and `$HOME/.g/g.conf` for `edit_command`, `gp_command`, and `gr_command`, and MUST ignore out-of-scope keys in each file.
-- **DES-007**: MUST centralize commit-readiness checks (working tree, staging, previous commit) in reusable functions shared by `cm`, `wip`, and related aliases.
+- **DES-007**: MUST centralize commit-readiness checks in reusable functions shared by `cm`, `wip`, and related aliases; readiness MUST succeed when staging is non-empty OR working-tree is dirty; MUST fail when both staging and working-tree have no committable data; MUST invoke `aa` to auto-stage working-tree changes when staging is empty and working-tree is dirty.
 - **DES-008**: MUST print all console messages in English.
 - **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.g.conf` plus `$HOME/.g/g.conf`, otherwise defaults from `DEFAULT_CONFIG`.
 
@@ -93,8 +93,8 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-018**: MUST the `changelog` command MUST generate `CHANGELOG.md` grouping commits by minor releases (semver tags where `patch=0` AND version `>=0.1.0`); MUST include only minor releases by default with all commits between consecutive minor releases (from repository beginning for the first minor); MUST produce an empty changelog body when no minor releases exist; MUST list releases reverse-chronologically (newest first).
 - **REQ-019**: MUST delete a user-specified local branch via `git branch -d <branch>` for alias `bd`.
 - **REQ-020**: MUST provide reusable checks for unstaged changes, staged changes, and remote-forward status of configured `develop` and `master`, including remote reference update before ahead/behind evaluation.
-- **REQ-021**: MUST implement `wip` using the fixed message `wip: work in progress.` and the same readiness/WIP-amend logic used by `cm`.
-- **REQ-022**: MUST aliases `new`, `fix`, `change`, `implement`, `refactor`, `docs`, `style`, `revert`, `misc`, and `cover` execute conventional commits and reuse the same readiness checks and WIP-amend decision logic used by `cm` and `wip`.
+- **REQ-021**: MUST implement `wip` using the fixed message `wip: work in progress.`; MUST call `aa` (stage all) when staging is empty and working-tree is dirty; MUST fail with explicit error when both working-tree and staging have no committable data.
+- **REQ-022**: MUST aliases `new`, `fix`, `change`, `implement`, `refactor`, `docs`, `style`, `revert`, `misc`, and `cover` execute conventional commits; MUST call `aa` when staging is empty and working-tree is dirty; MUST fail with explicit error when both working-tree and staging have no committable data; MUST reuse WIP-amend decision logic used by `cm` and `wip`.
 - **REQ-115**: MUST conventional aliases require non-empty commit text and support optional `<module>: <description>` prefix parsing before message construction.
 - **REQ-116**: MUST resolve omitted module from `.g.conf.default_commit_module`; when key is absent use hardcoded default `""`; when effective module is empty emit `<type>: <description>`, otherwise emit `<type>(<module>): <description>`.
 - **REQ-117**: MUST uppercase the first character of `<description>` unless numeric and MUST append `.` when `<description>` does not already end with a period.

@@ -2356,14 +2356,19 @@ def _build_conventional_message(kind: str, extra, alias: str) -> str:
 
 
 ## @brief Execute `_run_conventional_commit` runtime logic for Git-Alias CLI.
-# @details Executes `_run_conventional_commit` using deterministic CLI control-flow and explicit error propagation.
-# @param kind Input parameter consumed by `_run_conventional_commit`.
-# @param alias Input parameter consumed by `_run_conventional_commit`.
-# @param extra Input parameter consumed by `_run_conventional_commit`.
-# @return Result emitted by `_run_conventional_commit` according to command contract.
+# @details Builds the conventional commit message via `_build_conventional_message`, then validates
+#          commitability via `_ensure_commit_ready_with_stage` (auto-stages working-tree changes when
+#          staging is empty), then delegates to `_execute_commit` with WIP-amend semantics.
+# @param kind `str` — commit type token (e.g., `"fix"`, `"new"`, `"refactor"`).
+# @param alias `str` — alias name used in error messages and dispatch.
+# @param extra `list | None` — raw CLI extra arguments forwarded to `_build_conventional_message`.
+# @return Return value of `_execute_commit`.
+# @exception SystemExit Exit code 1 on message validation failure or no-data failure.
+# @satisfies REQ-022, DES-007
+# @see _build_conventional_message, _ensure_commit_ready_with_stage, _execute_commit, cmd_aa
 def _run_conventional_commit(kind: str, alias: str, extra):
     message = _build_conventional_message(kind, extra, alias)
-    _ensure_commit_ready(alias)
+    _ensure_commit_ready_with_stage(alias)
     return _execute_commit(message, alias)
 
 
@@ -2533,6 +2538,34 @@ def _ensure_commit_ready(alias):
     return True
 
 
+## @brief Commit-readiness guard with automatic working-tree staging for Git-Alias CLI.
+# @details Evaluates working-tree and staging state via `_git_status_lines()`.
+#          Control flow:
+#          1. Both staging and working-tree empty → print error and `sys.exit(1)`.
+#          2. Staging empty AND working-tree dirty → invoke `cmd_aa([])` to stage all changes.
+#          3. Staging non-empty → return `True` immediately.
+#          Satisfies REQ-021, REQ-022, DES-007: auto-stage path for `wip` and conventional commit aliases.
+#          Does NOT enforce "no unstaged changes" constraint; that constraint belongs to `_ensure_commit_ready`.
+# @param alias `str` — alias name used in error messages.
+# @return `True` when staging is confirmed non-empty after optional `cmd_aa` execution.
+# @exception SystemExit Exit code 1 when both working-tree and staging have no committable data.
+# @satisfies REQ-021, REQ-022, DES-007
+# @see _ensure_commit_ready, cmd_aa, has_staged_changes, has_unstaged_changes
+def _ensure_commit_ready_with_stage(alias):
+    status_lines = _git_status_lines()
+    staged = has_staged_changes(status_lines)
+    unstaged = has_unstaged_changes(status_lines)
+    if not staged and not unstaged:
+        print(
+            f"Unable to run git {alias}: no changes to commit (working tree and staging area are both empty).",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if not staged:
+        cmd_aa([])
+    return True
+
+
 ## @brief Execute `cmd_cm` runtime logic for Git-Alias CLI.
 # @details Executes `cmd_cm` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_cm`.
@@ -2544,9 +2577,14 @@ def cmd_cm(extra):
 
 
 ## @brief Execute `cmd_wip` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_wip` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_wip`.
-# @return Result emitted by `cmd_wip` according to command contract.
+# @details Validates commitability via `_ensure_commit_ready_with_stage` (auto-stages working-tree changes
+#          when staging is empty); rejects positional arguments except `--help`; emits fixed message
+#          `wip: work in progress.` and delegates to `_execute_commit` with WIP-amend semantics.
+# @param extra `list | None` — CLI extra arguments; only `["--help"]` is accepted.
+# @return Return value of `_execute_commit`, or `None` on `--help`.
+# @exception SystemExit Exit code 1 on positional argument or no-data failure; exit code 0 on `--help`.
+# @satisfies REQ-021, DES-007
+# @see _ensure_commit_ready_with_stage, _execute_commit, cmd_aa
 def cmd_wip(extra):
     if extra:
         args = _to_args(extra)
@@ -2555,7 +2593,7 @@ def cmd_wip(extra):
             return
         print("git wip does not accept positional arguments.", file=sys.stderr)
         sys.exit(1)
-    _ensure_commit_ready("wip")
+    _ensure_commit_ready_with_stage("wip")
     message = "wip: work in progress."
     return _execute_commit(message, "wip")
 

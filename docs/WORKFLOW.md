@@ -133,6 +133,11 @@
           - `_git_status_lines(...)` -> `_run_checked(...)`
           - `has_unstaged_changes(...)` -> `_git_status_lines(...)`
           - `has_staged_changes(...)` -> `_git_status_lines(...)`
+        - `_ensure_commit_ready_with_stage(...)`: auto-staging commit precondition guard [`src/git_alias/core.py`]
+          - `_git_status_lines(...)` -> `_run_checked(...)`
+          - `has_unstaged_changes(...)` -> `_git_status_lines(...)`
+          - `has_staged_changes(...)` -> `_git_status_lines(...)`
+          - `cmd_aa(...)` (when staging empty and working tree dirty) -> `_git_status_lines(...)`, `run_git_cmd(...)`
         - `cmd_cm(...)`: standard commit flow [`src/git_alias/core.py`]
           - `_prepare_commit_message(...)` -> `_to_args(...)`, `print_command_help(...)`
           - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
@@ -149,7 +154,7 @@
         - `cmd_wip(...)`: WIP commit flow [`src/git_alias/core.py`]
           - `_to_args(...)`
           - `print_command_help(...)`
-          - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
+          - `_ensure_commit_ready_with_stage(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`, `cmd_aa(...)` (conditional)
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
         - `cmd_release(...)`: release commit flow [`src/git_alias/core.py`]
           - `_to_args(...)`
@@ -205,7 +210,7 @@
         - `cmd_cover(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
         - `_run_conventional_commit(...)`: conventional commit helper [`src/git_alias/core.py`]
           - `_build_conventional_message(...)` -> `_prepare_commit_message(...)`, `get_config_value(...)`, `_normalize_conventional_description(...)`; emits `<type>: <description>` when effective module is empty, otherwise `<type>(<module>): <description>` [`src/git_alias/core.py`]
-          - `_ensure_commit_ready(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
+          - `_ensure_commit_ready_with_stage(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`, `cmd_aa(...)` (conditional)
           - `_execute_commit(...)` -> `_should_amend_existing_commit(...)`, `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
         - `cmd_co(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_dc(...)`: wrapper + arg guard -> `_to_args(...)`, `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
