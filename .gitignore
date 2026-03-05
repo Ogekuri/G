@@ -9,6 +9,7 @@
 ##########################################
 # Include specific files and directories #
 ##########################################
+!.place-holder
 !/.github/
 !/.github/workflows/
 !/.github/workflows/**/*.yml
