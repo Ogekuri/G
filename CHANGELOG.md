@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.12.0](https://github.com/Ogekuri/G/compare/v0.11.0..v0.12.0) - 2026-03-05
+### ⛰️  Features
+- Update .req/models.json file.
+- add lsi output filtering with --include-all bypass [useReq] *(core)*
+
+### 🐛  Bug Fixes
+- Add .place-holder files.
+- complete Doxygen coverage for uncovered symbols [useReq] *(core)*
+  - Add missing @brief/@details/@param/@return Doxygen blocks in core and foresta where coverage gaps remained.
+  - Keep runtime behavior unchanged; documentation-only edits.
+  - Verification: PYTHONPATH=src .venv/bin/python -m pytest -q (256 passed).
+- Remove unused scripts.
+
+### 🚜  Changes
+- remove mandatory venv refresh [useReq] *(requirements)*
+  - remove CPT-009 requirement from SRS
+  - drop hash-based .venv auto-refresh logic from scripts/g.sh
+  - remove CPT-009 test assertions
+  - update WORKFLOW/REFERENCES to match launcher flow
+- enforce venv and dependency sync [useReq] *(packaging)*
+  - update CPT-004 to define canonical requirements alignment
+  - add CPT-009 for .venv refresh on requirements changes
+  - implement hash-based .venv synchronization in scripts/g.sh
+  - extend dependency tests with launcher sync contract
+  - update WORKFLOW and REFERENCES for launcher process/symbols
+- align dependency manifests with requirements [useReq] *(packaging)*
+  - update CPT-004 to require dependency manifest synchronization
+  - align requirements.txt to runtime/build-only dependency set
+  - declare runtime dependency and build constraints in pyproject.toml
+  - add tests validating pyproject/requirements alignment
+- add auto-staging to wip and conventional commit aliases [useReq] *(core)*
+- add suffix-pattern exclusion for *.egg-info directories [useReq] *(lsi)*
+  - Add LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES tuple with .egg-info suffix (REQ-122)
+  - Update cmd_lsi to filter paths by both exact-match (LSI_DEFAULT_EXCLUDED_DIRS)
+  - and suffix-match (LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES) on path components (REQ-080)
+  - Update --include-all to bypass both filtering mechanisms (REQ-121)
+  - Add tests for suffix tuple type/entries, egg-info filtering, and --include-all bypass
+  - Update REQUIREMENTS.md with REQ-122 and modified REQ-080, REQ-121
+  - Update WORKFLOW.md and REFERENCES.md
+- filter excluded dirs at any path depth instead of root only [useReq] *(lsi)*
+- expand lsi default exclusions with AI tooling directories [useReq] *(core)*
+
+### 📚  Documentation
+- Update README.md document.
+
 ## [0.11.0](https://github.com/Ogekuri/G/compare/v0.10.0..v0.11.0) - 2026-03-04
 ### ⛰️  Features
 - Implement new commands.
@@ -413,6 +458,7 @@
 - \[0.9.0\]: https://github.com/Ogekuri/G/releases/tag/v0.9.0
 - \[0.10.0\]: https://github.com/Ogekuri/G/releases/tag/v0.10.0
 - \[0.11.0\]: https://github.com/Ogekuri/G/releases/tag/v0.11.0
+- \[0.12.0\]: https://github.com/Ogekuri/G/releases/tag/v0.12.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -425,3 +471,4 @@
 [0.9.0]: https://github.com/Ogekuri/G/compare/v0.8.0..v0.9.0
 [0.10.0]: https://github.com/Ogekuri/G/compare/v0.9.0..v0.10.0
 [0.11.0]: https://github.com/Ogekuri/G/compare/v0.10.0..v0.11.0
+[0.12.0]: https://github.com/Ogekuri/G/compare/v0.11.0..v0.12.0
