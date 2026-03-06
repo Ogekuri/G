@@ -38,7 +38,7 @@
   - Role: External `uv` process for self-upgrade and uninstall flows
   - Entrypoint Symbols:
     - `upgrade_self(...)`
-    - `remove_self(...)`
+    - `uninstall_self(...)`
   - Defining Files:
     - `src/git_alias/core.py`
 - ID: PROC:gzip
@@ -115,7 +115,12 @@
         - `get_cli_version(...)`: parse `__version__` from package init [`src/git_alias/core.py`]
         - `_parse_semver_tuple(...)`: semantic version parser [`src/git_alias/core.py`]
         - `_normalize_semver_text(...)`: strip leading `v` tag prefix [`src/git_alias/core.py`]
-        - `_print_update_available_warning(...)`: render bright-red update warning with latest/current versions [`src/git_alias/core.py`]
+        - `_resolve_release_api_url(...)`: derive GitHub Releases API endpoint from active git remote metadata [`src/git_alias/core.py`]
+          - `_resolve_github_owner_repo(...)`: extract `<owner>/<repo>` tuple from active remote URL [`src/git_alias/core.py`]
+            - `_resolve_active_remote_name(...)`: resolve active-branch remote with `origin` fallback [`src/git_alias/core.py`]
+            - `_extract_owner_repo(...)`: parse SSH/HTTPS remote URL into owner/repository tuple [`src/git_alias/core.py`]
+        - `_print_update_available_warning(...)`: render bright-green update availability message with latest/installed versions [`src/git_alias/core.py`]
+        - `_print_update_check_error(...)`: render bright-red diagnostics for remote-resolution, HTTP, and payload failures [`src/git_alias/core.py`]
       - `print_all_help(...)`: global help output path [`src/git_alias/core.py`]
         - `get_cli_version(...)`: include runtime version in usage header [`src/git_alias/core.py`]
         - `print_command_help(...)`: print per-command help rows [`src/git_alias/core.py`]
@@ -126,12 +131,12 @@
         - `get_global_config_path(...)`: resolve global target [`src/git_alias/core.py`]
       - `upgrade_self(...)`: self-upgrade action [`src/git_alias/core.py`]
         - `_run_checked(...)`: spawn `uv tool install ...` [`src/git_alias/core.py`]
-      - `remove_self(...)`: self-remove action [`src/git_alias/core.py`]
+      - `uninstall_self(...)`: self-remove action [`src/git_alias/core.py`]
         - `_run_checked(...)`: spawn `uv tool uninstall ...` [`src/git_alias/core.py`]
       - `run_git_cmd(...)`: fallback path when command not registered in `COMMANDS` [`src/git_alias/core.py`]
         - `_to_args(...)`: normalize optional arg list [`src/git_alias/core.py`]
         - `_run_checked(...)`: spawn `git` process [`src/git_alias/core.py`]
-      - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py:3150-3223`, `src/git_alias/core.py:3315-3325`]
+      - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py`]
         - `cmd_aa(...)`: stage all changed files [`src/git_alias/core.py`]
           - `_git_status_lines(...)` -> `_run_checked(...)`
           - `has_unstaged_changes(...)` -> `_git_status_lines(...)`
@@ -407,9 +412,9 @@
               - `get_release_page_url(...)`
               - `get_origin_compare_url(...)`
 - External Boundaries:
-  - OS subprocess execution (`subprocess.run`, `subprocess.Popen`) for `git`, `uv`, `gzip`, `gitk`, and configured editor binaries [`src/git_alias/core.py:673-678`, `src/git_alias/core.py:1905-1910`, `src/git_alias/core.py:1834-1852`, `src/git_alias/core.py:2536-2544`]
+  - OS subprocess execution (`subprocess.run`, `subprocess.Popen`) for `git`, `uv`, `gzip`, `gitk`, and configured editor binaries [`src/git_alias/core.py`]
   - HTTP GET to GitHub Releases API via `urlopen` for version checks [`src/git_alias/core.py`]
-  - File I/O: config file read/write and changelog/version file rewrites [`src/git_alias/core.py:313-451`, `src/git_alias/core.py:2455-2478`, `src/git_alias/core.py:2551-2559`]
+  - File I/O: config file read/write, update-check idle-time state file read/write, and changelog/version file rewrites [`src/git_alias/core.py`]
 
 ### PROC:git
 - Entrypoint(s):
@@ -435,16 +440,16 @@
 ### PROC:uv
 - Entrypoint(s):
   - `upgrade_self(...)` [`src/git_alias/core.py`]
-  - `remove_self(...)` [`src/git_alias/core.py`]
+  - `uninstall_self(...)` [`src/git_alias/core.py`]
 - Lifecycle/trigger:
-  - Start: management flags `--upgrade` / `--remove` in `main(...)`.
+  - Start: management flags `--upgrade` / `--uninstall` in `main(...)`.
   - Stop: exits when `uv` command completes.
   - Loop/block: blocking subprocess invocation.
   - Threads: no explicit threads detected from repository-managed spawn logic.
 - Internal Call-Trace Tree:
   - `upgrade_self(...)`: self-install path
     - `_run_checked(...)`: spawn `uv tool install ...`
-  - `remove_self(...)`: self-uninstall path
+  - `uninstall_self(...)`: self-uninstall path
     - `_run_checked(...)`: spawn `uv tool uninstall ...`
 - External Boundaries:
   - External `uv` binary and package installation side effects.
@@ -530,7 +535,7 @@
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv + stdio
   - Payload/Data-Shape: fixed argv sequences for install/uninstall (`["uv", "tool", ...]`)
-  - Evidence: `upgrade_self` [`src/git_alias/core.py`], `remove_self` [`src/git_alias/core.py`]
+  - Evidence: `upgrade_self` [`src/git_alias/core.py`], `uninstall_self` [`src/git_alias/core.py`]
 - EDGE: PROC:main -> PROC:gzip
   - Mechanism: OS subprocess spawn with pipe-based IPC
   - Endpoint/Channel: `archive_proc.stdout` pipe -> `gzip` stdin, output file handle for stdout

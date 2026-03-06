@@ -12,12 +12,12 @@ import shlex
 import shutil
 import subprocess
 import sys
-import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
@@ -33,15 +33,19 @@ GLOBAL_CONFIG_FILENAME = "g.conf"
 
 ## @brief Constant `GITHUB_LATEST_RELEASE_API` used by CLI runtime paths and policies.
 
-GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/Ogekuri/G/releases/latest"
+GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/{owner}/{repo}/releases/latest"
 
 ## @brief Constant `VERSION_CHECK_CACHE_FILE` used by CLI runtime paths and policies.
-VERSION_CHECK_CACHE_FILE = Path(tempfile.gettempdir()) / ".g_version_check_cache.json"
+VERSION_CHECK_CACHE_FILE = Path.home() / ".github_api_idle-time.git-alias"
 ## @brief Constant `VERSION_CHECK_TTL_HOURS` used by CLI runtime paths and policies.
 
-VERSION_CHECK_TTL_HOURS = 6
-## @brief Constant `VERSION_WARNING_COLOR` used by CLI runtime paths and policies.
-VERSION_WARNING_COLOR = "\033[31;1m"
+VERSION_CHECK_TTL_HOURS = 24
+## @brief Constant `VERSION_CHECK_TIMEOUT_SECONDS` used by CLI runtime paths and policies.
+VERSION_CHECK_TIMEOUT_SECONDS = 2.0
+## @brief Constant `VERSION_AVAILABLE_COLOR` used by CLI runtime paths and policies.
+VERSION_AVAILABLE_COLOR = "\033[92;1m"
+## @brief Constant `VERSION_ERROR_COLOR` used by CLI runtime paths and policies.
+VERSION_ERROR_COLOR = "\033[31;1m"
 ## @brief Constant `ANSI_COLOR_RESET` used by CLI runtime paths and policies.
 ANSI_COLOR_RESET = "\033[0m"
 
@@ -110,7 +114,7 @@ MANAGEMENT_HELP = [
         "Insert missing defaults into repository .g.conf and global $HOME/.g/g.conf.",
     ),
     ("--upgrade", "Reinstall git-alias via uv tool install."),
-    ("--remove", "Uninstall git-alias using uv tool uninstall."),
+    ("--uninstall", "Uninstall git-alias using uv tool uninstall."),
     ("--ver", "Print the CLI version."),
     ("--version", "Print the CLI version."),
     ("--help", "Print the full help screen or the help text of a specific alias."),
@@ -206,9 +210,11 @@ def _normalize_semver_text(text: str) -> str:
     return value
 
 
-## @brief Emit the standardized bright-red update warning for newer available versions.
-# @details Formats the warning using the REQ-123 contract `Update available: <latest> (current: <current>)`,
-# applies ANSI bright-red color, and writes to stderr without altering process control-flow.
+## @brief Emit the standardized bright-green update warning for newer available versions.
+# @details Formats the warning using the REQ-123 contract
+#          `Update available: <latest> (installed: <current>)`,
+#          applies ANSI bright-green color, and writes to stderr without altering process
+#          control-flow.
 # @param current Parsed current semantic version tuple `(major, minor, patch)`.
 # @param latest_text Latest available semantic version text.
 # @return None.
@@ -219,50 +225,129 @@ def _print_update_available_warning(
     current_text = "{}.{}.{}".format(*current)
     print(
         (
-            f"{VERSION_WARNING_COLOR}"
-            f"Update available: {latest_text} (current: {current_text})"
+            f"{VERSION_AVAILABLE_COLOR}"
+            f"Update available: {latest_text} (installed: {current_text})"
             f"{ANSI_COLOR_RESET}"
         ),
         file=sys.stderr,
     )
 
 
+## @brief Emit a standardized bright-red update-check error message.
+# @details Prefixes diagnostic payload with `Version check failed:` and applies ANSI
+#          bright-red color formatting while preserving caller control-flow.
+# @param detail Human-readable diagnostic detail.
+# @return None.
+def _print_update_check_error(detail: str) -> None:
+    print(
+        f"{VERSION_ERROR_COLOR}Version check failed: {detail}{ANSI_COLOR_RESET}",
+        file=sys.stderr,
+    )
+
+
+## @brief Resolve the preferred remote name for update checks.
+# @details Attempts to use the active branch remote from
+#          `branch.<current>.remote`; falls back to `origin` when unavailable.
+# @param repo_root Repository root used as command CWD.
+# @return Remote name to query with `git remote get-url`.
+def _resolve_active_remote_name(repo_root: Path) -> str:
+    branch_name = run_git_text(
+        ["rev-parse", "--abbrev-ref", "HEAD"],
+        cwd=repo_root,
+        check=False,
+    ).strip()
+    if branch_name and branch_name != "HEAD":
+        remote = run_git_text(
+            ["config", "--get", f"branch.{branch_name}.remote"],
+            cwd=repo_root,
+            check=False,
+        ).strip()
+        if remote:
+            return remote
+    return "origin"
+
+
+## @brief Resolve GitHub owner/repository tuple from repository remote metadata.
+# @details Uses active-branch remote fallback logic and parses SSH/HTTPS remote URLs.
+#          Returns `None` when git metadata lookup fails or when URL parsing is invalid.
+# @param repo_root Repository root used as command CWD.
+# @return Tuple `(owner, repo)` on success; otherwise `None`.
+def _resolve_github_owner_repo(repo_root: Path) -> Optional[Tuple[str, str]]:
+    remote_name = _resolve_active_remote_name(repo_root)
+    try:
+        remote_url = run_git_text(
+            ["remote", "get-url", remote_name],
+            cwd=repo_root,
+            check=True,
+        ).strip()
+    except RuntimeError:
+        return None
+    return _extract_owner_repo(remote_url)
+
+
+## @brief Resolve the GitHub latest-release API URL from git remotes.
+# @details Parses owner/repository metadata from the active remote and expands
+#          `GITHUB_LATEST_RELEASE_API` template.
+# @param repo_root Repository root used as command CWD.
+# @return Full latest-release API URL string or `None` when metadata resolution fails.
+def _resolve_release_api_url(repo_root: Path) -> Optional[str]:
+    owner_repo = _resolve_github_owner_repo(repo_root)
+    if owner_repo is None:
+        return None
+    owner, repo = owner_repo
+    return GITHUB_LATEST_RELEASE_API.format(owner=owner, repo=repo)
+
+
 ## @brief Execute `check_for_newer_version` runtime logic for Git-Alias CLI.
 # @details Executes `check_for_newer_version` using deterministic CLI control-flow and explicit error propagation.
+# @param repo_root Input parameter consumed by `check_for_newer_version`.
 # @param timeout_seconds Input parameter consumed by `check_for_newer_version`.
 # @return Result emitted by `check_for_newer_version` according to command contract.
-def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
+def check_for_newer_version(
+    *,
+    repo_root: Optional[Path] = None,
+    timeout_seconds: float = VERSION_CHECK_TIMEOUT_SECONDS,
+) -> None:
     current = _parse_semver_tuple(get_cli_version())
     if current is None:
         return
 
-    # @details Reuse non-expired cache payload before any online request.
-    cache_valid = False
+    now = datetime.now()
+    now_unix = int(now.timestamp())
     if VERSION_CHECK_CACHE_FILE.exists():
         try:
-            with open(VERSION_CHECK_CACHE_FILE, "r") as f:
+            with open(VERSION_CHECK_CACHE_FILE, "r", encoding="utf-8") as f:
                 cache_data = json.load(f)
-            expires_str = cache_data.get("expires", "")
-            if expires_str:
-                expires = datetime.fromisoformat(expires_str)
-                if datetime.now() < expires:
-                    # @details Emit upgrade warning when cached latest version is newer.
-                    cached_latest = cache_data.get("latest_version", "")
-                    latest = _parse_semver_tuple(cached_latest)
-                    if latest and latest > current:
-                        _print_update_available_warning(current, cached_latest)
-                    cache_valid = True
-        except Exception:
-            # @details Ignore cache read failures because version checks are non-blocking.
-            pass
+        except (OSError, json.JSONDecodeError) as exc:
+            _print_update_check_error(f"idle-time state read failed: {exc}")
+        else:
+            if isinstance(cache_data, dict):
+                idle_until_unix = cache_data.get("idle_until_unix")
+                if isinstance(idle_until_unix, (int, float)) and now_unix < int(
+                    idle_until_unix
+                ):
+                    return
+                if idle_until_unix is not None and not isinstance(
+                    idle_until_unix, (int, float)
+                ):
+                    _print_update_check_error(
+                        "idle-time state is invalid: `idle_until_unix` must be numeric."
+                    )
+            else:
+                _print_update_check_error(
+                    "idle-time state is invalid: JSON root must be an object."
+                )
 
-    if cache_valid:
-        # @details Skip network request when cache entry is valid.
+    root = Path(repo_root) if repo_root is not None else get_git_root()
+    release_api_url = _resolve_release_api_url(root)
+    if release_api_url is None:
+        _print_update_check_error(
+            "unable to resolve GitHub owner/repository from repository remotes."
+        )
         return
 
-    # @details Execute online release lookup when cache is absent or expired.
     request = Request(
-        GITHUB_LATEST_RELEASE_API,
+        release_api_url,
         headers={
             "Accept": "application/vnd.github+json",
             "User-Agent": "git-alias",
@@ -272,7 +357,28 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
     try:
         with urlopen(request, timeout=timeout_seconds) as response:
             payload_bytes = response.read()
-    except Exception:
+    except HTTPError as exc:
+        details = ""
+        try:
+            details_text = exc.read().decode("utf-8")
+            details_payload = json.loads(details_text)
+            if isinstance(details_payload, dict):
+                details = str(details_payload.get("message", "")).strip()
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            details = ""
+        if details:
+            _print_update_check_error(f"HTTP {exc.code}: {details}")
+        else:
+            _print_update_check_error(f"HTTP {exc.code}")
+        return
+    except URLError as exc:
+        _print_update_check_error(str(exc.reason))
+        return
+    except TimeoutError:
+        _print_update_check_error("request timeout exceeded.")
+        return
+    except OSError as exc:
+        _print_update_check_error(str(exc))
         return
     try:
         payload_text = (
@@ -281,33 +387,34 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
             else str(payload_bytes)
         )
         data = json.loads(payload_text)
-    except Exception:
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        _print_update_check_error(f"invalid JSON payload: {exc}")
         return
     if not isinstance(data, dict):
+        _print_update_check_error("invalid API payload: JSON root must be an object.")
         return
     tag = data.get("tag_name") or ""
     latest_text = _normalize_semver_text(str(tag))
     latest = _parse_semver_tuple(latest_text)
     if latest is None:
+        _print_update_check_error("invalid API payload: `tag_name` is not semantic version.")
         return
 
-    # @details Persist fresh release-check payload with TTL metadata.
+    idle_until_unix = now_unix + int(timedelta(hours=VERSION_CHECK_TTL_HOURS).total_seconds())
     try:
         cache_data = {
-            "last_check": datetime.now().isoformat(),
-            "current_version": "{}.{}.{}".format(*current),
-            "latest_version": latest_text,
-            "expires": (
-                datetime.now() + timedelta(hours=VERSION_CHECK_TTL_HOURS)
-            ).isoformat(),
+            "last_check_unix": now_unix,
+            "last_check_human": now.isoformat(sep=" ", timespec="seconds"),
+            "idle_until_unix": idle_until_unix,
+            "idle_until_human": (
+                now + timedelta(hours=VERSION_CHECK_TTL_HOURS)
+            ).isoformat(sep=" ", timespec="seconds"),
         }
-        with open(VERSION_CHECK_CACHE_FILE, "w") as f:
+        with open(VERSION_CHECK_CACHE_FILE, "w", encoding="utf-8") as f:
             json.dump(cache_data, f)
-    except Exception:
-        # @details Ignore cache write failures because command execution must continue.
-        pass
+    except OSError as exc:
+        _print_update_check_error(f"idle-time state write failed: {exc}")
 
-    # @details Emit upgrade hint when fetched latest version is newer than current.
     if latest > current:
         _print_update_available_warning(current, latest_text)
 
@@ -2445,25 +2552,33 @@ def _execute_commit(message, alias, allow_amend=True):
 
 ## @brief Execute `upgrade_self` runtime logic for Git-Alias CLI.
 # @details Executes `upgrade_self` using deterministic CLI control-flow and explicit error propagation.
+# @param repo_root Input parameter consumed by `upgrade_self`.
 # @return Result emitted by `upgrade_self` according to command contract.
-def upgrade_self():
+def upgrade_self(repo_root: Optional[Path] = None):
+    root = Path(repo_root) if repo_root is not None else get_git_root()
+    owner_repo = _resolve_github_owner_repo(root)
+    if owner_repo is None:
+        raise RuntimeError(
+            "Unable to resolve GitHub owner/repository from repository remotes."
+        )
+    owner, repo = owner_repo
     _run_checked(
         [
             "uv",
             "tool",
             "install",
-            "git-alias",
+            "usereq",
             "--force",
             "--from",
-            "git+https://github.com/Ogekuri/G.git",
+            f"git+https://github.com/{owner}/{repo}.git",
         ]
     )
 
 
-## @brief Execute `remove_self` runtime logic for Git-Alias CLI.
-# @details Executes `remove_self` using deterministic CLI control-flow and explicit error propagation.
-# @return Result emitted by `remove_self` according to command contract.
-def remove_self():
+## @brief Execute `uninstall_self` runtime logic for Git-Alias CLI.
+# @details Executes `uninstall_self` using deterministic CLI control-flow and explicit error propagation.
+# @return Result emitted by `uninstall_self` according to command contract.
+def uninstall_self():
     _run_checked(["uv", "tool", "uninstall", "git-alias"])
 
 
@@ -4319,7 +4434,10 @@ def main(argv=None, *, check_updates: bool = True):
     git_root = get_git_root()
     load_cli_config(git_root)
     if check_updates:
-        check_for_newer_version(timeout_seconds=1.0)
+        check_for_newer_version(
+            repo_root=git_root,
+            timeout_seconds=VERSION_CHECK_TIMEOUT_SECONDS,
+        )
     if not args:
         print("Please provide a command or --help", file=sys.stderr)
         print_all_help()
@@ -4334,10 +4452,10 @@ def main(argv=None, *, check_updates: bool = True):
         write_default_config(git_root)
         return
     if args[0] == "--upgrade":
-        upgrade_self()
+        upgrade_self(git_root)
         return
-    if args[0] == "--remove":
-        remove_self()
+    if args[0] == "--uninstall":
+        uninstall_self()
         return
     if args[0] == "--help":
         if len(args) == 1:
@@ -4365,3 +4483,6 @@ def main(argv=None, *, check_updates: bool = True):
         if err_text:
             print(err_text, file=sys.stderr)
         sys.exit(exc.returncode or 1)
+    except RuntimeError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)

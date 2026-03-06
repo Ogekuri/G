@@ -83,7 +83,7 @@ class AliasHelpTest(unittest.TestCase):
             entries.append(line.strip())
         flags = [line.split()[0] for line in entries if line.strip()]
         self.assertGreaterEqual(len(flags), 3)
-        self.assertEqual(flags[:3], ["--write-config", "--upgrade", "--remove"])
+        self.assertEqual(flags[:3], ["--write-config", "--upgrade", "--uninstall"])
         self.assertIn("--help", flags)
 
     def test_individual_help_matches_hlal(self):
@@ -148,11 +148,24 @@ class AliasHelpTest(unittest.TestCase):
             _, stdout, _ = self.run_script_result([flag], check=True)
             self.assertEqual(stdout.strip(), version)
 
+    def test_upgrade_flag_invokes_upgrade_self(self):
+        with mock.patch.object(core, "upgrade_self") as upgrade_self:
+            self.run_script_result(["--upgrade"], check=True)
+        upgrade_self.assert_called_once()
+        args, _ = upgrade_self.call_args
+        self.assertEqual(len(args), 1)
+        self.assertTrue(str(args[0]))
+
+    def test_uninstall_flag_invokes_uninstall_self(self):
+        with mock.patch.object(core, "uninstall_self") as uninstall_self:
+            self.run_script_result(["--uninstall"], check=True)
+        uninstall_self.assert_called_once_with()
+
     def test_update_check_runs_before_empty_args_validation(self):
         events = []
 
-        def _record_update(timeout_seconds: float = 1.0):
-            del timeout_seconds
+        def _record_update(*, repo_root=None, timeout_seconds: float = 1.0):
+            del repo_root, timeout_seconds
             events.append("update")
 
         def _record_help():
@@ -174,4 +187,10 @@ class AliasHelpTest(unittest.TestCase):
             )
 
         self.assertNotEqual(code, 0)
-        check_update.assert_called_once_with(timeout_seconds=1.0)
+        check_update.assert_called_once()
+        kwargs = check_update.call_args.kwargs
+        self.assertEqual(
+            kwargs.get("timeout_seconds"),
+            core.VERSION_CHECK_TIMEOUT_SECONDS,
+        )
+        self.assertIsNotNone(kwargs.get("repo_root"))

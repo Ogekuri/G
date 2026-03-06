@@ -131,10 +131,10 @@ The command must run from the `work` branch with a clean working tree; it bumps 
 
 ## Management Commands
 
-Upgrade or remove the Git-Alias CLI:
+Upgrade or uninstall the Git-Alias CLI:
 
 - `g --upgrade` / `git-alias --upgrade`: Upgrades the tool to the latest version from the GitHub repository.
-- `g --remove` / `git-alias --remove`: Uninstalls the tool.
+- `g --uninstall` / `git-alias --uninstall`: Uninstalls the tool.
 - `g --write-config` / `git-alias --write-config`: Inserts missing defaults into repository `.g.conf` and global `$HOME/.g/g.conf`.
 - `g --ver` / `g --version` / `git-alias --ver` / `git-alias --version`: Prints the CLI version.
 - `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
