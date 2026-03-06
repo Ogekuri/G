@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 0.98
+**Version**: 0.99
 **Author**: Francesco Rolando
-**Date**: 2026-02-25
+**Date**: 2026-03-06
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-03-06 | 0.99 | Moved startup update-check ordering before argument validation and formalized bright-red update warning format. |
 | 2026-02-24 | 0.97 | Added `l` command contracts and foresta engine requirements. |
 | 2026-02-25 | 0.98 | Recreated SRS structure in English from repository evidence while preserving existing requirement IDs and appending workflow coverage requirements. |
 
@@ -106,7 +107,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-029**: MUST print usage with package version suffix `(x.y.z)` when CLI is invoked without command arguments.
 - **REQ-030**: MUST print the package version and exit successfully when invoked with `--ver` or `--version`.
 - **REQ-031**: MUST keep all CLI output messages in English, including usage/help/info/debug/error paths.
-- **REQ-033**: MUST perform pre-execution latest-version checks using a 6-hour temp-file cache `.g_version_check_cache.json`, fetch GitHub release data with 1-second timeout when cache is stale, and continue silently on network/cache failures.
+- **REQ-033**: MUST execute latest-version checks before any CLI argument validation using a 6-hour cache `.g_version_check_cache.json`; when stale, MUST fetch GitHub release data with 1-second timeout and continue silently on network/cache failures.
 - **REQ-034**: MUST run `git remote -v`, print unique remote names, and run `git remote show <remote>` for each discovered remote in alias `str`.
 - **REQ-035**: MUST support `ver --verbose` (per-file regex outcome output) and `ver --debug` (full glob-match listing for each rule pattern).
 - **REQ-036**: MUST provide executable root script `doxygen.sh` that runs system `doxygen` to generate HTML/PDF/Markdown documentation under `doxygen/` from `src/`, and generated API docs MUST include every declaration indexed in `docs/REFERENCES.md`.
@@ -174,6 +175,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-119**: MUST visual diff aliases include `dcd` mapped to `git difftool -d <develop> <work>`, `dcm` mapped to `git difftool -d <master> <work>`, and `ddm` mapped to `git difftool -d <master> <develop>`, using configured branch names from `.g.conf`; `dcd`, `dcm`, and `ddm` MUST each expose explicit help text in global and per-command help outputs.
 - **REQ-120**: MUST define `LSI_DEFAULT_EXCLUDED_DIRS` as a `frozenset` containing: `.cache`, `.claude`, `.codex`, `.eslintcache`, `.gemini`, `.git`, `.github`, `.kiro`, `.mypy_cache`, `.npm`, `.opencode`, `.parcel-cache`, `.pytest_cache`, `.ruff_cache`, `.sass-cache`, `.terragrunt-cache`, `.tox`, `.venv`, `.vscode`, `__pycache__`, `build`, `dist`, `htmlcov`, `node_modules`, `temp`, `tmp`, `venv`.
 - **REQ-121**: MUST the `lsi` alias MUST accept `--include-all` flag; when present, MUST bypass `LSI_DEFAULT_EXCLUDED_DIRS` and `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` filtering and print all ignored files unfiltered.
+- **REQ-123**: MUST when a newer version is detected, print a bright-red (`\033[31;1m`) warning `Update available: <latest> (current: <current>)` before command execution.
 - **REQ-122**: MUST define `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` as a `tuple` containing: `.egg-info`.
 
 ### 3.3 Project File Structure

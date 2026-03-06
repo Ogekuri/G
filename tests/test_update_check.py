@@ -48,10 +48,9 @@ class UpdateCheckTest(unittest.TestCase):
                     with mock.patch.object(core, "urlopen", return_value=_FakeResponse({"tag_name": "v0.0.2"})):
                         core.check_for_newer_version(timeout_seconds=0.01)
         text = err.getvalue()
-        self.assertIn("New version available", text)
-        self.assertIn("current: 0.0.1", text)
-        self.assertIn("latest: 0.0.2", text)
-        self.assertIn("--upgrade", text)
+        self.assertIn("\033[31;1m", text)
+        self.assertIn("Update available: 0.0.2 (current: 0.0.1)", text)
+        self.assertIn("\033[0m", text)
 
     def test_check_does_not_warn_when_latest_is_not_newer(self):
         err = io.StringIO()

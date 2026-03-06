@@ -40,6 +40,10 @@ VERSION_CHECK_CACHE_FILE = Path(tempfile.gettempdir()) / ".g_version_check_cache
 ## @brief Constant `VERSION_CHECK_TTL_HOURS` used by CLI runtime paths and policies.
 
 VERSION_CHECK_TTL_HOURS = 6
+## @brief Constant `VERSION_WARNING_COLOR` used by CLI runtime paths and policies.
+VERSION_WARNING_COLOR = "\033[31;1m"
+## @brief Constant `ANSI_COLOR_RESET` used by CLI runtime paths and policies.
+ANSI_COLOR_RESET = "\033[0m"
 
 ## @brief Constant `DEFAULT_VER_RULES` used by CLI runtime paths and policies.
 
@@ -202,6 +206,27 @@ def _normalize_semver_text(text: str) -> str:
     return value
 
 
+## @brief Emit the standardized bright-red update warning for newer available versions.
+# @details Formats the warning using the REQ-123 contract `Update available: <latest> (current: <current>)`,
+# applies ANSI bright-red color, and writes to stderr without altering process control-flow.
+# @param current Parsed current semantic version tuple `(major, minor, patch)`.
+# @param latest_text Latest available semantic version text.
+# @return None.
+def _print_update_available_warning(
+    current: Tuple[int, int, int],
+    latest_text: str,
+) -> None:
+    current_text = "{}.{}.{}".format(*current)
+    print(
+        (
+            f"{VERSION_WARNING_COLOR}"
+            f"Update available: {latest_text} (current: {current_text})"
+            f"{ANSI_COLOR_RESET}"
+        ),
+        file=sys.stderr,
+    )
+
+
 ## @brief Execute `check_for_newer_version` runtime logic for Git-Alias CLI.
 # @details Executes `check_for_newer_version` using deterministic CLI control-flow and explicit error propagation.
 # @param timeout_seconds Input parameter consumed by `check_for_newer_version`.
@@ -225,12 +250,7 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
                     cached_latest = cache_data.get("latest_version", "")
                     latest = _parse_semver_tuple(cached_latest)
                     if latest and latest > current:
-                        current_text = "{}.{}.{}".format(*current)
-                        print(
-                            f"New version available (current: {current_text}, latest: {cached_latest}). "
-                            f"Upgrade with: g --upgrade",
-                            file=sys.stderr,
-                        )
+                        _print_update_available_warning(current, cached_latest)
                     cache_valid = True
         except Exception:
             # @details Ignore cache read failures because version checks are non-blocking.
@@ -289,12 +309,7 @@ def check_for_newer_version(timeout_seconds: float = 1.0) -> None:
 
     # @details Emit upgrade hint when fetched latest version is newer than current.
     if latest > current:
-        current_text = "{}.{}.{}".format(*current)
-        print(
-            f"New version available (current: {current_text}, latest: {latest_text}). "
-            f"Upgrade with: g --upgrade",
-            file=sys.stderr,
-        )
+        _print_update_available_warning(current, latest_text)
 
 
 ## @brief Execute `get_git_root` runtime logic for Git-Alias CLI.
@@ -4303,6 +4318,8 @@ def main(argv=None, *, check_updates: bool = True):
     args = list(argv) if argv is not None else sys.argv[1:]
     git_root = get_git_root()
     load_cli_config(git_root)
+    if check_updates:
+        check_for_newer_version(timeout_seconds=1.0)
     if not args:
         print("Please provide a command or --help", file=sys.stderr)
         print_all_help()
@@ -4310,8 +4327,6 @@ def main(argv=None, *, check_updates: bool = True):
     if args[0] == "--help" and len(args) > 1 and args[1] not in COMMANDS:
         print(f"Unknown command: {args[1]}", file=sys.stderr)
         sys.exit(1)
-    if check_updates:
-        check_for_newer_version(timeout_seconds=1.0)
     if args[0] in ("--ver", "--version"):
         print(get_cli_version())
         return

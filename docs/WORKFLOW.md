@@ -103,7 +103,7 @@
   - Threads: no explicit threads detected in `src/` (`threading`/`Thread` creation absent).
 - Internal Call-Trace Tree:
   - `__main__::<module_guard>(...)`: module execution bridge [`src/git_alias/__main__.py`]
-    - `main(...)`: CLI dispatch root [`src/git_alias/core.py`]
+    - `main(...)`: CLI dispatch root that executes update-check before argument validation [`src/git_alias/core.py`]
       - `get_git_root(...)`: resolve repository root path [`src/git_alias/core.py`]
         - `_run_checked(...)`: subprocess execution wrapper [`src/git_alias/core.py`]
       - `load_cli_config(...)`: hydrate runtime config map from local `.g.conf` and global `$HOME/.g/g.conf` while ignoring out-of-scope keys in each file; `default_commit_module` accepts empty-string values as valid [`src/git_alias/core.py`]
@@ -115,6 +115,7 @@
         - `get_cli_version(...)`: parse `__version__` from package init [`src/git_alias/core.py`]
         - `_parse_semver_tuple(...)`: semantic version parser [`src/git_alias/core.py`]
         - `_normalize_semver_text(...)`: strip leading `v` tag prefix [`src/git_alias/core.py`]
+        - `_print_update_available_warning(...)`: render bright-red update warning with latest/current versions [`src/git_alias/core.py`]
       - `print_all_help(...)`: global help output path [`src/git_alias/core.py`]
         - `get_cli_version(...)`: include runtime version in usage header [`src/git_alias/core.py`]
         - `print_command_help(...)`: print per-command help rows [`src/git_alias/core.py`]

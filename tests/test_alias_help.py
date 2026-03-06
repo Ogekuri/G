@@ -2,6 +2,7 @@ import contextlib
 import io
 import re
 import unittest
+from unittest import mock
 
 from git_alias import core
 
@@ -20,13 +21,13 @@ class AliasHelpTest(unittest.TestCase):
         return stdout.strip()
 
     @staticmethod
-    def run_script_result(args, check=True):
+    def run_script_result(args, check=True, *, check_updates=False):
         out = io.StringIO()
         err = io.StringIO()
         exit_code = 0
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             try:
-                core.main(args, check_updates=False)
+                core.main(args, check_updates=check_updates)
             except SystemExit as exc:
                 exit_code = int(exc.code) if isinstance(exc.code, int) else 1
         if check and exit_code != 0:
@@ -146,3 +147,31 @@ class AliasHelpTest(unittest.TestCase):
         for flag in ("--ver", "--version"):
             _, stdout, _ = self.run_script_result([flag], check=True)
             self.assertEqual(stdout.strip(), version)
+
+    def test_update_check_runs_before_empty_args_validation(self):
+        events = []
+
+        def _record_update(timeout_seconds: float = 1.0):
+            del timeout_seconds
+            events.append("update")
+
+        def _record_help():
+            events.append("help")
+
+        with mock.patch.object(core, "check_for_newer_version", side_effect=_record_update):
+            with mock.patch.object(core, "print_all_help", side_effect=_record_help):
+                code, _, _ = self.run_script_result([], check=False, check_updates=True)
+
+        self.assertNotEqual(code, 0)
+        self.assertEqual(events, ["update", "help"])
+
+    def test_update_check_runs_before_unknown_help_target_validation(self):
+        with mock.patch.object(core, "check_for_newer_version") as check_update:
+            code, _, _ = self.run_script_result(
+                ["--help", "not-a-command"],
+                check=False,
+                check_updates=True,
+            )
+
+        self.assertNotEqual(code, 0)
+        check_update.assert_called_once_with(timeout_seconds=1.0)
