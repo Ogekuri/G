@@ -1533,8 +1533,9 @@ def _get_remote_name_for_branch(branch_name: str, repo_root: Path) -> str:
 
 ## @brief Resolve the normalized HTTPS base URL from the master branch's configured remote.
 # @details Parses both SSH (`git@<host>:<owner>/<repo>[.git]`) and HTTPS
-#          (`https://<host>/<owner>/<repo>[.git]`) formats and extracts `<owner>` and `<repo>`
-#          through deterministic string parsing.
+#          (`https://<host>/<owner>/<repo>[.git]`) formats, plus URI-style SSH forms
+#          (`ssh://git@<host>/<owner>/<repo>[.git]`, `git+ssh://...`), and extracts
+#          `<owner>` and `<repo>` through deterministic string parsing.
 # @param remote_url Raw git remote URL string.
 # @return Tuple `(owner, repo)` when parsing succeeds; otherwise `None`.
 def _extract_owner_repo(remote_url: str) -> Optional[Tuple[str, str]]:
@@ -1547,7 +1548,7 @@ def _extract_owner_repo(remote_url: str) -> Optional[Tuple[str, str]]:
         path_part = value.split(":", 1)[1]
     else:
         parsed = urlparse(value)
-        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        if parsed.scheme not in {"http", "https", "ssh", "git+ssh"} or not parsed.netloc:
             return None
         path_part = parsed.path.lstrip("/")
     path_part = path_part.rstrip("/")

@@ -118,7 +118,7 @@
         - `_resolve_release_api_url(...)`: derive GitHub Releases API endpoint from active git remote metadata [`src/git_alias/core.py`]
           - `_resolve_github_owner_repo(...)`: extract `<owner>/<repo>` tuple from active remote URL [`src/git_alias/core.py`]
             - `_resolve_active_remote_name(...)`: resolve active-branch remote with `origin` fallback [`src/git_alias/core.py`]
-            - `_extract_owner_repo(...)`: parse SSH/HTTPS remote URL into owner/repository tuple [`src/git_alias/core.py`]
+            - `_extract_owner_repo(...)`: parse SSH/HTTPS remote URL (including URI-style SSH forms) into owner/repository tuple [`src/git_alias/core.py`]
         - `_print_update_available_warning(...)`: render bright-green update availability message with latest/installed versions [`src/git_alias/core.py`]
         - `_print_update_check_error(...)`: render bright-red diagnostics for remote-resolution, HTTP, and payload failures [`src/git_alias/core.py`]
       - `print_all_help(...)`: global help output path [`src/git_alias/core.py`]
@@ -395,7 +395,7 @@
                 - `_get_remote_name_for_branch(...)`: queries `git config branch.<master>.remote`; falls back to `origin` [`src/git_alias/core.py`]
                 - `run_git_text(...)` -> `_run_checked(...)`
               - `run_git_text(...)` -> `_run_checked(...)`: fetches remote URL via `git remote get-url <remote>` (local only)
-               - `_extract_owner_repo(...)`: parse SSH/HTTPS remote URL into `<owner>/<repo>` components [`src/git_alias/core.py`]
+               - `_extract_owner_repo(...)`: parse SSH/HTTPS remote URL (including URI-style SSH forms) into `<owner>/<repo>` components [`src/git_alias/core.py`]
             - `_is_minor_release_tag(...)` [`src/git_alias/core.py`]: filter minor releases from all tags
               - `_tag_semver_tuple(...)` -> `_parse_semver_tuple(...)`
             - `_latest_patch_tag_after(...)` [`src/git_alias/core.py`]: locate latest patch tag (when `include_patch=True`); result also appended to `history_tags` for `build_history_section`

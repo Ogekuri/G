@@ -132,6 +132,18 @@ class UpdateCheckTest(unittest.TestCase):
             "https://api.github.com/repos/Acme/Tool/releases/latest",
         )
 
+    def test_resolve_release_api_url_from_ssh_scheme_remote(self):
+        with mock.patch.object(
+            core,
+            "run_git_text",
+            side_effect=["work", "origin", "ssh://git@github.com/Acme/Tool.git"],
+        ):
+            api_url = core._resolve_release_api_url(Path("/repo"))
+        self.assertEqual(
+            api_url,
+            "https://api.github.com/repos/Acme/Tool/releases/latest",
+        )
+
     def test_upgrade_self_uses_uv_tool_install_usereq(self):
         with mock.patch.object(core, "_resolve_github_owner_repo", return_value=("Acme", "Tool")):
             with mock.patch.object(core, "_run_checked") as run_checked:
