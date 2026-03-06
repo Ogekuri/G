@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.13.0](https://github.com/Ogekuri/G/compare/v0.12.0..v0.13.0) - 2026-03-06
+### 🚜  Changes
+- BREAKING CHANGE: switch to remote-driven update checks [useReq] *(core)*
+  - Update SRS for uninstall flag and idle-time release checks.
+- run update check before arg validation [useReq] *(core)*
+  - Update REQ-033 and add REQ-123 for startup update-check behavior.
+  - Move check_for_newer_version execution before CLI argument validation in main.
+  - Render newer-version warning in bright red with format: Update available: <latest> (current: <current>).
+  - Adjust and extend tests for warning format and startup ordering.
+  - Refresh WORKFLOW and regenerate REFERENCES.
+
 ## [0.12.0](https://github.com/Ogekuri/G/compare/v0.11.0..v0.12.0) - 2026-03-05
 ### ⛰️  Features
 - Update .req/models.json file.
@@ -459,6 +470,7 @@
 - \[0.10.0\]: https://github.com/Ogekuri/G/releases/tag/v0.10.0
 - \[0.11.0\]: https://github.com/Ogekuri/G/releases/tag/v0.11.0
 - \[0.12.0\]: https://github.com/Ogekuri/G/releases/tag/v0.12.0
+- \[0.13.0\]: https://github.com/Ogekuri/G/releases/tag/v0.13.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -472,3 +484,4 @@
 [0.10.0]: https://github.com/Ogekuri/G/compare/v0.9.0..v0.10.0
 [0.11.0]: https://github.com/Ogekuri/G/compare/v0.10.0..v0.11.0
 [0.12.0]: https://github.com/Ogekuri/G/compare/v0.11.0..v0.12.0
+[0.13.0]: https://github.com/Ogekuri/G/compare/v0.12.0..v0.13.0
