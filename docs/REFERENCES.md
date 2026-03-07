@@ -1368,7 +1368,7 @@ used by section-1 current-branch output, and preserves all other lines.
 - @brief Execute `cmd_l` runtime logic for Git-Alias CLI.
 - @details Delegates to `foresta.run()` which renders a text-based tree visualization
 of git commit history using a vine-based graph algorithm with configurable styles,
-symbols, colors, and margins. Injects `-n 35` only when invoked without
+symbols, colors, and margins. Injects `-n 25` only when invoked without
 user arguments; otherwise forwards provided arguments unchanged.
 - @param extra {list} Additional CLI arguments forwarded to the foresta engine.
 - @return None.

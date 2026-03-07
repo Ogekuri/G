@@ -50,14 +50,14 @@ class TestLCommandDefaultDepth(unittest.TestCase):
     """
 
     @patch("git_alias.foresta.run")
-    def test_cmd_l_injects_default_n_35_only_without_args(self, mock_run):
-        """cmd_l MUST inject '-n 35' when invoked without parameters."""
+    def test_cmd_l_injects_default_n_25_only_without_args(self, mock_run):
+        """cmd_l MUST inject '-n 25' when invoked without parameters."""
         core.cmd_l([])
-        mock_run.assert_called_once_with(["-n", "35"])
+        mock_run.assert_called_once_with(["-n", "25"])
 
     @patch("git_alias.foresta.run")
-    def test_cmd_l_preserves_user_args_without_injecting_default_n_35(self, mock_run):
-        """cmd_l MUST NOT inject '-n 35' when user parameters are present."""
+    def test_cmd_l_preserves_user_args_without_injecting_default_n_25(self, mock_run):
+        """cmd_l MUST NOT inject '-n 25' when user parameters are present."""
         core.cmd_l(["--all", "--reverse"])
         mock_run.assert_called_once_with(["--all", "--reverse"])
 
