@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.16.0](https://github.com/Ogekuri/G/compare/v0.15.0..v0.16.0) - 2026-03-07
+### 🚜  Changes
+- reduce update idle window to 300s [useReq] *(core)*
+  - Update REQ-126 default idle interval from 24 hours to 300 seconds.
+  - Align REQ-033 idle-state filename template with <program_name>.
+  - Replace VERSION_CHECK_TTL_HOURS with VERSION_CHECK_IDLE_SECONDS in core update-check flow.
+  - Adjust update-check test to verify exact idle window in seconds.
+  - Update WORKFLOW wording and regenerate REFERENCES for symbol changes.
+- align uv tool name for self-management [useReq] *(core)*
+  - Update REQ-001, REQ-002, and REQ-126 to use <program_name> semantics.
+  - Add REQ-128 for explicit setuptools package inclusion in uv artifacts.
+  - Use UV_TOOL_NAME for upgrade, uninstall, cache-file naming, and request User-Agent.
+  - Adjust update-check tests to assert tool-name-driven command and cache behavior.
+  - Standardize pyproject setuptools package discovery and package-data inclusion.
+  - Regenerate REFERENCES and update WORKFLOW call-trace notes for uv management paths.
+
 ## [0.15.0](https://github.com/Ogekuri/G/compare/v0.14.0..v0.15.0) - 2026-03-07
 ### 🐛  Bug Fixes
 - Minor fixes.
@@ -498,6 +514,7 @@
 - \[0.13.0\]: https://github.com/Ogekuri/G/releases/tag/v0.13.0
 - \[0.14.0\]: https://github.com/Ogekuri/G/releases/tag/v0.14.0
 - \[0.15.0\]: https://github.com/Ogekuri/G/releases/tag/v0.15.0
+- \[0.16.0\]: https://github.com/Ogekuri/G/releases/tag/v0.16.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -514,3 +531,4 @@
 [0.13.0]: https://github.com/Ogekuri/G/compare/v0.12.0..v0.13.0
 [0.14.0]: https://github.com/Ogekuri/G/compare/v0.13.0..v0.14.0
 [0.15.0]: https://github.com/Ogekuri/G/compare/v0.14.0..v0.15.0
+[0.16.0]: https://github.com/Ogekuri/G/compare/v0.15.0..v0.16.0
