@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.03
+**Version**: 1.04
 **Author**: Francesco Rolando
 **Date**: 2026-03-07
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-03-07 | 1.04 | Replaced update-check idle-time policy with fixed 300-second delay semantics and added HTTP 429 Retry-After backoff persistence requirements. |
 | 2026-03-07 | 1.03 | Replaced update-check repository/program resolution with fixed constants, set successful idle-time default to 24 hours, and added minimum check-interval floor. |
 | 2026-03-07 | 1.02 | Changed update-check idle default from 24 hours to 300 seconds and aligned idle-time cache filename requirement with `<program_name>`. |
 | 2026-03-07 | 1.01 | Replaced hardcoded self-management executable names with package-tool identifier policy and required explicit package inclusion policy for uv release artifacts. |
@@ -182,10 +183,12 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-123**: MUST when a newer version is detected, print a bright-green (`\033[92;1m`) message `Update available: <latest> (installed: <current>)` before command execution.
 - **REQ-124**: MUST resolve the release-check URL exactly as `https://api.github.com/repos/Ogekuri/G/releases/latest`.
 - **REQ-125**: MUST execute release-check HTTP requests with a hardcoded configurable timeout defaulting to 2 seconds.
-- **REQ-126**: MUST after successful release checks write `$HOME/.github_api_idle-time.git-alias` JSON fields `last_check_unix`, `last_check_human`, `idle_until_unix`, and `idle_until_human`, with `idle_until_unix` defaulting to now plus hardcoded configurable 86400 seconds.
+- **REQ-126**: MUST after successful release checks write `$HOME/.github_api_idle-time.git-alias` JSON fields `last_check_unix`, `last_check_human`, `idle_until_unix`, and `idle_until_human`, with `idle_until_unix = last_check_unix + 300`.
 - **REQ-127**: MUST print bright-red (`\033[31;1m`) update-check errors, including HTTP status diagnostics and API-provided messages such as `rate limit exceeded`.
 - **REQ-128**: MUST package and distribute every runtime-required file for CLI execution in uv release artifacts via explicit setuptools configuration in `pyproject.toml`, ensuring parity between local execution and uv/uvx-installed execution.
-- **REQ-129**: MUST enforce a hardcoded configurable minimum 300-second interval between release-check HTTP requests, including when idle-time values are computed after successful checks.
+- **REQ-129**: MUST define a hardcoded `idle_delay_seconds` value equal to 300 and reuse it for every release-check scheduling decision.
+- **REQ-130**: MUST on HTTP 429 parse `Retry-After` as non-negative integer seconds, treating missing, non-integer, or negative values as `0`.
+- **REQ-131**: MUST on HTTP 429 update `$HOME/.github_api_idle-time.git-alias` with `idle_until_unix = max(existing_idle_until_unix, now + max(idle_delay_seconds, retry_after_seconds))` and synchronized human-readable fields.
 - **REQ-122**: MUST define `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` as a `tuple` containing: `.egg-info`.
 
 ### 3.3 Project File Structure

@@ -34,6 +34,21 @@ class UpdateCheckTest(unittest.TestCase):
             / f".github_api_idle-time.{core.UV_TOOL_NAME}.test.{uuid4().hex}",
         )
 
+    @staticmethod
+    def _http_error(
+        *,
+        code: int,
+        payload: dict,
+        headers: dict | None = None,
+    ) -> HTTPError:
+        return HTTPError(
+            url=core.GITHUB_LATEST_RELEASE_API,
+            code=code,
+            msg="HTTP Error",
+            hdrs=headers,
+            fp=io.BytesIO(json.dumps(payload).encode("utf-8")),
+        )
+
     def test_check_prints_red_error_on_network_failure(self):
         err = io.StringIO()
         with self._isolated_cache():
@@ -93,6 +108,7 @@ class UpdateCheckTest(unittest.TestCase):
             urlopen_mock.assert_not_called()
 
     def test_check_writes_idle_time_state_on_success(self):
+        before_unix = int(core.datetime.now().timestamp())
         with self._isolated_cache():
             with mock.patch.object(
                 core,
@@ -101,6 +117,7 @@ class UpdateCheckTest(unittest.TestCase):
             ):
                 core.check_for_newer_version(timeout_seconds=0.01)
             data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
+        after_unix = int(core.datetime.now().timestamp())
         self.assertEqual(
             sorted(data.keys()),
             [
@@ -112,22 +129,18 @@ class UpdateCheckTest(unittest.TestCase):
         )
         self.assertIsInstance(data["last_check_unix"], int)
         self.assertIsInstance(data["idle_until_unix"], int)
+        self.assertGreaterEqual(data["last_check_unix"], before_unix)
+        self.assertLessEqual(data["last_check_unix"], after_unix)
         self.assertEqual(
             data["idle_until_unix"] - data["last_check_unix"],
-            max(
-                core.VERSION_CHECK_IDLE_SECONDS,
-                core.VERSION_CHECK_MIN_INTERVAL_SECONDS,
-            ),
+            core.VERSION_CHECK_IDLE_DELAY_SECONDS,
         )
 
     def test_check_prints_http_403_rate_limit_error_details(self):
         err = io.StringIO()
-        rate_limit_error = HTTPError(
-            url=core.GITHUB_LATEST_RELEASE_API,
+        rate_limit_error = self._http_error(
             code=403,
-            msg="Forbidden",
-            hdrs=None,
-            fp=io.BytesIO(b'{"message":"rate limit exceeded"}'),
+            payload={"message": "rate limit exceeded"},
         )
         with self._isolated_cache():
             with contextlib.redirect_stderr(err):
@@ -145,18 +158,72 @@ class UpdateCheckTest(unittest.TestCase):
         api_url = core._resolve_release_api_url(Path("/repo"))
         self.assertEqual(api_url, core.GITHUB_LATEST_RELEASE_API)
 
-    def test_idle_time_enforces_minimum_interval_floor(self):
+    def test_idle_time_uses_hardcoded_idle_delay(self):
+        self.assertEqual(core.VERSION_CHECK_IDLE_DELAY_SECONDS, 300)
+
+    def test_http_429_uses_retry_after_when_retry_after_is_greater_than_idle_delay(self):
+        err = io.StringIO()
+        before_unix = int(core.datetime.now().timestamp())
+        rate_limit_error = self._http_error(
+            code=429,
+            payload={"message": "rate limit exceeded"},
+            headers={"Retry-After": "600"},
+        )
         with self._isolated_cache():
-            with mock.patch.object(core, "VERSION_CHECK_IDLE_SECONDS", 120):
-                with mock.patch.object(core, "VERSION_CHECK_MIN_INTERVAL_SECONDS", 300):
-                    with mock.patch.object(
-                        core,
-                        "urlopen",
-                        return_value=_FakeResponse({"tag_name": "v0.0.2"}),
-                    ):
-                        core.check_for_newer_version(timeout_seconds=0.01)
+            with contextlib.redirect_stderr(err):
+                with mock.patch.object(core, "urlopen", side_effect=rate_limit_error):
+                    core.check_for_newer_version(timeout_seconds=0.01)
             data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
-        self.assertEqual(data["idle_until_unix"] - data["last_check_unix"], 300)
+        after_unix = int(core.datetime.now().timestamp())
+        self.assertIn("Version check failed: HTTP 429: rate limit exceeded", err.getvalue())
+        self.assertGreaterEqual(data["idle_until_unix"], before_unix + 600)
+        self.assertLessEqual(data["idle_until_unix"], after_unix + 600)
+        self.assertEqual(data["last_check_unix"], 0)
+
+    def test_http_429_uses_idle_delay_when_retry_after_is_smaller(self):
+        err = io.StringIO()
+        before_unix = int(core.datetime.now().timestamp())
+        rate_limit_error = self._http_error(
+            code=429,
+            payload={"message": "rate limit exceeded"},
+            headers={"Retry-After": "120"},
+        )
+        with self._isolated_cache():
+            with contextlib.redirect_stderr(err):
+                with mock.patch.object(core, "urlopen", side_effect=rate_limit_error):
+                    core.check_for_newer_version(timeout_seconds=0.01)
+            data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
+        after_unix = int(core.datetime.now().timestamp())
+        self.assertIn("Version check failed: HTTP 429: rate limit exceeded", err.getvalue())
+        self.assertGreaterEqual(
+            data["idle_until_unix"],
+            before_unix + core.VERSION_CHECK_IDLE_DELAY_SECONDS,
+        )
+        self.assertLessEqual(
+            data["idle_until_unix"],
+            after_unix + core.VERSION_CHECK_IDLE_DELAY_SECONDS,
+        )
+
+    def test_http_429_invalid_retry_after_falls_back_to_idle_delay(self):
+        before_unix = int(core.datetime.now().timestamp())
+        rate_limit_error = self._http_error(
+            code=429,
+            payload={"message": "rate limit exceeded"},
+            headers={"Retry-After": "abc"},
+        )
+        with self._isolated_cache():
+            with mock.patch.object(core, "urlopen", side_effect=rate_limit_error):
+                core.check_for_newer_version(timeout_seconds=0.01)
+            data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
+        after_unix = int(core.datetime.now().timestamp())
+        self.assertGreaterEqual(
+            data["idle_until_unix"],
+            before_unix + core.VERSION_CHECK_IDLE_DELAY_SECONDS,
+        )
+        self.assertLessEqual(
+            data["idle_until_unix"],
+            after_unix + core.VERSION_CHECK_IDLE_DELAY_SECONDS,
+        )
 
     def test_upgrade_self_uses_uv_tool_install_program_name(self):
         with mock.patch.object(core, "_run_checked") as run_checked:

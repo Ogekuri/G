@@ -14,7 +14,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from urllib.error import HTTPError, URLError
@@ -48,11 +48,8 @@ UV_TOOL_NAME = "git-alias"
 
 ## @brief Constant `VERSION_CHECK_CACHE_FILE` used by CLI runtime paths and policies.
 VERSION_CHECK_CACHE_FILE = Path.home() / f".github_api_idle-time.{UV_TOOL_NAME}"
-## @brief Constant `VERSION_CHECK_MIN_INTERVAL_SECONDS` used by CLI runtime paths and policies.
-VERSION_CHECK_MIN_INTERVAL_SECONDS = 300
-## @brief Constant `VERSION_CHECK_IDLE_SECONDS` used by CLI runtime paths and policies.
-
-VERSION_CHECK_IDLE_SECONDS = 86400
+## @brief Constant `VERSION_CHECK_IDLE_DELAY_SECONDS` used by CLI runtime paths and policies.
+VERSION_CHECK_IDLE_DELAY_SECONDS = 300
 ## @brief Constant `VERSION_CHECK_TIMEOUT_SECONDS` used by CLI runtime paths and policies.
 VERSION_CHECK_TIMEOUT_SECONDS = 2.0
 ## @brief Constant `VERSION_AVAILABLE_COLOR` used by CLI runtime paths and policies.
@@ -268,6 +265,73 @@ def _resolve_release_api_url(repo_root: Path) -> str:
     return GITHUB_LATEST_RELEASE_API
 
 
+## @brief Coerce candidate JSON timestamp values into unix-second integers.
+# @details Accepts numeric values (`int`/`float`) and converts them to integer unix
+#          seconds; all non-numeric values are rejected.
+# @param value Candidate timestamp value loaded from JSON cache payload.
+# @return Parsed unix timestamp integer when numeric; otherwise `None`.
+def _coerce_unix_timestamp(value: object) -> Optional[int]:
+    if isinstance(value, (int, float)):
+        return int(value)
+    return None
+
+
+## @brief Parse Retry-After delay seconds from an HTTP 429 error response.
+# @details Reads `Retry-After` from HTTP headers (`headers`/`hdrs`), parses
+#          non-negative integer seconds, and normalizes missing/invalid/negative values to `0`.
+# @param http_error HTTP error raised by urllib request execution.
+# @return Retry-After delay seconds (`>= 0`).
+def _parse_retry_after_seconds(http_error: HTTPError) -> int:
+    retry_after_raw = ""
+    headers = getattr(http_error, "headers", None)
+    if headers is None:
+        headers = getattr(http_error, "hdrs", None)
+    if headers is not None:
+        retry_after_raw = str(headers.get("Retry-After", "")).strip()
+    if not retry_after_raw:
+        return 0
+    try:
+        retry_after_seconds = int(retry_after_raw)
+    except ValueError:
+        return 0
+    return max(retry_after_seconds, 0)
+
+
+## @brief Persist update-check idle-time cache state to JSON file.
+# @details Writes canonical fields `last_check_unix`, `last_check_human`,
+#          `idle_until_unix`, and `idle_until_human` using second-precision
+#          timestamps and emits standardized error diagnostics on I/O or timestamp failures.
+# @param last_check_unix Unix timestamp of last successful version check.
+# @param idle_until_unix Unix timestamp until next remote check is disabled.
+# @return None.
+def _write_version_check_state(
+    *,
+    last_check_unix: int,
+    idle_until_unix: int,
+) -> None:
+    try:
+        last_check_time = datetime.fromtimestamp(last_check_unix)
+        idle_until_time = datetime.fromtimestamp(idle_until_unix)
+        with open(VERSION_CHECK_CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "last_check_unix": int(last_check_unix),
+                    "last_check_human": last_check_time.isoformat(
+                        sep=" ",
+                        timespec="seconds",
+                    ),
+                    "idle_until_unix": int(idle_until_unix),
+                    "idle_until_human": idle_until_time.isoformat(
+                        sep=" ",
+                        timespec="seconds",
+                    ),
+                },
+                f,
+            )
+    except (OSError, OverflowError, ValueError) as exc:
+        _print_update_check_error(f"idle-time state write failed: {exc}")
+
+
 ## @brief Execute `check_for_newer_version` runtime logic for Git-Alias CLI.
 # @details Executes `check_for_newer_version` using deterministic CLI control-flow and explicit error propagation.
 # @param repo_root Input parameter consumed by `check_for_newer_version`.
@@ -284,21 +348,22 @@ def check_for_newer_version(
 
     now = datetime.now()
     now_unix = int(now.timestamp())
+    cache_data: Dict[str, object] = {}
     if VERSION_CHECK_CACHE_FILE.exists():
         try:
             with open(VERSION_CHECK_CACHE_FILE, "r", encoding="utf-8") as f:
-                cache_data = json.load(f)
+                loaded_cache_data = json.load(f)
         except (OSError, json.JSONDecodeError) as exc:
             _print_update_check_error(f"idle-time state read failed: {exc}")
         else:
-            if isinstance(cache_data, dict):
-                idle_until_unix = cache_data.get("idle_until_unix")
-                if isinstance(idle_until_unix, (int, float)) and now_unix < int(
-                    idle_until_unix
-                ):
+            if isinstance(loaded_cache_data, dict):
+                cache_data = loaded_cache_data
+                idle_until_unix = _coerce_unix_timestamp(cache_data.get("idle_until_unix"))
+                if idle_until_unix is not None and now_unix < idle_until_unix:
                     return
-                if idle_until_unix is not None and not isinstance(
-                    idle_until_unix, (int, float)
+                if (
+                    cache_data.get("idle_until_unix") is not None
+                    and idle_until_unix is None
                 ):
                     _print_update_check_error(
                         "idle-time state is invalid: `idle_until_unix` must be numeric."
@@ -331,6 +396,28 @@ def check_for_newer_version(
                 details = str(details_payload.get("message", "")).strip()
         except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             details = ""
+        if exc.code == 429:
+            retry_after_seconds = _parse_retry_after_seconds(exc)
+            retry_window_seconds = max(
+                VERSION_CHECK_IDLE_DELAY_SECONDS,
+                retry_after_seconds,
+            )
+            existing_idle_until_unix = _coerce_unix_timestamp(
+                cache_data.get("idle_until_unix")
+            )
+            if existing_idle_until_unix is None:
+                existing_idle_until_unix = 0
+            blocked_until_unix = max(
+                existing_idle_until_unix,
+                now_unix + retry_window_seconds,
+            )
+            last_check_unix = _coerce_unix_timestamp(cache_data.get("last_check_unix"))
+            if last_check_unix is None:
+                last_check_unix = 0
+            _write_version_check_state(
+                last_check_unix=last_check_unix,
+                idle_until_unix=blocked_until_unix,
+            )
         if details:
             _print_update_check_error(f"HTTP {exc.code}: {details}")
         else:
@@ -365,24 +452,11 @@ def check_for_newer_version(
         _print_update_check_error("invalid API payload: `tag_name` is not semantic version.")
         return
 
-    idle_seconds = max(
-        VERSION_CHECK_IDLE_SECONDS,
-        VERSION_CHECK_MIN_INTERVAL_SECONDS,
+    idle_seconds = VERSION_CHECK_IDLE_DELAY_SECONDS
+    _write_version_check_state(
+        last_check_unix=now_unix,
+        idle_until_unix=now_unix + idle_seconds,
     )
-    idle_until_unix = now_unix + idle_seconds
-    try:
-        cache_data = {
-            "last_check_unix": now_unix,
-            "last_check_human": now.isoformat(sep=" ", timespec="seconds"),
-            "idle_until_unix": idle_until_unix,
-            "idle_until_human": (
-                now + timedelta(seconds=idle_seconds)
-            ).isoformat(sep=" ", timespec="seconds"),
-        }
-        with open(VERSION_CHECK_CACHE_FILE, "w", encoding="utf-8") as f:
-            json.dump(cache_data, f)
-    except OSError as exc:
-        _print_update_check_error(f"idle-time state write failed: {exc}")
 
     if latest > current:
         _print_update_available_warning(current, latest_text)
