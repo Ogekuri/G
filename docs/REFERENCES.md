@@ -1910,7 +1910,7 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 
 ---
 
-# foresta.py | Python | 1558L | 31 symbols | 7 imports | 323 comments
+# foresta.py | Python | 1562L | 31 symbols | 7 imports | 323 comments
 > Path: `src/git_alias/foresta.py`
 
 ## Imports
@@ -2095,32 +2095,32 @@ is generated, using lookahead heuristics to preserve adjacent branch continuity.
 - @param f {Optional[str]} Optional suffix.
 - @return {str} Trimmed control string.
 
-### fn `def _vis_fan(s: str, fan_type: str) -> str` `priv` (L782-857)
+### fn `def _vis_fan(s: str, fan_type: str) -> str` `priv` (L782-856)
 - @brief Transform control string for branch/merge fan visualization.
-- @details Converts 's' fan markers into directional edge characters, resolves overpass sequences, and performs left/right edge transforms.
+- @details Converts 's' fan markers into directional edge characters, resolves overpass sequences, and performs left/right edge transforms. Normalizes interior spaces between fan markers (`S`/`s`) to preserve continuous connector rendering.
 - @param s {str} Raw control string.
 - @param fan_type {str} Either "branch" or "merge".
 - @return {str} Transformed control string.
 
-### fn `def _overpass_replace(m)` `priv` (L813-815)
+### fn `def _overpass_replace(m)` `priv` (L818-820)
 - @brief Expand matched overpass control segments to contiguous overpass markers.
 - @details Converts regex match groups for `O[DO]+O` into equal-length `O...O` spans.
 - @param m {re.Match[str]} Regex match object for the overpass control segment.
 - @return {str} Replacement string composed only of `O` markers.
 
-### fn `def _vis_fan2L(left: str) -> str` `priv` (L858-870)
+### fn `def _vis_fan2L(left: str) -> str` `priv` (L857-871)
 - @brief Transform left side of fan visualization.
-- @details Converts leading `s` to `e` and remaining `s` markers to `f`.
+- @details Converts the first `s` marker to `e` and remaining `s` markers to `f`, preserving any leading spacing used for vine alignment.
 - @param left {str} Left portion of control string.
 - @return {str} Transformed left portion.
 
-### fn `def _vis_fan2R(right: str) -> str` `priv` (L871-883)
+### fn `def _vis_fan2R(right: str) -> str` `priv` (L872-887)
 - @brief Transform right side of fan visualization.
-- @details Converts trailing `s` to `g` and remaining `s` markers to `f`.
+- @details Converts the rightmost `s` marker to `g` and remaining `s` markers to `f`, preserving trailing spacing used for vine alignment.
 - @param right {str} Right portion of control string.
 - @return {str} Transformed right portion.
 
-### fn `def _vis_xfrm(` `priv` (L916-921)
+### fn `def _vis_xfrm(` `priv` (L920-925)
 - @brief Convert graph control-string tokens into styled Unicode output.
 - @details Applies optional space-filling after commit markers, reverse-order fan transformation,
 style-specific Unicode translation, and final graph-symbol replacement.
@@ -2132,7 +2132,7 @@ style-specific Unicode translation, and final graph-symbol replacement.
 - @return {str} Rendered graph line with selected style and symbols.
 - @satisfies REQ-101
 
-### fn `def _vis_post(` `priv` (L969-977)
+### fn `def _vis_post(` `priv` (L973-981)
 - @brief Post-process graph control strings with style transform and branch coloring.
 - @brief Execute `_vis_post` graph-processing logic for Foresta rendering.
 - @details Applies `_vis_xfrm` to graph/control suffix segments, preserves ANSI spans, and injects
@@ -2157,7 +2157,7 @@ branch-color-specific commit glyph coloring based on tracked branch state.
 - @return {str} Final rendered line with style transformation and ANSI colors.
 - @return Result emitted by `_vis_post` according to command contract.
 
-### fn `def _update_branch_colors(` `priv` (L1046-1049)
+### fn `def _update_branch_colors(` `priv` (L1050-1053)
 - @brief Update branch-color assignments using current vine control-string content.
 - @details Scans even vine slots for branch indicators (`e`, `f`, `g`, `t`) and assigns colors
 from the reference palette while avoiding immediate neighbor color collisions.
@@ -2167,7 +2167,7 @@ from the reference palette while avoiding immediate neighbor color collisions.
 - @return None. Mutates `branch_colors_now` in place.
 - @satisfies REQ-110
 
-### fn `def _get_line_block(` `priv` (L1093-1094)
+### fn `def _get_line_block(` `priv` (L1097-1098)
 - @brief Read one commit-log line plus bounded lookahead for subvine processing.
 - @details Maintains a rolling prefetch buffer and returns the current line with up to
 `max_count - 1` subsequent entries for merge lookahead heuristics.
@@ -2176,24 +2176,24 @@ from the reference palette while avoiding immediate neighbor color collisions.
 - @param max_count {int} Maximum total items in returned block.
 - @return {Tuple[Optional[str], List[Optional[str]]]} Current line and lookahead list.
 
-### class `class _ReverseOutput` `priv` (L1116-1155)
+### class `class _ReverseOutput` `priv` (L1120-1159)
 - @brief Buffer that collects output and writes it in reverse line order.
 - @details Used when --reverse is specified. Accumulates all printed output and flushes in reverse order on close().
-- fn `def __init__(self, stream)` `priv` (L1123-1130)
+- fn `def __init__(self, stream)` `priv` (L1127-1134)
   - @brief Buffer that collects output and writes it in reverse line order.
   - @brief Initialize reverse output buffer.
   - @details Used when --reverse is specified. Accumulates all printed output
 and flushes in reverse order on close().
   - @param stream Output stream to write reversed content to.
-- fn `def write(self, text: str) -> None` (L1131-1137)
+- fn `def write(self, text: str) -> None` (L1135-1141)
   - @brief Accumulate text for later reversed output.
   - @param text {str} Text to buffer.
-- fn `def flush(self) -> None` (L1138-1143)
+- fn `def flush(self) -> None` (L1142-1147)
   - @brief No-op flush for buffered mode.
-- fn `def close(self) -> None` (L1144-1155)
+- fn `def close(self) -> None` (L1148-1159)
   - @brief Write buffered content in reverse line order to the stream.
 
-### fn `def _process(` `priv` (L1205-1223)
+### fn `def _process(` `priv` (L1209-1227)
 - @brief Stream git log commits, render vine graph lines, and emit final output.
 - @brief Execute `_process` graph-processing logic for Foresta rendering.
 - @details Opens a `git log` pipe, iterates commits, executes vine_branch/vine_commit/vine_merge
@@ -2239,12 +2239,12 @@ rendering stages, and writes normalized lines to the configured output stream.
 - @return Result emitted by `_process` according to command contract.
 - @satisfies REQ-099, REQ-100, REQ-109
 
-### fn `def _lines_iter()` `priv` (L1240-1244)
+### fn `def _lines_iter()` `priv` (L1244-1248)
 - @brief Yield streamed git-log lines from subprocess stdout.
 - @details Wraps `proc.stdout` iteration to keep generator creation local to `_process`.
 - @return {Iterator[str]} Iterator emitting raw log lines including trailing newlines.
 
-### fn `def run(extra_args: Optional[List[str]] = None) -> None` (L1391-1558)
+### fn `def run(extra_args: Optional[List[str]] = None) -> None` (L1395-1562)
 - @brief Execute the tree visualization command.
 - @details Parses command-line options, configures the visualization engine, and runs the main processing loop. Unrecognized options are passed through to git log.
 - @param extra_args {Optional[List[str]]} CLI arguments from the dispatcher.
@@ -2269,20 +2269,20 @@ rendering stages, and writes normalized lines to the configured output stream.
 |`_vine_commit`|fn|priv|536-585|def _vine_commit(vine: list, rev: str, parents: List[str]...|
 |`_vine_merge`|fn|priv|620-633|def _vine_merge(|
 |`_vis_commit`|fn|priv|768-781|def _vis_commit(s: str, f: Optional[str] = None) -> str|
-|`_vis_fan`|fn|priv|782-857|def _vis_fan(s: str, fan_type: str) -> str|
-|`_overpass_replace`|fn|priv|813-815|def _overpass_replace(m)|
-|`_vis_fan2L`|fn|priv|858-870|def _vis_fan2L(left: str) -> str|
-|`_vis_fan2R`|fn|priv|871-883|def _vis_fan2R(right: str) -> str|
-|`_vis_xfrm`|fn|priv|916-921|def _vis_xfrm(|
-|`_vis_post`|fn|priv|969-977|def _vis_post(|
-|`_update_branch_colors`|fn|priv|1046-1049|def _update_branch_colors(|
-|`_get_line_block`|fn|priv|1093-1094|def _get_line_block(|
-|`_ReverseOutput`|class|priv|1116-1155|class _ReverseOutput|
-|`_ReverseOutput.__init__`|fn|priv|1123-1130|def __init__(self, stream)|
-|`_ReverseOutput.write`|fn|pub|1131-1137|def write(self, text: str) -> None|
-|`_ReverseOutput.flush`|fn|pub|1138-1143|def flush(self) -> None|
-|`_ReverseOutput.close`|fn|pub|1144-1155|def close(self) -> None|
-|`_process`|fn|priv|1205-1223|def _process(|
-|`_lines_iter`|fn|priv|1240-1244|def _lines_iter()|
-|`run`|fn|pub|1391-1558|def run(extra_args: Optional[List[str]] = None) -> None|
+|`_vis_fan`|fn|priv|782-856|def _vis_fan(s: str, fan_type: str) -> str|
+|`_overpass_replace`|fn|priv|818-820|def _overpass_replace(m)|
+|`_vis_fan2L`|fn|priv|857-871|def _vis_fan2L(left: str) -> str|
+|`_vis_fan2R`|fn|priv|872-887|def _vis_fan2R(right: str) -> str|
+|`_vis_xfrm`|fn|priv|920-925|def _vis_xfrm(|
+|`_vis_post`|fn|priv|973-981|def _vis_post(|
+|`_update_branch_colors`|fn|priv|1050-1053|def _update_branch_colors(|
+|`_get_line_block`|fn|priv|1097-1098|def _get_line_block(|
+|`_ReverseOutput`|class|priv|1120-1159|class _ReverseOutput|
+|`_ReverseOutput.__init__`|fn|priv|1127-1134|def __init__(self, stream)|
+|`_ReverseOutput.write`|fn|pub|1135-1141|def write(self, text: str) -> None|
+|`_ReverseOutput.flush`|fn|pub|1142-1147|def flush(self) -> None|
+|`_ReverseOutput.close`|fn|pub|1148-1159|def close(self) -> None|
+|`_process`|fn|priv|1209-1227|def _process(|
+|`_lines_iter`|fn|priv|1244-1248|def _lines_iter()|
+|`run`|fn|pub|1395-1562|def run(extra_args: Optional[List[str]] = None) -> None|
 

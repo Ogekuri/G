@@ -784,17 +784,22 @@ def _vis_fan(s: str, fan_type: str) -> str:
     @brief Transform control string for branch/merge fan visualization.
     @details Converts 's' fan markers into directional edge characters,
     resolves overpass sequences, and performs left/right edge transforms.
+    Normalizes interior spaces between fan markers (`S`/`s`) to preserve
+    continuous connector rendering.
     @param s {str} Raw control string.
     @param fan_type {str} Either "branch" or "merge".
     @return {str} Transformed control string.
     """
     is_branch = fan_type == "branch"
 
-    # Find the span between first and last 's'
-    first_s = s.find("s")
-    last_s = s.rfind("s")
-    if first_s != -1 and last_s != -1 and first_s != last_s:
-        middle = s[first_s:last_s + 1]
+    # Normalize span between first and last fan markers (S/s).
+    marker_positions = [
+        idx for idx, ch in enumerate(s) if ch in ("S", "s")
+    ]
+    if len(marker_positions) >= 2:
+        first_marker = marker_positions[0]
+        last_marker = marker_positions[-1]
+        middle = s[first_marker:last_marker + 1]
         new_middle = ""
         for ch in middle:
             if ch == " ":
@@ -803,7 +808,7 @@ def _vis_fan(s: str, fan_type: str) -> str:
                 new_middle += "O"
             else:
                 new_middle += ch
-        s = s[:first_s] + new_middle + s[last_s + 1 :]
+        s = s[:first_marker] + new_middle + s[last_marker + 1 :]
 
     # Transform ODODO.. sequences into contiguous overpass
     ## @brief Expand matched overpass control segments to contiguous overpass markers.
@@ -831,20 +836,14 @@ def _vis_fan(s: str, fan_type: str) -> str:
         # Left side only
         left = s[:s_idx]
         left = _vis_fan2L(left)
-        s = left + "B"
-        if s_idx + 1 < len(s[:s_idx] + "B" + s[s_idx + 1 :]):
-            s = left + "B" + s[s_idx + 1 :]
-        else:
-            s = left + "B"
+        suffix = s[s_idx + 1 :]
+        s = left + "B" + suffix
     elif s_idx != -1 and last_s != -1 and last_s > s_idx:
         # Right side only
+        prefix = s[:s_idx]
         right = s[s_idx + 1 :]
         right = _vis_fan2R(right)
-        s = "A" + right
-        if s_idx > 0:
-            s = s[:s_idx] + "A" + right
-        else:
-            s = "A" + right
+        s = prefix + "A" + right
     # If none matched, keep as is (should not happen in normal flow)
 
     if is_branch:
@@ -858,12 +857,14 @@ def _vis_fan(s: str, fan_type: str) -> str:
 def _vis_fan2L(left: str) -> str:
     """
     @brief Transform left side of fan visualization.
-    @details Converts leading `s` to `e` and remaining `s` markers to `f`.
+    @details Converts the first `s` marker to `e` and remaining `s` markers to
+    `f`, preserving any leading spacing used for vine alignment.
     @param left {str} Left portion of control string.
     @return {str} Transformed left portion.
     """
-    if left and left[0] == "s":
-        left = "e" + left[1:]
+    first_s = left.find("s")
+    if first_s != -1:
+        left = left[:first_s] + "e" + left[first_s + 1 :]
     left = left.replace("s", "f")
     return left
 
@@ -871,14 +872,17 @@ def _vis_fan2L(left: str) -> str:
 def _vis_fan2R(right: str) -> str:
     """
     @brief Transform right side of fan visualization.
-    @details Converts trailing `s` to `g` and remaining `s` markers to `f`.
+    @details Converts the rightmost `s` marker to `g` and remaining `s` markers
+    to `f`, preserving trailing spacing used for vine alignment.
     @param right {str} Right portion of control string.
     @return {str} Transformed right portion.
     """
-    if right and right[-1] == "s":
-        right = right[:-1] + "g"
-    right = right.replace("s", "f")
-    return right
+    last_s = right.rfind("s")
+    if last_s == -1:
+        return right
+    prefix = right[:last_s].replace("s", "f")
+    suffix = right[last_s + 1 :].replace("s", "f")
+    return prefix + "g" + suffix
 
 
 # Style translation tables

@@ -281,6 +281,43 @@ class TestVisFan(unittest.TestCase):
         for ch in result:
             self.assertNotIn(ch, "efg")
 
+    def test_fan_connectors_render_continuous_edges_with_terminal_corners(self):
+        """
+        @brief Fan rendering MUST preserve connector continuity and terminal corners.
+        @details Validates merge and branch fan transformations used by `g l --all`
+        to prevent malformed output such as `├ ┬` and `├ ┴─┘`.
+        @satisfies REQ-099, REQ-109
+        @return None.
+        """
+        graph_symbol_tr = foresta._trgen("\u25cf", "\u25ce", "\u2550", "\u25a0", "\u25cb")
+
+        merge_vis = foresta._vis_xfrm(
+            foresta._vis_fan("S s  ", "merge"),
+            False,
+            1,
+            False,
+            graph_symbol_tr,
+        )
+        self.assertEqual(merge_vis, "\u251c\u2500\u2510  ")
+
+        branch_vis = foresta._vis_xfrm(
+            foresta._vis_fan("S sDs", "branch"),
+            False,
+            1,
+            False,
+            graph_symbol_tr,
+        )
+        self.assertEqual(branch_vis, "\u251c\u2500\u2534\u2500\u2518")
+
+        prefixed_merge_vis = foresta._vis_xfrm(
+            foresta._vis_fan("I S s    ", "merge"),
+            False,
+            1,
+            False,
+            graph_symbol_tr,
+        )
+        self.assertEqual(prefixed_merge_vis, "\u2502 \u251c\u2500\u2510    ")
+
 
 class TestGetStatus(unittest.TestCase):
     """
