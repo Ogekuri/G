@@ -105,8 +105,8 @@ from git_alias import foresta
 - @brief Constant `UV_TOOL_NAME` used by CLI runtime paths and policies.
 - var `VERSION_CHECK_CACHE_FILE = Path.home() / f".github_api_idle-time.{UV_TOOL_NAME}"` (L41)
 - @brief Constant `VERSION_CHECK_CACHE_FILE` used by CLI runtime paths and policies.
-- var `VERSION_CHECK_TTL_HOURS = 24` (L44)
-- @brief Constant `VERSION_CHECK_TTL_HOURS` used by CLI runtime paths and policies.
+- var `VERSION_CHECK_IDLE_SECONDS = 300` (L44)
+- @brief Constant `VERSION_CHECK_IDLE_SECONDS` used by CLI runtime paths and policies.
 - var `VERSION_CHECK_TIMEOUT_SECONDS = 2.0` (L46)
 - @brief Constant `VERSION_CHECK_TIMEOUT_SECONDS` used by CLI runtime paths and policies.
 - var `VERSION_AVAILABLE_COLOR = "\033[92;1m"` (L48)
@@ -1670,7 +1670,7 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 |`GITHUB_LATEST_RELEASE_API`|var|pub|36||
 |`UV_TOOL_NAME`|var|pub|38||
 |`VERSION_CHECK_CACHE_FILE`|var|pub|41||
-|`VERSION_CHECK_TTL_HOURS`|var|pub|44||
+|`VERSION_CHECK_IDLE_SECONDS`|var|pub|44||
 |`VERSION_CHECK_TIMEOUT_SECONDS`|var|pub|46||
 |`VERSION_AVAILABLE_COLOR`|var|pub|48||
 |`VERSION_ERROR_COLOR`|var|pub|50||

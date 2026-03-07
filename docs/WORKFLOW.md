@@ -111,7 +111,7 @@
         - `_read_config_object(...)`: parse JSON object safely [`src/git_alias/core.py`]
         - `_apply_config_values(...)`: validate and apply key subsets; preserve empty `default_commit_module` without fallback coercion [`src/git_alias/core.py`]
         - `get_config_path(...)`: resolve repository config path [`src/git_alias/core.py`]
-      - `check_for_newer_version(...)`: optional remote release check and cache handling [`src/git_alias/core.py`]
+      - `check_for_newer_version(...)`: optional remote release check and cache handling; on success writes idle-time window using hardcoded configurable 300-second default [`src/git_alias/core.py`]
         - `get_cli_version(...)`: parse `__version__` from package init [`src/git_alias/core.py`]
         - `_parse_semver_tuple(...)`: semantic version parser [`src/git_alias/core.py`]
         - `_normalize_semver_text(...)`: strip leading `v` tag prefix [`src/git_alias/core.py`]

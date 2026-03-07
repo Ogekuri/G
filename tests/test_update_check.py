@@ -101,7 +101,10 @@ class UpdateCheckTest(unittest.TestCase):
         )
         self.assertIsInstance(data["last_check_unix"], int)
         self.assertIsInstance(data["idle_until_unix"], int)
-        self.assertGreater(data["idle_until_unix"], data["last_check_unix"])
+        self.assertEqual(
+            data["idle_until_unix"] - data["last_check_unix"],
+            core.VERSION_CHECK_IDLE_SECONDS,
+        )
 
     def test_check_prints_http_403_rate_limit_error_details(self):
         err = io.StringIO()

@@ -39,9 +39,9 @@ UV_TOOL_NAME = "git-alias"
 
 ## @brief Constant `VERSION_CHECK_CACHE_FILE` used by CLI runtime paths and policies.
 VERSION_CHECK_CACHE_FILE = Path.home() / f".github_api_idle-time.{UV_TOOL_NAME}"
-## @brief Constant `VERSION_CHECK_TTL_HOURS` used by CLI runtime paths and policies.
+## @brief Constant `VERSION_CHECK_IDLE_SECONDS` used by CLI runtime paths and policies.
 
-VERSION_CHECK_TTL_HOURS = 24
+VERSION_CHECK_IDLE_SECONDS = 300
 ## @brief Constant `VERSION_CHECK_TIMEOUT_SECONDS` used by CLI runtime paths and policies.
 VERSION_CHECK_TIMEOUT_SECONDS = 2.0
 ## @brief Constant `VERSION_AVAILABLE_COLOR` used by CLI runtime paths and policies.
@@ -402,14 +402,14 @@ def check_for_newer_version(
         _print_update_check_error("invalid API payload: `tag_name` is not semantic version.")
         return
 
-    idle_until_unix = now_unix + int(timedelta(hours=VERSION_CHECK_TTL_HOURS).total_seconds())
+    idle_until_unix = now_unix + VERSION_CHECK_IDLE_SECONDS
     try:
         cache_data = {
             "last_check_unix": now_unix,
             "last_check_human": now.isoformat(sep=" ", timespec="seconds"),
             "idle_until_unix": idle_until_unix,
             "idle_until_human": (
-                now + timedelta(hours=VERSION_CHECK_TTL_HOURS)
+                now + timedelta(seconds=VERSION_CHECK_IDLE_SECONDS)
             ).isoformat(sep=" ", timespec="seconds"),
         }
         with open(VERSION_CHECK_CACHE_FILE, "w", encoding="utf-8") as f:
