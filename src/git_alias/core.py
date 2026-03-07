@@ -34,9 +34,11 @@ GLOBAL_CONFIG_FILENAME = "g.conf"
 ## @brief Constant `GITHUB_LATEST_RELEASE_API` used by CLI runtime paths and policies.
 
 GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/{owner}/{repo}/releases/latest"
+## @brief Constant `UV_TOOL_NAME` used by CLI runtime paths and policies.
+UV_TOOL_NAME = "git-alias"
 
 ## @brief Constant `VERSION_CHECK_CACHE_FILE` used by CLI runtime paths and policies.
-VERSION_CHECK_CACHE_FILE = Path.home() / ".github_api_idle-time.git-alias"
+VERSION_CHECK_CACHE_FILE = Path.home() / f".github_api_idle-time.{UV_TOOL_NAME}"
 ## @brief Constant `VERSION_CHECK_TTL_HOURS` used by CLI runtime paths and policies.
 
 VERSION_CHECK_TTL_HOURS = 24
@@ -350,7 +352,7 @@ def check_for_newer_version(
         release_api_url,
         headers={
             "Accept": "application/vnd.github+json",
-            "User-Agent": "git-alias",
+            "User-Agent": UV_TOOL_NAME,
         },
         method="GET",
     )
@@ -2568,7 +2570,7 @@ def upgrade_self(repo_root: Optional[Path] = None):
             "uv",
             "tool",
             "install",
-            "usereq",
+            UV_TOOL_NAME,
             "--force",
             "--from",
             f"git+https://github.com/{owner}/{repo}.git",
@@ -2580,7 +2582,7 @@ def upgrade_self(repo_root: Optional[Path] = None):
 # @details Executes `uninstall_self` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `uninstall_self` according to command contract.
 def uninstall_self():
-    _run_checked(["uv", "tool", "uninstall", "git-alias"])
+    _run_checked(["uv", "tool", "uninstall", UV_TOOL_NAME])
 
 
 ## @brief Execute `cmd_aa` runtime logic for Git-Alias CLI.

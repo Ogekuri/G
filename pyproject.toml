@@ -33,9 +33,15 @@ git-alias = "git_alias.core:main"
 g = "git_alias.core:main"
 
 [tool.setuptools]
-packages = ["git_alias"]
 package-dir = {"" = "src"}
 include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["git_alias", "git_alias.*"]
+
+[tool.setuptools.package-data]
+git_alias = ["*.py"]
 
 [tool.uv.forms.git-alias]
 description = "Launches the git-alias command through uvx."

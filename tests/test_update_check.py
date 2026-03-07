@@ -30,7 +30,8 @@ class UpdateCheckTest(unittest.TestCase):
         return mock.patch.object(
             core,
             "VERSION_CHECK_CACHE_FILE",
-            Path(tempfile.gettempdir()) / f".github_api_idle-time.git-alias.test.{uuid4().hex}",
+            Path(tempfile.gettempdir())
+            / f".github_api_idle-time.{core.UV_TOOL_NAME}.test.{uuid4().hex}",
         )
 
     def test_check_prints_red_error_on_network_failure(self):
@@ -144,7 +145,7 @@ class UpdateCheckTest(unittest.TestCase):
             "https://api.github.com/repos/Acme/Tool/releases/latest",
         )
 
-    def test_upgrade_self_uses_uv_tool_install_usereq(self):
+    def test_upgrade_self_uses_uv_tool_install_program_name(self):
         with mock.patch.object(core, "_resolve_github_owner_repo", return_value=("Acme", "Tool")):
             with mock.patch.object(core, "_run_checked") as run_checked:
                 core.upgrade_self(Path("/repo"))
@@ -153,7 +154,7 @@ class UpdateCheckTest(unittest.TestCase):
                 "uv",
                 "tool",
                 "install",
-                "usereq",
+                core.UV_TOOL_NAME,
                 "--force",
                 "--from",
                 "git+https://github.com/Acme/Tool.git",
@@ -163,4 +164,6 @@ class UpdateCheckTest(unittest.TestCase):
     def test_uninstall_self_uses_uv_tool_uninstall(self):
         with mock.patch.object(core, "_run_checked") as run_checked:
             core.uninstall_self()
-        run_checked.assert_called_once_with(["uv", "tool", "uninstall", "git-alias"])
+        run_checked.assert_called_once_with(
+            ["uv", "tool", "uninstall", core.UV_TOOL_NAME]
+        )
