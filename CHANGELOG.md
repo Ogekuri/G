@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.14.0](https://github.com/Ogekuri/G/compare/v0.13.0..v0.14.0) - 2026-03-07
+### 🐛  Bug Fixes
+- repair l graph fan connector rendering [useReq] *(foresta)*
+  - normalize S/s fan spans so spaces render as connector dashes
+  - preserve one-sided fan prefixes/suffixes without duplicated branches
+  - map terminal fan markers to corner glyphs when padded by spaces
+  - add regression test covering merge/branch connector edge cases
+  - update WORKFLOW.md call-trace and regenerate REFERENCES.md
+- support URI-style SSH remote parsing [useReq] *(update-check)*
+  - add a failing update-check reproducer for ssh:// remotes
+  - accept ssh and git+ssh remote URL schemes in owner/repo parsing
+  - update workflow/runtime references for the parsing behavior
+
+### 🚜  Changes
+- default l output limit to 25 commits [useReq] *(cmd_l)*
+  - update REQ-111 default injection from -n 35 to -n 25
+  - implement cmd_l runtime default argument change in core.py
+  - refactor cmd_l unit tests to assert new default depth behavior
+  - update WORKFLOW.md call-trace default value for cmd_l
+  - regenerate REFERENCES.md for synchronized symbol metadata
+
 ## [0.13.0](https://github.com/Ogekuri/G/compare/v0.12.0..v0.13.0) - 2026-03-06
 ### 🚜  Changes
 - BREAKING CHANGE: switch to remote-driven update checks [useReq] *(core)*
@@ -471,6 +492,7 @@
 - \[0.11.0\]: https://github.com/Ogekuri/G/releases/tag/v0.11.0
 - \[0.12.0\]: https://github.com/Ogekuri/G/releases/tag/v0.12.0
 - \[0.13.0\]: https://github.com/Ogekuri/G/releases/tag/v0.13.0
+- \[0.14.0\]: https://github.com/Ogekuri/G/releases/tag/v0.14.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -485,3 +507,4 @@
 [0.11.0]: https://github.com/Ogekuri/G/compare/v0.10.0..v0.11.0
 [0.12.0]: https://github.com/Ogekuri/G/compare/v0.11.0..v0.12.0
 [0.13.0]: https://github.com/Ogekuri/G/compare/v0.12.0..v0.13.0
+[0.14.0]: https://github.com/Ogekuri/G/compare/v0.13.0..v0.14.0
