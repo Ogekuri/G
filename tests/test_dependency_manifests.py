@@ -116,5 +116,36 @@ class DependencyManifestsTest(unittest.TestCase):
             runtime_dependencies.union(build_dependencies),
         )
 
+    ## @brief Verify pyproject explicitly packages git_alias runtime files for uv artifacts.
+    # @details Confirms setuptools package discovery and package-data declarations
+    #          remain explicit and that current runtime files under `src/git_alias`
+    #          are fully represented by Python-module packaging rules.
+    # @return None.
+    # @satisfies REQ-128
+    def test_pyproject_explicitly_packages_git_alias_runtime_files(self):
+        pyproject_path = self.REPO_ROOT / "pyproject.toml"
+        pyproject = tomllib.loads(pyproject_path.read_text())
+        setuptools_cfg = pyproject.get("tool", {}).get("setuptools", {})
+
+        package_dir = setuptools_cfg.get("package-dir", {})
+        self.assertEqual(package_dir.get(""), "src")
+
+        finder_cfg = setuptools_cfg.get("packages", {}).get("find", {})
+        self.assertEqual(finder_cfg.get("where"), ["src"])
+        include_patterns = set(finder_cfg.get("include", []))
+        self.assertTrue({"git_alias", "git_alias.*"}.issubset(include_patterns))
+
+        package_data = setuptools_cfg.get("package-data", {})
+        package_data_patterns = set(package_data.get("git_alias", []))
+        self.assertIn("*.py", package_data_patterns)
+
+        runtime_files = sorted(
+            path.relative_to(self.REPO_ROOT / "src" / "git_alias").as_posix()
+            for path in (self.REPO_ROOT / "src" / "git_alias").rglob("*")
+            if path.is_file() and "__pycache__" not in path.parts
+        )
+        self.assertTrue(runtime_files)
+        self.assertTrue(all(name.endswith(".py") for name in runtime_files))
+
 if __name__ == "__main__":
     unittest.main()

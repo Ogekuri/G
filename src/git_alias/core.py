@@ -31,17 +31,28 @@ GLOBAL_CONFIG_DIRECTORY = ".g"
 ## @brief Constant `GLOBAL_CONFIG_FILENAME` used by CLI runtime paths and policies.
 GLOBAL_CONFIG_FILENAME = "g.conf"
 
+## @brief Constant `GITHUB_OWNER` used by CLI runtime paths and policies.
+GITHUB_OWNER = "Ogekuri"
+## @brief Constant `GITHUB_REPOSITORY` used by CLI runtime paths and policies.
+GITHUB_REPOSITORY = "G"
 ## @brief Constant `GITHUB_LATEST_RELEASE_API` used by CLI runtime paths and policies.
-
-GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/{owner}/{repo}/releases/latest"
+GITHUB_LATEST_RELEASE_API = (
+    f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPOSITORY}/releases/latest"
+)
+## @brief Constant `UV_TOOL_UPGRADE_SOURCE` used by CLI runtime paths and policies.
+UV_TOOL_UPGRADE_SOURCE = (
+    f"git+https://github.com/{GITHUB_OWNER}/{GITHUB_REPOSITORY}.git"
+)
 ## @brief Constant `UV_TOOL_NAME` used by CLI runtime paths and policies.
 UV_TOOL_NAME = "git-alias"
 
 ## @brief Constant `VERSION_CHECK_CACHE_FILE` used by CLI runtime paths and policies.
 VERSION_CHECK_CACHE_FILE = Path.home() / f".github_api_idle-time.{UV_TOOL_NAME}"
+## @brief Constant `VERSION_CHECK_MIN_INTERVAL_SECONDS` used by CLI runtime paths and policies.
+VERSION_CHECK_MIN_INTERVAL_SECONDS = 300
 ## @brief Constant `VERSION_CHECK_IDLE_SECONDS` used by CLI runtime paths and policies.
 
-VERSION_CHECK_IDLE_SECONDS = 300
+VERSION_CHECK_IDLE_SECONDS = 86400
 ## @brief Constant `VERSION_CHECK_TIMEOUT_SECONDS` used by CLI runtime paths and policies.
 VERSION_CHECK_TIMEOUT_SECONDS = 2.0
 ## @brief Constant `VERSION_AVAILABLE_COLOR` used by CLI runtime paths and policies.
@@ -247,57 +258,14 @@ def _print_update_check_error(detail: str) -> None:
     )
 
 
-## @brief Resolve the preferred remote name for update checks.
-# @details Attempts to use the active branch remote from
-#          `branch.<current>.remote`; falls back to `origin` when unavailable.
-# @param repo_root Repository root used as command CWD.
-# @return Remote name to query with `git remote get-url`.
-def _resolve_active_remote_name(repo_root: Path) -> str:
-    branch_name = run_git_text(
-        ["rev-parse", "--abbrev-ref", "HEAD"],
-        cwd=repo_root,
-        check=False,
-    ).strip()
-    if branch_name and branch_name != "HEAD":
-        remote = run_git_text(
-            ["config", "--get", f"branch.{branch_name}.remote"],
-            cwd=repo_root,
-            check=False,
-        ).strip()
-        if remote:
-            return remote
-    return "origin"
-
-
-## @brief Resolve GitHub owner/repository tuple from repository remote metadata.
-# @details Uses active-branch remote fallback logic and parses SSH/HTTPS remote URLs.
-#          Returns `None` when git metadata lookup fails or when URL parsing is invalid.
-# @param repo_root Repository root used as command CWD.
-# @return Tuple `(owner, repo)` on success; otherwise `None`.
-def _resolve_github_owner_repo(repo_root: Path) -> Optional[Tuple[str, str]]:
-    remote_name = _resolve_active_remote_name(repo_root)
-    try:
-        remote_url = run_git_text(
-            ["remote", "get-url", remote_name],
-            cwd=repo_root,
-            check=True,
-        ).strip()
-    except RuntimeError:
-        return None
-    return _extract_owner_repo(remote_url)
-
-
-## @brief Resolve the GitHub latest-release API URL from git remotes.
-# @details Parses owner/repository metadata from the active remote and expands
-#          `GITHUB_LATEST_RELEASE_API` template.
-# @param repo_root Repository root used as command CWD.
-# @return Full latest-release API URL string or `None` when metadata resolution fails.
-def _resolve_release_api_url(repo_root: Path) -> Optional[str]:
-    owner_repo = _resolve_github_owner_repo(repo_root)
-    if owner_repo is None:
-        return None
-    owner, repo = owner_repo
-    return GITHUB_LATEST_RELEASE_API.format(owner=owner, repo=repo)
+## @brief Resolve the fixed GitHub latest-release API URL for update checks.
+# @details Returns the constant release endpoint configured for the program package.
+#          The `repo_root` parameter is intentionally ignored to keep call sites stable.
+# @param repo_root Repository root placeholder parameter.
+# @return Full latest-release API URL string.
+def _resolve_release_api_url(repo_root: Path) -> str:
+    del repo_root
+    return GITHUB_LATEST_RELEASE_API
 
 
 ## @brief Execute `check_for_newer_version` runtime logic for Git-Alias CLI.
@@ -342,11 +310,6 @@ def check_for_newer_version(
 
     root = Path(repo_root) if repo_root is not None else get_git_root()
     release_api_url = _resolve_release_api_url(root)
-    if release_api_url is None:
-        _print_update_check_error(
-            "unable to resolve GitHub owner/repository from repository remotes."
-        )
-        return
 
     request = Request(
         release_api_url,
@@ -402,14 +365,18 @@ def check_for_newer_version(
         _print_update_check_error("invalid API payload: `tag_name` is not semantic version.")
         return
 
-    idle_until_unix = now_unix + VERSION_CHECK_IDLE_SECONDS
+    idle_seconds = max(
+        VERSION_CHECK_IDLE_SECONDS,
+        VERSION_CHECK_MIN_INTERVAL_SECONDS,
+    )
+    idle_until_unix = now_unix + idle_seconds
     try:
         cache_data = {
             "last_check_unix": now_unix,
             "last_check_human": now.isoformat(sep=" ", timespec="seconds"),
             "idle_until_unix": idle_until_unix,
             "idle_until_human": (
-                now + timedelta(seconds=VERSION_CHECK_IDLE_SECONDS)
+                now + timedelta(seconds=idle_seconds)
             ).isoformat(sep=" ", timespec="seconds"),
         }
         with open(VERSION_CHECK_CACHE_FILE, "w", encoding="utf-8") as f:
@@ -2558,13 +2525,7 @@ def _execute_commit(message, alias, allow_amend=True):
 # @param repo_root Input parameter consumed by `upgrade_self`.
 # @return Result emitted by `upgrade_self` according to command contract.
 def upgrade_self(repo_root: Optional[Path] = None):
-    root = Path(repo_root) if repo_root is not None else get_git_root()
-    owner_repo = _resolve_github_owner_repo(root)
-    if owner_repo is None:
-        raise RuntimeError(
-            "Unable to resolve GitHub owner/repository from repository remotes."
-        )
-    owner, repo = owner_repo
+    del repo_root
     _run_checked(
         [
             "uv",
@@ -2573,7 +2534,7 @@ def upgrade_self(repo_root: Optional[Path] = None):
             UV_TOOL_NAME,
             "--force",
             "--from",
-            f"git+https://github.com/{owner}/{repo}.git",
+            UV_TOOL_UPGRADE_SOURCE,
         ]
     )
 

@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.02
+**Version**: 1.03
 **Author**: Francesco Rolando
 **Date**: 2026-03-07
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-03-07 | 1.03 | Replaced update-check repository/program resolution with fixed constants, set successful idle-time default to 24 hours, and added minimum check-interval floor. |
 | 2026-03-07 | 1.02 | Changed update-check idle default from 24 hours to 300 seconds and aligned idle-time cache filename requirement with `<program_name>`. |
 | 2026-03-07 | 1.01 | Replaced hardcoded self-management executable names with package-tool identifier policy and required explicit package inclusion policy for uv release artifacts. |
 | 2026-03-06 | 1.00 | Replaced update-check cache behavior with remote-derived GitHub API release checks, idle-time JSON policy, bright-green availability output, and `--uninstall` management command. |
@@ -76,8 +77,8 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.g.conf` plus `$HOME/.g/g.conf`, otherwise defaults from `DEFAULT_CONFIG`.
 
 ### 3.2 Functional Requirements
-- **REQ-001**: MUST execute `uv tool install <program_name> --force --from git+https://github.com/<owner>/<repository>.git` when `--upgrade` is invoked, where `<program_name>` is the installed uv tool identifier and `<owner>/<repository>` is parsed from the active GitHub remote URL.
-- **REQ-002**: MUST execute `uv tool uninstall <program_name>` when `--uninstall` is invoked, where `<program_name>` is the installed uv tool identifier used by `--upgrade`.
+- **REQ-001**: MUST execute `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git` when `--upgrade` is invoked.
+- **REQ-002**: MUST execute `uv tool uninstall git-alias` when `--uninstall` is invoked.
 - **REQ-003**: MUST show global command help or specific command help via `--help`, and per-command help text MUST explicitly list supported options when present.
 - **REQ-004**: MUST execute `git add --all` for alias `aa` only after reusable diagnostics confirm pending unstaged/untracked changes, and MUST fail with explicit error when nothing can be added.
 - **REQ-005**: MUST validate `cm` preconditions (no unstaged changes, non-empty index, and WIP-amend decision) and MUST amend `wip: work in progress.` only when not yet merged to configured `develop` and `master`.
@@ -110,7 +111,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-029**: MUST print usage with package version suffix `(x.y.z)` when CLI is invoked without command arguments.
 - **REQ-030**: MUST print the package version and exit successfully when invoked with `--ver` or `--version`.
 - **REQ-031**: MUST keep all CLI output messages in English, including usage/help/info/debug/error paths.
-- **REQ-033**: MUST execute update checks before CLI argument validation only when `$HOME/.github_api_idle-time.<program_name>` does not exist or its `idle_until_unix` timestamp is expired.
+- **REQ-033**: MUST execute update checks before CLI argument validation only when `$HOME/.github_api_idle-time.git-alias` does not exist or its `idle_until_unix` timestamp is expired.
 - **REQ-034**: MUST run `git remote -v`, print unique remote names, and run `git remote show <remote>` for each discovered remote in alias `str`.
 - **REQ-035**: MUST support `ver --verbose` (per-file regex outcome output) and `ver --debug` (full glob-match listing for each rule pattern).
 - **REQ-036**: MUST provide executable root script `doxygen.sh` that runs system `doxygen` to generate HTML/PDF/Markdown documentation under `doxygen/` from `src/`, and generated API docs MUST include every declaration indexed in `docs/REFERENCES.md`.
@@ -179,11 +180,12 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-120**: MUST define `LSI_DEFAULT_EXCLUDED_DIRS` as a `frozenset` containing: `.cache`, `.claude`, `.codex`, `.eslintcache`, `.gemini`, `.git`, `.github`, `.kiro`, `.mypy_cache`, `.npm`, `.opencode`, `.parcel-cache`, `.pytest_cache`, `.ruff_cache`, `.sass-cache`, `.terragrunt-cache`, `.tox`, `.venv`, `.vscode`, `__pycache__`, `build`, `dist`, `htmlcov`, `node_modules`, `temp`, `tmp`, `venv`.
 - **REQ-121**: MUST the `lsi` alias MUST accept `--include-all` flag; when present, MUST bypass `LSI_DEFAULT_EXCLUDED_DIRS` and `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` filtering and print all ignored files unfiltered.
 - **REQ-123**: MUST when a newer version is detected, print a bright-green (`\033[92;1m`) message `Update available: <latest> (installed: <current>)` before command execution.
-- **REQ-124**: MUST resolve release-check URL as `https://api.github.com/repos/<owner>/<repository>/releases/latest` by parsing the active repository GitHub remote URL in SSH or HTTPS format.
+- **REQ-124**: MUST resolve the release-check URL exactly as `https://api.github.com/repos/Ogekuri/G/releases/latest`.
 - **REQ-125**: MUST execute release-check HTTP requests with a hardcoded configurable timeout defaulting to 2 seconds.
-- **REQ-126**: MUST after successful release checks write `$HOME/.github_api_idle-time.<program_name>` JSON fields `last_check_unix`, `last_check_human`, `idle_until_unix`, and `idle_until_human`, where `<program_name>` is the installed uv tool identifier and `idle_until_unix` defaults to now plus hardcoded configurable 300 seconds.
+- **REQ-126**: MUST after successful release checks write `$HOME/.github_api_idle-time.git-alias` JSON fields `last_check_unix`, `last_check_human`, `idle_until_unix`, and `idle_until_human`, with `idle_until_unix` defaulting to now plus hardcoded configurable 86400 seconds.
 - **REQ-127**: MUST print bright-red (`\033[31;1m`) update-check errors, including HTTP status diagnostics and API-provided messages such as `rate limit exceeded`.
-- **REQ-128**: MUST package and distribute all runtime files under `src/git_alias/**` in uv release artifacts by explicit setuptools package configuration in `pyproject.toml`, ensuring parity between local execution and uv/uvx-installed execution.
+- **REQ-128**: MUST package and distribute every runtime-required file for CLI execution in uv release artifacts via explicit setuptools configuration in `pyproject.toml`, ensuring parity between local execution and uv/uvx-installed execution.
+- **REQ-129**: MUST enforce a hardcoded configurable minimum 300-second interval between release-check HTTP requests, including when idle-time values are computed after successful checks.
 - **REQ-122**: MUST define `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` as a `tuple` containing: `.egg-info`.
 
 ### 3.3 Project File Structure

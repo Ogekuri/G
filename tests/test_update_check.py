@@ -38,9 +38,12 @@ class UpdateCheckTest(unittest.TestCase):
         err = io.StringIO()
         with self._isolated_cache():
             with contextlib.redirect_stderr(err):
-                with mock.patch.object(core, "_resolve_release_api_url", return_value="https://api.github.com/repos/acme/tool/releases/latest"):
-                    with mock.patch.object(core, "urlopen", side_effect=OSError("network down")):
-                        core.check_for_newer_version(timeout_seconds=0.01)
+                with mock.patch.object(
+                    core,
+                    "urlopen",
+                    side_effect=OSError("network down"),
+                ):
+                    core.check_for_newer_version(timeout_seconds=0.01)
         self.assertIn("\033[31;1m", err.getvalue())
         self.assertIn("Version check failed: network down", err.getvalue())
 
@@ -49,9 +52,12 @@ class UpdateCheckTest(unittest.TestCase):
         with self._isolated_cache():
             with contextlib.redirect_stderr(err):
                 with mock.patch.object(core, "get_cli_version", return_value="0.0.1"):
-                    with mock.patch.object(core, "_resolve_release_api_url", return_value="https://api.github.com/repos/acme/tool/releases/latest"):
-                        with mock.patch.object(core, "urlopen", return_value=_FakeResponse({"tag_name": "v0.0.2"})):
-                            core.check_for_newer_version(timeout_seconds=0.01)
+                    with mock.patch.object(
+                        core,
+                        "urlopen",
+                        return_value=_FakeResponse({"tag_name": "v0.0.2"}),
+                    ):
+                        core.check_for_newer_version(timeout_seconds=0.01)
         text = err.getvalue()
         self.assertIn("\033[92;1m", text)
         self.assertIn("Update available: 0.0.2 (installed: 0.0.1)", text)
@@ -62,9 +68,12 @@ class UpdateCheckTest(unittest.TestCase):
         with self._isolated_cache():
             with contextlib.redirect_stderr(err):
                 with mock.patch.object(core, "get_cli_version", return_value="0.0.2"):
-                    with mock.patch.object(core, "_resolve_release_api_url", return_value="https://api.github.com/repos/acme/tool/releases/latest"):
-                        with mock.patch.object(core, "urlopen", return_value=_FakeResponse({"tag_name": "v0.0.2"})):
-                            core.check_for_newer_version(timeout_seconds=0.01)
+                    with mock.patch.object(
+                        core,
+                        "urlopen",
+                        return_value=_FakeResponse({"tag_name": "v0.0.2"}),
+                    ):
+                        core.check_for_newer_version(timeout_seconds=0.01)
         self.assertEqual(err.getvalue(), "")
 
     def test_check_skips_network_when_idle_time_is_not_expired(self):
@@ -79,16 +88,18 @@ class UpdateCheckTest(unittest.TestCase):
                 json.dumps(cache_data),
                 encoding="utf-8",
             )
-            with mock.patch.object(core, "_resolve_release_api_url", return_value="https://api.github.com/repos/acme/tool/releases/latest"):
-                with mock.patch.object(core, "urlopen") as urlopen_mock:
-                    core.check_for_newer_version(timeout_seconds=0.01)
+            with mock.patch.object(core, "urlopen") as urlopen_mock:
+                core.check_for_newer_version(timeout_seconds=0.01)
             urlopen_mock.assert_not_called()
 
     def test_check_writes_idle_time_state_on_success(self):
         with self._isolated_cache():
-            with mock.patch.object(core, "_resolve_release_api_url", return_value="https://api.github.com/repos/acme/tool/releases/latest"):
-                with mock.patch.object(core, "urlopen", return_value=_FakeResponse({"tag_name": "v0.0.2"})):
-                    core.check_for_newer_version(timeout_seconds=0.01)
+            with mock.patch.object(
+                core,
+                "urlopen",
+                return_value=_FakeResponse({"tag_name": "v0.0.2"}),
+            ):
+                core.check_for_newer_version(timeout_seconds=0.01)
             data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
         self.assertEqual(
             sorted(data.keys()),
@@ -103,13 +114,16 @@ class UpdateCheckTest(unittest.TestCase):
         self.assertIsInstance(data["idle_until_unix"], int)
         self.assertEqual(
             data["idle_until_unix"] - data["last_check_unix"],
-            core.VERSION_CHECK_IDLE_SECONDS,
+            max(
+                core.VERSION_CHECK_IDLE_SECONDS,
+                core.VERSION_CHECK_MIN_INTERVAL_SECONDS,
+            ),
         )
 
     def test_check_prints_http_403_rate_limit_error_details(self):
         err = io.StringIO()
         rate_limit_error = HTTPError(
-            url="https://api.github.com/repos/acme/tool/releases/latest",
+            url=core.GITHUB_LATEST_RELEASE_API,
             code=403,
             msg="Forbidden",
             hdrs=None,
@@ -117,41 +131,36 @@ class UpdateCheckTest(unittest.TestCase):
         )
         with self._isolated_cache():
             with contextlib.redirect_stderr(err):
-                with mock.patch.object(core, "_resolve_release_api_url", return_value="https://api.github.com/repos/acme/tool/releases/latest"):
-                    with mock.patch.object(core, "urlopen", side_effect=rate_limit_error):
-                        core.check_for_newer_version(timeout_seconds=0.01)
+                with mock.patch.object(
+                    core,
+                    "urlopen",
+                    side_effect=rate_limit_error,
+                ):
+                    core.check_for_newer_version(timeout_seconds=0.01)
         text = err.getvalue()
         self.assertIn("\033[31;1m", text)
         self.assertIn("Version check failed: HTTP 403: rate limit exceeded", text)
 
-    def test_resolve_release_api_url_from_active_remote(self):
-        with mock.patch.object(
-            core,
-            "run_git_text",
-            side_effect=["work", "origin", "git@github.com:Acme/Tool.git"],
-        ):
-            api_url = core._resolve_release_api_url(Path("/repo"))
-        self.assertEqual(
-            api_url,
-            "https://api.github.com/repos/Acme/Tool/releases/latest",
-        )
+    def test_resolve_release_api_url_uses_fixed_constant(self):
+        api_url = core._resolve_release_api_url(Path("/repo"))
+        self.assertEqual(api_url, core.GITHUB_LATEST_RELEASE_API)
 
-    def test_resolve_release_api_url_from_ssh_scheme_remote(self):
-        with mock.patch.object(
-            core,
-            "run_git_text",
-            side_effect=["work", "origin", "ssh://git@github.com/Acme/Tool.git"],
-        ):
-            api_url = core._resolve_release_api_url(Path("/repo"))
-        self.assertEqual(
-            api_url,
-            "https://api.github.com/repos/Acme/Tool/releases/latest",
-        )
+    def test_idle_time_enforces_minimum_interval_floor(self):
+        with self._isolated_cache():
+            with mock.patch.object(core, "VERSION_CHECK_IDLE_SECONDS", 120):
+                with mock.patch.object(core, "VERSION_CHECK_MIN_INTERVAL_SECONDS", 300):
+                    with mock.patch.object(
+                        core,
+                        "urlopen",
+                        return_value=_FakeResponse({"tag_name": "v0.0.2"}),
+                    ):
+                        core.check_for_newer_version(timeout_seconds=0.01)
+            data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
+        self.assertEqual(data["idle_until_unix"] - data["last_check_unix"], 300)
 
     def test_upgrade_self_uses_uv_tool_install_program_name(self):
-        with mock.patch.object(core, "_resolve_github_owner_repo", return_value=("Acme", "Tool")):
-            with mock.patch.object(core, "_run_checked") as run_checked:
-                core.upgrade_self(Path("/repo"))
+        with mock.patch.object(core, "_run_checked") as run_checked:
+            core.upgrade_self(Path("/repo"))
         run_checked.assert_called_once_with(
             [
                 "uv",
@@ -160,7 +169,7 @@ class UpdateCheckTest(unittest.TestCase):
                 core.UV_TOOL_NAME,
                 "--force",
                 "--from",
-                "git+https://github.com/Acme/Tool.git",
+                core.UV_TOOL_UPGRADE_SOURCE,
             ]
         )
 
