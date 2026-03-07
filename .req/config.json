@@ -64,18 +64,13 @@
       }
     ]
   },
-  "enable-models": false,
-  "enable-tools": false,
-  "enable-claude": true,
-  "enable-codex": true,
-  "enable-gemini": true,
-  "enable-github": true,
-  "enable-kiro": true,
-  "enable-opencode": true,
-  "install-prompts": true,
-  "install-agents": false,
-  "install-skills": false,
-  "prompts-use-agents": false,
-  "legacy": false,
+  "providers": [
+    "claude:prompts",
+    "github:skills",
+    "codex:prompts",
+    "opencode:agents",
+    "gemini:prompts",
+    "kiro:agents"
+  ],
   "preserve-models": false
 }
