@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.17.0](https://github.com/Ogekuri/G/compare/v0.16.0..v0.17.0) - 2026-03-07
+### 🚜  Changes
+- align update-check idle and 429 backoff [useReq] *(core)*
+  - update REQ-126 and REQ-129, and add REQ-130/REQ-131 for Retry-After behavior
+  - enforce fixed 300-second idle-delay for successful update-check cache scheduling
+  - persist HTTP 429 backoff using max(existing idle_until, now + max(300, Retry-After))
+  - keep fixed GitHub release URL, timeout wiring, and management flag contracts
+  - extend update-check tests and refresh WORKFLOW/REFERENCES documentation
+- BREAKING CHANGE: align fixed GitHub update flow [useReq] *(update-check)*
+  - Update requirements for fixed owner/repo/program update policy.
+  - Implement fixed release URL, fixed upgrade source, and 24h idle-time with 300s floor.
+  - Update tests, workflow model, and generated references.
+
 ## [0.16.0](https://github.com/Ogekuri/G/compare/v0.15.0..v0.16.0) - 2026-03-07
 ### 🚜  Changes
 - reduce update idle window to 300s [useReq] *(core)*
@@ -515,6 +528,7 @@
 - \[0.14.0\]: https://github.com/Ogekuri/G/releases/tag/v0.14.0
 - \[0.15.0\]: https://github.com/Ogekuri/G/releases/tag/v0.15.0
 - \[0.16.0\]: https://github.com/Ogekuri/G/releases/tag/v0.16.0
+- \[0.17.0\]: https://github.com/Ogekuri/G/releases/tag/v0.17.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -532,3 +546,4 @@
 [0.14.0]: https://github.com/Ogekuri/G/compare/v0.13.0..v0.14.0
 [0.15.0]: https://github.com/Ogekuri/G/compare/v0.14.0..v0.15.0
 [0.16.0]: https://github.com/Ogekuri/G/compare/v0.15.0..v0.16.0
+[0.17.0]: https://github.com/Ogekuri/G/compare/v0.16.0..v0.17.0
