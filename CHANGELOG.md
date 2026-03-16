@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.18.0](https://github.com/Ogekuri/G/compare/v0.17.0..v0.18.0) - 2026-03-16
+### ⛰️  Features
+- add rollback command and rollback requirements [useReq] *(core)*
+  - Append REQ-132..REQ-135 for rollback command semantics.
+  - Implement git rollback with clean-state prechecks, target validation, reachability check, and non-amend revert commit generation.
+  - Add rollback unit tests and update README/workflow/references docs.
+- Update useReq files.
+
+### 🐛  Bug Fixes
+- Update .gitignore file.
+
 ## [0.17.0](https://github.com/Ogekuri/G/compare/v0.16.0..v0.17.0) - 2026-03-07
 ### 🚜  Changes
 - align update-check idle and 429 backoff [useReq] *(core)*
@@ -529,6 +540,7 @@
 - \[0.15.0\]: https://github.com/Ogekuri/G/releases/tag/v0.15.0
 - \[0.16.0\]: https://github.com/Ogekuri/G/releases/tag/v0.16.0
 - \[0.17.0\]: https://github.com/Ogekuri/G/releases/tag/v0.17.0
+- \[0.18.0\]: https://github.com/Ogekuri/G/releases/tag/v0.18.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -547,3 +559,4 @@
 [0.15.0]: https://github.com/Ogekuri/G/compare/v0.14.0..v0.15.0
 [0.16.0]: https://github.com/Ogekuri/G/compare/v0.15.0..v0.16.0
 [0.17.0]: https://github.com/Ogekuri/G/compare/v0.16.0..v0.17.0
+[0.18.0]: https://github.com/Ogekuri/G/compare/v0.17.0..v0.18.0
