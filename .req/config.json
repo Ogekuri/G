@@ -7,6 +7,8 @@
     "scripts",
     ".github/workflows"
   ],
+  "base-path": "/home/ogekuri/Git/G",
+  "git-path": "/home/ogekuri/Git/G",
   "static-check": {
     "C": [
       {
