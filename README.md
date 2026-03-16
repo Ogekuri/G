@@ -45,6 +45,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
   - `docs`: Add/modify documentation.
   - `style`: Styling modifications.
   - `revert`: Revert changes.
+  - `rollback`: Restore branch content to a previous commit/tag by creating a dedicated rollback `revert` commit.
   - `misc`: Miscellaneous tasks.
   - `cover`: Add/adjust tests to improve coverage.
 - Provides `major`, `minor`, and `patch` release commands that auto-generate a `CHANGELOG.md`, create a tag on `develop` (`patch`) or `master` (`major`/`minor`).
@@ -155,6 +156,7 @@ Some CLI examples:
 - `g cm "Message"`: Runs `git commit` with the provided message.
 - `g new api: add endpoint`: Creates `new(api): add endpoint`; omit `api:` to use `.g.conf.default_commit_module`.
 - `g backup`: Merges configured `work` into `develop`, pushes `develop`, and checks out back to `work`.
+- `g rollback v1.2.3`: Reverts commits after `v1.2.3` and creates `revert: Roll back branch to v1.2.3 (<hash>).`.
 - `g dcd`: Runs `git difftool -d <develop> <work>` using configured branch names.
 - `g dcm`: Runs `git difftool -d <master> <work>` using configured branch names.
 - `g ddm`: Runs `git difftool -d <master> <develop>` using configured branch names.

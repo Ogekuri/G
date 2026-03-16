@@ -761,6 +761,7 @@ HELP_TEXTS = {
     "docs": "Conventional commit docs(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
     "style": "Conventional commit style(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
     "revert": "Conventional commit revert(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
+    "rollback": "Create rollback commit to a target commit or tag on current branch. Syntax: git rollback <commit-hash|tag>.",
     "misc": "Conventional commit misc(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
     "cover": "Conventional commit cover(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
     "me": "Merge",
@@ -2594,6 +2595,80 @@ def _execute_commit(message, alias, allow_amend=True):
         raise
 
 
+## @brief Validate clean working tree and empty staging before rollback operations.
+# @details Evaluates porcelain status and rejects command execution when unstaged,
+#          untracked, or staged entries are present in repository state.
+# @param alias `str` — alias name used in user-facing diagnostics.
+# @return `True` when both working tree and index are clean.
+# @exception SystemExit Exit code 1 when repository is not fully clean.
+# @satisfies REQ-133
+def _ensure_clean_worktree_and_index(alias: str) -> bool:
+    status_lines = _git_status_lines()
+    if has_unstaged_changes(status_lines):
+        print(
+            f"Unable to run git {alias}: working tree is not clean.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if has_staged_changes(status_lines):
+        print(
+            f"Unable to run git {alias}: staging area is not empty.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return True
+
+
+## @brief Resolve rollback target to an existing commit object.
+# @details Runs `git rev-parse --verify <target>^{commit}` to support both commit
+#          hashes and tag names while normalizing to a full commit hash.
+# @param target `str` — user-provided rollback target token.
+# @return `str` normalized full commit hash.
+# @exception SystemExit Exit code 1 when target does not resolve to a commit.
+# @satisfies REQ-134
+def _resolve_rollback_target_commit(target: str) -> str:
+    try:
+        return run_git_text(["rev-parse", "--verify", f"{target}^{{commit}}"]).strip()
+    except RuntimeError:
+        print(
+            f"Unable to run git rollback: target '{target}' is not a valid commit hash or tag.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+## @brief Evaluate commit reachability relation via merge-base ancestry check.
+# @details Executes `git merge-base --is-ancestor <ancestor> <descendant>` and
+#          returns boolean reachability without raising on non-zero status.
+# @param ancestor_commit `str` — commit expected to be ancestor.
+# @param descendant_ref `str` — descendant git reference.
+# @return `True` when `ancestor_commit` is reachable from `descendant_ref`.
+def _is_commit_ancestor(ancestor_commit: str, descendant_ref: str) -> bool:
+    proc = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", ancestor_commit, descendant_ref],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return proc.returncode == 0
+
+
+## @brief Validate whether a token matches git hexadecimal commit-hash syntax.
+# @details Accepts abbreviated/full hexadecimal hashes with length 4..40.
+# @param token `str` — CLI token to validate.
+# @return `True` when token is a hexadecimal commit-hash candidate.
+def _is_commit_hash_token(token: str) -> bool:
+    return bool(re.fullmatch(r"[0-9a-fA-F]{4,40}", token))
+
+
+## @brief Check whether a tag exists in local repository references.
+# @details Verifies `refs/tags/<tag_name>` presence using internal ref lookup.
+# @param tag_name `str` — tag name token.
+# @return `True` when local tag reference exists.
+def _tag_exists(tag_name: str) -> bool:
+    return _ref_exists(f"refs/tags/{tag_name}")
+
+
 ## @brief Execute `upgrade_self` runtime logic for Git-Alias CLI.
 # @details Executes `upgrade_self` using deterministic CLI control-flow and explicit error propagation.
 # @param repo_root Input parameter consumed by `upgrade_self`.
@@ -2876,6 +2951,68 @@ def cmd_style(extra):
 # @return Result emitted by `cmd_revert` according to command contract.
 def cmd_revert(extra):
     return _run_conventional_commit("revert", "revert", extra)
+
+
+## @brief Execute `cmd_rollback` runtime logic for Git-Alias CLI.
+# @details Validates clean preconditions, resolves a reachable commit target from
+#          current branch, applies inverse changes with `git revert --no-commit
+#          <target>..HEAD`, and creates one non-amend conventional `revert` commit.
+# @param extra `list | None` — requires exactly one rollback target or `--help`.
+# @return Return value emitted by `_execute_commit`.
+# @exception SystemExit Exit code 1 on argument, precondition, resolution, ancestry, or revert failures.
+# @satisfies REQ-132, REQ-133, REQ-134, REQ-135
+def cmd_rollback(extra):
+    args = _to_args(extra)
+    if args == ["--help"]:
+        print_command_help("rollback")
+        return
+    if len(args) != 1:
+        print(
+            "git rollback requires exactly one target: git rollback <commit-hash|tag>.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    target = args[0]
+    if not _is_commit_hash_token(target) and not _tag_exists(target):
+        print(
+            f"Unable to run git rollback: target '{target}' must be an existing tag or a commit hash.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    _ensure_clean_worktree_and_index("rollback")
+    resolved_target = _resolve_rollback_target_commit(target)
+    if not _is_commit_ancestor(resolved_target, "HEAD"):
+        print(
+            f"Unable to run git rollback: target '{target}' is not reachable from the current branch HEAD.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    current_head = run_git_text(["rev-parse", "--verify", "HEAD"]).strip()
+    if resolved_target == current_head:
+        print(
+            "Unable to run git rollback: target matches HEAD and produces no rollback commit.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    try:
+        run_git_cmd(["revert", "--no-commit", f"{resolved_target}..HEAD"])
+    except CommandExecutionError as exc:
+        subprocess.run(
+            ["git", "revert", "--abort"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        message = CommandExecutionError._decode_stream(exc.stderr).strip()
+        if message:
+            print(message, file=sys.stderr)
+        else:
+            print("Unable to run git rollback: revert operation failed.", file=sys.stderr)
+        sys.exit(exc.returncode or 1)
+    commit_message = f"revert: Roll back branch to {target} ({resolved_target})."
+    result = _execute_commit(commit_message, "rollback", allow_amend=False)
+    _ensure_clean_worktree_and_index("rollback")
+    return result
 
 
 ## @brief Execute `cmd_misc` runtime logic for Git-Alias CLI.
@@ -4387,6 +4524,7 @@ COMMANDS = {
     "pt": cmd_pt,
     "pu": cmd_pu,
     "revert": cmd_revert,
+    "rollback": cmd_rollback,
     "rf": cmd_rf,
     "rmloc": cmd_rmloc,
     "rmstg": cmd_rmstg,

@@ -190,6 +190,10 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-130**: MUST on HTTP 429 parse `Retry-After` as non-negative integer seconds, treating missing, non-integer, or negative values as `0`.
 - **REQ-131**: MUST on HTTP 429 update `$HOME/.github_api_idle-time.git-alias` with `idle_until_unix = max(existing_idle_until_unix, now + max(idle_delay_seconds, retry_after_seconds))` and synchronized human-readable fields.
 - **REQ-122**: MUST define `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` as a `tuple` containing: `.egg-info`.
+- **REQ-132**: MUST expose `rollback` as a CLI command in `COMMANDS` and `HELP_TEXTS`, and MUST support `git rollback --help` output.
+- **REQ-133**: MUST `rollback` execute only when both working tree and staging area are clean; otherwise MUST print explicit English error and exit non-zero.
+- **REQ-134**: MUST `rollback` accept exactly one `<target>` argument resolvable to a commit hash or tag reachable from `HEAD`; unresolved or unreachable targets MUST fail with explicit English error.
+- **REQ-135**: MUST `rollback` create one non-amend commit restoring branch content to `<target>` by reverting `<target>..HEAD`; commit subject MUST be `revert: Roll back branch to <target> (<resolved_hash>).`; post-commit index and working tree MUST be clean.
 
 ### 3.3 Project File Structure
 ```

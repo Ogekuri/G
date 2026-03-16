@@ -233,6 +233,17 @@
         - `cmd_docs(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
         - `cmd_style(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
         - `cmd_revert(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
+        - `cmd_rollback(...)`: rollback restore flow [`src/git_alias/core.py`]
+          - `_to_args(...)`
+          - `print_command_help(...)`
+          - `_is_commit_hash_token(...)` and `_tag_exists(...)` -> `_ref_exists(...)` (target token type/existence guard)
+          - `_ensure_clean_worktree_and_index(...)` -> `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
+          - `_resolve_rollback_target_commit(...)` -> `run_git_text(...)` -> `_run_checked(...)`
+          - `_is_commit_ancestor(...)` (git merge-base reachability guard)
+          - `run_git_text(...)` (`git rev-parse --verify HEAD`) -> `_run_checked(...)`
+          - `run_git_cmd(...)` (`git revert --no-commit <target>..HEAD`) -> `_to_args(...)` -> `_run_checked(...)`
+          - `_execute_commit(...)` (`allow_amend=False`) -> `run_git_cmd(...)`, `_git_status_lines(...)`, `has_unstaged_changes(...)`, `has_staged_changes(...)`
+          - `_ensure_clean_worktree_and_index(...)` (post-commit cleanliness verification)
         - `cmd_misc(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
         - `cmd_cover(...)`: `_run_conventional_commit(...)` [`src/git_alias/core.py`]
         - `_run_conventional_commit(...)`: conventional commit helper [`src/git_alias/core.py`]
