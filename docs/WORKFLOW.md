@@ -12,7 +12,7 @@
 - ID: PROC:launcher-g-sh
   - Type: Process
   - Parent Process: null
-  - Role: Bash launcher that prepares `.venv` and executes Python CLI entrypoint
+  - Role: Bash launcher that resolves repository root and delegates runtime to Astral `uv run`
   - Entrypoint Symbols:
     - `scripts/g.sh::<module_body>`
   - Defining Files:
@@ -35,8 +35,9 @@
 - ID: PROC:uv
   - Type: Process
   - Parent Process: null
-  - Role: External `uv` process for self-upgrade and uninstall flows
+  - Role: External `uv` process for launcher runtime delegation and self-management flows
   - Entrypoint Symbols:
+    - `scripts/g.sh::<module_body>`
     - `upgrade_self(...)`
     - `uninstall_self(...)`
   - Defining Files:
@@ -81,16 +82,16 @@
 ## Execution Units
 ### PROC:launcher-g-sh
 - Entrypoint(s):
-  - `scripts/g.sh::<module_body>`: launcher script that initializes runtime paths, creates `.venv` when missing, installs dependencies during first environment creation, and `exec`-chains into Python CLI [`scripts/g.sh`]
+  - `scripts/g.sh::<module_body>`: launcher script that resolves canonical repository root, validates launcher base alignment, and `exec`-chains into `uv run --project <repo> python -m git_alias` [`scripts/g.sh`]
 - Lifecycle/trigger:
   - Start: OS invokes `scripts/g.sh` as executable entrypoint.
-  - Stop: process is replaced by `.venv/bin/python3` via `exec` after optional first-time dependency installation.
-  - Loop/block: single-shot shell sequence with conditional dependency synchronization.
+  - Stop: process is replaced by `uv` via `exec` after root validation.
+  - Loop/block: single-shot shell sequence without environment bootstrap loops.
   - Threads: no explicit threads detected in `scripts/g.sh`.
 - Internal Call-Trace Tree:
-  - `scripts/g.sh::<module_body>(...)`: runtime launcher flow with conditional `.venv` creation, first-time `pip install -r requirements.txt`, and final `exec` handoff [`scripts/g.sh`]
+  - `scripts/g.sh::<module_body>(...)`: runtime launcher flow with root detection, root/base consistency guard, and final `exec` handoff to `uv run` [`scripts/g.sh`]
 - External Boundaries:
-  - External commands `git`, `virtualenv`, `pip`, and shell `source`/`exec` operations.
+  - External commands `git` and `uv`, plus shell `exec` operation.
 
 ### PROC:main
 - Entrypoint(s):
@@ -456,20 +457,22 @@
 
 ### PROC:uv
 - Entrypoint(s):
+  - `scripts/g.sh::<module_body>` [`scripts/g.sh`]
   - `upgrade_self(...)` [`src/git_alias/core.py`]
   - `uninstall_self(...)` [`src/git_alias/core.py`]
 - Lifecycle/trigger:
-  - Start: management flags `--upgrade` / `--uninstall` in `main(...)`.
+  - Start: launcher `scripts/g.sh` executes `uv run`, or management flags `--upgrade` / `--uninstall` in `main(...)`.
   - Stop: exits when `uv` command completes.
   - Loop/block: blocking subprocess invocation.
   - Threads: no explicit threads detected from repository-managed spawn logic.
 - Internal Call-Trace Tree:
+  - `scripts/g.sh::<module_body>(...)`: `exec uv run --project <repo> python -m git_alias ...` launcher delegation [`scripts/g.sh`]
   - `upgrade_self(...)`: self-install path
     - `_run_checked(...)`: spawn `uv tool install ...`
   - `uninstall_self(...)`: self-uninstall path
     - `_run_checked(...)`: spawn `uv tool uninstall ...`
 - External Boundaries:
-  - External `uv` binary and package installation side effects.
+  - External `uv` binary, uv-managed Python environment resolution, and package installation side effects.
 
 ### PROC:gzip
 - Entrypoint(s):
@@ -538,11 +541,16 @@
   - GitHub Actions marketplace actions (`actions/checkout`, `actions/setup-python`, `astral-sh/setup-uv`, `actions/attest-build-provenance`, `softprops/action-gh-release`) and shell commands (`uv pip install`, `python -m build`) [`.github/workflows/release-uvx.yml`]
 
 ## Communication Edges
-- EDGE: PROC:launcher-g-sh -> PROC:main
+- EDGE: PROC:launcher-g-sh -> PROC:uv
   - Mechanism: process replacement via shell `exec`
-  - Endpoint/Channel: inherited environment plus forwarded CLI argv
-  - Payload/Data-Shape: `PYTHONPATH`-extended environment and argument vector `List[str]` passed to `main(...)`
+  - Endpoint/Channel: process argv for `uv run --project <repo> python -m git_alias ...`
+  - Payload/Data-Shape: forwarded CLI argument vector `List[str]` appended after fixed launcher prefix
   - Evidence: `scripts/g.sh`
+- EDGE: PROC:uv -> PROC:main
+  - Mechanism: uv-managed Python process spawn for module execution
+  - Endpoint/Channel: module execution request `python -m git_alias` with inherited CLI argv
+  - Payload/Data-Shape: argument vector `List[str]` and uv-resolved project runtime context
+  - Evidence: `scripts/g.sh`, `src/git_alias/__main__.py`, `src/git_alias/core.py`
 - EDGE: PROC:main -> PROC:git
   - Mechanism: OS subprocess spawn (`subprocess.run` / `subprocess.Popen`)
   - Endpoint/Channel: process argv + stdio streams

@@ -11,14 +11,8 @@
         └── foresta.py
 ```
 
-# g.sh | Shell | 78L | 7 symbols | 2 imports | 43 comments
+# g.sh | Shell | 83L | 6 symbols | 0 imports | 56 comments
 > Path: `scripts/g.sh`
-
-## Imports
-```
-source "${VENVDIR}/bin/activate"
-source "${VENVDIR}/bin/activate"
-```
 
 ## Definitions
 
@@ -26,9 +20,8 @@ source "${VENVDIR}/bin/activate"
 - var `SCRIPT_PATH=$(dirname "$FULL_PATH")` (L26)
 - var `SCRIPT_NAME=$(basename "$FULL_PATH")` (L33)
 - var `BASE_DIR=$(dirname "$SCRIPT_PATH")` (L39)
-- var `PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)` (L47)
-- var `VENVDIR="${BASE_DIR}/.venv"` (L58)
-- var `PYTHONPATH="${BASE_DIR}/src:${PYTHONPATH}" \` (L77)
+- var `PROJECT_ROOT=$(git -C "${BASE_DIR}" rev-parse --show-toplevel 2>/dev/null)` (L48)
+- var `UV_TOOL="uv"` (L74)
 ## Symbol Index
 |Symbol|Kind|Vis|Lines|Sig|
 |---|---|---|---|---|
@@ -36,9 +29,8 @@ source "${VENVDIR}/bin/activate"
 |`SCRIPT_PATH`|var||26||
 |`SCRIPT_NAME`|var||33||
 |`BASE_DIR`|var||39||
-|`PROJECT_ROOT`|var||47||
-|`VENVDIR`|var||58||
-|`PYTHONPATH`|var||77||
+|`PROJECT_ROOT`|var||48||
+|`UV_TOOL`|var||74||
 
 
 ---

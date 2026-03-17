@@ -40,39 +40,44 @@ BASE_DIR=$(dirname "$SCRIPT_PATH")
 
 ###############################################################################
 ## @brief Resolve project root from git repository.
-## @details Uses `git rev-parse --show-toplevel` to determine project root.
-##          Exits non-zero with error message when invoked outside a git repo.
+## @details Uses `git -C "${BASE_DIR}" rev-parse --show-toplevel` to determine
+##          canonical project root from launcher base directory.
+##          Exits non-zero with explicit error when root detection fails.
 ## @satisfies REQ-034 REQ-007 DES-001
 ###############################################################################
-PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+PROJECT_ROOT=$(git -C "${BASE_DIR}" rev-parse --show-toplevel 2>/dev/null)
 if [ -z "$PROJECT_ROOT" ]; then
-    echo "❌ Errore: Impossibile determinare la root del progetto."
+    echo "ERROR: Unable to determine project root from launcher path."
     exit 1
 fi
 
 ###############################################################################
-## @brief Resolve virtual environment path.
-## @details Defines canonical `.venv` location for launcher runtime setup.
-## @satisfies CPT-004
+## @brief Validate launcher base directory against resolved git root.
+## @details Prevents mixed-root execution when script path and git root differ.
+##          Fails fast with explicit diagnostics to preserve deterministic runtime
+##          environment resolution for uv project execution.
+## @satisfies CTN-002
 ###############################################################################
-VENVDIR="${BASE_DIR}/.venv"
-
-# Create virtual environment when missing.
-if ! [ -d "${VENVDIR}/" ]; then
-    echo -n "Create virtual environment ..."
-    mkdir -p "${VENVDIR}/"
-    virtualenv --python=python3 "${VENVDIR}/" >/dev/null
-    echo "done."
-
-    # Install requirements during first environment creation.
-    source "${VENVDIR}/bin/activate"
-    echo -n "Install python requirements ..."
-    "${VENVDIR}/bin/pip" install -r "${BASE_DIR}/requirements.txt" >/dev/null
-    echo "done."
-else
-    source "${VENVDIR}/bin/activate"
+if [ "${PROJECT_ROOT}" != "${BASE_DIR}" ]; then
+    echo "ERROR: Launcher base directory mismatch with git root."
+    echo "git root: ${PROJECT_ROOT}"
+    echo "launcher base: ${BASE_DIR}"
+    exit 1
 fi
 
-# Execute application:
-PYTHONPATH="${BASE_DIR}/src:${PYTHONPATH}" \
-    exec ${VENVDIR}/bin/python3 -c 'from git_alias.core import main; raise SystemExit(main())' "$@"
+###############################################################################
+## @brief Resolve Astral uv executable name.
+## @details Stores canonical command token used for runtime delegation.
+##          Launcher requires uv to create and manage execution environment.
+## @satisfies CTN-002 CPT-005
+###############################################################################
+UV_TOOL="uv"
+
+###############################################################################
+## @brief Delegate CLI execution to Astral uv runtime.
+## @details Executes `uv run --project <BASE_DIR> python -m git_alias` and
+##          forwards all user CLI arguments unchanged. No `.venv` bootstrap,
+##          activation, or pip installation logic is used.
+## @satisfies CTN-002 CPT-005 CPT-002
+###############################################################################
+exec "${UV_TOOL}" run --project "${BASE_DIR}" python -m git_alias "$@"

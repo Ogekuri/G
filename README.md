@@ -68,6 +68,12 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 [![Flowchart](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/commnad_l_git-foresta-sample1.png)](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/commnad_l_git-foresta-sample1.png)
 
 
+## Requirements
+
+- Astral `uv` tool is required for project execution (`uv tool`, `uvx`, and `uv run` flows).
+- A separate external or system-managed Python virtual environment is not required.
+
+
 ## Quick Start
 
 ### Prerequisites
