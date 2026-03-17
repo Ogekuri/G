@@ -538,7 +538,7 @@
 - Internal Call-Trace Tree:
   - No internal function nodes detected under `.github/workflows/`; file is declarative workflow YAML.
 - External Boundaries:
-  - GitHub Actions marketplace actions (`actions/checkout`, `actions/setup-python`, `astral-sh/setup-uv`, `actions/attest-build-provenance`, `softprops/action-gh-release`) and shell commands (`uv pip install`, `python -m build`) [`.github/workflows/release-uvx.yml`]
+  - GitHub Actions marketplace actions (`actions/checkout`, `actions/setup-python`, `astral-sh/setup-uv`, `actions/attest-build-provenance`, `softprops/action-gh-release`) and shell commands (`uv pip install --system build`, `python -m build`) [`.github/workflows/release-uvx.yml`]
 
 ## Communication Edges
 - EDGE: PROC:launcher-g-sh -> PROC:uv

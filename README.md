@@ -72,6 +72,10 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 
 - Astral `uv` tool is required for project execution (`uv tool`, `uvx`, and `uv run` flows).
 - A separate external or system-managed Python virtual environment is not required.
+- When needed, you can generate a transient `requirements.txt` file with:
+  ```bash
+  uv export --format requirements-txt > requirements.txt
+  ```
 
 
 ## Quick Start

@@ -10,7 +10,9 @@ from pathlib import Path
 
 
 ## @brief Test suite for dependency declaration alignment across manifests.
-# @details Validates that requirements.txt and pyproject.toml declare only runtime/build dependencies and remain synchronized.
+# @details Validates that uv.lock is the canonical dependency lock source,
+#          pyproject runtime/build declarations remain synchronized with code,
+#          and unsupported uv configuration sections are not used.
 # @satisfies CPT-004
 class DependencyManifestsTest(unittest.TestCase):
     ## @brief Repository root path used by dependency-manifest tests.
@@ -25,19 +27,6 @@ class DependencyManifestsTest(unittest.TestCase):
         if match is None:
             return ""
         return match.group(1).lower().replace("_", "-")
-
-    ## @brief Parse requirements.txt dependency names.
-    # @return {set[str]} Normalized dependency-name set from requirements.txt.
-    def _requirements_dependencies(self) -> set[str]:
-        requirements_path = self.REPO_ROOT / "requirements.txt"
-        dependencies: set[str] = set()
-        for raw_line in requirements_path.read_text().splitlines():
-            line = raw_line.strip()
-            if not line or line.startswith("#"):
-                continue
-            dependencies.add(self._normalize_dependency_name(line))
-        dependencies.discard("")
-        return dependencies
 
     ## @brief Parse pyproject.toml dependency names by scope.
     # @return {tuple[set[str], set[str]]} Tuple(runtime_dependencies, build_dependencies).
@@ -58,6 +47,23 @@ class DependencyManifestsTest(unittest.TestCase):
         runtime_dependencies.discard("")
         build_dependencies.discard("")
         return runtime_dependencies, build_dependencies
+
+    ## @brief Parse uv.lock package names.
+    # @return {set[str]} Normalized package-name set from uv.lock package entries.
+    def _uv_lock_dependencies(self) -> set[str]:
+        uv_lock_path = self.REPO_ROOT / "uv.lock"
+        uv_lock = tomllib.loads(uv_lock_path.read_text())
+        package_entries = uv_lock.get("package", [])
+        dependencies: set[str] = set()
+        for entry in package_entries:
+            if not isinstance(entry, dict):
+                continue
+            name = entry.get("name")
+            if not isinstance(name, str):
+                continue
+            dependencies.add(self._normalize_dependency_name(name))
+        dependencies.discard("")
+        return dependencies
 
     ## @brief Collect external runtime imports from source modules.
     # @return {set[str]} External dependency names imported by src/git_alias/*.py modules.
@@ -105,16 +111,20 @@ class DependencyManifestsTest(unittest.TestCase):
         runtime_imports = self._runtime_external_imports()
         self.assertEqual(runtime_dependencies, runtime_imports)
 
-    ## @brief Verify requirements.txt aligns with pyproject runtime+build dependencies.
+    ## @brief Verify uv.lock contains all pyproject runtime dependencies.
     # @return None.
     # @satisfies CPT-004
-    def test_requirements_matches_pyproject_dependency_union(self):
-        requirements_dependencies = self._requirements_dependencies()
-        runtime_dependencies, build_dependencies = self._pyproject_dependencies()
-        self.assertEqual(
-            requirements_dependencies,
-            runtime_dependencies.union(build_dependencies),
-        )
+    def test_uv_lock_contains_pyproject_runtime_dependencies(self):
+        runtime_dependencies, _ = self._pyproject_dependencies()
+        uv_lock_dependencies = self._uv_lock_dependencies()
+        self.assertTrue(runtime_dependencies.issubset(uv_lock_dependencies))
+
+    ## @brief Verify repository does not require committed requirements.txt.
+    # @return None.
+    # @satisfies CPT-004
+    def test_requirements_txt_is_absent_by_default(self):
+        requirements_path = self.REPO_ROOT / "requirements.txt"
+        self.assertFalse(requirements_path.exists())
 
     ## @brief Verify pyproject explicitly packages git_alias runtime files for uv artifacts.
     # @details Confirms setuptools package discovery and package-data declarations
