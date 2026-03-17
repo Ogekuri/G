@@ -29,13 +29,14 @@ class DependencyManifestsTest(unittest.TestCase):
         return match.group(1).lower().replace("_", "-")
 
     ## @brief Parse pyproject.toml dependency names by scope.
-    # @return {tuple[set[str], set[str]]} Tuple(runtime_dependencies, build_dependencies).
-    def _pyproject_dependencies(self) -> tuple[set[str], set[str]]:
+    # @return {tuple[set[str], set[str], set[str]]} Tuple(runtime_dependencies, build_dependencies, dev_dependencies).
+    def _pyproject_dependencies(self) -> tuple[set[str], set[str], set[str]]:
         pyproject_path = self.REPO_ROOT / "pyproject.toml"
         pyproject = tomllib.loads(pyproject_path.read_text())
 
         runtime_specs = pyproject.get("project", {}).get("dependencies", [])
         build_specs = pyproject.get("build-system", {}).get("requires", [])
+        dev_specs = pyproject.get("dependency-groups", {}).get("dev", [])
 
         runtime_dependencies = {
             self._normalize_dependency_name(spec) for spec in runtime_specs
@@ -43,10 +44,14 @@ class DependencyManifestsTest(unittest.TestCase):
         build_dependencies = {
             self._normalize_dependency_name(spec) for spec in build_specs
         }
+        dev_dependencies = {
+            self._normalize_dependency_name(spec) for spec in dev_specs
+        }
 
         runtime_dependencies.discard("")
         build_dependencies.discard("")
-        return runtime_dependencies, build_dependencies
+        dev_dependencies.discard("")
+        return runtime_dependencies, build_dependencies, dev_dependencies
 
     ## @brief Parse uv.lock package names.
     # @return {set[str]} Normalized package-name set from uv.lock package entries.
@@ -107,7 +112,7 @@ class DependencyManifestsTest(unittest.TestCase):
     # @return None.
     # @satisfies CPT-004
     def test_runtime_dependencies_match_external_imports(self):
-        runtime_dependencies, _ = self._pyproject_dependencies()
+        runtime_dependencies, _, _ = self._pyproject_dependencies()
         runtime_imports = self._runtime_external_imports()
         self.assertEqual(runtime_dependencies, runtime_imports)
 
@@ -115,9 +120,23 @@ class DependencyManifestsTest(unittest.TestCase):
     # @return None.
     # @satisfies CPT-004
     def test_uv_lock_contains_pyproject_runtime_dependencies(self):
-        runtime_dependencies, _ = self._pyproject_dependencies()
+        runtime_dependencies, _, _ = self._pyproject_dependencies()
         uv_lock_dependencies = self._uv_lock_dependencies()
         self.assertTrue(runtime_dependencies.issubset(uv_lock_dependencies))
+
+    ## @brief Verify pyproject declares pytest in uv-managed development dependencies.
+    # @return None.
+    # @satisfies CPT-004
+    def test_pyproject_dev_dependencies_include_pytest(self):
+        _, _, dev_dependencies = self._pyproject_dependencies()
+        self.assertIn("pytest", dev_dependencies)
+
+    ## @brief Verify uv.lock contains pytest required by development dependency group.
+    # @return None.
+    # @satisfies CPT-004
+    def test_uv_lock_contains_pytest(self):
+        uv_lock_dependencies = self._uv_lock_dependencies()
+        self.assertIn("pytest", uv_lock_dependencies)
 
     ## @brief Verify repository does not require committed requirements.txt.
     # @return None.

@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.06
+**Version**: 1.07
 **Author**: Francesco Rolando
 **Date**: 2026-03-17
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-03-17 | 1.07 | Added explicit pytest dependency requirement for Astral uv-managed project dependencies in pyproject/lock synchronization policy. |
 | 2026-03-17 | 1.06 | Removed README-specific synchronization requirement from the SRS requirement set. |
 | 2026-03-17 | 1.05 | Aligned documentation-generation and release-workflow trigger requirements to current implementation (optional Doxygen assets and dual workflow triggers with master-containment gate). |
 | 2026-03-07 | 1.04 | Replaced update-check idle-time policy with fixed 300-second delay semantics and added HTTP 429 Retry-After backoff persistence requirements. |
@@ -61,7 +62,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **CPT-001**: MUST implement CLI dispatch and alias runtime behavior in `src/git_alias/core.py`.
 - **CPT-002**: MUST provide package entrypoints through `src/git_alias/__main__.py` and console scripts `git-alias` and `g`.
 - **CPT-003**: MUST include automated tests under `tests/` covering user-visible command contracts.
-- **CPT-004**: MUST treat `uv.lock` as canonical dependency lock inventory, MUST keep `pyproject.toml` synchronized with it, and MAY generate transient `requirements.txt` via `uv export` only when explicitly needed.
+- **CPT-004**: MUST treat `uv.lock` as canonical dependency lock inventory, MUST keep `pyproject.toml` synchronized with it, MUST include `pytest` as an Astral `uv`-managed dependency, and MAY generate transient `requirements.txt` via `uv export` only when explicitly needed.
 - **CPT-005**: MUST invoke external executables `git`, `gitk`, and Astral `uv` (including `uvx` and `uv run`) for delegated operations.
 - **CPT-006**: MUST use `pathspec` for gitignore-style pattern matching in version rules processing.
 - **CPT-007**: MAY include repository-local Doxygen launcher assets; runtime behavior MUST NOT depend on documentation-generation scripts.

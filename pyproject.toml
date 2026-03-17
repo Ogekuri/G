@@ -24,6 +24,9 @@ classifiers = [
 
 dependencies = ["pathspec"]
 
+[dependency-groups]
+dev = ["pytest"]
+
 [project.urls]
 Homepage = "https://github.com/Ogekuri/G"
 Repository = "https://github.com/Ogekuri/G"
