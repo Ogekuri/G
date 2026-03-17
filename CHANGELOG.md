@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.21.0](https://github.com/Ogekuri/G/compare/v0.20.0..v0.21.0) - 2026-03-17
+### ⛰️  Features
+- Add uv.lock file.
+
+### 🚜  Changes
+- add uv-managed pytest dev dependency [useReq] *(pyproject)*
+  - Update CPT-004 in SRS to require pytest in uv-managed dependencies.
+  - Add pytest under [dependency-groups].dev in pyproject.toml.
+  - Regenerate uv.lock to include pytest and transitive packages.
+  - Extend dependency manifest tests for pytest declaration and lock presence.
+
 ## [0.20.0](https://github.com/Ogekuri/G/compare/v0.19.0..v0.20.0) - 2026-03-17
 ### 🐛  Bug Fixes
 - Fix workflow.
@@ -568,6 +579,7 @@
 - \[0.18.0\]: https://github.com/Ogekuri/G/releases/tag/v0.18.0
 - \[0.19.0\]: https://github.com/Ogekuri/G/releases/tag/v0.19.0
 - \[0.20.0\]: https://github.com/Ogekuri/G/releases/tag/v0.20.0
+- \[0.21.0\]: https://github.com/Ogekuri/G/releases/tag/v0.21.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -589,3 +601,4 @@
 [0.18.0]: https://github.com/Ogekuri/G/compare/v0.17.0..v0.18.0
 [0.19.0]: https://github.com/Ogekuri/G/compare/v0.18.0..v0.19.0
 [0.20.0]: https://github.com/Ogekuri/G/compare/v0.19.0..v0.20.0
+[0.21.0]: https://github.com/Ogekuri/G/compare/v0.20.0..v0.21.0
