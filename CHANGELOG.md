@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.20.0](https://github.com/Ogekuri/G/compare/v0.19.0..v0.20.0) - 2026-03-17
+### 🐛  Bug Fixes
+- Fix workflow.
+
+### 🚜  Changes
+- remove README-bound SRS rule [useReq] *(requirements)*
+  - Remove REQ-071 from docs/REQUIREMENTS.md.
+  - Bump SRS version to 1.06 and update revision history.
+  - No runtime code/test behavior changes required by this requirement removal.
+- align SRS with current release/docs behavior [useReq] *(requirements)*
+  - Update CPT-007 and REQ-036 to optional Doxygen asset semantics.
+  - Update REQ-112 to include workflow_dispatch plus tag trigger with SHA gate.
+  - Refresh metadata and evidence lines to match repository implementation.
+
 ## [0.19.0](https://github.com/Ogekuri/G/compare/v0.18.0..v0.19.0) - 2026-03-17
 ### ⛰️  Features
 - Implment astral uv tool.
@@ -553,6 +567,7 @@
 - \[0.17.0\]: https://github.com/Ogekuri/G/releases/tag/v0.17.0
 - \[0.18.0\]: https://github.com/Ogekuri/G/releases/tag/v0.18.0
 - \[0.19.0\]: https://github.com/Ogekuri/G/releases/tag/v0.19.0
+- \[0.20.0\]: https://github.com/Ogekuri/G/releases/tag/v0.20.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -573,3 +588,4 @@
 [0.17.0]: https://github.com/Ogekuri/G/compare/v0.16.0..v0.17.0
 [0.18.0]: https://github.com/Ogekuri/G/compare/v0.17.0..v0.18.0
 [0.19.0]: https://github.com/Ogekuri/G/compare/v0.18.0..v0.19.0
+[0.20.0]: https://github.com/Ogekuri/G/compare/v0.19.0..v0.20.0
