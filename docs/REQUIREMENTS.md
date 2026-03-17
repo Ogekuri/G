@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.07
+**Version**: 1.08
 **Author**: Francesco Rolando
 **Date**: 2026-03-17
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-03-17 | 1.08 | Restricted `--upgrade`/`--uninstall` local execution to Linux and required explicit manual-command guidance on non-Linux platforms. |
 | 2026-03-17 | 1.07 | Added explicit pytest dependency requirement for Astral uv-managed project dependencies in pyproject/lock synchronization policy. |
 | 2026-03-17 | 1.06 | Removed README-specific synchronization requirement from the SRS requirement set. |
 | 2026-03-17 | 1.05 | Aligned documentation-generation and release-workflow trigger requirements to current implementation (optional Doxygen assets and dual workflow triggers with master-containment gate). |
@@ -81,8 +82,10 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.g.conf` plus `$HOME/.g/g.conf`, otherwise defaults from `DEFAULT_CONFIG`.
 
 ### 3.2 Functional Requirements
-- **REQ-001**: MUST execute `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git` when `--upgrade` is invoked.
-- **REQ-002**: MUST execute `uv tool uninstall git-alias` when `--uninstall` is invoked.
+- **REQ-001**: MUST execute `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git` when `--upgrade` is invoked on Linux.
+- **REQ-002**: MUST execute `uv tool uninstall git-alias` when `--uninstall` is invoked on Linux.
+- **REQ-129**: MUST NOT execute local `uv tool install` when `--upgrade` is invoked on non-Linux platforms, and MUST print the exact manual install command for user execution.
+- **REQ-130**: MUST NOT execute local `uv tool uninstall` when `--uninstall` is invoked on non-Linux platforms, and MUST print the exact manual uninstall command for user execution.
 - **REQ-003**: MUST show global command help or specific command help via `--help`, and per-command help text MUST explicitly list supported options when present.
 - **REQ-004**: MUST execute `git add --all` for alias `aa` only after reusable diagnostics confirm pending unstaged/untracked changes, and MUST fail with explicit error when nothing can be added.
 - **REQ-005**: MUST validate `cm` preconditions (no unstaged changes, non-empty index, and WIP-amend decision) and MUST amend `wip: work in progress.` only when not yet merged to configured `develop` and `master`.

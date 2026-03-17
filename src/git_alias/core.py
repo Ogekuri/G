@@ -45,6 +45,18 @@ UV_TOOL_UPGRADE_SOURCE = (
 )
 ## @brief Constant `UV_TOOL_NAME` used by CLI runtime paths and policies.
 UV_TOOL_NAME = "git-alias"
+## @brief Constant `UV_TOOL_UPGRADE_COMMAND` used by CLI runtime paths and policies.
+UV_TOOL_UPGRADE_COMMAND = (
+    "uv",
+    "tool",
+    "install",
+    UV_TOOL_NAME,
+    "--force",
+    "--from",
+    UV_TOOL_UPGRADE_SOURCE,
+)
+## @brief Constant `UV_TOOL_UNINSTALL_COMMAND` used by CLI runtime paths and policies.
+UV_TOOL_UNINSTALL_COMMAND = ("uv", "tool", "uninstall", UV_TOOL_NAME)
 
 ## @brief Constant `VERSION_CHECK_CACHE_FILE` used by CLI runtime paths and policies.
 VERSION_CHECK_CACHE_FILE = Path.home() / f".github_api_idle-time.{UV_TOOL_NAME}"
@@ -123,8 +135,8 @@ MANAGEMENT_HELP = [
         "--write-config",
         "Insert missing defaults into repository .g.conf and global $HOME/.g/g.conf.",
     ),
-    ("--upgrade", "Reinstall git-alias via uv tool install."),
-    ("--uninstall", "Uninstall git-alias using uv tool uninstall."),
+    ("--upgrade", "Reinstall git-alias on Linux; print manual command elsewhere."),
+    ("--uninstall", "Uninstall git-alias on Linux; print manual command elsewhere."),
     ("--ver", "Print the CLI version."),
     ("--version", "Print the CLI version."),
     ("--help", "Print the full help screen or the help text of a specific alias."),
@@ -2669,30 +2681,53 @@ def _tag_exists(tag_name: str) -> bool:
     return _ref_exists(f"refs/tags/{tag_name}")
 
 
+## @brief Determine whether local self-management commands are supported on current host.
+# @details Evaluates the current Python platform token and accepts only Linux hosts.
+# @return `True` when runtime platform is Linux; otherwise `False`.
+# @satisfies REQ-001 REQ-002 REQ-129 REQ-130
+def _is_linux_platform() -> bool:
+    return sys.platform.startswith("linux")
+
+
+## @brief Print manual self-management command for non-Linux runtimes.
+# @details Emits deterministic guidance without executing local `uv tool` commands.
+# @param action `str` — management action token (`upgrade` or `uninstall`).
+# @param command_tokens `Tuple[str, ...]` — command token sequence to print verbatim.
+# @return None.
+# @satisfies REQ-129 REQ-130
+def _print_non_linux_management_command(
+    action: str,
+    command_tokens: Tuple[str, ...],
+) -> None:
+    print(
+        f"Command '--{action}' is supported only on Linux for local execution.",
+        file=sys.stderr,
+    )
+    print(f"Run manually: {' '.join(command_tokens)}", file=sys.stderr)
+
+
 ## @brief Execute `upgrade_self` runtime logic for Git-Alias CLI.
 # @details Executes `upgrade_self` using deterministic CLI control-flow and explicit error propagation.
 # @param repo_root Input parameter consumed by `upgrade_self`.
 # @return Result emitted by `upgrade_self` according to command contract.
+# @satisfies REQ-001 REQ-129
 def upgrade_self(repo_root: Optional[Path] = None):
     del repo_root
-    _run_checked(
-        [
-            "uv",
-            "tool",
-            "install",
-            UV_TOOL_NAME,
-            "--force",
-            "--from",
-            UV_TOOL_UPGRADE_SOURCE,
-        ]
-    )
+    if not _is_linux_platform():
+        _print_non_linux_management_command("upgrade", UV_TOOL_UPGRADE_COMMAND)
+        return
+    _run_checked(list(UV_TOOL_UPGRADE_COMMAND))
 
 
 ## @brief Execute `uninstall_self` runtime logic for Git-Alias CLI.
 # @details Executes `uninstall_self` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `uninstall_self` according to command contract.
+# @satisfies REQ-002 REQ-130
 def uninstall_self():
-    _run_checked(["uv", "tool", "uninstall", UV_TOOL_NAME])
+    if not _is_linux_platform():
+        _print_non_linux_management_command("uninstall", UV_TOOL_UNINSTALL_COMMAND)
+        return
+    _run_checked(list(UV_TOOL_UNINSTALL_COMMAND))
 
 
 ## @brief Execute `cmd_aa` runtime logic for Git-Alias CLI.

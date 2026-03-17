@@ -130,10 +130,14 @@
         - `_write_missing_config_values(...)`: keep only allowed keys, fill defaults, and rename global `editor` to `edit_command` [`src/git_alias/core.py`]
         - `get_config_path(...)`: resolve repository target [`src/git_alias/core.py`]
         - `get_global_config_path(...)`: resolve global target [`src/git_alias/core.py`]
-      - `upgrade_self(...)`: self-upgrade action using fixed package constants for tool name and install source [`src/git_alias/core.py`]
-        - `_run_checked(...)`: spawn `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git` [`src/git_alias/core.py`]
-      - `uninstall_self(...)`: self-remove action using `UV_TOOL_NAME` for uninstall target [`src/git_alias/core.py`]
-        - `_run_checked(...)`: spawn `uv tool uninstall <UV_TOOL_NAME>` [`src/git_alias/core.py`]
+      - `upgrade_self(...)`: Linux-gated self-upgrade action using fixed package command constants [`src/git_alias/core.py`]
+        - `_is_linux_platform(...)`: evaluate local runtime platform [`src/git_alias/core.py`]
+        - `_run_checked(...)`: spawn `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git` when Linux [`src/git_alias/core.py`]
+        - `_print_non_linux_management_command(...)`: print manual install command when non-Linux [`src/git_alias/core.py`]
+      - `uninstall_self(...)`: Linux-gated self-remove action using fixed package command constants [`src/git_alias/core.py`]
+        - `_is_linux_platform(...)`: evaluate local runtime platform [`src/git_alias/core.py`]
+        - `_run_checked(...)`: spawn `uv tool uninstall git-alias` when Linux [`src/git_alias/core.py`]
+        - `_print_non_linux_management_command(...)`: print manual uninstall command when non-Linux [`src/git_alias/core.py`]
       - `run_git_cmd(...)`: fallback path when command not registered in `COMMANDS` [`src/git_alias/core.py`]
         - `_to_args(...)`: normalize optional arg list [`src/git_alias/core.py`]
         - `_run_checked(...)`: spawn `git` process [`src/git_alias/core.py`]
@@ -461,16 +465,20 @@
   - `upgrade_self(...)` [`src/git_alias/core.py`]
   - `uninstall_self(...)` [`src/git_alias/core.py`]
 - Lifecycle/trigger:
-  - Start: launcher `scripts/g.sh` executes `uv run`, or management flags `--upgrade` / `--uninstall` in `main(...)`.
+  - Start: launcher `scripts/g.sh` executes `uv run`, or management flags `--upgrade` / `--uninstall` in `main(...)` when local runtime is Linux.
   - Stop: exits when `uv` command completes.
   - Loop/block: blocking subprocess invocation.
   - Threads: no explicit threads detected from repository-managed spawn logic.
 - Internal Call-Trace Tree:
   - `scripts/g.sh::<module_body>(...)`: `exec uv run --project <repo> python -m git_alias ...` launcher delegation [`scripts/g.sh`]
   - `upgrade_self(...)`: self-install path
-    - `_run_checked(...)`: spawn `uv tool install ...`
+    - `_is_linux_platform(...)`: evaluate platform gate
+    - `_run_checked(...)`: spawn `uv tool install ...` when Linux
+    - `_print_non_linux_management_command(...)`: print manual install command when non-Linux
   - `uninstall_self(...)`: self-uninstall path
-    - `_run_checked(...)`: spawn `uv tool uninstall ...`
+    - `_is_linux_platform(...)`: evaluate platform gate
+    - `_run_checked(...)`: spawn `uv tool uninstall ...` when Linux
+    - `_print_non_linux_management_command(...)`: print manual uninstall command when non-Linux
 - External Boundaries:
   - External `uv` binary, uv-managed Python environment resolution, and package installation side effects.
 
@@ -559,7 +567,7 @@
 - EDGE: PROC:main -> PROC:uv
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv + stdio
-  - Payload/Data-Shape: fixed argv sequences for install/uninstall (`["uv", "tool", ...]`)
+  - Payload/Data-Shape: conditional Linux-only argv sequences for install/uninstall (`["uv", "tool", ...]`)
   - Evidence: `upgrade_self` [`src/git_alias/core.py`], `uninstall_self` [`src/git_alias/core.py`]
 - EDGE: PROC:main -> PROC:gzip
   - Mechanism: OS subprocess spawn with pipe-based IPC
