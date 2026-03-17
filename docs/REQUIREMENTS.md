@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.04
+**Version**: 1.05
 **Author**: Francesco Rolando
-**Date**: 2026-03-07
+**Date**: 2026-03-17
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-03-17 | 1.05 | Aligned documentation-generation and release-workflow trigger requirements to current implementation (optional Doxygen assets and dual workflow triggers with master-containment gate). |
 | 2026-03-07 | 1.04 | Replaced update-check idle-time policy with fixed 300-second delay semantics and added HTTP 429 Retry-After backoff persistence requirements. |
 | 2026-03-07 | 1.03 | Replaced update-check repository/program resolution with fixed constants, set successful idle-time default to 24 hours, and added minimum check-interval floor. |
 | 2026-03-07 | 1.02 | Changed update-check idle default from 24 hours to 300 seconds and aligned idle-time cache filename requirement with `<program_name>`. |
@@ -62,7 +63,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **CPT-004**: MUST treat `uv.lock` as canonical dependency lock inventory, MUST keep `pyproject.toml` synchronized with it, and MAY generate transient `requirements.txt` via `uv export` only when explicitly needed.
 - **CPT-005**: MUST invoke external executables `git`, `gitk`, and Astral `uv` (including `uvx` and `uv run`) for delegated operations.
 - **CPT-006**: MUST use `pathspec` for gitignore-style pattern matching in version rules processing.
-- **CPT-007**: MUST include root-level `doxygen.sh` to orchestrate Doxygen documentation generation.
+- **CPT-007**: MAY include repository-local Doxygen launcher assets; runtime behavior MUST NOT depend on documentation-generation scripts.
 - **CPT-008**: MUST include `src/git_alias/foresta.py` implementing text-based commit tree visualization.
 
 ## 3. Software Requirements
@@ -115,7 +116,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-033**: MUST execute update checks before CLI argument validation only when `$HOME/.github_api_idle-time.git-alias` does not exist or its `idle_until_unix` timestamp is expired.
 - **REQ-034**: MUST run `git remote -v`, print unique remote names, and run `git remote show <remote>` for each discovered remote in alias `str`.
 - **REQ-035**: MUST support `ver --verbose` (per-file regex outcome output) and `ver --debug` (full glob-match listing for each rule pattern).
-- **REQ-036**: MUST provide executable root script `doxygen.sh` that runs system `doxygen` to generate HTML/PDF/Markdown documentation under `doxygen/` from `src/`, and generated API docs MUST include every declaration indexed in `docs/REFERENCES.md`.
+- **REQ-036**: MAY provide repository-local Doxygen generation assets; when present they SHOULD generate documentation under `doxygen/` from `src/`; CLI runtime and release workflow MUST remain functional when such assets are absent.
 - **REQ-037**: MUST visual diff aliases MUST execute fixed `git difftool -d` mappings: `dwc` MUST execute `git difftool -d HEAD` (working tree vs latest commit), `dcc` MUST execute `git difftool -d HEAD~1 HEAD` (penultimate vs latest commit), `dc` MUST require exactly two positional git refs (`<ref_a> <ref_b>`) and execute `git difftool -d <ref_a> <ref_b>`, and `dw` MUST require exactly one positional git ref (`<ref>`) and execute `git difftool -d <ref>` (working tree vs specified ref), forwarding git errors without additional transformations.
 - **REQ-038**: MUST the visual diff aliases MUST include `dwcc` mapped to `git difftool -d HEAD~1` (working tree vs penultimate commit) and `dccc` mapped to `git difftool -d HEAD~2 HEAD` (third-last vs last commit), and both aliases MUST expose explicit help text in global and per-command help outputs.
 - **REQ-039**: MUST every command `<command>` present in the CLI command dispatch map MUST be implemented by a Python function named exactly `cmd_<command>`, and the dispatch entry for `<command>` MUST reference that exact function symbol.
@@ -173,7 +174,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-109**: MUST the `l` alias MUST implement a vine-based graph algorithm with three phases per commit: vine_branch (draw branch convergence connectors), vine_commit (place commit node and assign tip positions), vine_merge (draw merge fan-out connectors and allocate parent vine slots).
 - **REQ-110**: MUST the `l` alias MUST cycle branch colors from a predefined palette (`blue_bold`, `yellow_bold`, `magenta_bold`, `green_bold`, `cyan_bold`) with neighbor-avoidance logic ensuring adjacent branches use distinct colors.
 - **REQ-111**: MUST the `l` alias inject `-n 25` only when invoked with no user arguments, and MUST pass all user-provided unrecognized arguments through to `git log` unchanged without appending `-n 25`.
-- **REQ-112**: MUST trigger GitHub release workflow `release-uvx.yml` only on pushed tags matching `v<major>.<minor>.<patch>`, and MUST continue release execution only when the tagged commit is contained in `origin/master`.
+- **REQ-112**: MUST trigger GitHub release workflow `release-uvx.yml` on `workflow_dispatch` and pushed tags matching `v<major>.<minor>.<patch>`; execution MUST continue only when `${GITHUB_SHA}` is contained in `origin/master`.
 - **REQ-113**: MUST build release distributions in GitHub Actions with Python 3.11 using `python -m build`, and MUST attest provenance for `dist/*` artifacts.
 - **REQ-114**: MUST publish a non-draft, non-prerelease GitHub Release for the triggering tag and upload `dist/**/*` assets using changelog content produced by the configured changelog-builder step.
 - **REQ-115**: MUST section `=== 5. BRANCHES ===` append, after configured rows, aligned `<Identifier> | <latest commit subject>` rows for every discovered local or remote branch not already rendered.
@@ -220,10 +221,10 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 ### 3.4 Component Organization
 - `core.py` implements dispatch, command handlers, config loading/writing, git subprocess wrappers, and release/changelog flows.
 - `foresta.py` implements vine-based text tree rendering for git history (`l` alias).
-- `release-uvx.yml` implements tag-gated CI release build and publication workflow.
+- `release-uvx.yml` implements manual-or-tag-triggered CI release build and publication workflow guarded by a master-containment gate.
 - No explicit performance optimizations identified.
 
 ### 3.5 Evidence for Added Requirements
-- **REQ-112** evidence: `.github/workflows/release-uvx.yml` lines 3-6 (tag trigger), lines 25-35 (master containment gate).
+- **REQ-112** evidence: `.github/workflows/release-uvx.yml` lines 3-7 (`workflow_dispatch` plus pushed-tag trigger), lines 29-35 (master containment gate).
 - **REQ-113** evidence: `.github/workflows/release-uvx.yml` lines 50-53 (Python 3.11), line 62 (`python -m build`), lines 64-67 (attestation over `dist/*`).
 - **REQ-114** evidence: `.github/workflows/release-uvx.yml` lines 117-127 (GitHub Release creation, non-draft/non-prerelease, `dist/**/*` assets, changelog body wiring).
