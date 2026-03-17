@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.0](https://github.com/Ogekuri/G/compare/v0.22.0..v0.23.0) - 2026-03-17
+### 🚜  Changes
+- enforce terminal-width l output with --wrap [useReq] *(foresta)*
+  - Update SRS: revise REQ-100 and REQ-104 for terminal-width truncation and --wrap option.
+  - Implement foresta terminal-width detection via shutil and ANSI-safe line truncation helpers.
+  - Extend l option parsing/help to include --wrap and keep default -n 25 behavior.
+  - Add unit tests for truncation behavior and --wrap terminal-width bypass.
+
 ## [0.22.0](https://github.com/Ogekuri/G/compare/v0.21.0..v0.22.0) - 2026-03-17
 ### ⛰️  Features
 - Update .g.conf file.
@@ -593,6 +601,7 @@
 - \[0.20.0\]: https://github.com/Ogekuri/G/releases/tag/v0.20.0
 - \[0.21.0\]: https://github.com/Ogekuri/G/releases/tag/v0.21.0
 - \[0.22.0\]: https://github.com/Ogekuri/G/releases/tag/v0.22.0
+- \[0.23.0\]: https://github.com/Ogekuri/G/releases/tag/v0.23.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -616,3 +625,4 @@
 [0.20.0]: https://github.com/Ogekuri/G/compare/v0.19.0..v0.20.0
 [0.21.0]: https://github.com/Ogekuri/G/compare/v0.20.0..v0.21.0
 [0.22.0]: https://github.com/Ogekuri/G/compare/v0.21.0..v0.22.0
+[0.23.0]: https://github.com/Ogekuri/G/compare/v0.22.0..v0.23.0
