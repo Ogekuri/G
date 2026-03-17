@@ -1,6 +1,7 @@
 name: Release (uvx)
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+' # push di una versione canonica (es. v1.2.3) senza pre-release
@@ -55,11 +56,8 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v3
 
-      - name: Install build dependencies
-        run: uv pip install --system build
-
       - name: Build distributions
-        run: python -m build
+        run: uv run --frozen --with build python -m build
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v1
