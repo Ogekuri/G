@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.22.0](https://github.com/Ogekuri/G/compare/v0.21.0..v0.22.0) - 2026-03-17
+### ⛰️  Features
+- Update .g.conf file.
+- Add uv.lock file.
+
+### 🚜  Changes
+- gate self-management to Linux [useReq] *(core)*
+  - Update SRS: revise REQ-001/REQ-002 and add REQ-129/REQ-130.
+  - Implement Linux-only local execution for --upgrade/--uninstall.
+  - Print explicit manual uv commands on non-Linux runtimes.
+  - Regenerate WORKFLOW.md and REFERENCES.md for traceability.
+
 ## [0.21.0](https://github.com/Ogekuri/G/compare/v0.20.0..v0.21.0) - 2026-03-17
 ### ⛰️  Features
 - Add uv.lock file.
@@ -580,6 +592,7 @@
 - \[0.19.0\]: https://github.com/Ogekuri/G/releases/tag/v0.19.0
 - \[0.20.0\]: https://github.com/Ogekuri/G/releases/tag/v0.20.0
 - \[0.21.0\]: https://github.com/Ogekuri/G/releases/tag/v0.21.0
+- \[0.22.0\]: https://github.com/Ogekuri/G/releases/tag/v0.22.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -602,3 +615,4 @@
 [0.19.0]: https://github.com/Ogekuri/G/compare/v0.18.0..v0.19.0
 [0.20.0]: https://github.com/Ogekuri/G/compare/v0.19.0..v0.20.0
 [0.21.0]: https://github.com/Ogekuri/G/compare/v0.20.0..v0.21.0
+[0.22.0]: https://github.com/Ogekuri/G/compare/v0.21.0..v0.22.0
