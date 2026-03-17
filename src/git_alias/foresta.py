@@ -10,6 +10,7 @@
 import os
 import re
 import signal
+import shutil
 import subprocess
 import sys
 from time import localtime, strftime
@@ -120,6 +121,9 @@ _GRAPH_SYMBOL_ROOT = "\u25a0"  # ■
 ## @brief Default graph symbol for a tip (branch head).
 # @satisfies REQ-102
 _GRAPH_SYMBOL_TIP = "\u25cb"  # ○
+
+## @brief Compiled matcher for ANSI SGR escape sequences.
+_ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 
 # ---------------------------------------------------------------------------
@@ -1158,6 +1162,75 @@ class _ReverseOutput:
 
 
 # ---------------------------------------------------------------------------
+# Terminal-width output shaping
+# ---------------------------------------------------------------------------
+
+
+## @brief Resolve terminal column width for default non-wrapping rendering.
+# @details Reads active terminal size using `shutil.get_terminal_size` and enforces
+#          a minimum width of one printable column.
+# @satisfies REQ-100
+# @return {int} Terminal columns used for line truncation.
+def _resolve_terminal_columns() -> int:
+    return max(shutil.get_terminal_size(fallback=(120, 24)).columns, 1)
+
+
+## @brief Truncate one rendered line to a visible terminal-width budget.
+# @details Preserves ANSI escape sequences as zero-width tokens, truncates only
+#          printable glyph columns, and preserves trailing newline semantics.
+# @satisfies REQ-100
+# @param line {str} Rendered output line with optional ANSI escape sequences.
+# @param terminal_columns {int} Maximum number of visible printable columns.
+# @return {str} Width-bounded line preserving ANSI tokens and newline suffix.
+def _truncate_line_to_terminal_width(line: str, terminal_columns: int) -> str:
+    if terminal_columns < 1:
+        terminal_columns = 1
+    line_no_nl = line[:-1] if line.endswith("\n") else line
+    newline = "\n" if line.endswith("\n") else ""
+    visible_columns = 0
+    out: List[str] = []
+    index = 0
+    truncated = False
+    while index < len(line_no_nl):
+        escape_match = _ANSI_ESCAPE_RE.match(line_no_nl, index)
+        if escape_match is not None:
+            out.append(escape_match.group(0))
+            index = escape_match.end()
+            continue
+        if visible_columns >= terminal_columns:
+            truncated = True
+            break
+        out.append(line_no_nl[index])
+        visible_columns += 1
+        index += 1
+    if index < len(line_no_nl):
+        truncated = True
+    rendered = "".join(out)
+    if truncated and "\x1b[" in rendered and not rendered.endswith(_COLOR["default"]):
+        rendered += _COLOR["default"]
+    return rendered + newline
+
+
+## @brief Write one rendered line with optional terminal-width truncation.
+# @details Applies width truncation only when `terminal_columns` is provided;
+#          otherwise writes the full input line.
+# @satisfies REQ-100, REQ-104
+# @param output_stream {IO[str]} Destination stream.
+# @param line {str} Rendered output line.
+# @param terminal_columns {Optional[int]} Width budget or `None` for wrapping.
+# @return None.
+def _write_rendered_line(
+    output_stream,
+    line: str,
+    terminal_columns: Optional[int],
+) -> None:
+    if terminal_columns is None:
+        output_stream.write(line)
+        return
+    output_stream.write(_truncate_line_to_terminal_width(line, terminal_columns))
+
+
+# ---------------------------------------------------------------------------
 # Main process loop
 # ---------------------------------------------------------------------------
 
@@ -1184,6 +1257,7 @@ class _ReverseOutput:
 # @param output_stream {IO[str]} Destination stream for rendered lines.
 # @param branch_colors_now {List[str]} Mutable current branch-color state.
 # @param branch_colors_ref {List[str]} Fixed branch-color palette.
+# @param terminal_columns {Optional[int]} Visible-width budget; `None` disables truncation.
 # @return None.
 ## @brief Execute `_process` graph-processing logic for Foresta rendering.
 # @details Executes `_process` as deterministic commit-graph transformation/output logic.
@@ -1205,6 +1279,7 @@ class _ReverseOutput:
 # @param output_stream Input parameter consumed by `_process`.
 # @param branch_colors_now Input parameter consumed by `_process`.
 # @param branch_colors_ref Input parameter consumed by `_process`.
+# @param terminal_columns Input parameter consumed by `_process`.
 # @return Result emitted by `_process` according to command contract.
 def _process(
     refs: Dict[str, List[str]],
@@ -1225,6 +1300,7 @@ def _process(
     output_stream,
     branch_colors_now: List[str],
     branch_colors_ref: List[str],
+    terminal_columns: Optional[int],
 ) -> None:
     vine: list = []
     proc = _git_command_output_pipe(
@@ -1304,7 +1380,7 @@ def _process(
             branch_colors_ref,
         )
         if branch_line:
-            output_stream.write(branch_line)
+            _write_rendered_line(output_stream, branch_line, terminal_columns)
 
         # Print hash and date prefix
         hash_color = color.get("hash", "")
@@ -1321,8 +1397,6 @@ def _process(
             f"{'':>{graph_margin_left}s}"
             f"{default_color}"
         )
-        output_stream.write(prefix)
-
         # vine_commit
         commit_str = _vine_commit(vine, sha, parents)
         vis = _vis_post(
@@ -1335,13 +1409,7 @@ def _process(
             branch_colors_now,
             branch_colors_ref,
         )
-        output_stream.write(vis)
-
-        output_stream.write(" " * graph_margin_right)
-
-        output_stream.write(
-            f"{author_color}{author}{default_color}"
-        )
+        author_segment = f"{author_color}{author}{default_color}"
 
         # Annotate refs
         if sha in refs:
@@ -1361,7 +1429,11 @@ def _process(
                         auto_refs,
                     )
 
-        output_stream.write(f"{auto_refs} {subject}\n")
+        rendered_commit_line = (
+            f"{prefix}{vis}{' ' * graph_margin_right}"
+            f"{author_segment}{auto_refs} {subject}\n"
+        )
+        _write_rendered_line(output_stream, rendered_commit_line, terminal_columns)
 
         # vine_merge
         merge_line = _vine_merge(
@@ -1380,7 +1452,7 @@ def _process(
             branch_colors_ref,
         )
         if merge_line:
-            output_stream.write(merge_line)
+            _write_rendered_line(output_stream, merge_line, terminal_columns)
 
     if proc.stdout is not None:
         proc.stdout.close()
@@ -1398,7 +1470,7 @@ def run(extra_args: Optional[List[str]] = None) -> None:
     @details Parses command-line options, configures the visualization engine,
     and runs the main processing loop. Unrecognized options are passed through
     to git log.
-    @satisfies REQ-098, REQ-099, REQ-104, REQ-111
+    @satisfies REQ-098, REQ-099, REQ-100, REQ-104, REQ-111
     @param extra_args {Optional[List[str]]} CLI arguments from the dispatcher.
     @return None. Output written to stdout.
     """
@@ -1412,6 +1484,7 @@ def run(extra_args: Optional[List[str]] = None) -> None:
     show_all = _SHOW_ALL
     show_status = _SHOW_STATUS
     reverse_order = _REVERSE_ORDER
+    wrap_lines = False
     style = _STYLE
     subvine_depth = _SUBVINE_DEPTH
     hash_min_width = _HASH_MIN_WIDTH
@@ -1438,6 +1511,8 @@ def run(extra_args: Optional[List[str]] = None) -> None:
             show_status = False
         elif arg == "--reverse":
             reverse_order = True
+        elif arg == "--wrap":
+            wrap_lines = True
         elif arg.startswith("--pretty=") or arg.startswith("--format="):
             pass  # ignore
         elif arg.startswith("--pretty") and i + 1 < len(args) and not args[i + 1].startswith("-"):
@@ -1530,6 +1605,7 @@ def run(extra_args: Optional[List[str]] = None) -> None:
         output = _ReverseOutput(sys.stdout)
     else:
         output = sys.stdout
+    terminal_columns = None if wrap_lines else _resolve_terminal_columns()
 
     try:
         _process(
@@ -1551,6 +1627,7 @@ def run(extra_args: Optional[List[str]] = None) -> None:
             output_stream=output,
             branch_colors_now=branch_colors_now,
             branch_colors_ref=branch_colors_ref,
+            terminal_columns=terminal_columns,
         )
     except BrokenPipeError:
         pass

@@ -752,7 +752,7 @@ HELP_TEXTS = {
     "feall": "Fetch new data from origin for all branch.",
     "gp": "Open git commits graph (Git K).",
     "gr": "Open git tags graph (Git K).",
-    "l": "Print commit history as a text-based tree. Options: --all, --no-color, --no-status, --reverse, --abbrev=<n>, --svdepth=<n>, --style=<n>, --graph-margin-left=<n>, --graph-margin-right=<n>, --graph-symbol-commit=<s>, --graph-symbol-merge=<s>, --graph-symbol-overpass=<s>, --graph-symbol-root=<s>, --graph-symbol-tip=<s>.",
+    "l": "Print commit history as a text-based tree. Options: --all, --no-color, --no-status, --reverse, --wrap, --abbrev=<n>, --svdepth=<n>, --style=<n>, --graph-margin-left=<n>, --graph-margin-right=<n>, --graph-symbol-commit=<s>, --graph-symbol-merge=<s>, --graph-symbol-overpass=<s>, --graph-symbol-root=<s>, --graph-symbol-tip=<s>.",
     "lb": "Print all branches.",
     "lg": "Print commit history.",
     "lh": "Print last commit details.",

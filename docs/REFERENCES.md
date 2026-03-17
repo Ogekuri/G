@@ -2002,7 +2002,7 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 
 ---
 
-# foresta.py | Python | 1562L | 31 symbols | 7 imports | 323 comments
+# foresta.py | Python | 1639L | 34 symbols | 8 imports | 349 comments
 > Path: `src/git_alias/foresta.py`
 
 ## Imports
@@ -2010,6 +2010,7 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 import os
 import re
 import signal
+import shutil
 import subprocess
 import sys
 from time import localtime, strftime
@@ -2018,35 +2019,34 @@ from typing import Dict, List, Optional, Tuple
 
 ## Definitions
 
-### fn `def _maxof(x: int, y: int) -> int` `priv` (L130-140)
-- @brief Default graph symbol for a tip (branch head).
+### fn `def _maxof(x: int, y: int) -> int` `priv` (L134-144)
+- @brief Compiled matcher for ANSI SGR escape sequences.
 - @brief Return the greater of two integers.
 - @details Performs a single conditional comparison and returns the larger operand.
 - @param x {int} First operand.
 - @param y {int} Second operand.
 - @return {int} max(x, y).
-- @satisfies REQ-102
 
-### fn `def _round_down2(i: int) -> int` `priv` (L141-152)
+### fn `def _round_down2(i: int) -> int` `priv` (L145-156)
 - @brief Round down to the nearest even number.
 - @details Preserves negative values; for non-negative values clears the least-significant bit.
 - @param i {int} Input integer.
 - @return {int} Nearest even number <= i; returns i unchanged if negative.
 
-### fn `def _str_expand(s: str, length: int) -> str` `priv` (L153-165)
+### fn `def _str_expand(s: str, length: int) -> str` `priv` (L157-169)
 - @brief Expand string to at least the given length with spaces.
 - @details Appends trailing spaces only when the current length is smaller than the target.
 - @param s {str} Input string.
 - @param length {int} Minimum required length.
 - @return {str} String padded with trailing spaces if shorter than length.
 
-### fn `def _remove_trailing_blanks(vine: list) -> None` `priv` (L166-176)
+### fn `def _remove_trailing_blanks(vine: list) -> None` `priv` (L170-180)
 - @brief Remove trailing None entries from vine array in place.
 - @details Pops elements from the tail while the last slot is `None`.
 - @param vine {list} Column array of expected parent commit IDs.
 - @return None. Mutates vine in place.
 
-### fn `def _trgen(` `priv` (L192-197)
+### fn `def _trgen(` `priv` (L196-201)
 - @brief Build a character translation function for graph control codes.
 - @details Maps single-character control codes C/M/O/r/t to the configured graph symbols.
 Uses a chained replace pipeline because `str.translate` does not support
@@ -2058,14 +2058,14 @@ multi-codepoint replacement targets.
 - @param sym_tip {str} Replacement for 't' (tip marker).
 - @return {Callable[[str], str]} Translator closure that maps control strings to rendered symbols.
 
-### fn `def translate(s: str) -> str` (L204-211)
+### fn `def translate(s: str) -> str` (L208-215)
 - @brief Translate graph control markers into configured symbol glyphs.
 - @details Applies deterministic single-character substitutions for commit, merge,
 overpass, root, and tip tokens.
 - @param s {str} Graph control-string segment to transform.
 - @return {str} Transformed control string with configured symbols.
 
-### fn `def _git_command(args: List[str], cwd: Optional[str] = None) -> str` `priv` (L220-239)
+### fn `def _git_command(args: List[str], cwd: Optional[str] = None) -> str` `priv` (L224-243)
 - @brief Execute a git command and return stripped stdout.
 - @details Invokes `subprocess.run(..., check=True)` and propagates non-zero exits as `CalledProcessError`.
 - @param args {List[str]} Git sub-command and arguments.
@@ -2073,14 +2073,14 @@ overpass, root, and tip tokens.
 - @return {str} Stripped stdout text.
 - @throws {subprocess.CalledProcessError} On non-zero git exit.
 
-### fn `def _git_command_output_pipe(` `priv` (L245-246)
+### fn `def _git_command_output_pipe(` `priv` (L249-250)
 - @brief Open a git command subprocess with piped stdout for streaming.
 - @details Spawns `git <args>` with text-mode stdout/stderr pipes and optional working-directory override.
 - @param args {List[str]} Git sub-command tokens forwarded without transformation.
 - @param cwd {Optional[str]} Optional command working directory.
 - @return {subprocess.Popen} Process handle with readable stdout pipe.
 
-### fn `def _get_status(repo_path: str, git_dir: str) -> str` `priv` (L262-335)
+### fn `def _get_status(repo_path: str, git_dir: str) -> str` `priv` (L266-339)
 - @brief Determine working tree dirty flags and mid-flow state indicators.
 - @details Checks for unstaged, staged, stash, and untracked changes, then probes git internal state files for rebase/merge/cherry-pick/revert/bisect.
 - @param repo_path {str} Path to .git directory (or gitdir for worktrees).
@@ -2088,14 +2088,14 @@ overpass, root, and tip tokens.
 - @return {str} Status string like " *+$%|REBASE-i" or empty.
 - @satisfies REQ-106, REQ-107
 
-### fn `def _get_next_pick(lines: List[str], start: int) -> Optional[str]` `priv` (L341-357)
+### fn `def _get_next_pick(lines: List[str], start: int) -> Optional[str]` `priv` (L345-361)
 - @brief Parse rebase-todo file lines to find the next pick target.
 - @details Skips comments/blank lines and returns the second token from the first actionable row.
 - @param lines {List[str]} Lines from git-rebase-todo.
 - @param start {int} Starting line index.
 - @return {Optional[str]} Short SHA of next pick target, or None.
 
-### fn `def _get_refs(` `priv` (L364-365)
+### fn `def _get_refs(` `priv` (L368-369)
 - @brief Build a SHA-to-ref mapping from repository references and HEAD state.
 - @details Parses `git show-ref`, resolves annotated tags to target commits, and conditionally
 augments the map with active rebase markers (`rebase/next`, `rebase/onto`, `rebase/new`).
@@ -2103,7 +2103,7 @@ augments the map with active rebase markers (`rebase/next`, `rebase/onto`, `reba
 - @return {Dict[str, List[str]]} Map from full commit SHA to rendered ref labels.
 - @satisfies REQ-108
 
-### fn `def _vine_branch(` `priv` (L484-495)
+### fn `def _vine_branch(` `priv` (L488-499)
 - @brief Draw branch fan topology when a commit SHA appears in multiple vine columns.
 - @brief Execute `_vine_branch` graph-processing logic for Foresta rendering.
 - @details Scans vine slots for duplicate commit references, emits a branch fan line when needed,
@@ -2135,7 +2135,7 @@ and preserves branch-color continuity via `_vis_post`.
 - @return Result emitted by `_vine_branch` according to command contract.
 - @satisfies REQ-109
 
-### fn `def _vine_commit(vine: list, rev: str, parents: List[str]) -> str` `priv` (L536-585)
+### fn `def _vine_commit(vine: list, rev: str, parents: List[str]) -> str` `priv` (L540-589)
 - @brief Draw commit node on the vine graph.
 - @details Places the commit at its vine position or allocates a new tip slot. Differentiates commit types: 'C' regular, 'r' root (no parents), M' merge (multiple parents), 't' tip (new branch head).
 - @param vine {list} Column array of expected parent IDs.
@@ -2144,7 +2144,7 @@ and preserves branch-color continuity via `_vis_post`.
 - @return {str} Control string representing the commit line.
 - @satisfies REQ-109
 
-### fn `def _vine_merge(` `priv` (L620-633)
+### fn `def _vine_merge(` `priv` (L624-637)
 - @brief Draw merge fan topology and update vine state across commit parents.
 - @brief Execute `_vine_merge` graph-processing logic for Foresta rendering.
 - @details For single-parent commits the vine is only advanced; for merge commits a fan visualization
@@ -2180,39 +2180,39 @@ is generated, using lookahead heuristics to preserve adjacent branch continuity.
 - @return Result emitted by `_vine_merge` according to command contract.
 - @satisfies REQ-109
 
-### fn `def _vis_commit(s: str, f: Optional[str] = None) -> str` `priv` (L768-781)
+### fn `def _vis_commit(s: str, f: Optional[str] = None) -> str` `priv` (L772-785)
 - @brief Post-process commit control string.
 - @details Trims trailing spaces and appends the optional suffix segment when provided.
 - @param s {str} Raw control string from vine_commit.
 - @param f {Optional[str]} Optional suffix.
 - @return {str} Trimmed control string.
 
-### fn `def _vis_fan(s: str, fan_type: str) -> str` `priv` (L782-856)
+### fn `def _vis_fan(s: str, fan_type: str) -> str` `priv` (L786-860)
 - @brief Transform control string for branch/merge fan visualization.
 - @details Converts 's' fan markers into directional edge characters, resolves overpass sequences, and performs left/right edge transforms. Normalizes interior spaces between fan markers (`S`/`s`) to preserve continuous connector rendering.
 - @param s {str} Raw control string.
 - @param fan_type {str} Either "branch" or "merge".
 - @return {str} Transformed control string.
 
-### fn `def _overpass_replace(m)` `priv` (L818-820)
+### fn `def _overpass_replace(m)` `priv` (L822-824)
 - @brief Expand matched overpass control segments to contiguous overpass markers.
 - @details Converts regex match groups for `O[DO]+O` into equal-length `O...O` spans.
 - @param m {re.Match[str]} Regex match object for the overpass control segment.
 - @return {str} Replacement string composed only of `O` markers.
 
-### fn `def _vis_fan2L(left: str) -> str` `priv` (L857-871)
+### fn `def _vis_fan2L(left: str) -> str` `priv` (L861-875)
 - @brief Transform left side of fan visualization.
 - @details Converts the first `s` marker to `e` and remaining `s` markers to `f`, preserving any leading spacing used for vine alignment.
 - @param left {str} Left portion of control string.
 - @return {str} Transformed left portion.
 
-### fn `def _vis_fan2R(right: str) -> str` `priv` (L872-887)
+### fn `def _vis_fan2R(right: str) -> str` `priv` (L876-891)
 - @brief Transform right side of fan visualization.
 - @details Converts the rightmost `s` marker to `g` and remaining `s` markers to `f`, preserving trailing spacing used for vine alignment.
 - @param right {str} Right portion of control string.
 - @return {str} Transformed right portion.
 
-### fn `def _vis_xfrm(` `priv` (L920-925)
+### fn `def _vis_xfrm(` `priv` (L924-929)
 - @brief Convert graph control-string tokens into styled Unicode output.
 - @details Applies optional space-filling after commit markers, reverse-order fan transformation,
 style-specific Unicode translation, and final graph-symbol replacement.
@@ -2224,7 +2224,7 @@ style-specific Unicode translation, and final graph-symbol replacement.
 - @return {str} Rendered graph line with selected style and symbols.
 - @satisfies REQ-101
 
-### fn `def _vis_post(` `priv` (L973-981)
+### fn `def _vis_post(` `priv` (L977-985)
 - @brief Post-process graph control strings with style transform and branch coloring.
 - @brief Execute `_vis_post` graph-processing logic for Foresta rendering.
 - @details Applies `_vis_xfrm` to graph/control suffix segments, preserves ANSI spans, and injects
@@ -2249,7 +2249,7 @@ branch-color-specific commit glyph coloring based on tracked branch state.
 - @return {str} Final rendered line with style transformation and ANSI colors.
 - @return Result emitted by `_vis_post` according to command contract.
 
-### fn `def _update_branch_colors(` `priv` (L1050-1053)
+### fn `def _update_branch_colors(` `priv` (L1054-1057)
 - @brief Update branch-color assignments using current vine control-string content.
 - @details Scans even vine slots for branch indicators (`e`, `f`, `g`, `t`) and assigns colors
 from the reference palette while avoiding immediate neighbor color collisions.
@@ -2259,7 +2259,7 @@ from the reference palette while avoiding immediate neighbor color collisions.
 - @return None. Mutates `branch_colors_now` in place.
 - @satisfies REQ-110
 
-### fn `def _get_line_block(` `priv` (L1097-1098)
+### fn `def _get_line_block(` `priv` (L1101-1102)
 - @brief Read one commit-log line plus bounded lookahead for subvine processing.
 - @details Maintains a rolling prefetch buffer and returns the current line with up to
 `max_count - 1` subsequent entries for merge lookahead heuristics.
@@ -2268,24 +2268,50 @@ from the reference palette while avoiding immediate neighbor color collisions.
 - @param max_count {int} Maximum total items in returned block.
 - @return {Tuple[Optional[str], List[Optional[str]]]} Current line and lookahead list.
 
-### class `class _ReverseOutput` `priv` (L1120-1159)
+### class `class _ReverseOutput` `priv` (L1124-1163)
 - @brief Buffer that collects output and writes it in reverse line order.
 - @details Used when --reverse is specified. Accumulates all printed output and flushes in reverse order on close().
-- fn `def __init__(self, stream)` `priv` (L1127-1134)
+- fn `def __init__(self, stream)` `priv` (L1131-1138)
   - @brief Buffer that collects output and writes it in reverse line order.
   - @brief Initialize reverse output buffer.
   - @details Used when --reverse is specified. Accumulates all printed output
 and flushes in reverse order on close().
   - @param stream Output stream to write reversed content to.
-- fn `def write(self, text: str) -> None` (L1135-1141)
+- fn `def write(self, text: str) -> None` (L1139-1145)
   - @brief Accumulate text for later reversed output.
   - @param text {str} Text to buffer.
-- fn `def flush(self) -> None` (L1142-1147)
+- fn `def flush(self) -> None` (L1146-1151)
   - @brief No-op flush for buffered mode.
-- fn `def close(self) -> None` (L1148-1159)
+- fn `def close(self) -> None` (L1152-1163)
   - @brief Write buffered content in reverse line order to the stream.
 
-### fn `def _process(` `priv` (L1209-1227)
+### fn `def _resolve_terminal_columns() -> int` `priv` (L1174-1177)
+- @brief Resolve terminal column width for default non-wrapping rendering.
+- @details Reads active terminal size using `shutil.get_terminal_size` and enforces
+a minimum width of one printable column.
+- @return {int} Terminal columns used for line truncation.
+- @satisfies REQ-100
+
+### fn `def _truncate_line_to_terminal_width(line: str, terminal_columns: int) -> str` `priv` (L1185-1213)
+- @brief Truncate one rendered line to a visible terminal-width budget.
+- @details Preserves ANSI escape sequences as zero-width tokens, truncates only
+printable glyph columns, and preserves trailing newline semantics.
+- @param line {str} Rendered output line with optional ANSI escape sequences.
+- @param terminal_columns {int} Maximum number of visible printable columns.
+- @return {str} Width-bounded line preserving ANSI tokens and newline suffix.
+- @satisfies REQ-100
+
+### fn `def _write_rendered_line(` `priv` (L1222-1225)
+- @brief Write one rendered line with optional terminal-width truncation.
+- @details Applies width truncation only when `terminal_columns` is provided;
+otherwise writes the full input line.
+- @param output_stream {IO[str]} Destination stream.
+- @param line {str} Rendered output line.
+- @param terminal_columns {Optional[int]} Width budget or `None` for wrapping.
+- @return None.
+- @satisfies REQ-100, REQ-104
+
+### fn `def _process(` `priv` (L1284-1303)
 - @brief Stream git log commits, render vine graph lines, and emit final output.
 - @brief Execute `_process` graph-processing logic for Foresta rendering.
 - @details Opens a `git log` pipe, iterates commits, executes vine_branch/vine_commit/vine_merge
@@ -2309,6 +2335,7 @@ rendering stages, and writes normalized lines to the configured output stream.
 - @param output_stream {IO[str]} Destination stream for rendered lines.
 - @param branch_colors_now {List[str]} Mutable current branch-color state.
 - @param branch_colors_ref {List[str]} Fixed branch-color palette.
+- @param terminal_columns {Optional[int]} Visible-width budget; `None` disables truncation.
 - @param refs Input parameter consumed by `_process`.
 - @param status Input parameter consumed by `_process`.
 - @param show_status Input parameter consumed by `_process`.
@@ -2327,54 +2354,58 @@ rendering stages, and writes normalized lines to the configured output stream.
 - @param output_stream Input parameter consumed by `_process`.
 - @param branch_colors_now Input parameter consumed by `_process`.
 - @param branch_colors_ref Input parameter consumed by `_process`.
+- @param terminal_columns Input parameter consumed by `_process`.
 - @return None.
 - @return Result emitted by `_process` according to command contract.
 - @satisfies REQ-099, REQ-100, REQ-109
 
-### fn `def _lines_iter()` `priv` (L1244-1248)
+### fn `def _lines_iter()` `priv` (L1320-1324)
 - @brief Yield streamed git-log lines from subprocess stdout.
 - @details Wraps `proc.stdout` iteration to keep generator creation local to `_process`.
 - @return {Iterator[str]} Iterator emitting raw log lines including trailing newlines.
 
-### fn `def run(extra_args: Optional[List[str]] = None) -> None` (L1395-1562)
+### fn `def run(extra_args: Optional[List[str]] = None) -> None` (L1467-1639)
 - @brief Execute the tree visualization command.
 - @details Parses command-line options, configures the visualization engine, and runs the main processing loop. Unrecognized options are passed through to git log.
 - @param extra_args {Optional[List[str]]} CLI arguments from the dispatcher.
 - @return None. Output written to stdout.
-- @satisfies REQ-098, REQ-099, REQ-104, REQ-111
+- @satisfies REQ-098, REQ-099, REQ-100, REQ-104, REQ-111
 
 ## Symbol Index
 |Symbol|Kind|Vis|Lines|Sig|
 |---|---|---|---|---|
-|`_maxof`|fn|priv|130-140|def _maxof(x: int, y: int) -> int|
-|`_round_down2`|fn|priv|141-152|def _round_down2(i: int) -> int|
-|`_str_expand`|fn|priv|153-165|def _str_expand(s: str, length: int) -> str|
-|`_remove_trailing_blanks`|fn|priv|166-176|def _remove_trailing_blanks(vine: list) -> None|
-|`_trgen`|fn|priv|192-197|def _trgen(|
-|`translate`|fn|pub|204-211|def translate(s: str) -> str|
-|`_git_command`|fn|priv|220-239|def _git_command(args: List[str], cwd: Optional[str] = No...|
-|`_git_command_output_pipe`|fn|priv|245-246|def _git_command_output_pipe(|
-|`_get_status`|fn|priv|262-335|def _get_status(repo_path: str, git_dir: str) -> str|
-|`_get_next_pick`|fn|priv|341-357|def _get_next_pick(lines: List[str], start: int) -> Optio...|
-|`_get_refs`|fn|priv|364-365|def _get_refs(|
-|`_vine_branch`|fn|priv|484-495|def _vine_branch(|
-|`_vine_commit`|fn|priv|536-585|def _vine_commit(vine: list, rev: str, parents: List[str]...|
-|`_vine_merge`|fn|priv|620-633|def _vine_merge(|
-|`_vis_commit`|fn|priv|768-781|def _vis_commit(s: str, f: Optional[str] = None) -> str|
-|`_vis_fan`|fn|priv|782-856|def _vis_fan(s: str, fan_type: str) -> str|
-|`_overpass_replace`|fn|priv|818-820|def _overpass_replace(m)|
-|`_vis_fan2L`|fn|priv|857-871|def _vis_fan2L(left: str) -> str|
-|`_vis_fan2R`|fn|priv|872-887|def _vis_fan2R(right: str) -> str|
-|`_vis_xfrm`|fn|priv|920-925|def _vis_xfrm(|
-|`_vis_post`|fn|priv|973-981|def _vis_post(|
-|`_update_branch_colors`|fn|priv|1050-1053|def _update_branch_colors(|
-|`_get_line_block`|fn|priv|1097-1098|def _get_line_block(|
-|`_ReverseOutput`|class|priv|1120-1159|class _ReverseOutput|
-|`_ReverseOutput.__init__`|fn|priv|1127-1134|def __init__(self, stream)|
-|`_ReverseOutput.write`|fn|pub|1135-1141|def write(self, text: str) -> None|
-|`_ReverseOutput.flush`|fn|pub|1142-1147|def flush(self) -> None|
-|`_ReverseOutput.close`|fn|pub|1148-1159|def close(self) -> None|
-|`_process`|fn|priv|1209-1227|def _process(|
-|`_lines_iter`|fn|priv|1244-1248|def _lines_iter()|
-|`run`|fn|pub|1395-1562|def run(extra_args: Optional[List[str]] = None) -> None|
+|`_maxof`|fn|priv|134-144|def _maxof(x: int, y: int) -> int|
+|`_round_down2`|fn|priv|145-156|def _round_down2(i: int) -> int|
+|`_str_expand`|fn|priv|157-169|def _str_expand(s: str, length: int) -> str|
+|`_remove_trailing_blanks`|fn|priv|170-180|def _remove_trailing_blanks(vine: list) -> None|
+|`_trgen`|fn|priv|196-201|def _trgen(|
+|`translate`|fn|pub|208-215|def translate(s: str) -> str|
+|`_git_command`|fn|priv|224-243|def _git_command(args: List[str], cwd: Optional[str] = No...|
+|`_git_command_output_pipe`|fn|priv|249-250|def _git_command_output_pipe(|
+|`_get_status`|fn|priv|266-339|def _get_status(repo_path: str, git_dir: str) -> str|
+|`_get_next_pick`|fn|priv|345-361|def _get_next_pick(lines: List[str], start: int) -> Optio...|
+|`_get_refs`|fn|priv|368-369|def _get_refs(|
+|`_vine_branch`|fn|priv|488-499|def _vine_branch(|
+|`_vine_commit`|fn|priv|540-589|def _vine_commit(vine: list, rev: str, parents: List[str]...|
+|`_vine_merge`|fn|priv|624-637|def _vine_merge(|
+|`_vis_commit`|fn|priv|772-785|def _vis_commit(s: str, f: Optional[str] = None) -> str|
+|`_vis_fan`|fn|priv|786-860|def _vis_fan(s: str, fan_type: str) -> str|
+|`_overpass_replace`|fn|priv|822-824|def _overpass_replace(m)|
+|`_vis_fan2L`|fn|priv|861-875|def _vis_fan2L(left: str) -> str|
+|`_vis_fan2R`|fn|priv|876-891|def _vis_fan2R(right: str) -> str|
+|`_vis_xfrm`|fn|priv|924-929|def _vis_xfrm(|
+|`_vis_post`|fn|priv|977-985|def _vis_post(|
+|`_update_branch_colors`|fn|priv|1054-1057|def _update_branch_colors(|
+|`_get_line_block`|fn|priv|1101-1102|def _get_line_block(|
+|`_ReverseOutput`|class|priv|1124-1163|class _ReverseOutput|
+|`_ReverseOutput.__init__`|fn|priv|1131-1138|def __init__(self, stream)|
+|`_ReverseOutput.write`|fn|pub|1139-1145|def write(self, text: str) -> None|
+|`_ReverseOutput.flush`|fn|pub|1146-1151|def flush(self) -> None|
+|`_ReverseOutput.close`|fn|pub|1152-1163|def close(self) -> None|
+|`_resolve_terminal_columns`|fn|priv|1174-1177|def _resolve_terminal_columns() -> int|
+|`_truncate_line_to_terminal_width`|fn|priv|1185-1213|def _truncate_line_to_terminal_width(line: str, terminal_...|
+|`_write_rendered_line`|fn|priv|1222-1225|def _write_rendered_line(|
+|`_process`|fn|priv|1284-1303|def _process(|
+|`_lines_iter`|fn|priv|1320-1324|def _lines_iter()|
+|`run`|fn|pub|1467-1639|def run(extra_args: Optional[List[str]] = None) -> None|
 

@@ -7,6 +7,7 @@ REQ-105, REQ-106, REQ-109, REQ-110, REQ-111
 """
 
 import os
+import re
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -32,7 +33,7 @@ class TestLCommandRegistration(unittest.TestCase):
     def test_l_help_text_mentions_options(self):
         """l help text MUST mention key options."""
         text = core.HELP_TEXTS["l"]
-        for opt in ("--all", "--style", "--svdepth", "--no-color"):
+        for opt in ("--all", "--style", "--svdepth", "--no-color", "--wrap"):
             self.assertIn(opt, text)
 
     def test_l_command_is_cmd_l(self):
@@ -104,6 +105,54 @@ class TestForestaHelpers(unittest.TestCase):
         vine = ["a", "b"]
         foresta._remove_trailing_blanks(vine)
         self.assertEqual(vine, ["a", "b"])
+
+
+class TestForestaTerminalWidth(unittest.TestCase):
+    """
+    @brief Level 1: Verify terminal-width truncation and `--wrap` override behavior.
+    @satisfies REQ-100, REQ-104
+    """
+
+    def test_truncate_line_to_terminal_width_preserves_visible_width(self):
+        rendered = "\033[0;31mabcdef\033[0m\n"
+        truncated = foresta._truncate_line_to_terminal_width(rendered, 4)
+        visible = re.sub(r"\x1b\[[0-9;]*m", "", truncated.rstrip("\n"))
+        self.assertEqual(visible, "abcd")
+
+    @patch("git_alias.foresta._process")
+    @patch("git_alias.foresta._get_refs")
+    @patch("git_alias.foresta._git_command")
+    @patch("git_alias.foresta.shutil.get_terminal_size")
+    def test_run_resolves_terminal_columns_when_wrap_disabled(
+        self,
+        mock_get_terminal_size,
+        mock_git_command,
+        mock_get_refs,
+        mock_process,
+    ):
+        mock_get_terminal_size.return_value = os.terminal_size((50, 24))
+        mock_get_refs.return_value = {}
+        mock_git_command.return_value = "abcd1234\n"
+        foresta.run(["--no-status"])
+        mock_get_terminal_size.assert_called_once()
+        self.assertEqual(mock_process.call_args.kwargs["terminal_columns"], 50)
+
+    @patch("git_alias.foresta._process")
+    @patch("git_alias.foresta._get_refs")
+    @patch("git_alias.foresta._git_command")
+    @patch("git_alias.foresta.shutil.get_terminal_size")
+    def test_run_wrap_disables_terminal_width_truncation(
+        self,
+        mock_get_terminal_size,
+        mock_git_command,
+        mock_get_refs,
+        mock_process,
+    ):
+        mock_get_refs.return_value = {}
+        mock_git_command.return_value = "abcd1234\n"
+        foresta.run(["--no-status", "--wrap"])
+        mock_get_terminal_size.assert_not_called()
+        self.assertIsNone(mock_process.call_args.kwargs["terminal_columns"])
 
 
 class TestTrgen(unittest.TestCase):

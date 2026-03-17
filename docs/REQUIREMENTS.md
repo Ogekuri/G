@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.08
+**Version**: 1.09
 **Author**: Francesco Rolando
 **Date**: 2026-03-17
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-03-17 | 1.09 | Updated `l` rendering contract to enforce terminal-width truncation by default via `shutil` and added `--wrap` to disable truncation. |
 | 2026-03-17 | 1.08 | Restricted `--upgrade`/`--uninstall` local execution to Linux and required explicit manual-command guidance on non-Linux platforms. |
 | 2026-03-17 | 1.07 | Added explicit pytest dependency requirement for Astral uv-managed project dependencies in pyproject/lock synchronization policy. |
 | 2026-03-17 | 1.06 | Removed README-specific synchronization requirement from the SRS requirement set. |
@@ -166,11 +167,11 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-097**: MUST runtime configuration loading MUST NOT append, persist, or mutate configuration files; file normalization and key insertion MUST occur only when `--write-config` is explicitly executed.
 - **REQ-098**: MUST the CLI MUST expose an `l` alias in `COMMANDS` and `HELP_TEXTS`, and `--help` outputs MUST include `l` in global and per-command help paths.
 - **REQ-099**: MUST the `l` alias MUST render a text-based tree visualization of git commit history by invoking `git log --date-order` with a custom pretty format and processing the output through a vine-based graph algorithm.
-- **REQ-100**: MUST each `l` output line MUST display columns in fixed order: abbreviated commit hash, author date formatted as `%Y-%m-%d %H:%M`, graph tree segment, author name, ref decoration, commit subject.
+- **REQ-100**: MUST each `l` output line display columns in fixed order (hash, date `%Y-%m-%d %H:%M`, graph, author, refs, subject), and MUST truncate rendered line length to current terminal width resolved via `shutil.get_terminal_size`.
 - **REQ-101**: MUST the `l` alias MUST support `--style=<n>` with values: 1 (single-line Unicode, default), 2 (double-line Unicode), 10 (rounded Unicode edges), 15 (bold-line Unicode).
 - **REQ-102**: MUST the `l` alias MUST use configurable graph symbols with defaults: commit `●`, merge `◎`, overpass `═`, root `■`, tip `○`; overridable via `--graph-symbol-commit=<s>`, `--graph-symbol-merge=<s>`, `--graph-symbol-overpass=<s>`, `--graph-symbol-root=<s>`, `--graph-symbol-tip=<s>`.
 - **REQ-103**: MUST the `l` alias MUST apply ANSI color scheme: tree (cyan `\033[0;36m`), hash (magenta `\033[0;35m`), date (blue `\033[0;34m`), author (yellow `\033[0;33m`), tag (bold magenta `\033[1;35m`), default (reset `\033[0m`); `--no-color` MUST disable all ANSI color output.
-- **REQ-104**: MUST the `l` alias MUST support options: `--all` (show all branches and HEAD), `--reverse` (reverse output order), `--abbrev=<n>` (hash abbreviation width 4..40, default auto-detect from `git rev-parse --short HEAD`), `--svdepth=<n>` (maximum subvine merge depth, default 2), `--no-status` (disable working tree status display).
+- **REQ-104**: MUST the `l` alias support `--all`, `--reverse`, `--abbrev=<n>` (4..40), `--svdepth=<n>` (default 2), `--no-status`, and `--wrap`; `--wrap` MUST disable terminal-width truncation and preserve full rendered lines.
 - **REQ-105**: MUST the `l` alias MUST support `--graph-margin-left=<n>` (left margin columns, default 2) and `--graph-margin-right=<n>` (right margin columns, default 1) controlling spacing around the graph tree segment.
 - **REQ-106**: MUST the `l` alias MUST display working tree status indicators appended to the HEAD ref decoration: `*` (unstaged changes), `+` (staged changes), `$` (stash entries), `%` (untracked files); the status display MUST be disabled when `--no-status` is specified.
 - **REQ-107**: MUST the `l` alias MUST detect and display mid-flow state indicators appended to the working tree status: `|REBASE-i`, `|REBASE-m`, `|REBASE`, `|AM`, `|AM/REBASE`, `|MERGING`, `|CHERRY-PICKING`, `|REVERTING`, `|BISECTING`.
