@@ -3,6 +3,7 @@ import io
 import json
 import tempfile
 import unittest
+from email.message import Message
 from pathlib import Path
 from uuid import uuid4
 from unittest import mock
@@ -41,11 +42,14 @@ class UpdateCheckTest(unittest.TestCase):
         payload: dict,
         headers: dict | None = None,
     ) -> HTTPError:
+        response_headers = Message()
+        for key, value in (headers or {}).items():
+            response_headers[key] = value
         return HTTPError(
             url=core.GITHUB_LATEST_RELEASE_API,
             code=code,
             msg="HTTP Error",
-            hdrs=headers,
+            hdrs=response_headers,
             fp=io.BytesIO(json.dumps(payload).encode("utf-8")),
         )
 

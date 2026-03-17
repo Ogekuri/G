@@ -7,12 +7,9 @@ REQ-105, REQ-106, REQ-109, REQ-110, REQ-111
 """
 
 import os
-import re
-import subprocess
-import sys
 import tempfile
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from git_alias import core
 from git_alias import foresta
@@ -374,7 +371,7 @@ class TestReverseOutput(unittest.TestCase):
         rev.write("line1\nline2\nline3\n")
         rev.close()
         output = stream.getvalue()
-        lines = [l for l in output.split("\n") if l]
+        lines = [line for line in output.split("\n") if line]
         self.assertEqual(lines[0], "line3")
         self.assertEqual(lines[1], "line2")
         self.assertEqual(lines[2], "line1")

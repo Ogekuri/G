@@ -259,6 +259,7 @@ class ChangelogCommandTest(unittest.TestCase):
         with mock.patch.object(core, "_canonical_origin_base", return_value="https://github.com/Ogekuri/G"):
             history = core.build_history_section(repo_root, tags, include_unreleased=False)
         self.assertIsNotNone(history)
+        assert history is not None
         lines = history.splitlines()
         self.assertEqual(lines[0], "# History")
         self.assertIn("- \\[0.1.0\\]: https://github.com/Ogekuri/G/releases/tag/v0.1.0", lines)
@@ -269,6 +270,7 @@ class ChangelogCommandTest(unittest.TestCase):
         tags = [core.TagInfo(name="v0.1.0", iso_date="2024-03-01", object_name="c")]
         with mock.patch.object(core, "_canonical_origin_base", return_value="https://github.com/Ogekuri/G"):
             history = core.build_history_section(repo_root, tags, include_unreleased=True, include_unreleased_link=False)
+        assert history is not None
         self.assertNotIn("[unreleased]:", history)
 
     def test_history_includes_unreleased_link_when_requested(self):
@@ -276,6 +278,7 @@ class ChangelogCommandTest(unittest.TestCase):
         tags = [core.TagInfo(name="v0.1.0", iso_date="2024-03-01", object_name="c")]
         with mock.patch.object(core, "_canonical_origin_base", return_value="https://github.com/Ogekuri/G"):
             history = core.build_history_section(repo_root, tags, include_unreleased=True, include_unreleased_link=True)
+        assert history is not None
         self.assertIn("[unreleased]: https://github.com/Ogekuri/G/compare/v0.1.0..HEAD", history)
 
     def test_history_includes_draft_releases_by_default(self):
@@ -286,6 +289,7 @@ class ChangelogCommandTest(unittest.TestCase):
         ]
         with mock.patch.object(core, "_canonical_origin_base", return_value="https://github.com/Ogekuri/G"):
             history = core.build_history_section(repo_root, tags, include_unreleased=False)
+        assert history is not None
         lines = history.splitlines()
         self.assertIn("- \\[0.0.9\\]: https://github.com/Ogekuri/G/releases/tag/v0.0.9", lines)
         self.assertIn("- \\[0.1.0\\]: https://github.com/Ogekuri/G/releases/tag/v0.1.0", lines)
@@ -308,6 +312,7 @@ class ChangelogCommandTest(unittest.TestCase):
                     parsed = core.parse_conventional_commit(f"{header}: description")
                     with self.subTest(header=header):
                         self.assertIsNotNone(parsed)
+                        assert parsed is not None
                         parsed_type, parsed_module, parsed_breaking, parsed_desc = parsed
                         self.assertEqual(parsed_type, ctype)
                         self.assertEqual(parsed_module, module)
@@ -358,6 +363,7 @@ class ChangelogCommandTest(unittest.TestCase):
         ):
             section = core.generate_section_for_range(Path("/tmp"), "v1.2.3", "2026-02-18", "v1.2.2..v1.2.3")
         self.assertIsNotNone(section)
+        assert section is not None
         self.assertIn("- first line *(core)*\n  - second line\n- third line *(core)*", section)
 
     def test_git_log_subjects_reads_full_commit_messages(self):
@@ -379,6 +385,7 @@ class ChangelogCommandTest(unittest.TestCase):
         ):
             section = core.generate_section_for_range(Path("/tmp"), "v1.2.3", "2026-02-18", "v1.2.2..v1.2.3")
         self.assertIsNotNone(section)
+        assert section is not None
         self.assertIn("### 🏗️  Implementations", section)
 
     def test_extract_release_version_accepts_new_release_marker(self):
@@ -422,6 +429,7 @@ class LatestPatchTagAfterTest(unittest.TestCase):
         last_minor = tags[0]
         result = core._latest_patch_tag_after(tags, last_minor)
         self.assertIsNotNone(result)
+        assert result is not None
         self.assertEqual(result.name, "v0.1.2")
 
     def test_returns_none_when_no_patch_after_minor(self):
@@ -440,6 +448,7 @@ class LatestPatchTagAfterTest(unittest.TestCase):
         ]
         result = core._latest_patch_tag_after(tags, None)
         self.assertIsNotNone(result)
+        assert result is not None
         self.assertEqual(result.name, "v0.0.42")
 
     def test_returns_none_when_all_tags_empty(self):

@@ -426,15 +426,15 @@ class CmdOverviewTest(unittest.TestCase):
         self.assertNotIn("behind", normalized)
         self.assertNotIn("diverged", normalized)
         self.assertNotIn("unknown", normalized)
-        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", l) for l in lines]
+        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", line_text) for line_text in lines]
         self.assertIn("WorkingTree [clean]", norm_lines[0])
         self.assertEqual("|", norm_lines[1])
         grouped_idx = next(
             i
-            for i, l in enumerate(norm_lines)
-            if "Work(⎇ work)" in l
-            and "Develop(⎇ develop)" in l
-            and "Master(⎇ master)" in l
+            for i, line_text in enumerate(norm_lines)
+            if "Work(⎇ work)" in line_text
+            and "Develop(⎇ develop)" in line_text
+            and "Master(⎇ master)" in line_text
         )
         self.assertGreater(grouped_idx, 1)
 
@@ -462,15 +462,15 @@ class CmdOverviewTest(unittest.TestCase):
                 remote_master_display="RemoteMaster(⎇ origin/master)",
                 worktree_state="clean",
             )
-        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", l) for l in lines]
+        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", line_text) for line_text in lines]
         work_group_idx = next(
             i
-            for i, l in enumerate(norm_lines)
-            if "Work(⎇ work)" in l
-            and "Develop(⎇ develop)" in l
-            and "RemoteDevelop(⎇ origin/develop)" in l
+            for i, line_text in enumerate(norm_lines)
+            if "Work(⎇ work)" in line_text
+            and "Develop(⎇ develop)" in line_text
+            and "RemoteDevelop(⎇ origin/develop)" in line_text
         )
-        wt_idx = next(i for i, l in enumerate(norm_lines) if "WorkingTree" in l)
+        wt_idx = next(i for i, line_text in enumerate(norm_lines) if "WorkingTree" in line_text)
         self.assertEqual(wt_idx + 2, work_group_idx)
 
     ## @brief Verify `_overview_ascii_topology_lines` places dirty WorkingTree above Work.
@@ -497,9 +497,9 @@ class CmdOverviewTest(unittest.TestCase):
                 remote_master_display="RemoteMaster(⎇ origin/master)",
                 worktree_state="unstaged",
             )
-        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", l) for l in lines]
-        wt_idx = next(i for i, l in enumerate(norm_lines) if "WorkingTree" in l)
-        work_idx = next(i for i, l in enumerate(norm_lines) if "Work(⎇ work)" in l)
+        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", line_text) for line_text in lines]
+        wt_idx = next(i for i, line_text in enumerate(norm_lines) if "WorkingTree" in line_text)
+        work_idx = next(i for i, line_text in enumerate(norm_lines) if "Work(⎇ work)" in line_text)
         self.assertLess(wt_idx, work_idx)
         self.assertIn("[unstaged]", norm_lines[wt_idx])
 
@@ -529,10 +529,10 @@ class CmdOverviewTest(unittest.TestCase):
                 remote_master_display="RemoteMaster(⎇ origin/master)",
                 worktree_state="unstaged",
             )
-        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", l) for l in lines]
+        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", line_text) for line_text in lines]
         self.assertIn("RemoteDevelop(⎇ origin/develop)", norm_lines[0])
-        wt_idx = next(i for i, l in enumerate(norm_lines) if "WorkingTree" in l)
-        work_idx = next(i for i, l in enumerate(norm_lines) if "Work(⎇ work)" in l)
+        wt_idx = next(i for i, line_text in enumerate(norm_lines) if "WorkingTree" in line_text)
+        work_idx = next(i for i, line_text in enumerate(norm_lines) if "Work(⎇ work)" in line_text)
         self.assertLess(wt_idx, work_idx)
 
     ## @brief Verify topology groups refs sharing the same commit hash on one line.
@@ -559,10 +559,11 @@ class CmdOverviewTest(unittest.TestCase):
                 remote_master_display="RemoteMaster(⎇ origin/master)",
                 worktree_state="clean",
             )
-        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", l) for l in lines]
+        norm_lines = [re.sub(r"\x1b\[[0-9;]*m", "", line_text) for line_text in lines]
         grouped_line = next(
-            l for l in norm_lines
-            if "Develop(⎇ develop)" in l and "Master(⎇ master)" in l
+            line_text
+            for line_text in norm_lines
+            if "Develop(⎇ develop)" in line_text and "Master(⎇ master)" in line_text
         )
         self.assertIn("RemoteDevelop(⎇ origin/develop)", grouped_line)
         self.assertIn("RemoteMaster(⎇ origin/master)", grouped_line)

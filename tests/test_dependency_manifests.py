@@ -147,5 +147,16 @@ class DependencyManifestsTest(unittest.TestCase):
         self.assertTrue(runtime_files)
         self.assertTrue(all(name.endswith(".py") for name in runtime_files))
 
+    ## @brief Verify pyproject avoids unsupported `tool.uv` configuration sections.
+    # @details Ensures uv settings discovery remains warning-free by rejecting
+    #          unknown `tool.uv` keys that are not part of supported uv schema.
+    # @return None.
+    # @satisfies CTN-002 CPT-005
+    def test_pyproject_has_no_unsupported_tool_uv_sections(self):
+        pyproject_path = self.REPO_ROOT / "pyproject.toml"
+        pyproject = tomllib.loads(pyproject_path.read_text())
+        tool_uv_cfg = pyproject.get("tool", {}).get("uv", {})
+        self.assertNotIn("forms", tool_uv_cfg)
+
 if __name__ == "__main__":
     unittest.main()
