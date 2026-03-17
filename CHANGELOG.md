@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.19.0](https://github.com/Ogekuri/G/compare/v0.18.0..v0.19.0) - 2026-03-17
+### ⛰️  Features
+- Implment astral uv tool.
+
+### 🐛  Bug Fixes
+- remove unsupported tool.uv.forms config [useReq] *(pyproject)*
+  - Fix uv settings-discovery warning triggered by [tool.uv.forms.git-alias].
+  - Add a reproducer test for unsupported tool.uv sections and remove invalid TOML block.
+  - Resolve existing static-check failures in tests to keep req --here --static-check clean.
+- Remove .req dir.
+
 ## [0.18.0](https://github.com/Ogekuri/G/compare/v0.17.0..v0.18.0) - 2026-03-16
 ### ⛰️  Features
 - add rollback command and rollback requirements [useReq] *(core)*
@@ -541,6 +552,7 @@
 - \[0.16.0\]: https://github.com/Ogekuri/G/releases/tag/v0.16.0
 - \[0.17.0\]: https://github.com/Ogekuri/G/releases/tag/v0.17.0
 - \[0.18.0\]: https://github.com/Ogekuri/G/releases/tag/v0.18.0
+- \[0.19.0\]: https://github.com/Ogekuri/G/releases/tag/v0.19.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -560,3 +572,4 @@
 [0.16.0]: https://github.com/Ogekuri/G/compare/v0.15.0..v0.16.0
 [0.17.0]: https://github.com/Ogekuri/G/compare/v0.16.0..v0.17.0
 [0.18.0]: https://github.com/Ogekuri/G/compare/v0.17.0..v0.18.0
+[0.19.0]: https://github.com/Ogekuri/G/compare/v0.18.0..v0.19.0
