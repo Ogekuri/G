@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.05
+**Version**: 1.06
 **Author**: Francesco Rolando
 **Date**: 2026-03-17
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-03-17 | 1.06 | Removed README-specific synchronization requirement from the SRS requirement set. |
 | 2026-03-17 | 1.05 | Aligned documentation-generation and release-workflow trigger requirements to current implementation (optional Doxygen assets and dual workflow triggers with master-containment gate). |
 | 2026-03-07 | 1.04 | Replaced update-check idle-time policy with fixed 300-second delay semantics and added HTTP 429 Retry-After backoff persistence requirements. |
 | 2026-03-07 | 1.03 | Replaced update-check repository/program resolution with fixed constants, set successful idle-time default to 24 hours, and added minimum check-interval floor. |
@@ -133,7 +134,6 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-068**: MUST without `--include-patch`, `# History` MUST contain only minor-release tags present in the changelog body; with `--include-patch`, it MUST additionally include the latest patch tag, using last minor or repository start as diff baseline.
 - **REQ-069**: MUST `# History` release links MUST use template `https://github.com/<OWNER>/<REPO>/releases/tag/<TAG>` and diff links MUST use template `https://github.com/<OWNER>/<REPO>/compare/<TAG_FROM>..<TAG_TO>` generated deterministically from local changelog tags.
 - **REQ-070**: MUST `# History` generation MUST NOT verify remote tag existence and MUST NOT query remote tags; changelog tag and commit collection MUST use only local git commands.
-- **REQ-071**: MUST when a CLI command is added, modified, or removed in the dispatch map, `README.md` MUST be updated for user-facing usage changes; internal logic-only refactors with unchanged command behavior MUST NOT require README updates.
 - **REQ-072**: MUST the `major` and `minor` commands MUST push configured `develop` and configured `master` using `git push origin <branch> --tags` for each pushed branch, and MUST create definitive annotated `v<target>` on configured `master` immediately before master push.
 - **REQ-073**: MUST the `lt` alias MUST print one line per tag as `<tag>: <branch_1>, <branch_2>, ...`, where branches are the refs returned by `git branch -a --contains <tag>` after marker trimming.
 - **REQ-074**: MUST the alias `wt` MUST execute `git worktree list`, and `wtl` MUST execute `git worktree list` while forwarding all provided arguments unchanged.
