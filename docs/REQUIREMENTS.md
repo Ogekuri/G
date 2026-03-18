@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.09
+**Version**: 1.10
 **Author**: Francesco Rolando
-**Date**: 2026-03-17
+**Date**: 2026-03-18
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-03-18 | 1.10 | Replaced update-check idle cache path with `~/.cache/git-alias/check_version_idle-time.json`, required parent directory creation, and required Linux uninstall cache cleanup. |
 | 2026-03-17 | 1.09 | Updated `l` rendering contract to enforce terminal-width truncation by default via `shutil` and added `--wrap` to disable truncation. |
 | 2026-03-17 | 1.08 | Restricted `--upgrade`/`--uninstall` local execution to Linux and required explicit manual-command guidance on non-Linux platforms. |
 | 2026-03-17 | 1.07 | Added explicit pytest dependency requirement for Astral uv-managed project dependencies in pyproject/lock synchronization policy. |
@@ -84,7 +85,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 
 ### 3.2 Functional Requirements
 - **REQ-001**: MUST execute `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git` when `--upgrade` is invoked on Linux.
-- **REQ-002**: MUST execute `uv tool uninstall git-alias` when `--uninstall` is invoked on Linux.
+- **REQ-002**: MUST when `--uninstall` is invoked on Linux, delete `~/.cache/git-alias/check_version_idle-time.json`, remove `~/.cache/git-alias`, and execute `uv tool uninstall git-alias`.
 - **REQ-129**: MUST NOT execute local `uv tool install` when `--upgrade` is invoked on non-Linux platforms, and MUST print the exact manual install command for user execution.
 - **REQ-130**: MUST NOT execute local `uv tool uninstall` when `--uninstall` is invoked on non-Linux platforms, and MUST print the exact manual uninstall command for user execution.
 - **REQ-003**: MUST show global command help or specific command help via `--help`, and per-command help text MUST explicitly list supported options when present.
@@ -119,7 +120,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-029**: MUST print usage with package version suffix `(x.y.z)` when CLI is invoked without command arguments.
 - **REQ-030**: MUST print the package version and exit successfully when invoked with `--ver` or `--version`.
 - **REQ-031**: MUST keep all CLI output messages in English, including usage/help/info/debug/error paths.
-- **REQ-033**: MUST execute update checks before CLI argument validation only when `$HOME/.github_api_idle-time.git-alias` does not exist or its `idle_until_unix` timestamp is expired.
+- **REQ-033**: MUST execute update checks before CLI argument validation only when `~/.cache/git-alias/check_version_idle-time.json` does not exist or its `idle_until_unix` timestamp is expired.
 - **REQ-034**: MUST run `git remote -v`, print unique remote names, and run `git remote show <remote>` for each discovered remote in alias `str`.
 - **REQ-035**: MUST support `ver --verbose` (per-file regex outcome output) and `ver --debug` (full glob-match listing for each rule pattern).
 - **REQ-036**: MAY provide repository-local Doxygen generation assets; when present they SHOULD generate documentation under `doxygen/` from `src/`; CLI runtime and release workflow MUST remain functional when such assets are absent.
@@ -189,12 +190,13 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-123**: MUST when a newer version is detected, print a bright-green (`\033[92;1m`) message `Update available: <latest> (installed: <current>)` before command execution.
 - **REQ-124**: MUST resolve the release-check URL exactly as `https://api.github.com/repos/Ogekuri/G/releases/latest`.
 - **REQ-125**: MUST execute release-check HTTP requests with a hardcoded configurable timeout defaulting to 2 seconds.
-- **REQ-126**: MUST after successful release checks write `$HOME/.github_api_idle-time.git-alias` JSON fields `last_check_unix`, `last_check_human`, `idle_until_unix`, and `idle_until_human`, with `idle_until_unix = last_check_unix + 300`.
+- **REQ-126**: MUST after successful release checks write `~/.cache/git-alias/check_version_idle-time.json` JSON fields `last_check_unix`, `last_check_human`, `idle_until_unix`, and `idle_until_human`, with `idle_until_unix = last_check_unix + 300`.
 - **REQ-127**: MUST print bright-red (`\033[31;1m`) update-check errors, including HTTP status diagnostics and API-provided messages such as `rate limit exceeded`.
 - **REQ-128**: MUST package and distribute every runtime-required file for CLI execution in uv release artifacts via explicit setuptools configuration in `pyproject.toml`, ensuring parity between local execution and uv/uvx-installed execution.
 - **REQ-129**: MUST define a hardcoded `idle_delay_seconds` value equal to 300 and reuse it for every release-check scheduling decision.
 - **REQ-130**: MUST on HTTP 429 parse `Retry-After` as non-negative integer seconds, treating missing, non-integer, or negative values as `0`.
-- **REQ-131**: MUST on HTTP 429 update `$HOME/.github_api_idle-time.git-alias` with `idle_until_unix = max(existing_idle_until_unix, now + max(idle_delay_seconds, retry_after_seconds))` and synchronized human-readable fields.
+- **REQ-131**: MUST on HTTP 429 update `~/.cache/git-alias/check_version_idle-time.json` with `idle_until_unix = max(existing_idle_until_unix, now + max(idle_delay_seconds, retry_after_seconds))` and synchronized human-readable fields.
+- **REQ-136**: MUST create directory `~/.cache/git-alias` before writing update-check idle-time state when the directory does not exist.
 - **REQ-122**: MUST define `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` as a `tuple` containing: `.egg-info`.
 - **REQ-132**: MUST expose `rollback` as a CLI command in `COMMANDS` and `HELP_TEXTS`, and MUST support `git rollback --help` output.
 - **REQ-133**: MUST `rollback` execute only when both working tree and staging area are clean; otherwise MUST print explicit English error and exit non-zero.

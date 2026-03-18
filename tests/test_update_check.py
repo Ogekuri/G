@@ -32,7 +32,8 @@ class UpdateCheckTest(unittest.TestCase):
             core,
             "VERSION_CHECK_CACHE_FILE",
             Path(tempfile.gettempdir())
-            / f".github_api_idle-time.{core.UV_TOOL_NAME}.test.{uuid4().hex}",
+            / f"{core.UV_TOOL_NAME}.cache.test.{uuid4().hex}"
+            / "check_version_idle-time.json",
         )
 
     @staticmethod
@@ -103,6 +104,7 @@ class UpdateCheckTest(unittest.TestCase):
                 "idle_until_unix": 4_000_000_000,
                 "idle_until_human": "2096-10-02 07:06:40",
             }
+            core.VERSION_CHECK_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
             core.VERSION_CHECK_CACHE_FILE.write_text(
                 json.dumps(cache_data),
                 encoding="utf-8",
@@ -230,8 +232,9 @@ class UpdateCheckTest(unittest.TestCase):
         )
 
     def test_upgrade_self_uses_uv_tool_install_program_name(self):
-        with mock.patch.object(core, "_run_checked") as run_checked:
-            core.upgrade_self(Path("/repo"))
+        with mock.patch.object(core, "_is_linux_platform", return_value=True):
+            with mock.patch.object(core, "_run_checked") as run_checked:
+                core.upgrade_self(Path("/repo"))
         run_checked.assert_called_once_with(
             [
                 "uv",
@@ -245,8 +248,20 @@ class UpdateCheckTest(unittest.TestCase):
         )
 
     def test_uninstall_self_uses_uv_tool_uninstall(self):
-        with mock.patch.object(core, "_run_checked") as run_checked:
-            core.uninstall_self()
+        with self._isolated_cache():
+            with mock.patch.object(core, "_is_linux_platform", return_value=True):
+                with mock.patch.object(core, "_run_checked") as run_checked:
+                    core.uninstall_self()
         run_checked.assert_called_once_with(
             ["uv", "tool", "uninstall", core.UV_TOOL_NAME]
         )
+
+    def test_uninstall_self_removes_idle_time_cache_file_and_directory(self):
+        with self._isolated_cache():
+            core.VERSION_CHECK_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+            core.VERSION_CHECK_CACHE_FILE.write_text("{}", encoding="utf-8")
+            with mock.patch.object(core, "_is_linux_platform", return_value=True):
+                with mock.patch.object(core, "_run_checked"):
+                    core.uninstall_self()
+            self.assertFalse(core.VERSION_CHECK_CACHE_FILE.exists())
+            self.assertFalse(core.VERSION_CHECK_CACHE_FILE.parent.exists())

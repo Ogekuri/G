@@ -112,14 +112,14 @@
         - `_read_config_object(...)`: parse JSON object safely [`src/git_alias/core.py`]
         - `_apply_config_values(...)`: validate and apply key subsets; preserve empty `default_commit_module` without fallback coercion [`src/git_alias/core.py`]
         - `get_config_path(...)`: resolve repository config path [`src/git_alias/core.py`]
-      - `check_for_newer_version(...)`: optional remote release check and cache handling; executes only when idle-time is expired or absent, writes 300-second idle-delay windows after success, and applies HTTP 429 `Retry-After` backoff persistence [`src/git_alias/core.py`]
+      - `check_for_newer_version(...)`: optional remote release check and cache handling; executes only when `~/.cache/git-alias/check_version_idle-time.json` is absent or expired, writes 300-second idle-delay windows after success, and applies HTTP 429 `Retry-After` backoff persistence [`src/git_alias/core.py`]
         - `get_cli_version(...)`: parse `__version__` from package init [`src/git_alias/core.py`]
         - `_parse_semver_tuple(...)`: semantic version parser [`src/git_alias/core.py`]
         - `_normalize_semver_text(...)`: strip leading `v` tag prefix [`src/git_alias/core.py`]
         - `_coerce_unix_timestamp(...)`: validate numeric idle-time state fields [`src/git_alias/core.py`]
         - `_resolve_release_api_url(...)`: resolve fixed GitHub Releases API endpoint constant for package update checks [`src/git_alias/core.py`]
         - `_parse_retry_after_seconds(...)`: parse HTTP 429 `Retry-After` values with non-negative integer normalization [`src/git_alias/core.py`]
-        - `_write_version_check_state(...)`: persist canonical idle-time state payload (`last_check_*`, `idle_until_*`) [`src/git_alias/core.py`]
+        - `_write_version_check_state(...)`: create `~/.cache/git-alias` when missing and persist canonical idle-time state payload (`last_check_*`, `idle_until_*`) [`src/git_alias/core.py`]
         - `_print_update_available_warning(...)`: render bright-green update availability message with latest/installed versions [`src/git_alias/core.py`]
         - `_print_update_check_error(...)`: render bright-red diagnostics for HTTP/network and payload failures [`src/git_alias/core.py`]
       - `print_all_help(...)`: global help output path [`src/git_alias/core.py`]
@@ -136,6 +136,7 @@
         - `_print_non_linux_management_command(...)`: print manual install command when non-Linux [`src/git_alias/core.py`]
       - `uninstall_self(...)`: Linux-gated self-remove action using fixed package command constants [`src/git_alias/core.py`]
         - `_is_linux_platform(...)`: evaluate local runtime platform [`src/git_alias/core.py`]
+        - `_remove_version_check_cache_artifacts(...)`: remove idle-time cache file and cache directory before uninstall [`src/git_alias/core.py`]
         - `_run_checked(...)`: spawn `uv tool uninstall git-alias` when Linux [`src/git_alias/core.py`]
         - `_print_non_linux_management_command(...)`: print manual uninstall command when non-Linux [`src/git_alias/core.py`]
       - `run_git_cmd(...)`: fallback path when command not registered in `COMMANDS` [`src/git_alias/core.py`]
@@ -480,6 +481,7 @@
     - `_print_non_linux_management_command(...)`: print manual install command when non-Linux
   - `uninstall_self(...)`: self-uninstall path
     - `_is_linux_platform(...)`: evaluate platform gate
+    - `_remove_version_check_cache_artifacts(...)`: remove idle-time cache artifacts before uninstall
     - `_run_checked(...)`: spawn `uv tool uninstall ...` when Linux
     - `_print_non_linux_management_command(...)`: print manual uninstall command when non-Linux
 - External Boundaries:

@@ -59,7 +59,12 @@ UV_TOOL_UPGRADE_COMMAND = (
 UV_TOOL_UNINSTALL_COMMAND = ("uv", "tool", "uninstall", UV_TOOL_NAME)
 
 ## @brief Constant `VERSION_CHECK_CACHE_FILE` used by CLI runtime paths and policies.
-VERSION_CHECK_CACHE_FILE = Path.home() / f".github_api_idle-time.{UV_TOOL_NAME}"
+VERSION_CHECK_CACHE_FILE = (
+    Path.home()
+    / ".cache"
+    / UV_TOOL_NAME
+    / "check_version_idle-time.json"
+)
 ## @brief Constant `VERSION_CHECK_IDLE_DELAY_SECONDS` used by CLI runtime paths and policies.
 VERSION_CHECK_IDLE_DELAY_SECONDS = 300
 ## @brief Constant `VERSION_CHECK_TIMEOUT_SECONDS` used by CLI runtime paths and policies.
@@ -316,6 +321,7 @@ def _parse_retry_after_seconds(http_error: HTTPError) -> int:
 # @param last_check_unix Unix timestamp of last successful version check.
 # @param idle_until_unix Unix timestamp until next remote check is disabled.
 # @return None.
+# @satisfies REQ-126 REQ-131 REQ-136
 def _write_version_check_state(
     *,
     last_check_unix: int,
@@ -324,6 +330,7 @@ def _write_version_check_state(
     try:
         last_check_time = datetime.fromtimestamp(last_check_unix)
         idle_until_time = datetime.fromtimestamp(idle_until_unix)
+        VERSION_CHECK_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(VERSION_CHECK_CACHE_FILE, "w", encoding="utf-8") as f:
             json.dump(
                 {
@@ -2719,6 +2726,34 @@ def upgrade_self(repo_root: Optional[Path] = None):
     _run_checked(list(UV_TOOL_UPGRADE_COMMAND))
 
 
+## @brief Remove update-check idle-time cache artifacts before Linux uninstall.
+# @details Deletes `VERSION_CHECK_CACHE_FILE` when present and then removes the
+#          parent directory, enforcing deterministic failure on invalid path types
+#          or non-empty cache directory state.
+# @return None.
+# @satisfies REQ-002
+def _remove_version_check_cache_artifacts() -> None:
+    cache_file = VERSION_CHECK_CACHE_FILE
+    cache_directory = cache_file.parent
+    if cache_file.exists():
+        if not cache_file.is_file():
+            raise RuntimeError(
+                f"Uninstall failed: cache path is not a file: {cache_file}"
+            )
+        cache_file.unlink()
+    if cache_directory.exists():
+        if not cache_directory.is_dir():
+            raise RuntimeError(
+                f"Uninstall failed: cache directory path is invalid: {cache_directory}"
+            )
+        try:
+            cache_directory.rmdir()
+        except OSError as exc:
+            raise RuntimeError(
+                f"Uninstall failed: unable to remove cache directory {cache_directory}: {exc}"
+            ) from exc
+
+
 ## @brief Execute `uninstall_self` runtime logic for Git-Alias CLI.
 # @details Executes `uninstall_self` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `uninstall_self` according to command contract.
@@ -2727,6 +2762,7 @@ def uninstall_self():
     if not _is_linux_platform():
         _print_non_linux_management_command("uninstall", UV_TOOL_UNINSTALL_COMMAND)
         return
+    _remove_version_check_cache_artifacts()
     _run_checked(list(UV_TOOL_UNINSTALL_COMMAND))
 
 
