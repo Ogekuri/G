@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.24.0](https://github.com/Ogekuri/G/compare/v0.23.0..v0.24.0) - 2026-03-18
+### 🚜  Changes
+- move idle cache path and uninstall cleanup [useReq] *(update-check)*
+  - Update requirements REQ-002/033/126/131 and add REQ-136 for cache directory creation.
+  - Store idle-time state in ~/.cache/git-alias/check_version_idle-time.json.
+  - Create cache directory during state writes and remove cache file+directory on Linux --uninstall.
+  - Update unit tests and regenerate WORKFLOW/REFERENCES docs.
+
 ## [0.23.0](https://github.com/Ogekuri/G/compare/v0.22.0..v0.23.0) - 2026-03-17
 ### 🚜  Changes
 - enforce terminal-width l output with --wrap [useReq] *(foresta)*
@@ -602,6 +610,7 @@
 - \[0.21.0\]: https://github.com/Ogekuri/G/releases/tag/v0.21.0
 - \[0.22.0\]: https://github.com/Ogekuri/G/releases/tag/v0.22.0
 - \[0.23.0\]: https://github.com/Ogekuri/G/releases/tag/v0.23.0
+- \[0.24.0\]: https://github.com/Ogekuri/G/releases/tag/v0.24.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -626,3 +635,4 @@
 [0.21.0]: https://github.com/Ogekuri/G/compare/v0.20.0..v0.21.0
 [0.22.0]: https://github.com/Ogekuri/G/compare/v0.21.0..v0.22.0
 [0.23.0]: https://github.com/Ogekuri/G/compare/v0.22.0..v0.23.0
+[0.24.0]: https://github.com/Ogekuri/G/compare/v0.23.0..v0.24.0
