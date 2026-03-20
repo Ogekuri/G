@@ -12,6 +12,12 @@ class ConfigIOTest(unittest.TestCase):
     def setUp(self):
         core.CONFIG.update(core.DEFAULT_CONFIG)
 
+    def test_get_global_config_path_uses_xdg_location(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            home = Path(tmpdir) / "home"
+            expected = home / ".config" / "git-alias" / "config.json"
+            self.assertEqual(core.get_global_config_path(home), expected)
+
     def test_load_cli_config_reads_local_and_global_json(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

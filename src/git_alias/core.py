@@ -27,9 +27,9 @@ pathspec = importlib.import_module("pathspec")
 
 CONFIG_FILENAME = ".g.conf"
 ## @brief Constant `GLOBAL_CONFIG_DIRECTORY` used by CLI runtime paths and policies.
-GLOBAL_CONFIG_DIRECTORY = ".g"
+GLOBAL_CONFIG_DIRECTORY = ".config/git-alias"
 ## @brief Constant `GLOBAL_CONFIG_FILENAME` used by CLI runtime paths and policies.
-GLOBAL_CONFIG_FILENAME = "g.conf"
+GLOBAL_CONFIG_FILENAME = "config.json"
 
 ## @brief Constant `GITHUB_OWNER` used by CLI runtime paths and policies.
 GITHUB_OWNER = "Ogekuri"
@@ -138,7 +138,7 @@ GLOBAL_CONFIG_KEYS = ("edit_command", "gp_command", "gr_command")
 MANAGEMENT_HELP = [
     (
         "--write-config",
-        "Insert missing defaults into repository .g.conf and global $HOME/.g/g.conf.",
+        "Insert missing defaults into repository .g.conf and global $HOME/.config/git-alias/config.json.",
     ),
     ("--upgrade", "Reinstall git-alias on Linux; print manual command elsewhere."),
     ("--uninstall", "Uninstall git-alias on Linux; print manual command elsewhere."),

@@ -87,9 +87,9 @@ from git_alias import foresta
 
 - var `CONFIG_FILENAME = ".g.conf"` (L28)
 - @brief Constant `CONFIG_FILENAME` used by CLI runtime paths and policies.
-- var `GLOBAL_CONFIG_DIRECTORY = ".g"` (L30)
+- var `GLOBAL_CONFIG_DIRECTORY = ".config/git-alias"` (L30)
 - @brief Constant `GLOBAL_CONFIG_DIRECTORY` used by CLI runtime paths and policies.
-- var `GLOBAL_CONFIG_FILENAME = "g.conf"` (L32)
+- var `GLOBAL_CONFIG_FILENAME = "config.json"` (L32)
 - @brief Constant `GLOBAL_CONFIG_FILENAME` used by CLI runtime paths and policies.
 - var `GITHUB_OWNER = "Ogekuri"` (L35)
 - @brief Constant `GITHUB_OWNER` used by CLI runtime paths and policies.

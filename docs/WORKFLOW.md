@@ -107,7 +107,7 @@
     - `main(...)`: CLI dispatch root that executes update-check before argument validation [`src/git_alias/core.py`]
       - `get_git_root(...)`: resolve repository root path [`src/git_alias/core.py`]
         - `_run_checked(...)`: subprocess execution wrapper [`src/git_alias/core.py`]
-      - `load_cli_config(...)`: hydrate runtime config map from local `.g.conf` and global `$HOME/.g/g.conf` while ignoring out-of-scope keys in each file; `default_commit_module` accepts empty-string values as valid [`src/git_alias/core.py`]
+      - `load_cli_config(...)`: hydrate runtime config map from local `.g.conf` and global `$HOME/.config/git-alias/config.json` while ignoring out-of-scope keys in each file; `default_commit_module` accepts empty-string values as valid [`src/git_alias/core.py`]
         - `get_global_config_path(...)`: resolve global config path [`src/git_alias/core.py`]
         - `_read_config_object(...)`: parse JSON object safely [`src/git_alias/core.py`]
         - `_apply_config_values(...)`: validate and apply key subsets; preserve empty `default_commit_module` without fallback coercion [`src/git_alias/core.py`]

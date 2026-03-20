@@ -59,7 +59,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 ### 2.2 Project Constraints
 - **CTN-001**: MUST require Python 3.11 or newer at runtime.
 - **CTN-002**: MUST require `git` in PATH, MUST require `gitk` and Astral `uv` for related aliases and launcher flows, and MUST NOT require external or system-managed Python virtual environments.
-- **CTN-003**: MUST file-edit aliases MUST use a CLI-invokable editor configured by `edit_command` in `$HOME/.g/g.conf`, defaulting to `edit` when the file, key, or value is missing or invalid.
+- **CTN-003**: MUST file-edit aliases MUST use a CLI-invokable editor configured by `edit_command` in `$HOME/.config/git-alias/config.json`, defaulting to `edit` when the file, key, or value is missing or invalid.
 
 ### 2.3 Components and Libraries
 - **CPT-001**: MUST implement CLI dispatch and alias runtime behavior in `src/git_alias/core.py`.
@@ -78,10 +78,10 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **DES-003**: MUST define help text for every command and list commands alphabetically in global help output.
 - **DES-004**: MUST print an explicit message plus full help and exit non-zero when invoked without arguments.
 - **DES-005**: MUST compose complex aliases by reusing simpler alias functions when overlapping behavior exists.
-- **DES-006**: MUST the executable MUST load `.g.conf` for `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`, and `$HOME/.g/g.conf` for `edit_command`, `gp_command`, and `gr_command`, and MUST ignore out-of-scope keys in each file.
+- **DES-006**: MUST the executable MUST load `.g.conf` for `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`, and `$HOME/.config/git-alias/config.json` for `edit_command`, `gp_command`, and `gr_command`, and MUST ignore out-of-scope keys in each file.
 - **DES-007**: MUST centralize commit-readiness checks in reusable functions shared by `cm`, `wip`, and related aliases; readiness MUST succeed when staging is non-empty OR working-tree is dirty; MUST fail when both staging and working-tree have no committable data; MUST invoke `aa` to auto-stage working-tree changes when staging is empty and working-tree is dirty.
 - **DES-008**: MUST print all console messages in English.
-- **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.g.conf` plus `$HOME/.g/g.conf`, otherwise defaults from `DEFAULT_CONFIG`.
+- **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.g.conf` plus `$HOME/.config/git-alias/config.json`, otherwise defaults from `DEFAULT_CONFIG`.
 
 ### 3.2 Functional Requirements
 - **REQ-001**: MUST execute `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git` when `--upgrade` is invoked on Linux.
@@ -98,8 +98,8 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-010**: MUST the system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.
 - **REQ-011**: MUST provide reset/cleanup aliases (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`, `rmloc`, `rmstg`, `rmunt`) and MUST print dedicated reset help when `rs*` commands receive `--help`.
 - **REQ-012**: MUST tagging and archive aliases MUST support annotated tag creation (`tg`), local/remote tag deletion (`rmtg`), tag listing (`lt`), and archiving configured `master` in tar.gz (`ar`).
-- **REQ-013**: MUST open file paths through `ed` using `edit_command` from `$HOME/.g/g.conf` (default `edit`) and MUST fail with explicit error when no path is supplied.
-- **REQ-014**: MUST normalize `.g.conf` to keys `master`, `develop`, `work`, `default_commit_module`, `ver_rules` and normalize `$HOME/.g/g.conf` to keys `edit_command`, `gp_command`, `gr_command` when `--write-config` runs.
+- **REQ-013**: MUST open file paths through `ed` using `edit_command` from `$HOME/.config/git-alias/config.json` (default `edit`) and MUST fail with explicit error when no path is supplied.
+- **REQ-014**: MUST normalize `.g.conf` to keys `master`, `develop`, `work`, `default_commit_module`, `ver_rules` and normalize `$HOME/.config/git-alias/config.json` to keys `edit_command`, `gp_command`, `gr_command` when `--write-config` runs.
 - **REQ-015**: MUST migrate legacy global key `editor` to `edit_command` during `--write-config` when `edit_command` is missing, and MUST remove `editor` from persisted output.
 - **REQ-016**: MUST show management commands before alias listings when global help is requested or when command input is missing.
 - **REQ-017**: MUST evaluate `ver_rules` from `.g.conf` (or defaults), build repository candidates from `git ls-files`, apply pathspec matching plus hardcoded cache/temp exclusions, and fail on mismatched or missing version matches as specified.
