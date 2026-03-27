@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.26.0](https://github.com/Ogekuri/G/compare/v0.25.0..v0.26.0) - 2026-03-27
+### 🚜  Changes
+- force online update check for --version flags [useReq] *(core)*
+  - Update REQ-030 and REQ-033 to require forced online checks for --ver/--version.
+  - Implement check_for_newer_version(ignore_idle_cache) and route version flags through forced checks.
+  - Add and adjust unit tests for idle-cache bypass and version-flag update-check behavior.
+  - Update WORKFLOW.md and regenerate REFERENCES.md for traceability.
+
 ## [0.24.0](https://github.com/Ogekuri/G/compare/v0.23.0..v0.24.0) - 2026-03-18
 ### 🚜  Changes
 - move idle cache path and uninstall cleanup [useReq] *(update-check)*
@@ -612,6 +620,7 @@
 - \[0.23.0\]: https://github.com/Ogekuri/G/releases/tag/v0.23.0
 - \[0.24.0\]: https://github.com/Ogekuri/G/releases/tag/v0.24.0
 - \[0.25.0\]: https://github.com/Ogekuri/G/releases/tag/v0.25.0
+- \[0.26.0\]: https://github.com/Ogekuri/G/releases/tag/v0.26.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -638,3 +647,4 @@
 [0.23.0]: https://github.com/Ogekuri/G/compare/v0.22.0..v0.23.0
 [0.24.0]: https://github.com/Ogekuri/G/compare/v0.23.0..v0.24.0
 [0.25.0]: https://github.com/Ogekuri/G/compare/v0.24.0..v0.25.0
+[0.26.0]: https://github.com/Ogekuri/G/compare/v0.25.0..v0.26.0
