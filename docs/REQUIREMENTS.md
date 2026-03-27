@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.10
+**Version**: 1.11
 **Author**: Francesco Rolando
-**Date**: 2026-03-18
+**Date**: 2026-03-27
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-03-27 | 1.11 | Changed `--ver`/`--version` behavior to force online update checks while ignoring idle-time cache state gating. |
 | 2026-03-18 | 1.10 | Replaced update-check idle cache path with `~/.cache/git-alias/check_version_idle-time.json`, required parent directory creation, and required Linux uninstall cache cleanup. |
 | 2026-03-17 | 1.09 | Updated `l` rendering contract to enforce terminal-width truncation by default via `shutil` and added `--wrap` to disable truncation. |
 | 2026-03-17 | 1.08 | Restricted `--upgrade`/`--uninstall` local execution to Linux and required explicit manual-command guidance on non-Linux platforms. |
@@ -118,9 +119,9 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-027**: MUST the internal `cmd_release` function MUST reuse the same staging/worktree readiness and WIP amend decision logic used by `wip`, MUST determine the current version via `ver` before committing, MUST fail with the propagated detection error when version resolution fails, MUST create a `release: Release version <ver>` commit (where `<ver>` is `major.minor.patch`) by amending HEAD only when HEAD is an amendable `wip: work in progress.` commit not yet contained in configured `develop` and `master` and otherwise by creating a new commit, and MUST remain unavailable as a user-exposed CLI command.
 - **REQ-028**: MUST implement `ra` as inverse of `aa` by requiring configured `work` branch, no pending unstaged changes, and non-empty staging before unstaging all indexed entries.
 - **REQ-029**: MUST print usage with package version suffix `(x.y.z)` when CLI is invoked without command arguments.
-- **REQ-030**: MUST print the package version and exit successfully when invoked with `--ver` or `--version`.
+- **REQ-030**: MUST when invoked with `--ver` or `--version`, force an online update check that ignores `~/.cache/git-alias/check_version_idle-time.json` and then print the package version and exit successfully.
 - **REQ-031**: MUST keep all CLI output messages in English, including usage/help/info/debug/error paths.
-- **REQ-033**: MUST execute update checks before CLI argument validation only when `~/.cache/git-alias/check_version_idle-time.json` does not exist or its `idle_until_unix` timestamp is expired.
+- **REQ-033**: MUST execute update checks before CLI argument validation only when `~/.cache/git-alias/check_version_idle-time.json` does not exist or its `idle_until_unix` timestamp is expired, except when REQ-030 mandates a forced online check.
 - **REQ-034**: MUST run `git remote -v`, print unique remote names, and run `git remote show <remote>` for each discovered remote in alias `str`.
 - **REQ-035**: MUST support `ver --verbose` (per-file regex outcome output) and `ver --debug` (full glob-match listing for each rule pattern).
 - **REQ-036**: MAY provide repository-local Doxygen generation assets; when present they SHOULD generate documentation under `doxygen/` from `src/`; CLI runtime and release workflow MUST remain functional when such assets are absent.

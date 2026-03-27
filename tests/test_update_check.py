@@ -113,6 +113,30 @@ class UpdateCheckTest(unittest.TestCase):
                 core.check_for_newer_version(timeout_seconds=0.01)
             urlopen_mock.assert_not_called()
 
+    def test_check_forces_network_when_idle_time_is_not_expired_and_ignore_idle_cache_true(self):
+        with self._isolated_cache():
+            cache_data = {
+                "last_check_unix": 1,
+                "last_check_human": "1970-01-01 00:00:01",
+                "idle_until_unix": 4_000_000_000,
+                "idle_until_human": "2096-10-02 07:06:40",
+            }
+            core.VERSION_CHECK_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+            core.VERSION_CHECK_CACHE_FILE.write_text(
+                json.dumps(cache_data),
+                encoding="utf-8",
+            )
+            with mock.patch.object(
+                core,
+                "urlopen",
+                return_value=_FakeResponse({"tag_name": "v0.0.1"}),
+            ) as urlopen_mock:
+                core.check_for_newer_version(
+                    timeout_seconds=0.01,
+                    ignore_idle_cache=True,
+                )
+            urlopen_mock.assert_called_once()
+
     def test_check_writes_idle_time_state_on_success(self):
         before_unix = int(core.datetime.now().timestamp())
         with self._isolated_cache():

@@ -355,11 +355,13 @@ def _write_version_check_state(
 # @details Executes `check_for_newer_version` using deterministic CLI control-flow and explicit error propagation.
 # @param repo_root Input parameter consumed by `check_for_newer_version`.
 # @param timeout_seconds Input parameter consumed by `check_for_newer_version`.
+# @param ignore_idle_cache When `True`, bypasses `idle_until_unix` gating and forces an online check.
 # @return Result emitted by `check_for_newer_version` according to command contract.
 def check_for_newer_version(
     *,
     repo_root: Optional[Path] = None,
     timeout_seconds: float = VERSION_CHECK_TIMEOUT_SECONDS,
+    ignore_idle_cache: bool = False,
 ) -> None:
     current = _parse_semver_tuple(get_cli_version())
     if current is None:
@@ -378,7 +380,11 @@ def check_for_newer_version(
             if isinstance(loaded_cache_data, dict):
                 cache_data = loaded_cache_data
                 idle_until_unix = _coerce_unix_timestamp(cache_data.get("idle_until_unix"))
-                if idle_until_unix is not None and now_unix < idle_until_unix:
+                if (
+                    not ignore_idle_cache
+                    and idle_until_unix is not None
+                    and now_unix < idle_until_unix
+                ):
                     return
                 if (
                     cache_data.get("idle_until_unix") is not None
@@ -4678,12 +4684,14 @@ def print_all_help():
 # @return Result emitted by `main` according to command contract.
 def main(argv=None, *, check_updates: bool = True):
     args = list(argv) if argv is not None else sys.argv[1:]
+    force_online_update_check = bool(args) and args[0] in ("--ver", "--version")
     git_root = get_git_root()
     load_cli_config(git_root)
-    if check_updates:
+    if check_updates or force_online_update_check:
         check_for_newer_version(
             repo_root=git_root,
             timeout_seconds=VERSION_CHECK_TIMEOUT_SECONDS,
+            ignore_idle_cache=force_online_update_check,
         )
     if not args:
         print("Please provide a command or --help", file=sys.stderr)

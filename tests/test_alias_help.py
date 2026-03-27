@@ -148,6 +148,20 @@ class AliasHelpTest(unittest.TestCase):
             _, stdout, _ = self.run_script_result([flag], check=True)
             self.assertEqual(stdout.strip(), version)
 
+    def test_global_version_flags_force_online_update_check(self):
+        for flag in ("--ver", "--version"):
+            with self.subTest(flag=flag):
+                with mock.patch.object(core, "check_for_newer_version") as check_update:
+                    self.run_script_result([flag], check=True, check_updates=False)
+                check_update.assert_called_once()
+                kwargs = check_update.call_args.kwargs
+                self.assertEqual(
+                    kwargs.get("timeout_seconds"),
+                    core.VERSION_CHECK_TIMEOUT_SECONDS,
+                )
+                self.assertIsNotNone(kwargs.get("repo_root"))
+                self.assertTrue(kwargs.get("ignore_idle_cache"))
+
     def test_upgrade_flag_invokes_upgrade_self(self):
         with mock.patch.object(core, "upgrade_self") as upgrade_self:
             self.run_script_result(["--upgrade"], check=True)
@@ -164,8 +178,13 @@ class AliasHelpTest(unittest.TestCase):
     def test_update_check_runs_before_empty_args_validation(self):
         events = []
 
-        def _record_update(*, repo_root=None, timeout_seconds: float = 1.0):
-            del repo_root, timeout_seconds
+        def _record_update(
+            *,
+            repo_root=None,
+            timeout_seconds: float = 1.0,
+            ignore_idle_cache: bool = False,
+        ):
+            del repo_root, timeout_seconds, ignore_idle_cache
             events.append("update")
 
         def _record_help():
