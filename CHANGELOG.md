@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.27.0](https://github.com/Ogekuri/G/compare/v0.26.0..v0.27.0) - 2026-03-30
+### 🚜  Changes
+- rewrite idle-time JSON on all errors [useReq] *(version-check)*
+  - update SRS to require JSON rewrites on every terminal version-check error
+  - rename error idle helper/constants to generic version-check error semantics
+  - cover invalid installed-version error path and refresh workflow/references docs
+- update release-check idle delays [useReq] *(version-check)*
+  - change SRS idle delays to 3600 on success and 86400 on API errors
+  - persist extended backoff across HTTP, network, timeout, and payload failures
+  - update targeted tests plus workflow and references docs
+- persist fixed rate-limit idle delay [useReq] *(version-check)*
+  - update requirements for fixed 3600-second backoff on HTTP 429/403 rate limits
+  - persist rate-limit idle windows in version-check cache
+  - refresh workflow, references, and targeted tests
+
 ## [0.26.0](https://github.com/Ogekuri/G/compare/v0.25.0..v0.26.0) - 2026-03-27
 ### 🚜  Changes
 - force online update check for --version flags [useReq] *(core)*
@@ -621,6 +636,7 @@
 - \[0.24.0\]: https://github.com/Ogekuri/G/releases/tag/v0.24.0
 - \[0.25.0\]: https://github.com/Ogekuri/G/releases/tag/v0.25.0
 - \[0.26.0\]: https://github.com/Ogekuri/G/releases/tag/v0.26.0
+- \[0.27.0\]: https://github.com/Ogekuri/G/releases/tag/v0.27.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -648,3 +664,4 @@
 [0.24.0]: https://github.com/Ogekuri/G/compare/v0.23.0..v0.24.0
 [0.25.0]: https://github.com/Ogekuri/G/compare/v0.24.0..v0.25.0
 [0.26.0]: https://github.com/Ogekuri/G/compare/v0.25.0..v0.26.0
+[0.27.0]: https://github.com/Ogekuri/G/compare/v0.26.0..v0.27.0
