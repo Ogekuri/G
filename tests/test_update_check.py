@@ -26,6 +26,20 @@ class _FakeResponse:
         return False
 
 
+class _RawResponse:
+    def __init__(self, payload_bytes: bytes):
+        self._payload_bytes = payload_bytes
+
+    def read(self):
+        return self._payload_bytes
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
 class UpdateCheckTest(unittest.TestCase):
     def _isolated_cache(self):
         return mock.patch.object(
@@ -54,8 +68,9 @@ class UpdateCheckTest(unittest.TestCase):
             fp=io.BytesIO(json.dumps(payload).encode("utf-8")),
         )
 
-    def test_check_prints_red_error_on_network_failure(self):
+    def test_check_prints_red_error_on_network_failure_and_writes_api_error_idle_time(self):
         err = io.StringIO()
+        before_unix = int(core.datetime.now().timestamp())
         with self._isolated_cache():
             with contextlib.redirect_stderr(err):
                 with mock.patch.object(
@@ -64,8 +79,19 @@ class UpdateCheckTest(unittest.TestCase):
                     side_effect=OSError("network down"),
                 ):
                     core.check_for_newer_version(timeout_seconds=0.01)
+            data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
+        after_unix = int(core.datetime.now().timestamp())
         self.assertIn("\033[31;1m", err.getvalue())
         self.assertIn("Version check failed: network down", err.getvalue())
+        self.assertGreaterEqual(
+            data["idle_until_unix"],
+            before_unix + core.VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS,
+        )
+        self.assertLessEqual(
+            data["idle_until_unix"],
+            after_unix + core.VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS,
+        )
+        self.assertEqual(data["last_check_unix"], 0)
 
     def test_check_warns_when_newer_version_available(self):
         err = io.StringIO()
@@ -166,7 +192,7 @@ class UpdateCheckTest(unittest.TestCase):
             core.VERSION_CHECK_IDLE_DELAY_SECONDS,
         )
 
-    def test_check_prints_http_403_rate_limit_error_details_and_writes_extended_idle_time(self):
+    def test_check_prints_http_403_rate_limit_error_details_and_writes_api_error_idle_time(self):
         err = io.StringIO()
         before_unix = int(core.datetime.now().timestamp())
         rate_limit_error = self._http_error(
@@ -188,11 +214,11 @@ class UpdateCheckTest(unittest.TestCase):
         self.assertIn("Version check failed: HTTP 403: rate limit exceeded", text)
         self.assertGreaterEqual(
             data["idle_until_unix"],
-            before_unix + core.VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS,
+            before_unix + core.VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS,
         )
         self.assertLessEqual(
             data["idle_until_unix"],
-            after_unix + core.VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS,
+            after_unix + core.VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS,
         )
         self.assertEqual(data["last_check_unix"], 0)
 
@@ -201,10 +227,10 @@ class UpdateCheckTest(unittest.TestCase):
         self.assertEqual(api_url, core.GITHUB_LATEST_RELEASE_API)
 
     def test_idle_time_uses_hardcoded_idle_delays(self):
-        self.assertEqual(core.VERSION_CHECK_IDLE_DELAY_SECONDS, 300)
-        self.assertEqual(core.VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS, 3600)
+        self.assertEqual(core.VERSION_CHECK_IDLE_DELAY_SECONDS, 3600)
+        self.assertEqual(core.VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS, 86400)
 
-    def test_http_429_uses_fixed_rate_limit_idle_delay(self):
+    def test_http_429_uses_fixed_api_error_idle_delay(self):
         err = io.StringIO()
         before_unix = int(core.datetime.now().timestamp())
         rate_limit_error = self._http_error(
@@ -221,11 +247,35 @@ class UpdateCheckTest(unittest.TestCase):
         self.assertIn("Version check failed: HTTP 429: rate limit exceeded", err.getvalue())
         self.assertGreaterEqual(
             data["idle_until_unix"],
-            before_unix + core.VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS,
+            before_unix + core.VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS,
         )
         self.assertLessEqual(
             data["idle_until_unix"],
-            after_unix + core.VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS,
+            after_unix + core.VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS,
+        )
+        self.assertEqual(data["last_check_unix"], 0)
+
+    def test_invalid_json_payload_writes_api_error_idle_delay(self):
+        err = io.StringIO()
+        before_unix = int(core.datetime.now().timestamp())
+        with self._isolated_cache():
+            with contextlib.redirect_stderr(err):
+                with mock.patch.object(
+                    core,
+                    "urlopen",
+                    return_value=_RawResponse(b"not-json"),
+                ):
+                    core.check_for_newer_version(timeout_seconds=0.01)
+            data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
+        after_unix = int(core.datetime.now().timestamp())
+        self.assertIn("Version check failed: invalid JSON payload:", err.getvalue())
+        self.assertGreaterEqual(
+            data["idle_until_unix"],
+            before_unix + core.VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS,
+        )
+        self.assertLessEqual(
+            data["idle_until_unix"],
+            after_unix + core.VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS,
         )
         self.assertEqual(data["last_check_unix"], 0)
 
