@@ -67,8 +67,8 @@ VERSION_CHECK_CACHE_FILE = (
 )
 ## @brief Constant `VERSION_CHECK_IDLE_DELAY_SECONDS` used by CLI runtime paths and policies.
 VERSION_CHECK_IDLE_DELAY_SECONDS = 3600
-## @brief Constant `VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS` used by CLI runtime paths and policies.
-VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS = 86400
+## @brief Constant `VERSION_CHECK_ERROR_IDLE_DELAY_SECONDS` used by CLI runtime paths and policies.
+VERSION_CHECK_ERROR_IDLE_DELAY_SECONDS = 86400
 ## @brief Constant `VERSION_CHECK_TIMEOUT_SECONDS` used by CLI runtime paths and policies.
 VERSION_CHECK_TIMEOUT_SECONDS = 2.0
 ## @brief Constant `VERSION_AVAILABLE_COLOR` used by CLI runtime paths and policies.
@@ -302,7 +302,7 @@ def _coerce_unix_timestamp(value: object) -> Optional[int]:
 # @param last_check_unix Unix timestamp of last successful version check.
 # @param idle_until_unix Unix timestamp until next remote check is disabled.
 # @return None.
-# @satisfies REQ-126 REQ-131 REQ-136 REQ-137 REQ-138
+# @satisfies REQ-126 REQ-131 REQ-136 REQ-137
 def _write_version_check_state(
     *,
     last_check_unix: int,
@@ -332,16 +332,16 @@ def _write_version_check_state(
         _print_update_check_error(f"idle-time state write failed: {exc}")
 
 
-## @brief Persist the canonical extended idle-time state for release-check API-call errors.
+## @brief Persist the canonical extended idle-time state for version-check errors.
 # @details Reuses cached `last_check_unix` when available, normalizes missing or
 #          invalid cached values to `0`, and writes `idle_until_unix = now_unix +
-#          VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS` to suppress repeated failing
-#          release checks across all API-call error branches.
+#          VERSION_CHECK_ERROR_IDLE_DELAY_SECONDS` to suppress repeated failing
+#          version checks across all terminal error branches.
 # @param cache_data Parsed idle-time JSON object from prior state.
 # @param now_unix Current unix timestamp captured by the active release-check attempt.
 # @return None.
-# @satisfies REQ-130 REQ-131 REQ-137 REQ-138
-def _write_version_check_api_error_state(
+# @satisfies REQ-130 REQ-131 REQ-137
+def _write_version_check_error_state(
     cache_data: Dict[str, object],
     now_unix: int,
 ) -> None:
@@ -350,7 +350,7 @@ def _write_version_check_api_error_state(
         last_check_unix = 0
     _write_version_check_state(
         last_check_unix=last_check_unix,
-        idle_until_unix=now_unix + VERSION_CHECK_API_ERROR_IDLE_DELAY_SECONDS,
+        idle_until_unix=now_unix + VERSION_CHECK_ERROR_IDLE_DELAY_SECONDS,
     )
 
 
@@ -358,22 +358,19 @@ def _write_version_check_api_error_state(
 # @details Executes `check_for_newer_version` using deterministic CLI control-flow,
 #          explicit error propagation, a fixed 3600-second idle window after
 #          successful release checks, and a fixed 86400-second idle window after
-#          release-check API-call errors.
+#          terminal version-check errors while rewriting the idle-time JSON before
+#          returning control on every error path.
 # @param repo_root Input parameter consumed by `check_for_newer_version`.
 # @param timeout_seconds Input parameter consumed by `check_for_newer_version`.
 # @param ignore_idle_cache When `True`, bypasses `idle_until_unix` gating and forces an online check.
 # @return Result emitted by `check_for_newer_version` according to command contract.
-# @satisfies REQ-123 REQ-126 REQ-127 REQ-129 REQ-130 REQ-131 REQ-137 REQ-138
+# @satisfies REQ-123 REQ-126 REQ-127 REQ-129 REQ-130 REQ-131 REQ-137
 def check_for_newer_version(
     *,
     repo_root: Optional[Path] = None,
     timeout_seconds: float = VERSION_CHECK_TIMEOUT_SECONDS,
     ignore_idle_cache: bool = False,
 ) -> None:
-    current = _parse_semver_tuple(get_cli_version())
-    if current is None:
-        return
-
     now = datetime.now()
     now_unix = int(now.timestamp())
     cache_data: Dict[str, object] = {}
@@ -405,6 +402,12 @@ def check_for_newer_version(
                     "idle-time state is invalid: JSON root must be an object."
                 )
 
+    current = _parse_semver_tuple(get_cli_version())
+    if current is None:
+        _write_version_check_error_state(cache_data, now_unix)
+        _print_update_check_error("installed version is not semantic version.")
+        return
+
     root = Path(repo_root) if repo_root is not None else get_git_root()
     release_api_url = _resolve_release_api_url(root)
 
@@ -428,22 +431,22 @@ def check_for_newer_version(
                 details = str(details_payload.get("message", "")).strip()
         except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             details = ""
-        _write_version_check_api_error_state(cache_data, now_unix)
+        _write_version_check_error_state(cache_data, now_unix)
         if details:
             _print_update_check_error(f"HTTP {exc.code}: {details}")
         else:
             _print_update_check_error(f"HTTP {exc.code}")
         return
     except URLError as exc:
-        _write_version_check_api_error_state(cache_data, now_unix)
+        _write_version_check_error_state(cache_data, now_unix)
         _print_update_check_error(str(exc.reason))
         return
     except TimeoutError:
-        _write_version_check_api_error_state(cache_data, now_unix)
+        _write_version_check_error_state(cache_data, now_unix)
         _print_update_check_error("request timeout exceeded.")
         return
     except OSError as exc:
-        _write_version_check_api_error_state(cache_data, now_unix)
+        _write_version_check_error_state(cache_data, now_unix)
         _print_update_check_error(str(exc))
         return
     try:
@@ -454,18 +457,18 @@ def check_for_newer_version(
         )
         data = json.loads(payload_text)
     except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
-        _write_version_check_api_error_state(cache_data, now_unix)
+        _write_version_check_error_state(cache_data, now_unix)
         _print_update_check_error(f"invalid JSON payload: {exc}")
         return
     if not isinstance(data, dict):
-        _write_version_check_api_error_state(cache_data, now_unix)
+        _write_version_check_error_state(cache_data, now_unix)
         _print_update_check_error("invalid API payload: JSON root must be an object.")
         return
     tag = data.get("tag_name") or ""
     latest_text = _normalize_semver_text(str(tag))
     latest = _parse_semver_tuple(latest_text)
     if latest is None:
-        _write_version_check_api_error_state(cache_data, now_unix)
+        _write_version_check_error_state(cache_data, now_unix)
         _print_update_check_error("invalid API payload: `tag_name` is not semantic version.")
         return
 
