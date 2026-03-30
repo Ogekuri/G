@@ -22,6 +22,7 @@ tags: ["requirements", "srs", "git-alias"]
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-03-30 | 1.12 | Replaced release-check rate-limit backoff with a fixed 3600-second idle delay for HTTP 429 and HTTP 403 API rate-limit responses. |
 | 2026-03-27 | 1.11 | Changed `--ver`/`--version` behavior to force online update checks while ignoring idle-time cache state gating. |
 | 2026-03-18 | 1.10 | Replaced update-check idle cache path with `~/.cache/git-alias/check_version_idle-time.json`, required parent directory creation, and required Linux uninstall cache cleanup. |
 | 2026-03-17 | 1.09 | Updated `l` rendering contract to enforce terminal-width truncation by default via `shutil` and added `--wrap` to disable truncation. |
@@ -194,10 +195,11 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-126**: MUST after successful release checks write `~/.cache/git-alias/check_version_idle-time.json` JSON fields `last_check_unix`, `last_check_human`, `idle_until_unix`, and `idle_until_human`, with `idle_until_unix = last_check_unix + 300`.
 - **REQ-127**: MUST print bright-red (`\033[31;1m`) update-check errors, including HTTP status diagnostics and API-provided messages such as `rate limit exceeded`.
 - **REQ-128**: MUST package and distribute every runtime-required file for CLI execution in uv release artifacts via explicit setuptools configuration in `pyproject.toml`, ensuring parity between local execution and uv/uvx-installed execution.
-- **REQ-129**: MUST define a hardcoded `idle_delay_seconds` value equal to 300 and reuse it for every release-check scheduling decision.
-- **REQ-130**: MUST on HTTP 429 parse `Retry-After` as non-negative integer seconds, treating missing, non-integer, or negative values as `0`.
-- **REQ-131**: MUST on HTTP 429 update `~/.cache/git-alias/check_version_idle-time.json` with `idle_until_unix = max(existing_idle_until_unix, now + max(idle_delay_seconds, retry_after_seconds))` and synchronized human-readable fields.
+- **REQ-129**: MUST define a hardcoded `idle_delay_seconds` value equal to `300` for successful release-check scheduling.
+- **REQ-130**: MUST define a hardcoded `rate_limit_idle_delay_seconds` value equal to `3600` for HTTP 429 and HTTP 403 API rate-limit scheduling.
+- **REQ-131**: MUST on HTTP 429 update `~/.cache/git-alias/check_version_idle-time.json` with `idle_until_unix = now + rate_limit_idle_delay_seconds` and synchronized human-readable fields.
 - **REQ-136**: MUST create directory `~/.cache/git-alias` before writing update-check idle-time state when the directory does not exist.
+- **REQ-137**: MUST on HTTP 403 with API message containing `rate limit exceeded` update `~/.cache/git-alias/check_version_idle-time.json` using `rate_limit_idle_delay_seconds` and synchronized human-readable fields.
 - **REQ-122**: MUST define `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` as a `tuple` containing: `.egg-info`.
 - **REQ-132**: MUST expose `rollback` as a CLI command in `COMMANDS` and `HELP_TEXTS`, and MUST support `git rollback --help` output.
 - **REQ-133**: MUST `rollback` execute only when both working tree and staging area are clean; otherwise MUST print explicit English error and exit non-zero.

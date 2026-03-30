@@ -166,8 +166,9 @@ class UpdateCheckTest(unittest.TestCase):
             core.VERSION_CHECK_IDLE_DELAY_SECONDS,
         )
 
-    def test_check_prints_http_403_rate_limit_error_details(self):
+    def test_check_prints_http_403_rate_limit_error_details_and_writes_extended_idle_time(self):
         err = io.StringIO()
+        before_unix = int(core.datetime.now().timestamp())
         rate_limit_error = self._http_error(
             code=403,
             payload={"message": "rate limit exceeded"},
@@ -180,18 +181,30 @@ class UpdateCheckTest(unittest.TestCase):
                     side_effect=rate_limit_error,
                 ):
                     core.check_for_newer_version(timeout_seconds=0.01)
+            data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
+        after_unix = int(core.datetime.now().timestamp())
         text = err.getvalue()
         self.assertIn("\033[31;1m", text)
         self.assertIn("Version check failed: HTTP 403: rate limit exceeded", text)
+        self.assertGreaterEqual(
+            data["idle_until_unix"],
+            before_unix + core.VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS,
+        )
+        self.assertLessEqual(
+            data["idle_until_unix"],
+            after_unix + core.VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS,
+        )
+        self.assertEqual(data["last_check_unix"], 0)
 
     def test_resolve_release_api_url_uses_fixed_constant(self):
         api_url = core._resolve_release_api_url(Path("/repo"))
         self.assertEqual(api_url, core.GITHUB_LATEST_RELEASE_API)
 
-    def test_idle_time_uses_hardcoded_idle_delay(self):
+    def test_idle_time_uses_hardcoded_idle_delays(self):
         self.assertEqual(core.VERSION_CHECK_IDLE_DELAY_SECONDS, 300)
+        self.assertEqual(core.VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS, 3600)
 
-    def test_http_429_uses_retry_after_when_retry_after_is_greater_than_idle_delay(self):
+    def test_http_429_uses_fixed_rate_limit_idle_delay(self):
         err = io.StringIO()
         before_unix = int(core.datetime.now().timestamp())
         rate_limit_error = self._http_error(
@@ -206,54 +219,15 @@ class UpdateCheckTest(unittest.TestCase):
             data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
         after_unix = int(core.datetime.now().timestamp())
         self.assertIn("Version check failed: HTTP 429: rate limit exceeded", err.getvalue())
-        self.assertGreaterEqual(data["idle_until_unix"], before_unix + 600)
-        self.assertLessEqual(data["idle_until_unix"], after_unix + 600)
+        self.assertGreaterEqual(
+            data["idle_until_unix"],
+            before_unix + core.VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS,
+        )
+        self.assertLessEqual(
+            data["idle_until_unix"],
+            after_unix + core.VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS,
+        )
         self.assertEqual(data["last_check_unix"], 0)
-
-    def test_http_429_uses_idle_delay_when_retry_after_is_smaller(self):
-        err = io.StringIO()
-        before_unix = int(core.datetime.now().timestamp())
-        rate_limit_error = self._http_error(
-            code=429,
-            payload={"message": "rate limit exceeded"},
-            headers={"Retry-After": "120"},
-        )
-        with self._isolated_cache():
-            with contextlib.redirect_stderr(err):
-                with mock.patch.object(core, "urlopen", side_effect=rate_limit_error):
-                    core.check_for_newer_version(timeout_seconds=0.01)
-            data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
-        after_unix = int(core.datetime.now().timestamp())
-        self.assertIn("Version check failed: HTTP 429: rate limit exceeded", err.getvalue())
-        self.assertGreaterEqual(
-            data["idle_until_unix"],
-            before_unix + core.VERSION_CHECK_IDLE_DELAY_SECONDS,
-        )
-        self.assertLessEqual(
-            data["idle_until_unix"],
-            after_unix + core.VERSION_CHECK_IDLE_DELAY_SECONDS,
-        )
-
-    def test_http_429_invalid_retry_after_falls_back_to_idle_delay(self):
-        before_unix = int(core.datetime.now().timestamp())
-        rate_limit_error = self._http_error(
-            code=429,
-            payload={"message": "rate limit exceeded"},
-            headers={"Retry-After": "abc"},
-        )
-        with self._isolated_cache():
-            with mock.patch.object(core, "urlopen", side_effect=rate_limit_error):
-                core.check_for_newer_version(timeout_seconds=0.01)
-            data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
-        after_unix = int(core.datetime.now().timestamp())
-        self.assertGreaterEqual(
-            data["idle_until_unix"],
-            before_unix + core.VERSION_CHECK_IDLE_DELAY_SECONDS,
-        )
-        self.assertLessEqual(
-            data["idle_until_unix"],
-            after_unix + core.VERSION_CHECK_IDLE_DELAY_SECONDS,
-        )
 
     def test_upgrade_self_uses_uv_tool_install_program_name(self):
         with mock.patch.object(core, "_is_linux_platform", return_value=True):

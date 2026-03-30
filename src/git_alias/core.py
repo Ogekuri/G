@@ -67,6 +67,8 @@ VERSION_CHECK_CACHE_FILE = (
 )
 ## @brief Constant `VERSION_CHECK_IDLE_DELAY_SECONDS` used by CLI runtime paths and policies.
 VERSION_CHECK_IDLE_DELAY_SECONDS = 300
+## @brief Constant `VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS` used by CLI runtime paths and policies.
+VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS = 3600
 ## @brief Constant `VERSION_CHECK_TIMEOUT_SECONDS` used by CLI runtime paths and policies.
 VERSION_CHECK_TIMEOUT_SECONDS = 2.0
 ## @brief Constant `VERSION_AVAILABLE_COLOR` used by CLI runtime paths and policies.
@@ -293,27 +295,6 @@ def _coerce_unix_timestamp(value: object) -> Optional[int]:
     return None
 
 
-## @brief Parse Retry-After delay seconds from an HTTP 429 error response.
-# @details Reads `Retry-After` from HTTP headers (`headers`/`hdrs`), parses
-#          non-negative integer seconds, and normalizes missing/invalid/negative values to `0`.
-# @param http_error HTTP error raised by urllib request execution.
-# @return Retry-After delay seconds (`>= 0`).
-def _parse_retry_after_seconds(http_error: HTTPError) -> int:
-    retry_after_raw = ""
-    headers = getattr(http_error, "headers", None)
-    if headers is None:
-        headers = getattr(http_error, "hdrs", None)
-    if headers is not None:
-        retry_after_raw = str(headers.get("Retry-After", "")).strip()
-    if not retry_after_raw:
-        return 0
-    try:
-        retry_after_seconds = int(retry_after_raw)
-    except ValueError:
-        return 0
-    return max(retry_after_seconds, 0)
-
-
 ## @brief Persist update-check idle-time cache state to JSON file.
 # @details Writes canonical fields `last_check_unix`, `last_check_human`,
 #          `idle_until_unix`, and `idle_until_human` using second-precision
@@ -321,7 +302,7 @@ def _parse_retry_after_seconds(http_error: HTTPError) -> int:
 # @param last_check_unix Unix timestamp of last successful version check.
 # @param idle_until_unix Unix timestamp until next remote check is disabled.
 # @return None.
-# @satisfies REQ-126 REQ-131 REQ-136
+# @satisfies REQ-126 REQ-131 REQ-136 REQ-137
 def _write_version_check_state(
     *,
     last_check_unix: int,
@@ -352,11 +333,15 @@ def _write_version_check_state(
 
 
 ## @brief Execute `check_for_newer_version` runtime logic for Git-Alias CLI.
-# @details Executes `check_for_newer_version` using deterministic CLI control-flow and explicit error propagation.
+# @details Executes `check_for_newer_version` using deterministic CLI control-flow,
+#          explicit error propagation, a fixed 300-second idle window after
+#          successful release checks, and a fixed 3600-second idle window after
+#          HTTP 429 or HTTP 403 API rate-limit responses.
 # @param repo_root Input parameter consumed by `check_for_newer_version`.
 # @param timeout_seconds Input parameter consumed by `check_for_newer_version`.
 # @param ignore_idle_cache When `True`, bypasses `idle_until_unix` gating and forces an online check.
 # @return Result emitted by `check_for_newer_version` according to command contract.
+# @satisfies REQ-123 REQ-126 REQ-127 REQ-129 REQ-130 REQ-131 REQ-137
 def check_for_newer_version(
     *,
     repo_root: Optional[Path] = None,
@@ -421,27 +406,18 @@ def check_for_newer_version(
                 details = str(details_payload.get("message", "")).strip()
         except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             details = ""
-        if exc.code == 429:
-            retry_after_seconds = _parse_retry_after_seconds(exc)
-            retry_window_seconds = max(
-                VERSION_CHECK_IDLE_DELAY_SECONDS,
-                retry_after_seconds,
-            )
-            existing_idle_until_unix = _coerce_unix_timestamp(
-                cache_data.get("idle_until_unix")
-            )
-            if existing_idle_until_unix is None:
-                existing_idle_until_unix = 0
-            blocked_until_unix = max(
-                existing_idle_until_unix,
-                now_unix + retry_window_seconds,
-            )
+        is_rate_limit_error = exc.code == 429 or (
+            exc.code == 403 and "rate limit exceeded" in details.casefold()
+        )
+        if is_rate_limit_error:
             last_check_unix = _coerce_unix_timestamp(cache_data.get("last_check_unix"))
             if last_check_unix is None:
                 last_check_unix = 0
             _write_version_check_state(
                 last_check_unix=last_check_unix,
-                idle_until_unix=blocked_until_unix,
+                idle_until_unix=(
+                    now_unix + VERSION_CHECK_RATE_LIMIT_IDLE_DELAY_SECONDS
+                ),
             )
         if details:
             _print_update_check_error(f"HTTP {exc.code}: {details}")
