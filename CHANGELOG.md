@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.28.0](https://github.com/Ogekuri/G/compare/v0.27.0..v0.28.0) - 2026-03-31
+### 🚜  Changes
+- coordinate bd and wtd deletions [useReq] *(core)*
+  - Update requirements for paired branch/worktree deletion.
+  - Replace worktree delete alias with wtd and add shared preflight logic.
+  - Abort without partial deletion when either side cannot be removed.
+  - Refresh tests, workflow, and references for the new command flow.
+
 ## [0.27.0](https://github.com/Ogekuri/G/compare/v0.26.0..v0.27.0) - 2026-03-30
 ### 🚜  Changes
 - rewrite idle-time JSON on all errors [useReq] *(version-check)*
@@ -637,6 +645,7 @@
 - \[0.25.0\]: https://github.com/Ogekuri/G/releases/tag/v0.25.0
 - \[0.26.0\]: https://github.com/Ogekuri/G/releases/tag/v0.26.0
 - \[0.27.0\]: https://github.com/Ogekuri/G/releases/tag/v0.27.0
+- \[0.28.0\]: https://github.com/Ogekuri/G/releases/tag/v0.28.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -665,3 +674,4 @@
 [0.25.0]: https://github.com/Ogekuri/G/compare/v0.24.0..v0.25.0
 [0.26.0]: https://github.com/Ogekuri/G/compare/v0.25.0..v0.26.0
 [0.27.0]: https://github.com/Ogekuri/G/compare/v0.26.0..v0.27.0
+[0.28.0]: https://github.com/Ogekuri/G/compare/v0.27.0..v0.28.0
