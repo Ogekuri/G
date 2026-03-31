@@ -57,7 +57,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 
 - Provides `backup` command to run release preflight checks, merge `work` into `develop`, push `develop`, and return to `work`.
 - Provides visual diff aliases for repository comparisons, including `dcd` (`develop` vs `work`), `dcm` (`master` vs `work`), and `ddm` (`master` vs `develop`).
-- Provides worktree aliases: `wt` (`git worktree list`), `wtl` (`git worktree list ...`), `wtp` (`git worktree prune ...`), and `wtd` (safe worktree delete with paired branch cleanup when applicable).
+- Provides worktree aliases: `wt` (`git worktree list`), `wtl` (`git worktree list ...`), `wtp` (`git worktree prune ...`), and `wtd` (worktree delete with paired branch cleanup and optional `--force`).
 - Provides file listing aliases: `ls` lists tracked files and `lsi` lists ignored files, both with argument passthrough.
 - Provides an overview alias: `o` prints a structured repository summary with working-tree status, branch divergence/alignment sections, and a branch table that lists configured branches first and then all other local/remote branches with latest commit subjects.
 - Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--include-patch`, `--force-write`, `--print-only`, `--disable-history`).
@@ -170,8 +170,9 @@ Some CLI examples:
 - `g dcd`: Runs `git difftool -d <develop> <work>` using configured branch names.
 - `g dcm`: Runs `git difftool -d <master> <work>` using configured branch names.
 - `g ddm`: Runs `git difftool -d <master> <develop>` using configured branch names.
+- `g bd --force feature/demo`: Removes the associated worktree first when present, then force-deletes `feature/demo`.
 - `g wt`: Runs `git worktree list`.
-- `g wtd ../repo-worktree`: Runs `git worktree remove ../repo-worktree` when the target worktree has no associated local branch and passes preflight checks.
+- `g wtd --force ../repo-worktree`: Force-removes the target worktree; when it is associated to a local branch, the worktree is deleted before the branch.
 - `g ls -z`: Lists tracked files using `git ls-files --exclude-standard`.
 - `g lsi -z`: Lists ignored files using `git ls-files -i --exclude-standard`.
 - `g o`: Prints a verbose overview with status, branch distances, active worktrees, and a qualitative ASCII topology tree.

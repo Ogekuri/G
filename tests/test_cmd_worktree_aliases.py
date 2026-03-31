@@ -59,27 +59,32 @@ class CmdWorktreeAliasesTest(unittest.TestCase):
         associations.assert_not_called()
         run_git.assert_not_called()
 
-    ## @brief Verify `cmd_wtd` rejects force flags.
+    ## @brief Verify `cmd_wtd` accepts a leading force flag for single-worktree deletion.
     # @return None.
-    # @satisfies REQ-077
-    def test_cmd_wtd_rejects_force_flag(self):
-        stderr = io.StringIO()
-        with contextlib.redirect_stderr(stderr):
-            with self.assertRaises(SystemExit) as ctx:
-                core.cmd_wtd(["--force"])
-        self.assertEqual(ctx.exception.code, 1)
-        self.assertIn("does not support force flags", stderr.getvalue())
+    # @satisfies REQ-077, REQ-144
+    def test_cmd_wtd_accepts_force_flag_for_unassociated_worktree(self):
+        target = Path("../feature-tree").resolve()
+        with (
+            mock.patch.object(core, "_list_worktree_associations", return_value=[]),
+            mock.patch.object(core, "_preflight_worktree_delete") as preflight,
+            mock.patch.object(core, "run_git_cmd", return_value=None) as run_git,
+        ):
+            core.cmd_wtd(["--force", "../feature-tree"])
+        preflight.assert_not_called()
+        run_git.assert_called_once_with(["worktree", "remove", "--force", str(target)])
 
-    ## @brief Verify `cmd_bd` rejects force flags.
+    ## @brief Verify `cmd_bd` accepts a leading force flag for single-branch deletion.
     # @return None.
-    # @satisfies REQ-019
-    def test_cmd_bd_rejects_force_flag(self):
-        stderr = io.StringIO()
-        with contextlib.redirect_stderr(stderr):
-            with self.assertRaises(SystemExit) as ctx:
-                core.cmd_bd(["-D"])
-        self.assertEqual(ctx.exception.code, 1)
-        self.assertIn("does not support force flags", stderr.getvalue())
+    # @satisfies REQ-019, REQ-144
+    def test_cmd_bd_accepts_force_flag_for_unassociated_branch(self):
+        with (
+            mock.patch.object(core, "_list_worktree_associations", return_value=[]),
+            mock.patch.object(core, "_preflight_branch_delete") as preflight,
+            mock.patch.object(core, "run_git_cmd", return_value=None) as run_git,
+        ):
+            core.cmd_bd(["--force", "feature/demo"])
+        preflight.assert_not_called()
+        run_git.assert_called_once_with(["branch", "-D", "feature/demo"])
 
     ## @brief Verify worktree porcelain parsing preserves path and branch associations.
     # @return None.
@@ -204,6 +209,28 @@ class CmdWorktreeAliasesTest(unittest.TestCase):
         self.assertIn(f"Deleted worktree: {info.path}", output)
         self.assertIn("Deleted branch: feature/demo", output)
 
+    ## @brief Verify forced paired deletion removes worktree before branch.
+    # @return None.
+    # @satisfies REQ-141, REQ-145
+    def test_cmd_bd_force_deletes_associated_worktree_before_branch(self):
+        info = core.WorktreeInfo(path=Path("/tmp/feature-tree"), branch_name="feature/demo")
+        with (
+            mock.patch.object(core, "_list_worktree_associations", return_value=[info]),
+            mock.patch.object(core, "_preflight_worktree_delete") as preflight_worktree,
+            mock.patch.object(core, "_preflight_branch_delete") as preflight_branch,
+            mock.patch.object(core, "run_git_cmd", return_value=None) as run_git,
+        ):
+            core.cmd_bd(["--force", "feature/demo"])
+        preflight_worktree.assert_not_called()
+        preflight_branch.assert_not_called()
+        self.assertEqual(
+            run_git.call_args_list,
+            [
+                mock.call(["worktree", "remove", "--force", str(info.path)]),
+                mock.call(["branch", "-D", "feature/demo"]),
+            ],
+        )
+
     ## @brief Verify `cmd_wtd` performs paired deletion and prints explicit evidence.
     # @return None.
     # @satisfies REQ-139, REQ-140, REQ-141, REQ-142
@@ -233,6 +260,28 @@ class CmdWorktreeAliasesTest(unittest.TestCase):
         output = stdout.getvalue()
         self.assertIn(f"Deleted worktree: {info.path}", output)
         self.assertIn("Deleted branch: feature/demo", output)
+
+    ## @brief Verify forced paired deletion removes worktree before branch from `wtd`.
+    # @return None.
+    # @satisfies REQ-141, REQ-145
+    def test_cmd_wtd_force_deletes_associated_worktree_before_branch(self):
+        info = core.WorktreeInfo(path=Path("/tmp/feature-tree"), branch_name="feature/demo")
+        with (
+            mock.patch.object(core, "_list_worktree_associations", return_value=[info]),
+            mock.patch.object(core, "_preflight_worktree_delete") as preflight_worktree,
+            mock.patch.object(core, "_preflight_branch_delete") as preflight_branch,
+            mock.patch.object(core, "run_git_cmd", return_value=None) as run_git,
+        ):
+            core.cmd_wtd(["--force", str(info.path)])
+        preflight_worktree.assert_not_called()
+        preflight_branch.assert_not_called()
+        self.assertEqual(
+            run_git.call_args_list,
+            [
+                mock.call(["worktree", "remove", "--force", str(info.path)]),
+                mock.call(["branch", "-D", "feature/demo"]),
+            ],
+        )
 
     ## @brief Verify paired deletion aborts before mutations when branch preflight fails.
     # @return None.

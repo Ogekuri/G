@@ -734,7 +734,7 @@ def _config_command_parts(key: str, default_command: str) -> List[str]:
 HELP_TEXTS = {
     "aa": "Add all file changes/added to stage area for commit.",
     "ar": "Archive the configured master branch as zip file. Use tag as filename.",
-    "bd": "Delete a local branch, or the associated worktree plus branch when paired. Syntax: git bd <branch>.",
+    "bd": "Delete a local branch, or the associated worktree plus branch when paired. Syntax: git bd [--force] <branch>.",
     "br": "Create a new branch.",
     "backup": "Merge configured work into develop and push develop to origin (shared release preflight checks).",
     "chver": "Change the project version to the provided semantic version.",
@@ -807,7 +807,7 @@ HELP_TEXTS = {
     "wt": "List worktrees. Syntax: git wt [<git worktree list args>].",
     "wtl": "List worktrees with optional verbosity/porcelain flags. Syntax: git wtl [-v|--porcelain [-z]] [args].",
     "wtp": "Prune stale worktree metadata. Syntax: git wtp [-n] [-v] [--expire <expire>] [args].",
-    "wtd": "Delete a worktree, or the associated worktree plus branch when paired. Syntax: git wtd <worktree>.",
+    "wtd": "Delete a worktree, or the associated worktree plus branch when paired. Syntax: git wtd [--force] <worktree>.",
     "wip": "Commit work in progress with an automatic message and the same checks as cm.",
     "ver": "Verify version consistency across configured files. Options: --verbose, --debug.",
     "str": "Display all unique remotes and show detailed status for each.",
@@ -2214,40 +2214,48 @@ def _find_association_for_worktree(
     return None
 
 
-## @brief Validate branch-delete CLI operands for non-force coordinated deletion.
-# @details Accepts exactly one branch operand, rejects force-style flags and extra operands, and
-#          emits deterministic English diagnostics on invalid input.
+## @brief Validate branch-delete CLI operands and optional force mode.
+# @details Accepts exactly one branch operand with an optional leading `--force`, rejects all other
+#          flags and extra operands, and emits deterministic English diagnostics on invalid input.
 # @param args `List[str]` — CLI operands after `bd`.
-# @return `str` normalized branch target.
+# @return `Tuple[str, bool]` normalized branch target and force-mode flag.
 # @exception SystemExit Exit code 1 on invalid operands.
 # @satisfies REQ-019
-def _parse_bd_target(args: List[str]) -> str:
+def _parse_bd_target(args: List[str]) -> Tuple[str, bool]:
+    force_delete = False
+    if args and args[0] == "--force":
+        force_delete = True
+        args = args[1:]
     if len(args) != 1:
-        print("git bd requires exactly one branch: git bd <branch>.", file=sys.stderr)
+        print("git bd requires exactly one branch: git bd [--force] <branch>.", file=sys.stderr)
         sys.exit(1)
     branch_name = args[0].strip()
-    if branch_name in {"-d", "-D", "-f", "--force", "--help"} or branch_name.startswith("-"):
-        print("git bd accepts one branch name and does not support force flags.", file=sys.stderr)
+    if not branch_name or branch_name.startswith("-"):
+        print("git bd accepts one branch name and an optional leading --force flag.", file=sys.stderr)
         sys.exit(1)
-    return branch_name
+    return branch_name, force_delete
 
 
-## @brief Validate worktree-delete CLI operands for non-force coordinated deletion.
-# @details Accepts exactly one worktree operand, rejects force-style flags and extra operands, and
-#          emits deterministic English diagnostics on invalid input.
+## @brief Validate worktree-delete CLI operands and optional force mode.
+# @details Accepts exactly one worktree operand with an optional leading `--force`, rejects all
+#          other flags and extra operands, and emits deterministic English diagnostics on invalid input.
 # @param args `List[str]` — CLI operands after `wtd`.
-# @return `str` normalized worktree target operand.
+# @return `Tuple[str, bool]` normalized worktree target operand and force-mode flag.
 # @exception SystemExit Exit code 1 on invalid operands.
 # @satisfies REQ-077
-def _parse_wtd_target(args: List[str]) -> str:
+def _parse_wtd_target(args: List[str]) -> Tuple[str, bool]:
+    force_delete = False
+    if args and args[0] == "--force":
+        force_delete = True
+        args = args[1:]
     if len(args) != 1:
-        print("git wtd requires exactly one worktree: git wtd <worktree>.", file=sys.stderr)
+        print("git wtd requires exactly one worktree: git wtd [--force] <worktree>.", file=sys.stderr)
         sys.exit(1)
     worktree_arg = args[0].strip()
-    if worktree_arg in {"-f", "--force", "--help"} or worktree_arg.startswith("-"):
-        print("git wtd accepts one worktree path and does not support force flags.", file=sys.stderr)
+    if not worktree_arg or worktree_arg.startswith("-"):
+        print("git wtd accepts one worktree path and an optional leading --force flag.", file=sys.stderr)
         sys.exit(1)
-    return worktree_arg
+    return worktree_arg, force_delete
 
 
 ## @brief Preflight branch deletion without mutating repository state.
@@ -2341,24 +2349,31 @@ def _print_paired_delete_success(worktree_path: Path, branch_name: str) -> None:
     print(f"Deleted branch: {branch_name}")
 
 
-## @brief Execute coordinated non-force deletion for an associated worktree/branch pair.
-# @details Preflights both deletion operations before mutating repository state, then removes the
-#          worktree first and the branch second. Any failure before execution aborts with no partial
-#          deletions.
+## @brief Execute coordinated deletion for an associated worktree/branch pair.
+# @details When `force_delete` is disabled, preflights both deletion operations before mutating
+#          repository state. Always removes the worktree first and the branch second because the
+#          branch cannot be deleted while an associated worktree still exists.
 # @param worktree_info `WorktreeInfo` — resolved association record with branch binding.
 # @param alias `str` — user-facing alias token used in diagnostics.
+# @param force_delete `bool` — when `True`, bypass non-force preflight checks and execute forced git deletion flags.
 # @return `None`; side-effects: git delete commands and stdout evidence.
 # @exception RuntimeError Raised when the association lacks a branch binding.
-# @satisfies REQ-140, REQ-141, REQ-142
+# @satisfies REQ-140, REQ-141, REQ-142, REQ-145
 def _delete_associated_branch_and_worktree(
-    worktree_info: WorktreeInfo, alias: str
+    worktree_info: WorktreeInfo, alias: str, force_delete: bool = False
 ) -> None:
     if not worktree_info.branch_name:
         raise RuntimeError("Associated branch name is required for paired deletion.")
-    _preflight_worktree_delete(worktree_info.path, alias)
-    _preflight_branch_delete(worktree_info.branch_name, alias)
-    run_git_cmd(["worktree", "remove", str(worktree_info.path)])
-    run_git_cmd(["branch", "-d", worktree_info.branch_name])
+    if not force_delete:
+        _preflight_worktree_delete(worktree_info.path, alias)
+        _preflight_branch_delete(worktree_info.branch_name, alias)
+    worktree_cmd = ["worktree", "remove"]
+    branch_cmd = ["branch", "-d"]
+    if force_delete:
+        worktree_cmd.append("--force")
+        branch_cmd = ["branch", "-D"]
+    run_git_cmd(worktree_cmd + [str(worktree_info.path)])
+    run_git_cmd(branch_cmd + [worktree_info.branch_name])
     _print_paired_delete_success(worktree_info.path, worktree_info.branch_name)
 
 
@@ -3062,26 +3077,30 @@ def cmd_br(extra):
 
 
 ## @brief Execute `cmd_bd` runtime logic for Git-Alias CLI.
-# @details Accepts one branch target, resolves worktree associations, preflights all non-force
-#          deletions, performs paired deletion when the branch has an associated worktree, and
-#          otherwise deletes only the branch via `git branch -d`.
+# @details Accepts one branch target with optional `--force`, resolves worktree associations,
+#          deletes an associated worktree before deleting the branch, and uses forced git delete
+#          flags only when explicitly requested.
 # @param extra `list | None` — requires exactly one branch target or `--help`.
 # @return Return value from `run_git_cmd` when only the branch is deleted; otherwise `None`.
 # @exception SystemExit Exit code 1 on invalid operands or preflight failure.
-# @satisfies REQ-019, REQ-138, REQ-139, REQ-140, REQ-141, REQ-142
+# @satisfies REQ-019, REQ-138, REQ-139, REQ-140, REQ-141, REQ-142, REQ-144, REQ-145
 def cmd_bd(extra):
     args = _to_args(extra)
     if args == ["--help"]:
         print_command_help("bd")
         return
-    branch_name = _parse_bd_target(args)
+    branch_name, force_delete = _parse_bd_target(args)
     associations = _list_worktree_associations()
     worktree_info = _find_worktree_for_branch(branch_name, associations)
     if worktree_info is not None:
-        _delete_associated_branch_and_worktree(worktree_info, "bd")
+        _delete_associated_branch_and_worktree(worktree_info, "bd", force_delete)
         return
-    _preflight_branch_delete(branch_name, "bd")
-    return run_git_cmd(["branch", "-d", branch_name])
+    branch_cmd = ["branch", "-d", branch_name]
+    if force_delete:
+        branch_cmd = ["branch", "-D", branch_name]
+    else:
+        _preflight_branch_delete(branch_name, "bd")
+    return run_git_cmd(branch_cmd)
 
 
 ## @brief Execute `cmd_ck` runtime logic for Git-Alias CLI.
@@ -4546,30 +4565,38 @@ def cmd_wtp(extra):
 
 
 ## @brief Execute `cmd_wtd` runtime logic for Git-Alias CLI.
-# @details Accepts one worktree target, resolves worktree associations, preflights all non-force
-#          deletions, performs paired deletion when the worktree has an associated local branch,
-#          and otherwise deletes only the worktree via `git worktree remove`.
+# @details Accepts one worktree target with optional `--force`, resolves worktree associations,
+#          deletes an associated worktree before deleting the branch, and uses forced git delete
+#          flags only when explicitly requested.
 # @param extra `list | None` — requires exactly one worktree target or `--help`.
 # @return Return value from `run_git_cmd` when only the worktree is deleted; otherwise `None`.
 # @exception SystemExit Exit code 1 on invalid operands or preflight failure.
-# @satisfies REQ-077, REQ-139, REQ-140, REQ-141, REQ-142, REQ-143
+# @satisfies REQ-077, REQ-139, REQ-140, REQ-141, REQ-142, REQ-143, REQ-144, REQ-145
 def cmd_wtd(extra):
     args = _to_args(extra)
     if args == ["--help"]:
         print_command_help("wtd")
         return
-    worktree_arg = _parse_wtd_target(args)
+    worktree_arg, force_delete = _parse_wtd_target(args)
     associations = _list_worktree_associations()
     worktree_info = _find_association_for_worktree(worktree_arg, associations)
     if worktree_info is None:
         target_path = Path(worktree_arg).expanduser().resolve()
-        _preflight_worktree_delete(target_path, "wtd")
-        return run_git_cmd(["worktree", "remove", str(target_path)])
+        worktree_cmd = ["worktree", "remove", str(target_path)]
+        if force_delete:
+            worktree_cmd = ["worktree", "remove", "--force", str(target_path)]
+        else:
+            _preflight_worktree_delete(target_path, "wtd")
+        return run_git_cmd(worktree_cmd)
     if worktree_info.branch_name:
-        _delete_associated_branch_and_worktree(worktree_info, "wtd")
+        _delete_associated_branch_and_worktree(worktree_info, "wtd", force_delete)
         return
-    _preflight_worktree_delete(worktree_info.path, "wtd")
-    return run_git_cmd(["worktree", "remove", str(worktree_info.path)])
+    worktree_cmd = ["worktree", "remove", str(worktree_info.path)]
+    if force_delete:
+        worktree_cmd = ["worktree", "remove", "--force", str(worktree_info.path)]
+    else:
+        _preflight_worktree_delete(worktree_info.path, "wtd")
+    return run_git_cmd(worktree_cmd)
 
 
 ## @brief Execute `cmd_ver` runtime logic for Git-Alias CLI.
