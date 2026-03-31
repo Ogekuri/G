@@ -154,8 +154,8 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-074**: MUST the alias `wt` MUST execute `git worktree list`, and `wtl` MUST execute `git worktree list` while forwarding all provided arguments unchanged.
 - **REQ-075**: MUST the alias `wtl` MUST accept and forward `-v`, `--porcelain`, and `-z` options as native `git worktree list` arguments without CLI-side transformation.
 - **REQ-076**: MUST the alias `wtp` MUST execute `git worktree prune` and MUST forward `-n`, `-v`, `--expire <expire>`, and additional git-compatible arguments unchanged.
-- **REQ-077**: MUST alias `wtd` accept exactly one `<worktree>` target and MUST NOT accept `-f`, `--force`, or extra operands.
-- **REQ-143**: MUST `wtd` execute `git worktree remove <worktree>` when the target worktree has no associated local branch.
+- **REQ-077**: MUST the user-exposed worktree-delete alias be named `wtd`, accept exactly one `<worktree>` target, and MUST NOT accept `-f`, `--force`, or extra operands.
+- **REQ-143**: MUST the `wtd` worktree-delete alias execute `git worktree remove <worktree>` when the target worktree has no associated local branch.
 - **REQ-078**: MUST changelog markdown MUST render one top-level bullet per commit; multiline description lines MUST become consecutive indented sub-bullets; renderer MUST NOT insert blank separator lines between consecutive top-level commit bullets.
 - **REQ-079**: MUST the `ls` alias MUST run `git ls-files --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
 - **REQ-080**: MUST the `lsi` alias MUST run `git ls-files --others --ignored --exclude-standard`, MUST filter output by excluding paths where any path component matches any entry in `LSI_DEFAULT_EXCLUDED_DIRS` or ends with any suffix in `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES`, and MUST pass any additional arguments to the git command unchanged.
