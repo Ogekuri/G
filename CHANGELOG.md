@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.29.0](https://github.com/Ogekuri/G/compare/v0.28.0..v0.29.0) - 2026-03-31
+### 🚜  Changes
+- BREAKING CHANGE: add force-aware paired delete for bd and wtd [useReq] *(core)*
+  - Update requirements, core delete flow, tests, workflow, and references.
+- align worktree-delete alias naming to wtd [useReq] *(core)*
+  - update REQ-077 and REQ-143 to encode the user-exposed alias name
+  - replace legacy README references to wtr with wtd usage
+
 ## [0.28.0](https://github.com/Ogekuri/G/compare/v0.27.0..v0.28.0) - 2026-03-31
 ### 🚜  Changes
 - coordinate bd and wtd deletions [useReq] *(core)*
@@ -646,6 +654,7 @@
 - \[0.26.0\]: https://github.com/Ogekuri/G/releases/tag/v0.26.0
 - \[0.27.0\]: https://github.com/Ogekuri/G/releases/tag/v0.27.0
 - \[0.28.0\]: https://github.com/Ogekuri/G/releases/tag/v0.28.0
+- \[0.29.0\]: https://github.com/Ogekuri/G/releases/tag/v0.29.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -675,3 +684,4 @@
 [0.26.0]: https://github.com/Ogekuri/G/compare/v0.25.0..v0.26.0
 [0.27.0]: https://github.com/Ogekuri/G/compare/v0.26.0..v0.27.0
 [0.28.0]: https://github.com/Ogekuri/G/compare/v0.27.0..v0.28.0
+[0.29.0]: https://github.com/Ogekuri/G/compare/v0.28.0..v0.29.0
