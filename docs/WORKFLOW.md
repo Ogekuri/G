@@ -160,7 +160,20 @@
           - `capture_git_output(...)` -> `_run_checked(...)`
           - `_run_checked(...)` (gzip invocation)
         - `cmd_br(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
-        - `cmd_bd(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_bd(...)`: branch delete orchestration with worktree-pair detection [`src/git_alias/core.py`]
+          - `_to_args(...)`
+          - `print_command_help(...)` (only on `--help`)
+          - `_parse_bd_target(...)`
+          - `_list_worktree_associations(...)` -> `run_git_text(...)` (`git worktree list --porcelain`) -> `_run_checked(...)`
+          - `_find_worktree_for_branch(...)`
+          - `_delete_associated_branch_and_worktree(...)` (only when branch/worktree association exists)
+            - `_preflight_worktree_delete(...)` -> `get_git_root(...)`, `run_git_text(...)` (`git status --porcelain`) -> `_run_checked(...)`
+            - `_preflight_branch_delete(...)` -> `run_git_text(...)` (`git rev-parse --verify <branch>`) -> `_run_checked(...)`; `run_git_text(...)` (`git for-each-ref --format=%(upstream:short) refs/heads/<branch>`) -> `_run_checked(...)`; `_is_commit_ancestor(...)`
+            - `run_git_cmd(...)` (`git worktree remove <path>`) -> `_to_args(...)` -> `_run_checked(...)`
+            - `run_git_cmd(...)` (`git branch -d <branch>`) -> `_to_args(...)` -> `_run_checked(...)`
+            - `_print_paired_delete_success(...)`
+          - `_preflight_branch_delete(...)` -> `run_git_text(...)`, `_is_commit_ancestor(...)` (only when no worktree association exists)
+          - `run_git_cmd(...)` (`git branch -d <branch>`) -> `_to_args(...)` -> `_run_checked(...)` (only when no worktree association exists)
         - `cmd_ck(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `_ensure_commit_ready(...)`: commit precondition guard [`src/git_alias/core.py`]
           - `_git_status_lines(...)` -> `_run_checked(...)`
@@ -339,7 +352,20 @@
         - `cmd_wt(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_wtl(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_wtp(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
-        - `cmd_wtr(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_wtd(...)`: worktree delete orchestration with branch-pair detection [`src/git_alias/core.py`]
+          - `_to_args(...)`
+          - `print_command_help(...)` (only on `--help`)
+          - `_parse_wtd_target(...)`
+          - `_list_worktree_associations(...)` -> `run_git_text(...)` (`git worktree list --porcelain`) -> `_run_checked(...)`
+          - `_find_association_for_worktree(...)`
+          - `_preflight_worktree_delete(...)` -> `get_git_root(...)`, `run_git_text(...)` (`git status --porcelain`) -> `_run_checked(...)` (only when no associated branch exists or worktree is untracked by porcelain)
+          - `run_git_cmd(...)` (`git worktree remove <path>`) -> `_to_args(...)` -> `_run_checked(...)` (only when no associated branch exists)
+          - `_delete_associated_branch_and_worktree(...)` (only when worktree/branch association exists)
+            - `_preflight_worktree_delete(...)` -> `get_git_root(...)`, `run_git_text(...)` (`git status --porcelain`) -> `_run_checked(...)`
+            - `_preflight_branch_delete(...)` -> `run_git_text(...)` (`git rev-parse --verify <branch>`) -> `_run_checked(...)`; `run_git_text(...)` (`git for-each-ref --format=%(upstream:short) refs/heads/<branch>`) -> `_run_checked(...)`; `_is_commit_ancestor(...)`
+            - `run_git_cmd(...)` (`git worktree remove <path>`) -> `_to_args(...)` -> `_run_checked(...)`
+            - `run_git_cmd(...)` (`git branch -d <branch>`) -> `_to_args(...)` -> `_run_checked(...)`
+            - `_print_paired_delete_success(...)`
         - `cmd_ver(...)`: version validation flow [`src/git_alias/core.py`]
           - `_to_args(...)`
           - `get_git_root(...)` -> `_run_checked(...)`

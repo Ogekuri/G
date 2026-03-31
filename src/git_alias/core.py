@@ -734,7 +734,7 @@ def _config_command_parts(key: str, default_command: str) -> List[str]:
 HELP_TEXTS = {
     "aa": "Add all file changes/added to stage area for commit.",
     "ar": "Archive the configured master branch as zip file. Use tag as filename.",
-    "bd": "Delete a local branch: git bd '<branch>'.",
+    "bd": "Delete a local branch, or the associated worktree plus branch when paired. Syntax: git bd <branch>.",
     "br": "Create a new branch.",
     "backup": "Merge configured work into develop and push develop to origin (shared release preflight checks).",
     "chver": "Change the project version to the provided semantic version.",
@@ -807,7 +807,7 @@ HELP_TEXTS = {
     "wt": "List worktrees. Syntax: git wt [<git worktree list args>].",
     "wtl": "List worktrees with optional verbosity/porcelain flags. Syntax: git wtl [-v|--porcelain [-z]] [args].",
     "wtp": "Prune stale worktree metadata. Syntax: git wtp [-n] [-v] [--expire <expire>] [args].",
-    "wtr": "Remove a worktree. Syntax: git wtr [-f] <worktree> [args].",
+    "wtd": "Delete a worktree, or the associated worktree plus branch when paired. Syntax: git wtd <worktree>.",
     "wip": "Commit work in progress with an automatic message and the same checks as cm.",
     "ver": "Verify version consistency across configured files. Options: --verbose, --debug.",
     "str": "Display all unique remotes and show detailed status for each.",
@@ -1284,6 +1284,17 @@ class TagInfo:
     iso_date: str
     ## @brief Store object hash associated with the tag reference.
     object_name: str
+
+
+@dataclass(frozen=True)
+## @brief Class `WorktreeInfo` models parsed worktree-to-branch association data.
+# @details Encapsulates a normalized absolute worktree path and its optional local branch binding
+#          as derived from `git worktree list --porcelain` output.
+class WorktreeInfo:
+    ## @brief Store normalized absolute worktree path.
+    path: Path
+    ## @brief Store associated local branch name or `None` for detached worktrees.
+    branch_name: Optional[str]
 
 
 ## @brief Constant `DELIM` used by CLI runtime paths and policies.
@@ -2137,6 +2148,220 @@ def _remote_branch_exists(branch_name):
     return _ref_exists(f"refs/remotes/origin/{branch_name}")
 
 
+## @brief Parse worktree porcelain output into deterministic association records.
+# @details Executes `git worktree list --porcelain`, extracts `worktree <path>` and optional
+#          `branch refs/heads/<name>` fields, normalizes paths via `Path.resolve()`, and preserves
+#          entry order for deterministic downstream matching and diagnostics.
+# @return `List[WorktreeInfo]` parsed from repository worktree metadata.
+# @exception RuntimeError Propagates git query failures from `run_git_text`.
+# @satisfies REQ-139
+def _list_worktree_associations() -> List[WorktreeInfo]:
+    text = run_git_text(["worktree", "list", "--porcelain"])
+    entries: List[WorktreeInfo] = []
+    current_path: Optional[Path] = None
+    current_branch: Optional[str] = None
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            if current_path is not None:
+                entries.append(WorktreeInfo(path=current_path, branch_name=current_branch))
+            current_path = None
+            current_branch = None
+            continue
+        if line.startswith("worktree "):
+            if current_path is not None:
+                entries.append(WorktreeInfo(path=current_path, branch_name=current_branch))
+            current_path = Path(line[len("worktree ") :]).expanduser().resolve()
+            current_branch = None
+            continue
+        if line.startswith("branch refs/heads/"):
+            current_branch = line[len("branch refs/heads/") :]
+    if current_path is not None:
+        entries.append(WorktreeInfo(path=current_path, branch_name=current_branch))
+    return entries
+
+
+## @brief Resolve the association record bound to a local branch name.
+# @details Scans parsed worktree metadata and returns the first worktree whose `branch_name`
+#          equals the requested local branch.
+# @param branch_name `str` — local branch name to resolve.
+# @param associations `List[WorktreeInfo]` — parsed worktree metadata snapshot.
+# @return `Optional[WorktreeInfo]` matching association or `None`.
+# @satisfies REQ-139
+def _find_worktree_for_branch(
+    branch_name: str, associations: List[WorktreeInfo]
+) -> Optional[WorktreeInfo]:
+    for info in associations:
+        if info.branch_name == branch_name:
+            return info
+    return None
+
+
+## @brief Resolve the association record bound to a target worktree path.
+# @details Normalizes the user-provided path via `Path.resolve()` and returns the matching parsed
+#          worktree record when present.
+# @param worktree_arg `str` — CLI worktree operand.
+# @param associations `List[WorktreeInfo]` — parsed worktree metadata snapshot.
+# @return `Optional[WorktreeInfo]` matching association or `None`.
+# @satisfies REQ-139
+def _find_association_for_worktree(
+    worktree_arg: str, associations: List[WorktreeInfo]
+) -> Optional[WorktreeInfo]:
+    target = Path(worktree_arg).expanduser().resolve()
+    for info in associations:
+        if info.path == target:
+            return info
+    return None
+
+
+## @brief Validate branch-delete CLI operands for non-force coordinated deletion.
+# @details Accepts exactly one branch operand, rejects force-style flags and extra operands, and
+#          emits deterministic English diagnostics on invalid input.
+# @param args `List[str]` — CLI operands after `bd`.
+# @return `str` normalized branch target.
+# @exception SystemExit Exit code 1 on invalid operands.
+# @satisfies REQ-019
+def _parse_bd_target(args: List[str]) -> str:
+    if len(args) != 1:
+        print("git bd requires exactly one branch: git bd <branch>.", file=sys.stderr)
+        sys.exit(1)
+    branch_name = args[0].strip()
+    if branch_name in {"-d", "-D", "-f", "--force", "--help"} or branch_name.startswith("-"):
+        print("git bd accepts one branch name and does not support force flags.", file=sys.stderr)
+        sys.exit(1)
+    return branch_name
+
+
+## @brief Validate worktree-delete CLI operands for non-force coordinated deletion.
+# @details Accepts exactly one worktree operand, rejects force-style flags and extra operands, and
+#          emits deterministic English diagnostics on invalid input.
+# @param args `List[str]` — CLI operands after `wtd`.
+# @return `str` normalized worktree target operand.
+# @exception SystemExit Exit code 1 on invalid operands.
+# @satisfies REQ-077
+def _parse_wtd_target(args: List[str]) -> str:
+    if len(args) != 1:
+        print("git wtd requires exactly one worktree: git wtd <worktree>.", file=sys.stderr)
+        sys.exit(1)
+    worktree_arg = args[0].strip()
+    if worktree_arg in {"-f", "--force", "--help"} or worktree_arg.startswith("-"):
+        print("git wtd accepts one worktree path and does not support force flags.", file=sys.stderr)
+        sys.exit(1)
+    return worktree_arg
+
+
+## @brief Preflight branch deletion without mutating repository state.
+# @details Resolves the branch tip commit, verifies that an upstream branch exists and contains the
+#          tip or that the tip is reachable from `HEAD`, and converts any git failure into deterministic
+#          English diagnostics suitable for the all-or-nothing coordinated deletion flow.
+# @param branch_name `str` — local branch target.
+# @param alias `str` — user-facing alias token used in diagnostics.
+# @return `None` when branch deletion is safe without force.
+# @exception SystemExit Exit code 1 when the branch cannot be deleted without force.
+# @satisfies REQ-138, REQ-140
+def _preflight_branch_delete(branch_name: str, alias: str) -> None:
+    try:
+        branch_commit = run_git_text(["rev-parse", "--verify", branch_name]).strip()
+    except RuntimeError as exc:
+        print(
+            f"Unable to run git {alias}: branch '{branch_name}' cannot be deleted without force: {exc}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    try:
+        upstream_ref = run_git_text(
+            ["for-each-ref", "--format=%(upstream:short)", f"refs/heads/{branch_name}"]
+        ).strip()
+    except RuntimeError:
+        upstream_ref = ""
+    if upstream_ref:
+        if _is_commit_ancestor(branch_commit, upstream_ref):
+            return
+        print(
+            f"Unable to run git {alias}: branch '{branch_name}' cannot be deleted without force because it is not merged into upstream '{upstream_ref}'.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if _is_commit_ancestor(branch_commit, "HEAD"):
+        return
+    print(
+        f"Unable to run git {alias}: branch '{branch_name}' cannot be deleted without force because it is not merged into HEAD.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+## @brief Preflight worktree removal without mutating repository state.
+# @details Rejects deletion of the main repository worktree, ensures the target path is a registered
+#          linked worktree, and verifies that `git status --porcelain` executed inside the worktree
+#          is empty so `git worktree remove` can proceed without force.
+# @param worktree_path `Path` — normalized absolute worktree target.
+# @param alias `str` — user-facing alias token used in diagnostics.
+# @return `None` when worktree removal is safe without force.
+# @exception SystemExit Exit code 1 when the worktree cannot be deleted without force.
+# @satisfies REQ-140, REQ-143
+def _preflight_worktree_delete(worktree_path: Path, alias: str) -> None:
+    if worktree_path == get_git_root().resolve():
+        print(
+            f"Unable to run git {alias}: worktree '{worktree_path}' is the main repository worktree.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if not worktree_path.exists():
+        print(
+            f"Unable to run git {alias}: worktree '{worktree_path}' does not exist.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    try:
+        status_output = run_git_text(["status", "--porcelain"], cwd=worktree_path)
+    except RuntimeError as exc:
+        print(
+            f"Unable to run git {alias}: worktree '{worktree_path}' cannot be deleted without force: {exc}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if status_output.strip():
+        print(
+            f"Unable to run git {alias}: worktree '{worktree_path}' cannot be deleted without force because it is not clean.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+## @brief Print paired branch/worktree deletion evidence.
+# @details Emits deterministic English stdout lines identifying both deleted resources after the
+#          coordinated deletion path completes successfully.
+# @param worktree_path `Path` — deleted worktree path.
+# @param branch_name `str` — deleted local branch name.
+# @return `None`; side-effect: stdout output.
+# @satisfies REQ-142
+def _print_paired_delete_success(worktree_path: Path, branch_name: str) -> None:
+    print(f"Deleted worktree: {worktree_path}")
+    print(f"Deleted branch: {branch_name}")
+
+
+## @brief Execute coordinated non-force deletion for an associated worktree/branch pair.
+# @details Preflights both deletion operations before mutating repository state, then removes the
+#          worktree first and the branch second. Any failure before execution aborts with no partial
+#          deletions.
+# @param worktree_info `WorktreeInfo` — resolved association record with branch binding.
+# @param alias `str` — user-facing alias token used in diagnostics.
+# @return `None`; side-effects: git delete commands and stdout evidence.
+# @exception RuntimeError Raised when the association lacks a branch binding.
+# @satisfies REQ-140, REQ-141, REQ-142
+def _delete_associated_branch_and_worktree(
+    worktree_info: WorktreeInfo, alias: str
+) -> None:
+    if not worktree_info.branch_name:
+        raise RuntimeError("Associated branch name is required for paired deletion.")
+    _preflight_worktree_delete(worktree_info.path, alias)
+    _preflight_branch_delete(worktree_info.branch_name, alias)
+    run_git_cmd(["worktree", "remove", str(worktree_info.path)])
+    run_git_cmd(["branch", "-d", worktree_info.branch_name])
+    _print_paired_delete_success(worktree_info.path, worktree_info.branch_name)
+
+
 ## @brief Execute `_ensure_release_prerequisites` runtime logic for Git-Alias CLI.
 # @details Executes `_ensure_release_prerequisites` using deterministic CLI control-flow and explicit error propagation.
 # @return Result emitted by `_ensure_release_prerequisites` according to command contract.
@@ -2837,11 +3062,26 @@ def cmd_br(extra):
 
 
 ## @brief Execute `cmd_bd` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_bd` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_bd`.
-# @return Result emitted by `cmd_bd` according to command contract.
+# @details Accepts one branch target, resolves worktree associations, preflights all non-force
+#          deletions, performs paired deletion when the branch has an associated worktree, and
+#          otherwise deletes only the branch via `git branch -d`.
+# @param extra `list | None` — requires exactly one branch target or `--help`.
+# @return Return value from `run_git_cmd` when only the branch is deleted; otherwise `None`.
+# @exception SystemExit Exit code 1 on invalid operands or preflight failure.
+# @satisfies REQ-019, REQ-138, REQ-139, REQ-140, REQ-141, REQ-142
 def cmd_bd(extra):
-    return run_git_cmd(["branch", "-d"], extra)
+    args = _to_args(extra)
+    if args == ["--help"]:
+        print_command_help("bd")
+        return
+    branch_name = _parse_bd_target(args)
+    associations = _list_worktree_associations()
+    worktree_info = _find_worktree_for_branch(branch_name, associations)
+    if worktree_info is not None:
+        _delete_associated_branch_and_worktree(worktree_info, "bd")
+        return
+    _preflight_branch_delete(branch_name, "bd")
+    return run_git_cmd(["branch", "-d", branch_name])
 
 
 ## @brief Execute `cmd_ck` runtime logic for Git-Alias CLI.
@@ -4305,12 +4545,31 @@ def cmd_wtp(extra):
     return run_git_cmd(["worktree", "prune"], extra)
 
 
-## @brief Execute `cmd_wtr` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_wtr` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_wtr`.
-# @return Result emitted by `cmd_wtr` according to command contract.
-def cmd_wtr(extra):
-    return run_git_cmd(["worktree", "remove"], extra)
+## @brief Execute `cmd_wtd` runtime logic for Git-Alias CLI.
+# @details Accepts one worktree target, resolves worktree associations, preflights all non-force
+#          deletions, performs paired deletion when the worktree has an associated local branch,
+#          and otherwise deletes only the worktree via `git worktree remove`.
+# @param extra `list | None` — requires exactly one worktree target or `--help`.
+# @return Return value from `run_git_cmd` when only the worktree is deleted; otherwise `None`.
+# @exception SystemExit Exit code 1 on invalid operands or preflight failure.
+# @satisfies REQ-077, REQ-139, REQ-140, REQ-141, REQ-142, REQ-143
+def cmd_wtd(extra):
+    args = _to_args(extra)
+    if args == ["--help"]:
+        print_command_help("wtd")
+        return
+    worktree_arg = _parse_wtd_target(args)
+    associations = _list_worktree_associations()
+    worktree_info = _find_association_for_worktree(worktree_arg, associations)
+    if worktree_info is None:
+        target_path = Path(worktree_arg).expanduser().resolve()
+        _preflight_worktree_delete(target_path, "wtd")
+        return run_git_cmd(["worktree", "remove", str(target_path)])
+    if worktree_info.branch_name:
+        _delete_associated_branch_and_worktree(worktree_info, "wtd")
+        return
+    _preflight_worktree_delete(worktree_info.path, "wtd")
+    return run_git_cmd(["worktree", "remove", str(worktree_info.path)])
 
 
 ## @brief Execute `cmd_ver` runtime logic for Git-Alias CLI.
@@ -4614,7 +4873,7 @@ COMMANDS = {
     "wt": cmd_wt,
     "wtl": cmd_wtl,
     "wtp": cmd_wtp,
-    "wtr": cmd_wtr,
+    "wtd": cmd_wtd,
     "wip": cmd_wip,
     "ver": cmd_ver,
     "style": cmd_style,

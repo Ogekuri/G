@@ -109,7 +109,12 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-017**: MUST evaluate `ver_rules` from `.g.conf` (or defaults), build repository candidates from `git ls-files`, apply pathspec matching plus hardcoded cache/temp exclusions, and fail on mismatched or missing version matches as specified.
 - **REQ-118**: MUST abort `ver` and `chver` when a `ver_rules.pattern` matches zero repository files, and MUST report the offending pattern with guidance that only repository files can be configured in `ver_rules.pattern`.
 - **REQ-018**: MUST the `changelog` command MUST generate `CHANGELOG.md` grouping commits by minor releases (semver tags where `patch=0` AND version `>=0.1.0`); MUST include only minor releases by default with all commits between consecutive minor releases (from repository beginning for the first minor); MUST produce an empty changelog body when no minor releases exist; MUST list releases reverse-chronologically (newest first).
-- **REQ-019**: MUST delete a user-specified local branch via `git branch -d <branch>` for alias `bd`.
+- **REQ-019**: MUST alias `bd` accept exactly one local branch target and MUST NOT accept `-D`, `-f`, `--force`, or extra operands.
+- **REQ-138**: MUST `bd` execute `git branch -d <branch>` when the target branch has no associated worktree.
+- **REQ-139**: MUST `bd` and `wtd` derive worktree-to-branch associations from `git worktree list --porcelain` before evaluating deletion targets.
+- **REQ-140**: MUST when an association exists, `bd` and `wtd` preflight both non-force deletions and abort before changes if either the worktree or the branch cannot be deleted.
+- **REQ-141**: MUST when paired non-force deletion succeeds, `bd` and `wtd` delete the associated worktree before deleting the associated local branch.
+- **REQ-142**: MUST after paired deletion, `bd` and `wtd` print explicit English output identifying the deleted worktree path and branch name.
 - **REQ-020**: MUST provide reusable checks for unstaged changes, staged changes, and remote-forward status of configured `develop` and `master`, including remote reference update before ahead/behind evaluation.
 - **REQ-021**: MUST implement `wip` using the fixed message `wip: work in progress.`; MUST call `aa` (stage all) when staging is empty and working-tree is dirty; MUST fail with explicit error when both working-tree and staging have no committable data.
 - **REQ-022**: MUST aliases `new`, `fix`, `change`, `implement`, `refactor`, `docs`, `style`, `revert`, `misc`, and `cover` execute conventional commits; MUST call `aa` when staging is empty and working-tree is dirty; MUST fail with explicit error when both working-tree and staging have no committable data; MUST reuse WIP-amend decision logic used by `cm` and `wip`.
@@ -149,7 +154,8 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-074**: MUST the alias `wt` MUST execute `git worktree list`, and `wtl` MUST execute `git worktree list` while forwarding all provided arguments unchanged.
 - **REQ-075**: MUST the alias `wtl` MUST accept and forward `-v`, `--porcelain`, and `-z` options as native `git worktree list` arguments without CLI-side transformation.
 - **REQ-076**: MUST the alias `wtp` MUST execute `git worktree prune` and MUST forward `-n`, `-v`, `--expire <expire>`, and additional git-compatible arguments unchanged.
-- **REQ-077**: MUST the alias `wtr` MUST execute `git worktree remove` and MUST forward `-f`, required `<worktree>`, and additional git-compatible arguments unchanged.
+- **REQ-077**: MUST alias `wtd` accept exactly one `<worktree>` target and MUST NOT accept `-f`, `--force`, or extra operands.
+- **REQ-143**: MUST `wtd` execute `git worktree remove <worktree>` when the target worktree has no associated local branch.
 - **REQ-078**: MUST changelog markdown MUST render one top-level bullet per commit; multiline description lines MUST become consecutive indented sub-bullets; renderer MUST NOT insert blank separator lines between consecutive top-level commit bullets.
 - **REQ-079**: MUST the `ls` alias MUST run `git ls-files --exclude-standard` and MUST pass any additional arguments to the git command unchanged.
 - **REQ-080**: MUST the `lsi` alias MUST run `git ls-files --others --ignored --exclude-standard`, MUST filter output by excluding paths where any path component matches any entry in `LSI_DEFAULT_EXCLUDED_DIRS` or ends with any suffix in `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES`, and MUST pass any additional arguments to the git command unchanged.
