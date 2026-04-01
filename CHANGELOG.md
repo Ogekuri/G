@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.30.0](https://github.com/Ogekuri/G/compare/v0.29.0..v0.30.0) - 2026-04-01
+### 🐛  Bug Fixes
+- Fix git repository.
+
 ## [0.29.0](https://github.com/Ogekuri/G/compare/v0.28.0..v0.29.0) - 2026-03-31
 ### 🚜  Changes
 - BREAKING CHANGE: add force-aware paired delete for bd and wtd [useReq] *(core)*
@@ -655,6 +659,7 @@
 - \[0.27.0\]: https://github.com/Ogekuri/G/releases/tag/v0.27.0
 - \[0.28.0\]: https://github.com/Ogekuri/G/releases/tag/v0.28.0
 - \[0.29.0\]: https://github.com/Ogekuri/G/releases/tag/v0.29.0
+- \[0.30.0\]: https://github.com/Ogekuri/G/releases/tag/v0.30.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -685,3 +690,4 @@
 [0.27.0]: https://github.com/Ogekuri/G/compare/v0.26.0..v0.27.0
 [0.28.0]: https://github.com/Ogekuri/G/compare/v0.27.0..v0.28.0
 [0.29.0]: https://github.com/Ogekuri/G/compare/v0.28.0..v0.29.0
+[0.30.0]: https://github.com/Ogekuri/G/compare/v0.29.0..v0.30.0
