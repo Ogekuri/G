@@ -82,14 +82,14 @@
 ## Execution Units
 ### PROC:launcher-g-sh
 - Entrypoint(s):
-  - `scripts/g.sh::<module_body>`: launcher script that resolves canonical repository root, validates launcher base alignment, and `exec`-chains into `uv run --project <repo> python -m git_alias` [`scripts/g.sh`]
+  - `scripts/g.sh::<module_body>`: launcher script that resolves canonical repository root, normalizes Windows drive-letter casing before launcher-base validation, and `exec`-chains into `uv run --project <repo> python -m git_alias` [`scripts/g.sh`]
 - Lifecycle/trigger:
   - Start: OS invokes `scripts/g.sh` as executable entrypoint.
   - Stop: process is replaced by `uv` via `exec` after root validation.
   - Loop/block: single-shot shell sequence without environment bootstrap loops.
   - Threads: no explicit threads detected in `scripts/g.sh`.
 - Internal Call-Trace Tree:
-  - `scripts/g.sh::<module_body>(...)`: runtime launcher flow with root detection, root/base consistency guard, and final `exec` handoff to `uv run` [`scripts/g.sh`]
+  - `scripts/g.sh::<module_body>(...)`: runtime launcher flow with root detection, Windows drive-letter normalization for Git Bash path equivalence, root/base consistency guard, and final `exec` handoff to `uv run` [`scripts/g.sh`]
 - External Boundaries:
   - External commands `git` and `uv`, plus shell `exec` operation.
 
@@ -504,7 +504,7 @@
   - Loop/block: blocking subprocess invocation.
   - Threads: no explicit threads detected from repository-managed spawn logic.
 - Internal Call-Trace Tree:
-  - `scripts/g.sh::<module_body>(...)`: `exec uv run --project <repo> python -m git_alias ...` launcher delegation [`scripts/g.sh`]
+  - `scripts/g.sh::<module_body>(...)`: normalize launcher/git-root path drive-letter casing when needed, then `exec uv run --project <repo> python -m git_alias ...` launcher delegation [`scripts/g.sh`]
   - `upgrade_self(...)`: self-install path
     - `_is_linux_platform(...)`: evaluate platform gate
     - `_run_checked(...)`: spawn `uv tool install ...` when Linux

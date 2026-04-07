@@ -39,6 +39,28 @@ SCRIPT_NAME=$(basename "$FULL_PATH")
 BASE_DIR=$(dirname "$SCRIPT_PATH")
 
 ###############################################################################
+## @brief Normalize Windows drive-letter casing for launcher path comparisons.
+## @details Preserves the original path except when the input matches the
+##          `X:/...` Windows form used by Git Bash; in that case only the drive
+##          letter is lowercased so equivalent paths such as `C:/repo` and
+##          `c:/repo` compare equal while POSIX path semantics remain unchanged.
+## @param $1 Input path candidate.
+## @return Normalized path string written to stdout.
+###############################################################################
+normalize_launcher_path() {
+    case "$1" in
+        [A-Za-z]:/*)
+            printf '%s%s' \
+                "$(printf '%s' "${1%%:*}" | tr '[:upper:]' '[:lower:]')" \
+                "${1#?:}"
+            ;;
+        *)
+            printf '%s' "$1"
+            ;;
+    esac
+}
+
+###############################################################################
 ## @brief Resolve project root from git repository.
 ## @details Uses `git -C "${BASE_DIR}" rev-parse --show-toplevel` to determine
 ##          canonical project root from launcher base directory.
@@ -52,13 +74,23 @@ if [ -z "$PROJECT_ROOT" ]; then
 fi
 
 ###############################################################################
+## @brief Normalize launcher base and git root before equality validation.
+## @details Applies drive-letter normalization only for Windows-style Git Bash
+##          paths so identical repositories do not fail validation because of
+##          `C:` versus `c:` casing differences.
+## @satisfies CTN-002
+###############################################################################
+NORMALIZED_BASE_DIR=$(normalize_launcher_path "${BASE_DIR}")
+NORMALIZED_PROJECT_ROOT=$(normalize_launcher_path "${PROJECT_ROOT}")
+
+###############################################################################
 ## @brief Validate launcher base directory against resolved git root.
 ## @details Prevents mixed-root execution when script path and git root differ.
 ##          Fails fast with explicit diagnostics to preserve deterministic runtime
 ##          environment resolution for uv project execution.
 ## @satisfies CTN-002
 ###############################################################################
-if [ "${PROJECT_ROOT}" != "${BASE_DIR}" ]; then
+if [ "${NORMALIZED_PROJECT_ROOT}" != "${NORMALIZED_BASE_DIR}" ]; then
     echo "ERROR: Launcher base directory mismatch with git root."
     echo "git root: ${PROJECT_ROOT}"
     echo "launcher base: ${BASE_DIR}"

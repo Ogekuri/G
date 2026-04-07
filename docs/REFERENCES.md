@@ -11,7 +11,7 @@
         └── foresta.py
 ```
 
-# g.sh | Shell | 83L | 6 symbols | 0 imports | 56 comments
+# g.sh | Shell | 115L | 9 symbols | 0 imports | 72 comments
 > Path: `scripts/g.sh`
 
 ## Definitions
@@ -20,8 +20,11 @@
 - var `SCRIPT_PATH=$(dirname "$FULL_PATH")` (L26)
 - var `SCRIPT_NAME=$(basename "$FULL_PATH")` (L33)
 - var `BASE_DIR=$(dirname "$SCRIPT_PATH")` (L39)
-- var `PROJECT_ROOT=$(git -C "${BASE_DIR}" rev-parse --show-toplevel 2>/dev/null)` (L48)
-- var `UV_TOOL="uv"` (L74)
+- fn `normalize_launcher_path() {` (L50)
+- var `PROJECT_ROOT=$(git -C "${BASE_DIR}" rev-parse --show-toplevel 2>/dev/null)` (L70)
+- var `NORMALIZED_BASE_DIR=$(normalize_launcher_path "${BASE_DIR}")` (L83)
+- var `NORMALIZED_PROJECT_ROOT=$(normalize_launcher_path "${PROJECT_ROOT}")` (L84)
+- var `UV_TOOL="uv"` (L106)
 ## Symbol Index
 |Symbol|Kind|Vis|Lines|Sig|
 |---|---|---|---|---|
@@ -29,8 +32,11 @@
 |`SCRIPT_PATH`|var||26||
 |`SCRIPT_NAME`|var||33||
 |`BASE_DIR`|var||39||
-|`PROJECT_ROOT`|var||48||
-|`UV_TOOL`|var||74||
+|`normalize_launcher_path`|fn||50|normalize_launcher_path()|
+|`PROJECT_ROOT`|var||70||
+|`NORMALIZED_BASE_DIR`|var||83||
+|`NORMALIZED_PROJECT_ROOT`|var||84||
+|`UV_TOOL`|var||106||
 
 
 ---
