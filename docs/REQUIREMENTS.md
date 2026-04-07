@@ -215,6 +215,16 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-133**: MUST `rollback` execute only when both working tree and staging area are clean; otherwise MUST print explicit English error and exit non-zero.
 - **REQ-134**: MUST `rollback` accept exactly one `<target>` argument resolvable to a commit hash or tag reachable from `HEAD`; unresolved or unreachable targets MUST fail with explicit English error.
 - **REQ-135**: MUST `rollback` create one non-amend commit restoring branch content to `<target>` by reverting `<target>..HEAD`; commit subject MUST be `revert: Roll back branch to <target> (<resolved_hash>).`; post-commit index and working tree MUST be clean.
+- **REQ-146**: MUST expose `get` as a CLI command in `COMMANDS` and `HELP_TEXTS`, and MUST support `git get --help` output.
+- **REQ-147**: MUST `get` reject any positional arguments and exit non-zero with explicit English error when extra operands are supplied.
+- **REQ-148**: MUST `get` abort with explicit English error when the staging area is non-empty or when the working tree has pending changes, before any remote operation.
+- **REQ-149**: MUST `get` abort with explicit English error when the current branch is not the configured `work` branch.
+- **REQ-150**: MUST `get` abort with explicit English error when the local configured `work` HEAD commit is not contained in the local configured `develop` branch.
+- **REQ-151**: MUST `get` abort with explicit English error when the local configured `develop` and the local configured `master` branches are not aligned on the same commit.
+- **REQ-152**: MUST `get` abort with explicit English error when the local configured `develop` HEAD is not contained in `origin/<develop>` or when the local configured `master` HEAD is not contained in `origin/<master>`.
+- **REQ-153**: MUST `get` abort with explicit English error when `origin/<develop>` has zero pending commits relative to the local configured `develop` branch.
+- **REQ-154**: MUST `get` fast-forward the local configured `master` branch from `origin/<master>` including tags, then fast-forward the local configured `develop` branch from `origin/<develop>` including tags, and finally fast-forward merge the local configured `develop` branch into the currently checked out local `work` branch.
+- **REQ-155**: MUST `get` terminate with explicit English error and non-zero exit status when any fetch or merge step of the synchronization flow fails.
 
 ### 3.3 Project File Structure
 ```

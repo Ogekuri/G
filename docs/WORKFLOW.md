@@ -290,6 +290,10 @@
             - `run_command(...)` -> `_run_checked(...)`
         - `cmd_fe(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_feall(...)`: `cmd_fe(...)` + `_to_args(...)` [`src/git_alias/core.py`]
+        - `cmd_get(...)`: preflight verifications, fast-forward master/develop from origin, fast-forward merge develop into work [`src/git_alias/core.py`]
+          - `_execute_get_flow(...)` [`src/git_alias/core.py`]
+            - `get_branch(...)`, `_local_branch_exists(...)`, `_git_status_lines(...)`, `has_staged_changes(...)`, `has_unstaged_changes(...)`, `_current_branch_name(...)`, `capture_git_output(...)`, `_commit_exists_in_branch(...)`, `_refresh_remote_refs(...)`, `_remote_branch_exists(...)`, `_branch_remote_divergence(...)`
+            - `_run_release_step(...)` -> `run_git_cmd(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_gp(...)`: GUI wrapper -> `_config_command_parts(...)`, `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_gr(...)`: GUI wrapper -> `_config_command_parts(...)`, `_to_args(...)`, `run_command(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_str(...)`: remote-status flow [`src/git_alias/core.py`]

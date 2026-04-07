@@ -1476,7 +1476,7 @@ def run(extra_args: Optional[List[str]] = None) -> None:
     """
     # Ignore SIGPIPE
     if hasattr(signal, "SIGPIPE"):
-        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # pyright: ignore[reportAttributeAccessIssue]
 
     args = list(extra_args) if extra_args else []
 

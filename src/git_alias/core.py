@@ -758,6 +758,7 @@ HELP_TEXTS = {
     "ed": "Edit a file. Syntax: git ed <filename>.",
     "fe": "Fetch new data of current branch from origin.",
     "feall": "Fetch new data from origin for all branch.",
+    "get": "Fast-forward local master and develop from origin (with tags) and fast-forward merge develop into the current work branch after preflight checks.",
     "gp": "Open git commits graph (Git K).",
     "gr": "Open git tags graph (Git K).",
     "l": "Print commit history as a text-based tree. Options: --all, --no-color, --no-status, --reverse, --wrap, --abbrev=<n>, --svdepth=<n>, --style=<n>, --graph-margin-left=<n>, --graph-margin-right=<n>, --graph-symbol-commit=<s>, --graph-symbol-merge=<s>, --graph-symbol-overpass=<s>, --graph-symbol-root=<s>, --graph-symbol-tip=<s>.",
@@ -3523,6 +3524,113 @@ def cmd_feall(extra):
     return cmd_fe(["--all", "--tags", "--prune"] + _to_args(extra))
 
 
+## @brief Execute preflight verifications and fast-forward synchronization flow for `get`.
+# @details Validates clean index/worktree, current-branch=work, develop contains work HEAD,
+#          local develop and master aligned on same commit, local develop/master HEADs already
+#          present on their origin counterparts, and origin/develop strictly ahead of local
+#          develop. Then fetches origin master into local master fast-forward (with tags),
+#          fetches origin develop into local develop fast-forward (with tags), and finally
+#          fast-forward merges local develop into the currently checked out work branch.
+#          Any verification failure or git step error raises `ReleaseError` with an explicit
+#          English diagnostic.
+# @return None; raises `ReleaseError` on any verification or execution failure.
+# @satisfies REQ-146, REQ-148, REQ-149, REQ-150, REQ-151, REQ-152, REQ-153, REQ-154, REQ-155
+def _execute_get_flow():
+    master_branch = get_branch("master")
+    develop_branch = get_branch("develop")
+    work_branch = get_branch("work")
+    for name in (master_branch, develop_branch, work_branch):
+        if not _local_branch_exists(name):
+            raise ReleaseError(f"Unable to run get: missing local branch '{name}'.")
+    status = _git_status_lines()
+    if has_staged_changes(status):
+        raise ReleaseError(
+            "Staging area is not empty. Clean the index before running 'get'."
+        )
+    if has_unstaged_changes(status):
+        raise ReleaseError(
+            "Working tree has pending changes. Commit or discard them before running 'get'."
+        )
+    current_branch = _current_branch_name()
+    if current_branch != work_branch:
+        raise ReleaseError(
+            f"'get' must be executed from the '{work_branch}' branch (current: {current_branch})."
+        )
+    work_hash = capture_git_output(["rev-parse", work_branch])
+    develop_hash = capture_git_output(["rev-parse", develop_branch])
+    master_hash = capture_git_output(["rev-parse", master_branch])
+    if not _commit_exists_in_branch(work_hash, develop_branch):
+        raise ReleaseError(
+            f"Local '{work_branch}' HEAD is not contained in local '{develop_branch}'. Merge it first."
+        )
+    if develop_hash != master_hash:
+        raise ReleaseError(
+            f"Local '{develop_branch}' and '{master_branch}' are not aligned on the same commit."
+        )
+    _refresh_remote_refs()
+    for name in (master_branch, develop_branch):
+        if not _remote_branch_exists(name):
+            raise ReleaseError(f"Missing remote branch 'origin/{name}'.")
+    if not _commit_exists_in_branch(develop_hash, f"origin/{develop_branch}"):
+        raise ReleaseError(
+            f"Local '{develop_branch}' HEAD is not present on 'origin/{develop_branch}'."
+        )
+    if not _commit_exists_in_branch(master_hash, f"origin/{master_branch}"):
+        raise ReleaseError(
+            f"Local '{master_branch}' HEAD is not present on 'origin/{master_branch}'."
+        )
+    _, remote_ahead = _branch_remote_divergence("develop")
+    if remote_ahead <= 0:
+        raise ReleaseError(
+            f"Remote 'origin/{develop_branch}' has no new commits relative to local '{develop_branch}'."
+        )
+    level = "get"
+    print()
+    _run_release_step(
+        level,
+        "fast-forward local master from origin",
+        lambda: run_git_cmd(
+            ["fetch", "origin", f"{master_branch}:{master_branch}", "--tags"]
+        ),
+    )
+    _run_release_step(
+        level,
+        "fast-forward local develop from origin",
+        lambda: run_git_cmd(
+            ["fetch", "origin", f"{develop_branch}:{develop_branch}", "--tags"]
+        ),
+    )
+    _run_release_step(
+        level,
+        "fast-forward merge develop into work",
+        lambda: run_git_cmd(["merge", "--ff-only", develop_branch]),
+    )
+    print(
+        f"Get completed successfully: local '{master_branch}' and '{develop_branch}' aligned with origin; '{work_branch}' fast-forwarded from '{develop_branch}'."
+    )
+
+
+## @brief CLI entry-point for the `get` subcommand.
+# @details Rejects positional arguments, supports `--help`, and delegates to `_execute_get_flow`.
+#          Converts `ReleaseError` into stderr output plus non-zero exit.
+# @param extra Iterable of CLI argument strings following the `get` subcommand token.
+# @return None; side-effects: fast-forwards local branches and tags from origin.
+# @satisfies REQ-146, REQ-147, REQ-155
+def cmd_get(extra):
+    args = _to_args(extra)
+    if args == ["--help"]:
+        print_command_help("get")
+        return
+    if args:
+        print("git get does not accept positional arguments.", file=sys.stderr)
+        sys.exit(1)
+    try:
+        _execute_get_flow()
+    except ReleaseError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+
+
 ## @brief Execute `cmd_gp` runtime logic for Git-Alias CLI.
 # @details Executes `cmd_gp` using deterministic CLI control-flow and explicit error propagation.
 # @param extra Input parameter consumed by `cmd_gp`.
@@ -4855,6 +4963,7 @@ COMMANDS = {
     "fix": cmd_fix,
     "fe": cmd_fe,
     "feall": cmd_feall,
+    "get": cmd_get,
     "gp": cmd_gp,
     "gr": cmd_gr,
     "l": cmd_l,
