@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.31.0](https://github.com/Ogekuri/G/compare/v0.30.0..v0.31.0) - 2026-04-07
+### ⛰️  Features
+- add get command for fast-forward sync of master/develop/work [useReq] *(core)*
+  - Implement `git get` CLI command with preflight verifications and
+  - fast-forward synchronization of configured master, develop and work
+  - branches from origin.
+  - Add REQ-146..REQ-155 covering verifications and fast-forward flow.
+  - Update WORKFLOW.md and regenerate REFERENCES.md.
+  - Silence Windows-only Pylance SIGPIPE attribute check in foresta.
+
+### 🐛  Bug Fixes
+- normalize Windows launcher drive casing [useReq] *(g.sh)*
+  - Normalize Git Bash launcher path comparison on Windows.
+  - Add launcher regression coverage for slash and drive-letter variants.
+  - Update workflow and references documentation for the launcher flow.
+
 ## [0.30.0](https://github.com/Ogekuri/G/compare/v0.29.0..v0.30.0) - 2026-04-01
 ### 🐛  Bug Fixes
 - Fix git repository.
@@ -660,6 +676,7 @@
 - \[0.28.0\]: https://github.com/Ogekuri/G/releases/tag/v0.28.0
 - \[0.29.0\]: https://github.com/Ogekuri/G/releases/tag/v0.29.0
 - \[0.30.0\]: https://github.com/Ogekuri/G/releases/tag/v0.30.0
+- \[0.31.0\]: https://github.com/Ogekuri/G/releases/tag/v0.31.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -691,3 +708,4 @@
 [0.28.0]: https://github.com/Ogekuri/G/compare/v0.27.0..v0.28.0
 [0.29.0]: https://github.com/Ogekuri/G/compare/v0.28.0..v0.29.0
 [0.30.0]: https://github.com/Ogekuri/G/compare/v0.29.0..v0.30.0
+[0.31.0]: https://github.com/Ogekuri/G/compare/v0.30.0..v0.31.0
