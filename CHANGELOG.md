@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.32.0](https://github.com/Ogekuri/G/compare/v0.31.0..v0.32.0) - 2026-04-12
+### 📚  Documentation
+- align README with current CLI behavior [useReq] *(readme)*
+  - Correct global config path and default commit-module behavior.
+  - Document get/str commands and lsi filtering semantics.
+  - Clarify Linux-only scope for upgrade/uninstall commands.
+  - Update examples for wip auto-stage and normalized conventional messages.
+- Update README.md file.
+
 ## [0.31.0](https://github.com/Ogekuri/G/compare/v0.30.0..v0.31.0) - 2026-04-07
 ### ⛰️  Features
 - add get command for fast-forward sync of master/develop/work [useReq] *(core)*
@@ -677,6 +686,7 @@
 - \[0.29.0\]: https://github.com/Ogekuri/G/releases/tag/v0.29.0
 - \[0.30.0\]: https://github.com/Ogekuri/G/releases/tag/v0.30.0
 - \[0.31.0\]: https://github.com/Ogekuri/G/releases/tag/v0.31.0
+- \[0.32.0\]: https://github.com/Ogekuri/G/releases/tag/v0.32.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -709,3 +719,4 @@
 [0.29.0]: https://github.com/Ogekuri/G/compare/v0.28.0..v0.29.0
 [0.30.0]: https://github.com/Ogekuri/G/compare/v0.29.0..v0.30.0
 [0.31.0]: https://github.com/Ogekuri/G/compare/v0.30.0..v0.31.0
+[0.32.0]: https://github.com/Ogekuri/G/compare/v0.31.0..v0.32.0
