@@ -35,7 +35,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 - Common aliases for repetitive tasks like `add --all` (`aa`) and more.
 - Acts like a `.gitconfig` [alias] section, providing all standard Git commands with a fallback mechanism.
 - Customizable three-branch workflow: `master`, `develop`, and `work`.
-- Conventional commit aliases support `<module>: <description>` syntax (example: `g new api: add endpoint`) and also accept `<description>` only, using `.g.conf.default_commit_module` (default `core`).
+- Conventional commit aliases support `<module>: <description>` syntax (example: `g new api: add endpoint`) and also accept `<description>` only, using `.g.conf.default_commit_module` (default: empty, so messages become `<type>: <description>` when no module is configured).
 - Standardized commits with specific commands like: `g new core: foo bar.` Use these commands for common activities such as:
   - `new`: Implement new features.
   - `implement`: Implement features or larger changes.
@@ -56,12 +56,14 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
   | major | work -> develop -> master | Minor versions only |
 
 - Provides `backup` command to run release preflight checks, merge `work` into `develop`, push `develop`, and return to `work`.
+- Provides `get` command to fast-forward local `master` and `develop` from `origin` (with tags), then fast-forward merge `develop` into `work` after strict preflight checks.
+- Provides `str` command to print all remotes and run `git remote show <remote>` for each.
 - Provides visual diff aliases for repository comparisons, including `dcd` (`develop` vs `work`), `dcm` (`master` vs `work`), and `ddm` (`master` vs `develop`).
 - Provides worktree aliases: `wt` (`git worktree list`), `wtl` (`git worktree list ...`), `wtp` (`git worktree prune ...`), and `wtd` (worktree delete with paired branch cleanup and optional `--force`).
-- Provides file listing aliases: `ls` lists tracked files and `lsi` lists ignored files, both with argument passthrough.
+- Provides file listing aliases: `ls` lists tracked files; `lsi` lists ignored/untracked files and applies a default directory/suffix filter unless `--include-all` is provided.
 - Provides an overview alias: `o` prints a structured repository summary with working-tree status, branch divergence/alignment sections, and a branch table that lists configured branches first and then all other local/remote branches with latest commit subjects.
 - Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--include-patch`, `--force-write`, `--print-only`, `--disable-history`).
-- Self-upgrading feature.
+- Self-upgrade and self-uninstall management commands are Linux-only for local execution (`--upgrade`, `--uninstall`), with manual command hints on other platforms.
 - Includes a **quick overview** command `o`:
 [![Flowchart](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/command_o_overview_sample1.png)](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/command_o_overview_sample1.png)
 - Includes **git-foresta** command `l`:
@@ -82,7 +84,8 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 
 ### Prerequisites
 
-- Use supported environment: `linux`
+- Supported runtime for the CLI: Linux, macOS, or Windows (with Git + Python 3.11+ available).
+- `--upgrade` and `--uninstall` execute locally only on Linux; other platforms print the equivalent manual `uv tool` command.
 - Install the `uv` tool from: [https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/)
 
 
@@ -99,7 +102,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
   ```
 
 
-### Create Configuration Files (`.g.conf` + `$HOME/.g/g.conf`)
+### Create Configuration Files (`.g.conf` + `$HOME/.config/git-alias/config.json`)
 
 ```bash
 g --write-config
@@ -109,7 +112,7 @@ g --write-config
 ### Edit Configuration Files
 
 - Customize repository-local `.g.conf` with `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`.
-- Customize global `$HOME/.g/g.conf` with `edit_command`, `gp_command`, and `gr_command`.
+- Customize global `$HOME/.config/git-alias/config.json` with `edit_command`, `gp_command`, and `gr_command`.
 - Running `g --write-config` normalizes both files to these key sets and migrates legacy global `editor` to `edit_command`.
 
 
@@ -117,16 +120,16 @@ g --write-config
 
 ```bash
 g st
-g aa
 g wip
 ```
+
+`g wip` auto-stages tracked/untracked working-tree changes when the index is empty.
 
 
 ### Override a `wip` Commit with a Final Commit
 
 ```bash
-g aa
-g new core: foo bar
+g new core: finalize release notes
 ```
 
 ### Release a New Version (with all changes committed)
@@ -144,9 +147,9 @@ The command must run from the `work` branch with a clean working tree; it bumps 
 
 Upgrade or uninstall the Git-Alias CLI:
 
-- `g --upgrade` / `git-alias --upgrade`: Upgrades the tool to the latest version from the GitHub repository.
-- `g --uninstall` / `git-alias --uninstall`: Uninstalls the tool.
-- `g --write-config` / `git-alias --write-config`: Inserts missing defaults into repository `.g.conf` and global `$HOME/.g/g.conf`.
+- `g --upgrade` / `git-alias --upgrade`: Reinstalls the tool from the GitHub repository on Linux; on non-Linux platforms it prints the equivalent manual command.
+- `g --uninstall` / `git-alias --uninstall`: Uninstalls the tool on Linux; on non-Linux platforms it prints the equivalent manual command.
+- `g --write-config` / `git-alias --write-config`: Inserts missing defaults into repository `.g.conf` and global `$HOME/.config/git-alias/config.json`.
 - `g --ver` / `g --version` / `git-alias --ver` / `git-alias --version`: Prints the CLI version.
 - `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
 
@@ -164,8 +167,12 @@ Some CLI examples:
 - `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
 - `g lg --help`: Shows the help text for the `lg` alias.
 - `g cm "Message"`: Runs `git commit` with the provided message.
-- `g new api: add endpoint`: Creates `new(api): add endpoint`; omit `api:` to use `.g.conf.default_commit_module`.
+- `g new api: add endpoint`: Creates `new(api): Add endpoint.` (first letter normalized to uppercase and a trailing period added when missing).
+- `g new add endpoint`: Creates `new: Add endpoint.` when `.g.conf.default_commit_module` is empty.
+- `g wip`: Auto-stages when needed and commits `wip: work in progress.`.
 - `g backup`: Merges configured `work` into `develop`, pushes `develop`, and checks out back to `work`.
+- `g get`: Fast-forwards local `master` and `develop` from `origin` and then fast-forward merges `develop` into `work`.
+- `g str`: Lists remotes and prints `git remote show` details for each.
 - `g rollback v1.2.3`: Reverts commits after `v1.2.3` and creates `revert: Roll back branch to v1.2.3 (<hash>).`.
 - `g dcd`: Runs `git difftool -d <develop> <work>` using configured branch names.
 - `g dcm`: Runs `git difftool -d <master> <work>` using configured branch names.
@@ -174,7 +181,8 @@ Some CLI examples:
 - `g wt`: Runs `git worktree list`.
 - `g wtd --force ../repo-worktree`: Force-removes the target worktree; when it is associated to a local branch, the worktree is deleted before the branch.
 - `g ls -z`: Lists tracked files using `git ls-files --exclude-standard`.
-- `g lsi -z`: Lists ignored files using `git ls-files -i --exclude-standard`.
+- `g lsi -z`: Lists ignored/untracked files using `git ls-files --others --ignored --exclude-standard` plus the default filter.
+- `g lsi --include-all -z`: Lists all ignored/untracked files without the default filter.
 - `g o`: Prints a verbose overview with status, branch distances, active worktrees, and a qualitative ASCII topology tree.
 - `g ver --verbose`: Verifies version consistency with detailed output.
 - `g chver 1.2.3`: Updates the project version to 1.2.3 using `ver_rules`.
