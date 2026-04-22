@@ -1773,17 +1773,21 @@ trims branch markers/prefixes from git output, and prints deterministic `<tag>: 
 - @param extra Input parameter consumed by `cmd_unstg`.
 - @return Result emitted by `cmd_unstg` according to command contract.
 
-### fn `def cmd_wt(extra)` (L4655-4658)
-- @brief Execute `cmd_wt` runtime logic for Git-Alias CLI.
-- @details Executes `cmd_wt` using deterministic CLI control-flow and explicit error propagation.
-- @param extra Input parameter consumed by `cmd_wt`.
-- @return Result emitted by `cmd_wt` according to command contract.
+### fn `def cmd_wt(extra)` (L4660-4663)
+- @brief Dispatch raw `git worktree` subcommands through alias `wt`.
+- @details Delegates to native `git worktree` so subcommands such as `list`, `add`, and `prune` remain reachable through the alias. Forwards every operand unchanged and performs no CLI-side interpretation before subprocess execution.
+- @param extra {List[str] | None} CLI operands appended after `git worktree`.
+- @return Result emitted by `run_git_cmd` for the delegated git subprocess.
+- @satisfies REQ-074
+- @note Complexity: O(1) excluding delegated git process runtime.
 
-### fn `def cmd_wtl(extra)` (L4663-4666)
-- @brief Execute `cmd_wtl` runtime logic for Git-Alias CLI.
-- @details Executes `cmd_wtl` using deterministic CLI control-flow and explicit error propagation.
-- @param extra Input parameter consumed by `cmd_wtl`.
-- @return Result emitted by `cmd_wtl` according to command contract.
+### fn `def cmd_wtl(extra)` (L4673-4676)
+- @brief Dispatch dedicated `git worktree list` behavior through alias `wtl`.
+- @details Delegates to native `git worktree list` while preserving every user operand unchanged, including verbosity and porcelain flags handled by git itself.
+- @param extra {List[str] | None} CLI operands appended after `git worktree list`.
+- @return Result emitted by `run_git_cmd` for the delegated git subprocess.
+- @satisfies REQ-074, REQ-075
+- @note Complexity: O(1) excluding delegated git process runtime.
 
 ### fn `def cmd_wtp(extra)` (L4671-4674)
 - @brief Execute `cmd_wtp` runtime logic for Git-Alias CLI.
@@ -2145,9 +2149,9 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 |`cmd_st`|fn|pub|4631-4634|def cmd_st(extra)|
 |`cmd_tg`|fn|pub|4639-4642|def cmd_tg(extra)|
 |`cmd_unstg`|fn|pub|4647-4650|def cmd_unstg(extra)|
-|`cmd_wt`|fn|pub|4655-4658|def cmd_wt(extra)|
-|`cmd_wtl`|fn|pub|4663-4666|def cmd_wtl(extra)|
-|`cmd_wtp`|fn|pub|4671-4674|def cmd_wtp(extra)|
+|`cmd_wt`|fn|pub|4660-4663|def cmd_wt(extra)|
+|`cmd_wtl`|fn|pub|4673-4676|def cmd_wtl(extra)|
+|`cmd_wtp`|fn|pub|4681-4684|def cmd_wtp(extra)|
 |`cmd_wtd`|fn|pub|4683-4709|def cmd_wtd(extra)|
 |`cmd_ver`|fn|pub|4714-4740|def cmd_ver(extra)|
 |`cmd_chver`|fn|pub|4745-4828|def cmd_chver(extra)|

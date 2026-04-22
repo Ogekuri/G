@@ -24,12 +24,16 @@ class CmdWorktreeAliasesTest(unittest.TestCase):
             self.assertIn(alias, core.COMMANDS)
             self.assertIn(alias, core.HELP_TEXTS)
 
-    ## @brief Verify `cmd_wt` forwards list execution unchanged.
+    ## @brief Verify `cmd_wt` forwards raw worktree subcommands unchanged.
     # @return None.
-    def test_cmd_wt_runs_worktree_list(self):
+    # @satisfies REQ-074
+    def test_cmd_wt_runs_native_worktree_command(self):
         with mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
-            core.cmd_wt([])
-            run_git.assert_called_once_with(["worktree", "list"], [])
+            core.cmd_wt(["add", "../feature-tree", "feature/demo"])
+            run_git.assert_called_once_with(
+                ["worktree"],
+                ["add", "../feature-tree", "feature/demo"],
+            )
 
     ## @brief Verify `cmd_wtl` forwards optional list arguments unchanged.
     # @return None.

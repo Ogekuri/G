@@ -353,8 +353,8 @@
         - `cmd_st(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_tg(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_unstg(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
-        - `cmd_wt(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
-        - `cmd_wtl(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_wt(...)`: raw `git worktree` passthrough wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
+        - `cmd_wtl(...)`: dedicated `git worktree list` passthrough wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
         - `cmd_wtp(...)`: wrapper -> `run_git_cmd(...)` -> `_to_args(...)` -> `_run_checked(...)` [`src/git_alias/core.py`]
 - `cmd_wtd(...)`: worktree delete orchestration with branch-pair detection and optional force mode [`src/git_alias/core.py`]
           - `_to_args(...)`

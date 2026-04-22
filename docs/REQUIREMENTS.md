@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.11
+**Version**: 1.15
 **Author**: Francesco Rolando
-**Date**: 2026-03-27
+**Date**: 2026-04-22
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-04-22 | 1.15 | Changed `wt` to execute `git worktree` while keeping `wtl` as the dedicated `git worktree list` alias. |
 | 2026-03-30 | 1.14 | Required idle-time JSON rewrites for every version-check error while keeping 3600-second success delay and 86400-second error delay. |
 | 2026-03-30 | 1.13 | Changed release-check idle delays to 3600 seconds after success and 86400 seconds after release-check API-call errors. |
 | 2026-03-30 | 1.12 | Replaced release-check rate-limit backoff with a fixed 3600-second idle delay for HTTP 429 and HTTP 403 API rate-limit responses. |
@@ -151,7 +152,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-070**: MUST `# History` generation MUST NOT verify remote tag existence and MUST NOT query remote tags; changelog tag and commit collection MUST use only local git commands.
 - **REQ-072**: MUST the `major` and `minor` commands MUST push configured `develop` and configured `master` using `git push origin <branch> --tags` for each pushed branch, and MUST create definitive annotated `v<target>` on configured `master` immediately before master push.
 - **REQ-073**: MUST the `lt` alias MUST print one line per tag as `<tag>: <branch_1>, <branch_2>, ...`, where branches are the refs returned by `git branch -a --contains <tag>` after marker trimming.
-- **REQ-074**: MUST the alias `wt` MUST execute `git worktree list`, and `wtl` MUST execute `git worktree list` while forwarding all provided arguments unchanged.
+- **REQ-074**: MUST the alias `wt` MUST execute `git worktree` and `wtl` MUST execute `git worktree list`, while both aliases forward all provided arguments unchanged.
 - **REQ-075**: MUST the alias `wtl` MUST accept and forward `-v`, `--porcelain`, and `-z` options as native `git worktree list` arguments without CLI-side transformation.
 - **REQ-076**: MUST the alias `wtp` MUST execute `git worktree prune` and MUST forward `-n`, `-v`, `--expire <expire>`, and additional git-compatible arguments unchanged.
 - **REQ-077**: MUST the user-exposed worktree-delete alias be named `wtd`, accept exactly one `<worktree>` target, MAY accept one leading `--force`, and MUST NOT accept any other flags or extra operands.

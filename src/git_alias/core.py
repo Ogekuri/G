@@ -805,7 +805,7 @@ HELP_TEXTS = {
     "st": "Print current GIT status.",
     "tg": "Create a new annotate tag. Syntax: git tg <description> <tag>.",
     "unstg": "Un-stage a file from commit: git unstg '<filename>'. Unstage all files with: git unstg *.",
-    "wt": "List worktrees. Syntax: git wt [<git worktree list args>].",
+    "wt": "Run native git worktree subcommands. Syntax: git wt [<git worktree args>].",
     "wtl": "List worktrees with optional verbosity/porcelain flags. Syntax: git wtl [-v|--porcelain [-z]] [args].",
     "wtp": "Prune stale worktree metadata. Syntax: git wtp [-n] [-v] [--expire <expire>] [args].",
     "wtd": "Delete a worktree, or the associated worktree plus branch when paired. Syntax: git wtd [--force] <worktree>.",
@@ -4648,18 +4648,28 @@ def cmd_unstg(extra):
     return run_git_cmd(["reset", "--mixed", "--"], extra)
 
 
-## @brief Execute `cmd_wt` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_wt` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_wt`.
-# @return Result emitted by `cmd_wt` according to command contract.
+## @brief Dispatch raw `git worktree` subcommands through alias `wt`.
+# @details Delegates to native `git worktree` so subcommands such as `list`,
+# `add`, and `prune` remain reachable through the alias. Forwards every
+# operand unchanged and performs no CLI-side interpretation before subprocess
+# execution.
+# @param extra {List[str] | None} CLI operands appended after `git worktree`.
+# @return Result emitted by `run_git_cmd` for the delegated git subprocess.
+# @satisfies REQ-074
+# @note Complexity: O(1) excluding delegated git process runtime.
 def cmd_wt(extra):
-    return run_git_cmd(["worktree", "list"], extra)
+    return run_git_cmd(["worktree"], extra)
 
 
-## @brief Execute `cmd_wtl` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_wtl` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_wtl`.
-# @return Result emitted by `cmd_wtl` according to command contract.
+## @brief Dispatch dedicated `git worktree list` behavior through alias `wtl`.
+# @details Delegates to native `git worktree list` while preserving every user
+# operand unchanged, including verbosity and porcelain flags handled by git
+# itself.
+# @param extra {List[str] | None} CLI operands appended after
+# `git worktree list`.
+# @return Result emitted by `run_git_cmd` for the delegated git subprocess.
+# @satisfies REQ-074, REQ-075
+# @note Complexity: O(1) excluding delegated git process runtime.
 def cmd_wtl(extra):
     return run_git_cmd(["worktree", "list"], extra)
 
