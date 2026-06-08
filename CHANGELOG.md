@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.34.0](https://github.com/Ogekuri/G/compare/v0.33.0..v0.34.0) - 2026-06-08
+### ⛰️  Features
+- Check edit, gp, gr commands.
+
+### 🐛  Bug Fixes
+- Move docs dir.
+
 ## [0.33.0](https://github.com/Ogekuri/G/compare/v0.32.0..v0.33.0) - 2026-04-22
 ### 🚜  Changes
 - BREAKING CHANGE: switch wt alias to git worktree [useReq] *(core)*
@@ -695,6 +702,7 @@
 - \[0.31.0\]: https://github.com/Ogekuri/G/releases/tag/v0.31.0
 - \[0.32.0\]: https://github.com/Ogekuri/G/releases/tag/v0.32.0
 - \[0.33.0\]: https://github.com/Ogekuri/G/releases/tag/v0.33.0
+- \[0.34.0\]: https://github.com/Ogekuri/G/releases/tag/v0.34.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -729,3 +737,4 @@
 [0.31.0]: https://github.com/Ogekuri/G/compare/v0.30.0..v0.31.0
 [0.32.0]: https://github.com/Ogekuri/G/compare/v0.31.0..v0.32.0
 [0.33.0]: https://github.com/Ogekuri/G/compare/v0.32.0..v0.33.0
+[0.34.0]: https://github.com/Ogekuri/G/compare/v0.33.0..v0.34.0
