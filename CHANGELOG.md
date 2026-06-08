@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.35.0](https://github.com/Ogekuri/G/compare/v0.34.0..v0.35.0) - 2026-06-08
+### 🐛  Bug Fixes
+- support Git Bash shell-script launchers [useReq] *(core)*
+  - resolve Windows PATH lookup for non-PATHEXT launchers such as gitk\n- add a reproducer test for gr_command on Git Bash\n- update pi-usereq workflow and references docs
+
 ## [0.34.0](https://github.com/Ogekuri/G/compare/v0.33.0..v0.34.0) - 2026-06-08
 ### ⛰️  Features
 - Check edit, gp, gr commands.
@@ -703,6 +708,7 @@
 - \[0.32.0\]: https://github.com/Ogekuri/G/releases/tag/v0.32.0
 - \[0.33.0\]: https://github.com/Ogekuri/G/releases/tag/v0.33.0
 - \[0.34.0\]: https://github.com/Ogekuri/G/releases/tag/v0.34.0
+- \[0.35.0\]: https://github.com/Ogekuri/G/releases/tag/v0.35.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -738,3 +744,4 @@
 [0.32.0]: https://github.com/Ogekuri/G/compare/v0.31.0..v0.32.0
 [0.33.0]: https://github.com/Ogekuri/G/compare/v0.32.0..v0.33.0
 [0.34.0]: https://github.com/Ogekuri/G/compare/v0.33.0..v0.34.0
+[0.35.0]: https://github.com/Ogekuri/G/compare/v0.34.0..v0.35.0
