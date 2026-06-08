@@ -671,62 +671,82 @@ def write_default_config(root=None, home=None):
     return local_config_path
 
 
-## @brief Execute `_editor_base_command` runtime logic for Git-Alias CLI.
-# @details Executes `_editor_base_command` using deterministic CLI control-flow and explicit error propagation.
-# @return Result emitted by `_editor_base_command` according to command contract.
-def _editor_base_command():
-    raw_value = get_editor() or DEFAULT_CONFIG["edit_command"]
+## @brief Parse one configured launcher command line into argv tokens.
+# @details Applies shell-like tokenization to the configured command line,
+# rejects malformed quoting, and rejects empty argv sequences before process
+# execution dispatch.
+# @param command_line `str` — configured launcher command line.
+# @param config_key `str` — configuration key used in error messages.
+# @return `List[str]` — parsed argv tokens.
+# @exception RuntimeError Raised when the configured command line is invalid or empty.
+# @satisfies REQ-156, REQ-159
+
+def _parse_config_command_parts(command_line: str, config_key: str) -> List[str]:
     try:
-        parts = shlex.split(raw_value)
+        parts = shlex.split(command_line)
     except ValueError as exc:
-        print(
-            f"Ignoring invalid edit command '{raw_value}': {exc}. Falling back to '{DEFAULT_CONFIG['edit_command']}'",
-            file=sys.stderr,
-        )
-        parts = [DEFAULT_CONFIG["edit_command"]]
+        raise RuntimeError(
+            f"Configured {config_key} command is invalid: {exc}"
+        ) from None
     if not parts:
-        parts = [DEFAULT_CONFIG["edit_command"]]
+        raise RuntimeError(f"Configured {config_key} command is empty.")
     return parts
+
+
+## @brief Validate configured launcher executable availability.
+# @details Resolves the first argv token against the current-platform PATH
+# lookup rules and aborts command execution when the executable is unavailable.
+# @param key `str` — configuration key containing the launcher command line.
+# @param default_command `str` — fallback command line when config is empty.
+# @return `List[str]` — validated argv tokens ready for subprocess execution.
+# @exception RuntimeError Raised when the configured command is invalid or the executable is unavailable.
+# @satisfies REQ-157, REQ-159
+
+def _validated_config_command_parts(key: str, default_command: str) -> List[str]:
+    raw_value = get_config_value(key) or default_command
+    parts = _parse_config_command_parts(raw_value, key)
+    executable = parts[0]
+    if shutil.which(executable) is None:
+        raise RuntimeError(
+            f"Configured {key} executable '{executable}' is not available on this system."
+        )
+    return parts
+
+
+## @brief Resolve the editor launcher command after executable validation.
+# @details Returns the validated editor argv sequence used by the `ed` alias.
+# @return `List[str]` — validated editor argv tokens.
+# @exception RuntimeError Raised when `edit_command` is invalid or unavailable.
+# @satisfies REQ-156, REQ-157, REQ-159
+
+def _editor_base_command() -> List[str]:
+    return _validated_config_command_parts(
+        "edit_command", DEFAULT_CONFIG["edit_command"]
+    )
 
 
 ## @brief Execute `run_editor_command` runtime logic for Git-Alias CLI.
 # @details Executes `run_editor_command` using deterministic CLI control-flow and explicit error propagation.
 # @param args Input parameter consumed by `run_editor_command`.
 # @return Result emitted by `run_editor_command` according to command contract.
+# @exception RuntimeError Raised when the configured editor launcher is invalid or unavailable.
+# @satisfies REQ-158, REQ-159
+
 def run_editor_command(args):
     return run_command(_editor_base_command() + list(args))
 
 
-## @brief Resolve command parts from config with executable-availability fallback.
-# @details Parses a configured command line and verifies the configured executable
-# is available in PATH. Invalid or unavailable configured commands fall back to
-# the provided default command template.
+## @brief Resolve configured graph launcher command parts after validation.
+# @details Normalizes the configured command line, validates the executable on
+# the current platform, and returns argv tokens without fallback execution.
 # @param key Input parameter consumed by `_config_command_parts`.
 # @param default_command Input parameter consumed by `_config_command_parts`.
 # @return Result emitted by `_config_command_parts` according to command contract.
+# @exception RuntimeError Raised when the configured launcher is invalid or unavailable.
+# @satisfies REQ-156, REQ-157, REQ-159
+
 def _config_command_parts(key: str, default_command: str) -> List[str]:
-    default_parts = shlex.split(default_command)
-    raw_value = get_config_value(key) or default_command
-    configured_value = raw_value != default_command
-    try:
-        parts = shlex.split(raw_value)
-    except ValueError as exc:
-        print(
-            f"Ignoring invalid {key} command '{raw_value}': {exc}. "
-            f"Falling back to '{default_command}'",
-            file=sys.stderr,
-        )
-        return default_parts
-    if not parts:
-        return default_parts
-    if configured_value and shutil.which(parts[0]) is None:
-        print(
-            f"Ignoring unavailable {key} executable '{parts[0]}'. "
-            f"Falling back to '{default_command}'",
-            file=sys.stderr,
-        )
-        return default_parts
-    return parts
+    return _validated_config_command_parts(key, default_command)
 
 
 ## @brief Constant `HELP_TEXTS` used by CLI runtime paths and policies.
