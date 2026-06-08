@@ -1,0 +1,266 @@
+## Execution Units Index
+- ID: PROC:main
+  - Type: Process
+  - Parent Process: null
+  - Role: Git-Alias CLI runtime dispatcher and orchestration process
+  - Entrypoint Symbols:
+    - `git_alias.__main__::<module_guard>`
+    - `main(argv=None, *, check_updates=True)`
+  - Defining Files:
+    - `src/git_alias/__main__.py`
+    - `src/git_alias/core.py`
+- ID: PROC:launcher-g-sh
+  - Type: Process
+  - Parent Process: null
+  - Role: Bash launcher that resolves repository root and delegates runtime to Astral `uv run`
+  - Entrypoint Symbols:
+    - `scripts/g.sh::<module_body>`
+  - Defining Files:
+    - `scripts/g.sh`
+- ID: PROC:git
+  - Type: Process
+  - Parent Process: null
+  - Role: External `git` command process spawned by CLI wrappers
+  - Entrypoint Symbols:
+    - `run_git_cmd(...)`
+    - `run_git_text(...)`
+    - `capture_git_output(...)`
+    - `_git_status_lines(...)`
+    - `_current_branch_name(...)`
+    - `_commit_exists_in_branch(...)`
+    - `_ref_exists(...)`
+    - `cmd_ar(...)`
+  - Defining Files:
+    - `src/git_alias/core.py`
+- ID: PROC:uv
+  - Type: Process
+  - Parent Process: null
+  - Role: External `uv` process for launcher runtime delegation and self-management flows
+  - Entrypoint Symbols:
+    - `scripts/g.sh::<module_body>`
+    - `upgrade_self(...)`
+    - `uninstall_self(...)`
+  - Defining Files:
+    - `src/git_alias/core.py`
+    - `scripts/g.sh`
+- ID: PROC:gzip
+  - Type: Process
+  - Parent Process: null
+  - Role: External `gzip` process used by archive flow
+  - Entrypoint Symbols:
+    - `cmd_ar(...)`
+  - Defining Files:
+    - `src/git_alias/core.py`
+- ID: PROC:editor
+  - Type: Process
+  - Parent Process: null
+  - Role: External editor process invoked from `edit_command`
+  - Entrypoint Symbols:
+    - `cmd_ed(...)`
+    - `run_editor_command(...)`
+    - `run_command(...)`
+  - Defining Files:
+    - `src/git_alias/core.py`
+- ID: PROC:gitk
+  - Type: Process
+  - Parent Process: null
+  - Role: External graph-viewer process invoked from `gp_command` or `gr_command`
+  - Entrypoint Symbols:
+    - `cmd_gp(...)`
+    - `cmd_gr(...)`
+    - `run_command(...)`
+  - Defining Files:
+    - `src/git_alias/core.py`
+
+## Execution Units
+### PROC:launcher-g-sh
+- Entrypoint(s):
+  - `scripts/g.sh::<module_body>`: launcher script that resolves repository root, validates launcher location, and `exec`-chains into `uv run --project <repo> python -m git_alias` [`scripts/g.sh`]
+- Lifecycle/trigger:
+  - Start: OS invokes `scripts/g.sh` as executable entrypoint.
+  - Stop: process is replaced by `uv` via `exec` after root validation.
+  - Threads: no explicit threads detected.
+- Internal Call-Trace Tree:
+  - `scripts/g.sh::<module_body>(...)`: resolve canonical repository root and delegate CLI execution [`scripts/g.sh`]
+- External Boundaries:
+  - External commands `git` and `uv`.
+
+### PROC:main
+- Entrypoint(s):
+  - `git_alias.__main__::<module_guard>`: module execution bridge [`src/git_alias/__main__.py`]
+  - `main(argv=None, *, check_updates=True)`: primary CLI dispatcher [`src/git_alias/core.py`]
+- Lifecycle/trigger:
+  - Start: OS invokes console script, `python -m git_alias`, or `uv run` module execution.
+  - Stop: returns from `main(...)` or terminates via `sys.exit(...)` on validation/command failures.
+  - Threads: no explicit threads detected.
+- Internal Call-Trace Tree:
+  - `__main__::<module_guard>(...)`: bridge from module execution to CLI dispatcher [`src/git_alias/__main__.py`]
+    - `main(...)`: load config, optionally run update checks, route management commands, and dispatch alias handlers [`src/git_alias/core.py`]
+      - `get_git_root(...)`: resolve repository root [`src/git_alias/core.py`]
+      - `load_cli_config(...)`: load repository and global configuration scopes [`src/git_alias/core.py`]
+      - `check_for_newer_version(...)`: perform cached remote release check when enabled [`src/git_alias/core.py`]
+      - `print_all_help(...)`: render global help output [`src/git_alias/core.py`]
+      - `print_command_help(...)`: render per-command help output [`src/git_alias/core.py`]
+      - `write_default_config(...)`: normalize supported config keys [`src/git_alias/core.py`]
+      - `upgrade_self(...)`: Linux-gated self-upgrade flow [`src/git_alias/core.py`]
+      - `uninstall_self(...)`: Linux-gated self-uninstall flow [`src/git_alias/core.py`]
+      - `run_git_cmd(...)`: fallback path when command is not registered in `COMMANDS` [`src/git_alias/core.py`]
+      - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py`]
+        - `cmd_ed(...)`: validate file operands, expand `~`, and invoke configured editor [`src/git_alias/core.py`]
+          - `run_editor_command(...)`: build editor argv and execute subprocess [`src/git_alias/core.py`]
+            - `_editor_base_command(...)`: resolve `edit_command` launcher [`src/git_alias/core.py`]
+              - `_validated_config_command_parts(...)`: validate configured launcher and construct runnable argv [`src/git_alias/core.py`]
+                - `_parse_config_command_parts(...)`: parse configured command line into argv tokens [`src/git_alias/core.py`]
+                - `_resolve_windows_shell_command_prefix(...)`: wrap Windows Git Bash shell-script launchers with `sh` or `bash` when direct Win32 execution is unavailable [`src/git_alias/core.py`]
+                  - `_find_windows_shell_script_path(...)`: scan `PATH` for non-`PATHEXT` shell-script launchers such as `gitk` [`src/git_alias/core.py`]
+            - `run_command(...)`: execute resolved external command [`src/git_alias/core.py`]
+        - `cmd_gp(...)`: resolve `gp_command` launcher and execute graph viewer [`src/git_alias/core.py`]
+          - `_config_command_parts(...)`: resolve validated graph-viewer argv [`src/git_alias/core.py`]
+            - `_validated_config_command_parts(...)`: validate configured launcher and construct runnable argv [`src/git_alias/core.py`]
+              - `_parse_config_command_parts(...)`: parse configured command line into argv tokens [`src/git_alias/core.py`]
+              - `_resolve_windows_shell_command_prefix(...)`: wrap Windows Git Bash shell-script launchers with `sh` or `bash` when direct Win32 execution is unavailable [`src/git_alias/core.py`]
+                - `_find_windows_shell_script_path(...)`: scan `PATH` for non-`PATHEXT` shell-script launchers such as `gitk` [`src/git_alias/core.py`]
+          - `run_command(...)`: execute resolved external command [`src/git_alias/core.py`]
+        - `cmd_gr(...)`: resolve `gr_command` launcher and execute graph viewer [`src/git_alias/core.py`]
+          - `_config_command_parts(...)`: resolve validated graph-viewer argv [`src/git_alias/core.py`]
+            - `_validated_config_command_parts(...)`: validate configured launcher and construct runnable argv [`src/git_alias/core.py`]
+              - `_parse_config_command_parts(...)`: parse configured command line into argv tokens [`src/git_alias/core.py`]
+              - `_resolve_windows_shell_command_prefix(...)`: wrap Windows Git Bash shell-script launchers with `sh` or `bash` when direct Win32 execution is unavailable [`src/git_alias/core.py`]
+                - `_find_windows_shell_script_path(...)`: scan `PATH` for non-`PATHEXT` shell-script launchers such as `gitk` [`src/git_alias/core.py`]
+          - `run_command(...)`: execute resolved external command [`src/git_alias/core.py`]
+        - `cmd_ar(...)`: archive flow combining `git archive` and `gzip` [`src/git_alias/core.py`]
+        - `cmd_l(...)`: delegate text-graph rendering to `foresta.run(...)` [`src/git_alias/core.py`]
+- External Boundaries:
+  - OS subprocess execution for `git`, `uv`, `gzip`, configured editor launchers, and configured graph launchers.
+  - HTTP GET to GitHub Releases API for update checks.
+  - File I/O for config, changelog, and version-managed files.
+
+### PROC:git
+- Entrypoint(s):
+  - `run_git_cmd(...)`, `run_git_text(...)`, `capture_git_output(...)`, `_git_status_lines(...)`, `_current_branch_name(...)`, `_commit_exists_in_branch(...)`, `_ref_exists(...)`, and `cmd_ar(...)` [`src/git_alias/core.py`]
+- Lifecycle/trigger:
+  - Start: spawned on demand by CLI helper wrappers.
+  - Stop: synchronous completion per invocation.
+  - Threads: no explicit threads detected.
+- Internal Call-Trace Tree:
+  - `run_git_cmd(...)`: normalized `git` subprocess wrapper [`src/git_alias/core.py`]
+    - `_to_args(...)`: normalize optional argument tail [`src/git_alias/core.py`]
+    - `_run_checked(...)`: spawn child process and normalize failure reporting [`src/git_alias/core.py`]
+  - `run_git_text(...)`: textual `git` output capture wrapper [`src/git_alias/core.py`]
+    - `_run_checked(...)`: spawn child process and normalize failure reporting [`src/git_alias/core.py`]
+  - `capture_git_output(...)`: stdout capture helper [`src/git_alias/core.py`]
+    - `_run_checked(...)`: spawn child process and normalize failure reporting [`src/git_alias/core.py`]
+  - `_git_status_lines(...)`: working-tree status parser source [`src/git_alias/core.py`]
+    - `_run_checked(...)`: spawn child process and normalize failure reporting [`src/git_alias/core.py`]
+- External Boundaries:
+  - External `git` executable and repository state.
+
+### PROC:uv
+- Entrypoint(s):
+  - `scripts/g.sh::<module_body>`
+  - `upgrade_self(...)`
+  - `uninstall_self(...)`
+- Lifecycle/trigger:
+  - Start: launcher `scripts/g.sh` executes `uv run`, or management flags trigger self-management flows.
+  - Stop: exits when `uv` command completes.
+  - Threads: no explicit threads detected.
+- Internal Call-Trace Tree:
+  - `scripts/g.sh::<module_body>(...)`: `exec uv run --project <repo> python -m git_alias ...` delegation [`scripts/g.sh`]
+  - `upgrade_self(...)`: spawn `uv tool install` when Linux [`src/git_alias/core.py`]
+  - `uninstall_self(...)`: spawn `uv tool uninstall` when Linux [`src/git_alias/core.py`]
+- External Boundaries:
+  - External `uv` binary and package-management side effects.
+
+### PROC:gzip
+- Entrypoint(s):
+  - `cmd_ar(...)`: archive compression flow [`src/git_alias/core.py`]
+- Lifecycle/trigger:
+  - Start: alias `ar` triggers tar-stream compression.
+  - Stop: exits after consuming the archive stream.
+  - Threads: no explicit threads detected.
+- Internal Call-Trace Tree:
+  - `cmd_ar(...)`: create `git archive` stream and pipe it to `gzip` [`src/git_alias/core.py`]
+- External Boundaries:
+  - External `gzip` executable and pipe-based stream I/O.
+
+### PROC:editor
+- Entrypoint(s):
+  - `cmd_ed(...)`
+- Lifecycle/trigger:
+  - Start: alias `ed` receives one-or-more file paths.
+  - Stop: one subprocess completion per supplied file path.
+  - Threads: no explicit threads detected.
+- Internal Call-Trace Tree:
+  - `cmd_ed(...)`: expand target paths and invoke `run_editor_command(...)` [`src/git_alias/core.py`]
+    - `run_editor_command(...)`: execute configured editor command [`src/git_alias/core.py`]
+      - `_editor_base_command(...)`: resolve validated editor argv [`src/git_alias/core.py`]
+        - `_validated_config_command_parts(...)`: validate launcher and build runnable argv [`src/git_alias/core.py`]
+          - `_parse_config_command_parts(...)`: tokenize configured command string [`src/git_alias/core.py`]
+          - `_resolve_windows_shell_command_prefix(...)`: adapt Windows shell-script launchers when required [`src/git_alias/core.py`]
+            - `_find_windows_shell_script_path(...)`: locate non-`PATHEXT` shell-script launchers in `PATH` [`src/git_alias/core.py`]
+      - `run_command(...)`: execute resolved external command [`src/git_alias/core.py`]
+- External Boundaries:
+  - External editor binary or shell-script launcher.
+
+### PROC:gitk
+- Entrypoint(s):
+  - `cmd_gp(...)`
+  - `cmd_gr(...)`
+- Lifecycle/trigger:
+  - Start: aliases `gp` or `gr`.
+  - Stop: exits when configured viewer process terminates.
+  - Threads: no explicit threads detected.
+- Internal Call-Trace Tree:
+  - `cmd_gp(...)`: execute configured graph viewer for commit graph rendering [`src/git_alias/core.py`]
+    - `_config_command_parts(...)`: resolve validated graph-viewer argv [`src/git_alias/core.py`]
+      - `_validated_config_command_parts(...)`: validate launcher and build runnable argv [`src/git_alias/core.py`]
+        - `_parse_config_command_parts(...)`: tokenize configured command string [`src/git_alias/core.py`]
+        - `_resolve_windows_shell_command_prefix(...)`: adapt Windows shell-script launchers when required [`src/git_alias/core.py`]
+          - `_find_windows_shell_script_path(...)`: locate non-`PATHEXT` shell-script launchers in `PATH` [`src/git_alias/core.py`]
+    - `run_command(...)`: execute resolved external command [`src/git_alias/core.py`]
+  - `cmd_gr(...)`: execute configured graph viewer for decorated/tag-focused graph rendering [`src/git_alias/core.py`]
+    - `_config_command_parts(...)`: resolve validated graph-viewer argv [`src/git_alias/core.py`]
+      - `_validated_config_command_parts(...)`: validate launcher and build runnable argv [`src/git_alias/core.py`]
+        - `_parse_config_command_parts(...)`: tokenize configured command string [`src/git_alias/core.py`]
+        - `_resolve_windows_shell_command_prefix(...)`: adapt Windows shell-script launchers when required [`src/git_alias/core.py`]
+          - `_find_windows_shell_script_path(...)`: locate non-`PATHEXT` shell-script launchers in `PATH` [`src/git_alias/core.py`]
+    - `run_command(...)`: execute resolved external command [`src/git_alias/core.py`]
+- External Boundaries:
+  - External graph-viewer binary or Git Bash shell-script launcher.
+
+## Communication Edges
+- EDGE: PROC:launcher-g-sh -> PROC:uv
+  - Mechanism: process replacement via shell `exec`
+  - Endpoint/Channel: `uv run --project <repo> python -m git_alias ...`
+  - Payload/Data-Shape: forwarded CLI argument vector `List[str]`
+  - Evidence: `scripts/g.sh`
+- EDGE: PROC:uv -> PROC:main
+  - Mechanism: uv-managed Python process spawn for module execution
+  - Endpoint/Channel: `python -m git_alias`
+  - Payload/Data-Shape: CLI argument vector `List[str]`
+  - Evidence: `scripts/g.sh`, `src/git_alias/__main__.py`, `src/git_alias/core.py`
+- EDGE: PROC:main -> PROC:git
+  - Mechanism: OS subprocess spawn
+  - Endpoint/Channel: process argv plus stdio streams
+  - Payload/Data-Shape: `List[str]` git argv and optional stdin/stdout/stderr text streams
+  - Evidence: `src/git_alias/core.py`
+- EDGE: PROC:main -> PROC:uv
+  - Mechanism: OS subprocess spawn
+  - Endpoint/Channel: process argv plus stdio
+  - Payload/Data-Shape: conditional Linux-only `uv tool` argv sequences
+  - Evidence: `src/git_alias/core.py`
+- EDGE: PROC:main -> PROC:gzip
+  - Mechanism: OS subprocess spawn with pipe-based IPC
+  - Endpoint/Channel: `git archive` stdout pipe to `gzip` stdin
+  - Payload/Data-Shape: tar byte stream transformed into gzip byte stream
+  - Evidence: `src/git_alias/core.py`
+- EDGE: PROC:main -> PROC:editor
+  - Mechanism: OS subprocess spawn
+  - Endpoint/Channel: process argv built from `edit_command`
+  - Payload/Data-Shape: validated launcher argv plus expanded file path operands
+  - Evidence: `src/git_alias/core.py`
+- EDGE: PROC:main -> PROC:gitk
+  - Mechanism: OS subprocess spawn
+  - Endpoint/Channel: process argv built from `gp_command` or `gr_command`
+  - Payload/Data-Shape: validated launcher argv plus forwarded CLI extras; on Windows shell-script launchers use `[sh|bash, <script_path>, ...]`
+  - Evidence: `src/git_alias/core.py`
