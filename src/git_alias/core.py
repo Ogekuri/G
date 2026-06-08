@@ -693,24 +693,82 @@ def _parse_config_command_parts(command_line: str, config_key: str) -> List[str]
     return parts
 
 
+## @brief Resolve non-PATHEXT Windows shell-script launcher paths.
+# @details Searches the configured `PATH` for an exact filename match when the
+# launcher is a Git Bash style script such as `gitk` with no executable
+# extension. This bypasses `shutil.which(...)` limitations on Windows for
+# shell-script launchers not covered by `PATHEXT`.
+# @param executable `str` — configured launcher token before argument parsing.
+# @return `Optional[str]` — POSIX-normalized script path when found; otherwise `None`.
+# @satisfies CTN-002
+
+def _find_windows_shell_script_path(executable: str) -> Optional[str]:
+    if os.name != "nt":
+        return None
+    separators = tuple(
+        separator
+        for separator in (os.sep, os.altsep, "/", "\\")
+        if separator
+    )
+    if any(separator in executable for separator in separators):
+        candidates = [executable]
+    else:
+        path_value = os.getenv("PATH", "")
+        candidates = [
+            os.path.join(directory, executable)
+            for directory in path_value.split(os.pathsep)
+            if directory
+        ]
+    for candidate in candidates:
+        normalized_candidate = os.path.normpath(candidate)
+        if os.path.isfile(normalized_candidate):
+            return Path(normalized_candidate).as_posix()
+    return None
+
+
+## @brief Resolve a runnable Windows shell-script launcher prefix.
+# @details Converts Git Bash style PATH entries such as `gitk` into a subprocess
+# argv prefix executable by Python on Windows. When a shell-script launcher is
+# detected, the command is executed through `sh` or `bash` so `subprocess.run`
+# does not fail with native Win32 executable lookup errors.
+# @param executable `str` — configured launcher token before argument parsing.
+# @return `Optional[List[str]]` — argv prefix `[shell_path, script_path]` when a
+# Windows shell-script launcher is available; otherwise `None`.
+# @satisfies CTN-002
+
+def _resolve_windows_shell_command_prefix(executable: str) -> Optional[List[str]]:
+    script_path = _find_windows_shell_script_path(executable)
+    if script_path is None:
+        return None
+    shell_path = shutil.which("sh") or shutil.which("bash")
+    if shell_path is None:
+        return None
+    return [shell_path, script_path]
+
+
 ## @brief Validate configured launcher executable availability.
 # @details Resolves the first argv token against the current-platform PATH
 # lookup rules and aborts command execution when the executable is unavailable.
+# On Windows, Git Bash shell-script launchers without executable extensions are
+# executed through `sh`/`bash` when present in `PATH`.
 # @param key `str` — configuration key containing the launcher command line.
 # @param default_command `str` — fallback command line when config is empty.
 # @return `List[str]` — validated argv tokens ready for subprocess execution.
 # @exception RuntimeError Raised when the configured command is invalid or the executable is unavailable.
-# @satisfies REQ-157, REQ-159
+# @satisfies CTN-002, REQ-157, REQ-159
 
 def _validated_config_command_parts(key: str, default_command: str) -> List[str]:
     raw_value = get_config_value(key) or default_command
     parts = _parse_config_command_parts(raw_value, key)
     executable = parts[0]
-    if shutil.which(executable) is None:
-        raise RuntimeError(
-            f"Configured {key} executable '{executable}' is not available on this system."
-        )
-    return parts
+    if shutil.which(executable) is not None:
+        return parts
+    shell_prefix = _resolve_windows_shell_command_prefix(executable)
+    if shell_prefix is not None:
+        return shell_prefix + parts[1:]
+    raise RuntimeError(
+        f"Configured {key} executable '{executable}' is not available on this system."
+    )
 
 
 ## @brief Resolve the editor launcher command after executable validation.

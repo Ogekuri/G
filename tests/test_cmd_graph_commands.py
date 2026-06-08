@@ -47,3 +47,42 @@ class CmdGraphCommandsTest(unittest.TestCase):
             ):
                 core.cmd_gr(["--tags"])
         run_command.assert_not_called()
+
+    def test_cmd_gr_uses_git_bash_script_when_windows_path_contains_gitk(self):
+        """
+        @brief Verify Windows Git Bash launcher resolution for `gitk`.
+        @details Reproduces the defect where `shutil.which("gitk")` returns `None`
+        on Windows although PATH contains a shell-script launcher named `gitk`.
+        The command must be executed through `sh` instead of being rejected as
+        unavailable.
+        @return {None} No return value.
+        """
+        core.CONFIG["gr_command"] = "gitk --simplify-by-decoration --all"
+        with mock.patch.object(core.os, "name", "nt"), \
+             mock.patch.object(
+                 core.shutil,
+                 "which",
+                 side_effect=[None, "C:/Program Files/Git/usr/bin/sh.exe"],
+             ), \
+             mock.patch.object(
+                 core.os,
+                 "getenv",
+                 return_value="C:/Git/mingw64/bin;C:/Git/usr/bin",
+             ), \
+             mock.patch.object(
+                 core.os.path,
+                 "isfile",
+                 side_effect=lambda path: path.replace("\\", "/")
+                 == "C:/Git/mingw64/bin/gitk",
+             ), \
+             mock.patch.object(core, "run_command", return_value=None) as run_command:
+            core.cmd_gr(["--tags"])
+        run_command.assert_called_once_with(
+            [
+                "C:/Program Files/Git/usr/bin/sh.exe",
+                "C:/Git/mingw64/bin/gitk",
+                "--simplify-by-decoration",
+                "--all",
+                "--tags",
+            ]
+        )
