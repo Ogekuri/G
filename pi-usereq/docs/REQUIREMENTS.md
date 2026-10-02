@@ -22,6 +22,7 @@ tags: ["requirements", "srs", "git-alias"]
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-10-02 | 1.16 | Required gitignore(5) escaping and negation exclusion semantics for `ver_rules.pattern` with anchoring preserved and README documentation. |
 | 2026-04-22 | 1.15 | Changed `wt` to execute `git worktree` while keeping `wtl` as the dedicated `git worktree list` alias. |
 | 2026-03-30 | 1.14 | Required idle-time JSON rewrites for every version-check error while keeping 3600-second success delay and 86400-second error delay. |
 | 2026-03-30 | 1.13 | Changed release-check idle delays to 3600 seconds after success and 86400 seconds after release-check API-call errors. |
@@ -109,6 +110,12 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-016**: MUST show management commands before alias listings when global help is requested or when command input is missing.
 - **REQ-017**: MUST evaluate `ver_rules` from `.g.conf` (or defaults), build repository candidates from `git ls-files`, apply pathspec matching plus hardcoded cache/temp exclusions, and fail on mismatched or missing version matches as specified.
 - **REQ-118**: MUST abort `ver` and `chver` when a `ver_rules.pattern` matches zero repository files, and MUST report the offending pattern with guidance that only repository files can be configured in `ver_rules.pattern`.
+- **REQ-160**: MUST treat each backslash in `ver_rules.pattern` as a gitignore(5) escape of the next character and MUST NOT convert backslashes to path separators.
+- **REQ-161**: MUST exclude candidate files matching the remainder of a `ver_rules.pattern` starting with `!` from every version rule matched file list.
+- **REQ-162**: MUST accept `ver_rules` entries whose pattern starts with `!` without a `regex` field and MUST NOT evaluate such entries as version detection rules.
+- **REQ-163**: MUST NOT count negation-excluded files as `ver_rules.pattern` matches and MUST apply the REQ-118 zero-match abort only to non-excluded matches.
+- **REQ-164**: MUST keep `ver_rules.pattern` anchoring unchanged: patterns containing `/` MUST be anchored to repository root and patterns without `/` MUST match at any depth.
+- **REQ-165**: MUST document `ver_rules.pattern` in `README.md` as gitignore(5)-compatible including backslash escaping and `!` negation exclusion.
 - **REQ-018**: MUST the `changelog` command MUST generate `CHANGELOG.md` grouping commits by minor releases (semver tags where `patch=0` AND version `>=0.1.0`); MUST include only minor releases by default with all commits between consecutive minor releases (from repository beginning for the first minor); MUST produce an empty changelog body when no minor releases exist; MUST list releases reverse-chronologically (newest first).
 - **REQ-019**: MUST alias `bd` accept exactly one local branch target, MAY accept one leading `--force`, and MUST NOT accept any other flags or extra operands.
 - **REQ-138**: MUST `bd` execute `git branch -d <branch>` when the target branch has no associated worktree and `--force` is absent.

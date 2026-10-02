@@ -112,6 +112,7 @@ g --write-config
 ### Edit Configuration Files
 
 - Customize repository-local `.g.conf` with `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`.
+- Each `ver_rules` entry pairs a `pattern` (file selector) with a `regex` (version extractor). `pattern` uses gitignore(5) syntax: patterns without `/` match at any depth, patterns containing `/` are anchored to the repository root, a backslash escapes the next character (e.g. `\!file.txt` matches a file literally named `!file.txt`), and a pattern starting with `!` excludes the matching files from every rule's match list (such entries do not need a `regex`).
 - Customize global `$HOME/.config/git-alias/config.json` with `edit_command`, `gp_command`, and `gr_command`.
 - Running `g --write-config` normalizes both files to these key sets and migrates legacy global `editor` to `edit_command`.
 

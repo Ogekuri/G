@@ -175,11 +175,14 @@ def get_editor():
     return get_config_value("edit_command")
 
 
-## @brief Execute `_load_config_rules` runtime logic for Git-Alias CLI.
-# @details Executes `_load_config_rules` using deterministic CLI control-flow and explicit error propagation.
-# @param key Input parameter consumed by `_load_config_rules`.
-# @param fallback Input parameter consumed by `_load_config_rules`.
-# @return Result emitted by `_load_config_rules` according to command contract.
+## @brief Load rule pairs from the active configuration for a rule-bearing config key.
+# @details Accepts dict entries `{"pattern"|"glob", "regex"}` and `(pattern, regex)` sequence
+#          entries, strips both fields, and drops invalid entries. Negation patterns starting
+#          with `!` are accepted without a `regex` field and stored with `None` regex.
+# @param key {str} Configuration key to read from `CONFIG`.
+# @param fallback {List[Tuple[str, str]]} Default rule list used when no valid entry remains.
+# @return {List[Tuple[str, Optional[str]]]} Parsed `(pattern, regex)` rule pairs; negation entries carry `None` regex.
+# @satisfies REQ-162
 def _load_config_rules(key, fallback):
     raw_value = CONFIG.get(key, DEFAULT_CONFIG[key])
     if not isinstance(raw_value, list):
@@ -203,6 +206,8 @@ def _load_config_rules(key, fallback):
             regex = None
         if pattern and regex:
             rules.append((pattern, regex))
+        elif pattern and pattern.startswith("!"):
+            rules.append((pattern, None))
     return rules if rules else list(fallback)
 
 
@@ -1912,20 +1917,89 @@ class VersionRuleContext:
 
 
 ## @brief Normalize a `ver_rules` pattern to the internal pathspec matching form.
-# @details Converts separators to POSIX style, strips leading `./`, and anchors patterns containing `/`
-#          to repository root by prefixing `/` when missing, preserving REQ-017 semantics.
-# @param pattern Input pattern string from configuration.
-# @return Normalized pathspec-compatible pattern string; empty string when input is blank.
+# @details Strips surrounding blanks, strips a leading `./`, and anchors patterns containing `/`
+#          to repository root by prefixing `/` when missing. Backslash sequences are preserved
+#          verbatim so pathspec gitwildmatch applies gitignore(5) escape semantics.
+# @param pattern {str} Input pattern string from configuration.
+# @return {str} Normalized pathspec-compatible pattern string; empty string when input is blank.
+# @satisfies REQ-160, REQ-164
 def _normalize_version_rule_pattern(pattern: str) -> str:
     trimmed = (pattern or "").strip()
     if not trimmed:
         return ""
-    normalized_pattern = trimmed.replace("\\", "/")
+    normalized_pattern = trimmed
     if normalized_pattern.startswith("./"):
         normalized_pattern = normalized_pattern[2:]
     if "/" in normalized_pattern and not normalized_pattern.startswith("/"):
         normalized_pattern = f"/{normalized_pattern}"
     return normalized_pattern
+
+
+## @brief Split a `ver_rules` pattern into its negation flag and matching base pattern.
+# @details Detects the gitignore(5)-style negation prefix `!` in the raw pattern text and
+#          returns the remainder used for exclusion matching.
+# @param pattern {str} Raw pattern string from configuration.
+# @return {Tuple[bool, str]} `(True, remainder)` when the pattern starts with `!`; `(False, pattern)` otherwise.
+# @satisfies REQ-161
+def _split_negation_pattern(pattern: str) -> Tuple[bool, str]:
+    text = pattern or ""
+    if text.startswith("!"):
+        return True, text[1:]
+    return False, text
+
+
+## @brief Evaluate pathspec membership for one repository-relative path.
+# @details Applies the spec match and retries with a leading `/` for root-anchored patterns,
+#          mirroring the anchored-pattern matching contract of the inventory walker.
+# @param spec {pathspec.PathSpec} Compiled pathspec used for matching.
+# @param normalized_pattern {str} Normalized pattern that produced `spec`.
+# @param relative {str} Repository-relative POSIX path under evaluation.
+# @return {bool} True when the path matches the spec.
+def _version_pathspec_matches(spec, normalized_pattern: str, relative: str) -> bool:
+    matches = spec.match_file(relative)
+    if (
+        not matches
+        and normalized_pattern.startswith("/")
+        and not relative.startswith("/")
+    ):
+        matches = spec.match_file(f"/{relative}")
+    return bool(matches)
+
+
+## @brief Compile exclusion pathspecs from negation `ver_rules` patterns.
+# @details Collects every rule pattern starting with `!`, strips the prefix, normalizes the
+#          remainder with the shared normalization contract, and compiles each base pattern
+#          as a positive gitwildmatch spec.
+# @param rules {List[Tuple[str, Optional[str]]]} Parsed `(pattern, regex)` rule pairs.
+# @return {List[pathspec.PathSpec]} Compiled exclusion pathspecs; empty when no negation pattern is configured.
+# @satisfies REQ-161
+def _build_version_negation_specs(rules) -> List:
+    specs = []
+    for pattern, _regex in rules:
+        negated, base_text = _split_negation_pattern(
+            pattern if isinstance(pattern, str) else ""
+        )
+        if not negated:
+            continue
+        base = _normalize_version_rule_pattern(base_text)
+        if not base:
+            continue
+        specs.append(pathspec.PathSpec.from_lines("gitwildmatch", [base]))
+    return specs
+
+
+## @brief Report whether a repository-relative path is excluded by a negation pattern.
+# @details Evaluates each compiled negation spec directly and with a leading `/` prefix so
+#          root-anchored exclusion bases match repository-relative paths.
+# @param relative {str} Repository-relative POSIX path under evaluation.
+# @param negation_specs {List[pathspec.PathSpec]} Compiled exclusion pathspecs.
+# @return {bool} True when any negation spec matches the path.
+# @satisfies REQ-161, REQ-163
+def _version_path_is_negated(relative: str, negation_specs) -> bool:
+    for spec in negation_specs:
+        if spec.match_file(relative) or spec.match_file(f"/{relative}"):
+            return True
+    return False
 
 
 ## @brief Build a deduplicated repository file inventory for version rule evaluation.
@@ -1961,14 +2035,17 @@ def _build_version_file_inventory(root: Path) -> List[Tuple[Path, str]]:
     return inventory
 
 
-## @brief Execute `_collect_version_files` runtime logic for Git-Alias CLI.
-# @details Executes `_collect_version_files` using deterministic CLI control-flow and explicit error propagation.
-#          Uses precomputed inventory when provided to avoid repeated repository traversals.
-# @param root Input parameter consumed by `_collect_version_files`.
-# @param pattern Input parameter consumed by `_collect_version_files`.
-# @param inventory Optional precomputed `(path, normalized_relative_path)` list.
-# @return Result emitted by `_collect_version_files` according to command contract.
-def _collect_version_files(root, pattern, *, inventory=None):
+## @brief Collect repository files matched by one `ver_rules` pattern.
+# @details Normalizes the pattern, applies pathspec gitignore-style matching over the tracked-file
+#          inventory, and drops candidates excluded by any compiled negation spec. Uses the
+#          precomputed inventory when provided to avoid repeated repository traversals.
+# @param root {Path} Repository root path used as traversal anchor.
+# @param pattern {str} Inclusion pattern string from configuration (never starting with `!`).
+# @param inventory {Optional[List[Tuple[Path, str]]]} Precomputed `(path, normalized_relative_path)` list.
+# @param negation_specs {List[pathspec.PathSpec]} Compiled exclusion pathspecs applied before matching.
+# @return {List[Path]} Matched, non-excluded file paths in inventory order.
+# @satisfies REQ-161, REQ-163, REQ-164
+def _collect_version_files(root, pattern, *, inventory=None, negation_specs=()):
     files = []
     normalized_pattern = _normalize_version_rule_pattern(pattern)
     if not normalized_pattern:
@@ -1979,14 +2056,9 @@ def _collect_version_files(root, pattern, *, inventory=None):
         inventory if inventory is not None else _build_version_file_inventory(root)
     )
     for path, normalized_relative in candidates:
-        matches = spec.match_file(normalized_relative)
-        if (
-            not matches
-            and normalized_pattern.startswith("/")
-            and not normalized_relative.startswith("/")
-        ):
-            matches = spec.match_file(f"/{normalized_relative}")
-        if matches:
+        if _version_path_is_negated(normalized_relative, negation_specs):
+            continue
+        if _version_pathspec_matches(spec, normalized_pattern, normalized_relative):
             files.append(path)
 
     return files
@@ -2041,19 +2113,30 @@ def _read_version_file_text(
 
 
 ## @brief Build reusable per-rule contexts for canonical version evaluation workflows.
-# @details Resolves matched files and compiled regex for each `(pattern, regex)` rule exactly once.
+# @details Compiles exclusion pathspecs from negation rules, skips negation rules from context
+#          generation, and resolves matched files plus compiled regex for each inclusion rule.
 #          Preserves error contracts for unmatched patterns and invalid regex declarations.
-# @param root Repository root path used for relative-path rendering.
-# @param rules Sequence of `(pattern, regex)` tuples.
-# @param inventory Optional precomputed inventory to avoid repeated filesystem traversal.
-# @return Ordered list of `VersionRuleContext` objects aligned to input rule order.
+# @param root {Path} Repository root path used for relative-path rendering.
+# @param rules {List[Tuple[str, Optional[str]]]} Sequence of `(pattern, regex)` tuples; negation
+#        patterns (`!` prefix) contribute exclusions and never produce contexts.
+# @param inventory {Optional[List[Tuple[Path, str]]]} Precomputed inventory to avoid repeated filesystem traversal.
+# @return {List[VersionRuleContext]} Ordered list of `VersionRuleContext` objects aligned to inclusion rule order.
 # @throws VersionDetectionError when a rule matches no files or contains an invalid regex.
+# @satisfies REQ-161, REQ-162, REQ-163
 def _prepare_version_rule_contexts(
     root: Path, rules, *, inventory: Optional[List[Tuple[Path, str]]] = None
 ) -> List[VersionRuleContext]:
     contexts: List[VersionRuleContext] = []
+    negation_specs = _build_version_negation_specs(rules)
     for pattern, expression in rules:
-        files = _collect_version_files(root, pattern, inventory=inventory)
+        negated, _base_text = _split_negation_pattern(
+            pattern if isinstance(pattern, str) else ""
+        )
+        if negated:
+            continue
+        files = _collect_version_files(
+            root, pattern, inventory=inventory, negation_specs=negation_specs
+        )
         relative_map: Dict[Path, str] = {}
         for file_path in files:
             try:
