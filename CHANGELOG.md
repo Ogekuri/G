@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.38.0](https://github.com/Ogekuri/G/compare/v0.37.0..v0.38.0) - 2026-10-02
+### 🚜  Changes
+- add gitignore escaping and negation to ver_rules.pattern [useReq] *(core)*
+  - Preserve gitignore(5) backslash escaping in ver_rules.pattern
+  - normalization (REQ-160); backslashes are no longer converted to
+  - path separators.
+  - Add negation exclusion: patterns starting with '!' exclude matched
+  - files from every rule's file list (REQ-161); such entries accept
+  - no regex and are skipped as detection rules (REQ-162).
+  - Negation-excluded files no longer count as matches and the REQ-118
+  - zero-match abort applies only to non-excluded matches (REQ-163).
+  - Anchoring semantics unchanged (REQ-164); README documents full
+  - gitignore(5) compatibility (REQ-165).
+  - Add HDT unit tests in tests/test_ver_rule_patterns.py.
+
 ## [0.37.0](https://github.com/Ogekuri/G/compare/v0.36.0..v0.37.0) - 2026-07-08
 ### 🐛  Bug Fixes
 - Fix ignore file.
@@ -719,6 +734,7 @@
 - \[0.35.0\]: https://github.com/Ogekuri/G/releases/tag/v0.35.0
 - \[0.36.0\]: https://github.com/Ogekuri/G/releases/tag/v0.36.0
 - \[0.37.0\]: https://github.com/Ogekuri/G/releases/tag/v0.37.0
+- \[0.38.0\]: https://github.com/Ogekuri/G/releases/tag/v0.38.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -757,3 +773,4 @@
 [0.35.0]: https://github.com/Ogekuri/G/compare/v0.34.0..v0.35.0
 [0.36.0]: https://github.com/Ogekuri/G/compare/v0.35.0..v0.36.0
 [0.37.0]: https://github.com/Ogekuri/G/compare/v0.36.0..v0.37.0
+[0.38.0]: https://github.com/Ogekuri/G/compare/v0.37.0..v0.38.0
