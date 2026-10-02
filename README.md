@@ -112,7 +112,28 @@ g --write-config
 ### Edit Configuration Files
 
 - Customize repository-local `.g.conf` with `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`.
-- Each `ver_rules` entry pairs a `pattern` (file selector) with a `regex` (version extractor). `pattern` uses gitignore(5) syntax: patterns without `/` match at any depth, patterns containing `/` are anchored to the repository root, a backslash escapes the next character (e.g. `\!file.txt` matches a file literally named `!file.txt`), and a pattern starting with `!` excludes the matching files from every rule's match list (such entries do not need a `regex`).
+- Each `ver_rules` entry pairs a `pattern` (file selector) with a `regex` (version extractor).
+- **`ver_rules.pattern` uses the `.gitignore` file syntax ([gitignore(5)](https://git-scm.com/docs/gitignore))**. Only tracked repository files (`git ls-files`) are candidates, and hardcoded cache/temporary paths (e.g. `.git`, `tmp`, `temp`, `.cache`, `.pytest_cache`) are always excluded from matching. Semantics:
+  - Patterns without `/` match at any depth; patterns containing `/` are anchored to the repository root (a leading `./` is stripped).
+  - A backslash escapes the next character and is never treated as a path separator (e.g. `\!file.txt` matches a file literally named `!file.txt`).
+  - A pattern starting with `!` is a negation rule: matching files are excluded from every `ver_rules` match list; negation entries do not need a `regex` and are not evaluated for version detection.
+  - A `pattern` that matches zero repository files aborts `ver` and `chver` with an explicit error.
+
+Pattern examples (`ver_rules.pattern`, gitignore syntax):
+
+| `pattern` | Matching behavior | Example matched files |
+| --- | --- | --- |
+| `README.md` | No `/`: matches at any depth | `README.md`, `docs/README.md` |
+| `pyproject.toml` | No `/`: matches at any depth | `pyproject.toml`, `tools/pyproject.toml` |
+| `src/**/*.py` | Contains `/`: anchored to the repository root; `**` spans any number of directories | all `.py` files under `src/` (e.g. `src/git_alias/core.py`) |
+| `src/*.py` | Contains `/`: anchored to the repository root, direct children of `src/` only | `src/main.py` (not `src/git_alias/core.py`) |
+| `docs/CHANGELOG.md` | Anchored exact repository path | `docs/CHANGELOG.md` only |
+| `./pyproject.toml` | Leading `./` is stripped before matching | equivalent to `pyproject.toml` (matches at any depth) |
+| `!src/experimental/**` | Negation: excludes matched files from every rule's match list; no `regex` needed | removes all files under `src/experimental/` from the match lists |
+| `\!file.txt` | Backslash escape: matches the next character literally | a file literally named `!file.txt` |
+
+The default `ver_rules` select `README.md`, `src/**/*.py`, and `pyproject.toml`.
+
 - Customize global `$HOME/.config/git-alias/config.json` with `edit_command`, `gp_command`, and `gr_command`.
 - Running `g --write-config` normalizes both files to these key sets and migrates legacy global `editor` to `edit_command`.
 
