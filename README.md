@@ -58,9 +58,9 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 - Provides `backup` command to run release preflight checks, merge `work` into `develop`, push `develop`, and return to `work`.
 - Provides `get` command to fast-forward local `master` and `develop` from `origin` (with tags), then fast-forward merge `develop` into `work` after strict preflight checks.
 - Provides `str` command to print all remotes and run `git remote show <remote>` for each.
-- Provides visual diff aliases for repository comparisons, including `dcd` (`develop` vs `work`), `dcm` (`master` vs `work`), and `ddm` (`master` vs `develop`).
-- Provides worktree aliases: `wt` (`git worktree list`), `wtl` (`git worktree list ...`), `wtp` (`git worktree prune ...`), and `wtd` (worktree delete with paired branch cleanup and optional `--force`).
-- Provides file listing aliases: `ls` lists tracked files; `lsi` lists ignored/untracked files and applies a default directory/suffix filter unless `--include-all` is provided.
+- Provides visual diff aliases for repository comparisons: `dwc` (working tree vs `HEAD`), `dcc` (`HEAD~1` vs `HEAD`), `dccc` (`HEAD~2` vs `HEAD`), `dwcc` (working tree vs `HEAD~1`), `dw <ref>` (working tree vs a specific ref), `dc <ref_a> <ref_b>` (between two refs), plus configured-branch comparisons `dcd` (`develop` vs `work`), `dcm` (`master` vs `work`), and `ddm` (`master` vs `develop`).
+- Provides worktree aliases: `wt` (generic `git worktree` subcommands with arguments forwarded unchanged), `wtl` (dedicated `git worktree list` with `-v`/`--porcelain`/`-z` forwarding), `wtp` (`git worktree prune ...`), and `wtd` (worktree delete with paired branch cleanup and optional `--force`).
+- Provides file listing aliases: `ls` lists tracked files; `lsa` lists untracked files; `lsi` lists ignored/untracked files and applies a default directory/suffix filter unless `--include-all` is provided.
 - Provides an overview alias: `o` prints a structured repository summary with working-tree status, branch divergence/alignment sections, and a branch table that lists configured branches first and then all other local/remote branches with latest commit subjects.
 - Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--include-patch`, `--force-write`, `--print-only`, `--disable-history`).
 - Self-upgrade and self-uninstall management commands are Linux-only for local execution (`--upgrade`, `--uninstall`), with manual command hints on other platforms.
@@ -68,6 +68,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 [![Flowchart](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/command_o_overview_sample1.png)](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/command_o_overview_sample1.png)
 - Includes **git-foresta** command `l`:
 [![Flowchart](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/commnad_l_git-foresta-sample1.png)](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/commnad_l_git-foresta-sample1.png)
+  Options include `--all`, `--no-color`, `--no-status`, `--reverse`, `--wrap`, `--abbrev=<n>`, `--svdepth=<n>`, `--style=<n>`, `--graph-margin-left=<n>`, `--graph-margin-right=<n>`, and `--graph-symbol-*` overrides.
 
 
 ## Requirements
@@ -100,6 +101,13 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
   ```bash
   uvx --from git+https://github.com/Ogekuri/G.git git-alias <command> [args...]
   ```
+
+  - Run with the Repository-Local Launcher (no installation required)
+  ```bash
+  scripts/g.sh <command> [args...]
+  ```
+
+  Requires Astral `uv` in `PATH`: the launcher resolves the repository root and delegates execution to `uv run --project <repo> python -m git_alias`.
 
 
 ### Create Configuration Files (`.g.conf` + `$HOME/.config/git-alias/config.json`)
@@ -200,7 +208,8 @@ Some CLI examples:
 - `g dcm`: Runs `git difftool -d <master> <work>` using configured branch names.
 - `g ddm`: Runs `git difftool -d <master> <develop>` using configured branch names.
 - `g bd --force feature/demo`: Removes the associated worktree first when present, then force-deletes `feature/demo`.
-- `g wt`: Runs `git worktree list`.
+- `g wt list`: Runs `git worktree list`; `wt` forwards any `git worktree` subcommand/argument (e.g. `g wt add <path> <branch>`) unchanged.
+- `g wtl --porcelain`: Lists worktrees via `git worktree list --porcelain`; `g wtp` runs `git worktree prune`.
 - `g wtd --force ../repo-worktree`: Force-removes the target worktree; when it is associated to a local branch, the worktree is deleted before the branch.
 - `g ls -z`: Lists tracked files using `git ls-files --exclude-standard`.
 - `g lsi -z`: Lists ignored/untracked files using `git ls-files --others --ignored --exclude-standard` plus the default filter.
