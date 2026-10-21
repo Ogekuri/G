@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.39.0](https://github.com/Ogekuri/G/compare/v0.38.0..v0.39.0) - 2026-10-21
+### 🚜  Changes
+- add --exec option to major/minor/patch release commands [useReq] *(core)*
+  - Add `--exec <command> [params...]` to major/minor/patch releases: the operand tail is parsed by _parse_release_flags with rest-of-argv semantics, kept separate from changelog args, and executed as an argv list (repository root CWD, inherited stdio) between the version-update and staging steps of _execute_release_flow. A non-zero exit aborts the release with the standard --- [release:<level>] Step ... failed: ... --- diagnostic before staging, commit, tag, or push. Help texts and the SRS document the option (new REQ-166, REQ-167, REQ-168; REQ-026 extended). Also fixes pre-existing Doxygen block adjacency defects in core.py launcher helpers.
+
 ## [0.38.0](https://github.com/Ogekuri/G/compare/v0.37.0..v0.38.0) - 2026-10-02
 ### 🚜  Changes
 - add gitignore escaping and negation to ver_rules.pattern [useReq] *(core)*
@@ -735,6 +740,7 @@
 - \[0.36.0\]: https://github.com/Ogekuri/G/releases/tag/v0.36.0
 - \[0.37.0\]: https://github.com/Ogekuri/G/releases/tag/v0.37.0
 - \[0.38.0\]: https://github.com/Ogekuri/G/releases/tag/v0.38.0
+- \[0.39.0\]: https://github.com/Ogekuri/G/releases/tag/v0.39.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -774,3 +780,4 @@
 [0.36.0]: https://github.com/Ogekuri/G/compare/v0.35.0..v0.36.0
 [0.37.0]: https://github.com/Ogekuri/G/compare/v0.36.0..v0.37.0
 [0.38.0]: https://github.com/Ogekuri/G/compare/v0.37.0..v0.38.0
+[0.39.0]: https://github.com/Ogekuri/G/compare/v0.38.0..v0.39.0
