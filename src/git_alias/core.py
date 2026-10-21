@@ -685,7 +685,6 @@ def write_default_config(root=None, home=None):
 # @return `List[str]` — parsed argv tokens.
 # @exception RuntimeError Raised when the configured command line is invalid or empty.
 # @satisfies REQ-156, REQ-159
-
 def _parse_config_command_parts(command_line: str, config_key: str) -> List[str]:
     try:
         parts = shlex.split(command_line)
@@ -706,7 +705,6 @@ def _parse_config_command_parts(command_line: str, config_key: str) -> List[str]
 # @param executable `str` — configured launcher token before argument parsing.
 # @return `Optional[str]` — POSIX-normalized script path when found; otherwise `None`.
 # @satisfies CTN-002
-
 def _find_windows_shell_script_path(executable: str) -> Optional[str]:
     if os.name != "nt":
         return None
@@ -740,7 +738,6 @@ def _find_windows_shell_script_path(executable: str) -> Optional[str]:
 # @return `Optional[List[str]]` — argv prefix `[shell_path, script_path]` when a
 # Windows shell-script launcher is available; otherwise `None`.
 # @satisfies CTN-002
-
 def _resolve_windows_shell_command_prefix(executable: str) -> Optional[List[str]]:
     script_path = _find_windows_shell_script_path(executable)
     if script_path is None:
@@ -761,7 +758,6 @@ def _resolve_windows_shell_command_prefix(executable: str) -> Optional[List[str]
 # @return `List[str]` — validated argv tokens ready for subprocess execution.
 # @exception RuntimeError Raised when the configured command is invalid or the executable is unavailable.
 # @satisfies CTN-002, REQ-157, REQ-159
-
 def _validated_config_command_parts(key: str, default_command: str) -> List[str]:
     raw_value = get_config_value(key) or default_command
     parts = _parse_config_command_parts(raw_value, key)
@@ -781,7 +777,6 @@ def _validated_config_command_parts(key: str, default_command: str) -> List[str]
 # @return `List[str]` — validated editor argv tokens.
 # @exception RuntimeError Raised when `edit_command` is invalid or unavailable.
 # @satisfies REQ-156, REQ-157, REQ-159
-
 def _editor_base_command() -> List[str]:
     return _validated_config_command_parts(
         "edit_command", DEFAULT_CONFIG["edit_command"]
@@ -794,7 +789,6 @@ def _editor_base_command() -> List[str]:
 # @return Result emitted by `run_editor_command` according to command contract.
 # @exception RuntimeError Raised when the configured editor launcher is invalid or unavailable.
 # @satisfies REQ-158, REQ-159
-
 def run_editor_command(args):
     return run_command(_editor_base_command() + list(args))
 
@@ -807,7 +801,6 @@ def run_editor_command(args):
 # @return Result emitted by `_config_command_parts` according to command contract.
 # @exception RuntimeError Raised when the configured launcher is invalid or unavailable.
 # @satisfies REQ-156, REQ-157, REQ-159
-
 def _config_command_parts(key: str, default_command: str) -> List[str]:
     return _validated_config_command_parts(key, default_command)
 
@@ -854,8 +847,8 @@ HELP_TEXTS = {
     "lsi": "List ignored files using git ls-files. Options: --include-all (show all, skip default directory filter).",
     "lsa": "List untracked files using git ls-files.",
     "lt": "Print tags with containing branches.",
-    "major": "Release a new major version from the work branch. Options: --include-patch.",
-    "minor": "Release a new minor version from the work branch. Options: --include-patch.",
+    "major": "Release a new major version from the work branch. Options: --include-patch, --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release).",
+    "minor": "Release a new minor version from the work branch. Options: --include-patch, --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release).",
     "new": "Conventional commit new(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
     "o": "Print a verbose overview with status, branch distances, active worktrees, and a qualitative ASCII topology tree.",
     "implement": "Conventional commit implement(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
@@ -872,7 +865,7 @@ HELP_TEXTS = {
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
-    "patch": "Release a new patch version from the work branch. Options: --include-patch.",
+    "patch": "Release a new patch version from the work branch. Options: --include-patch, --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release).",
     "ra": "Remove all staged files and return them to the working tree (inverse of aa).",
     "rf": "Print changes on HEAD reference.",
     "rmloc": "Remove changed files from the working tree.",
@@ -2678,20 +2671,21 @@ def _push_branch_with_tags(branch_name):
 #          - `major`/`minor`: merges `work` into `develop`, pushes `develop` with tags, then merges
 #            `develop` into `master` and pushes `master`.
 #          Changelog flags always include `--force-write`; `patch` auto-adds `--include-patch`.
-#          A temporary local `v<target>` tag is created on `work` only to generate changelog and
+#          When `exec_args` is non-empty, an additional `run external command` step executes
+#          the argv list between `update versions` and `stage files` so build artifacts are
+#          staged by `git add --all` and included in the first release commit.
 #          deleted immediately after changelog generation. The definitive `v<target>` tag is then
 #          created on `develop` (`patch`) or `master` (`major`/`minor`) immediately before push
 #          with `--tags`.
-# @param level Release level string: `"major"`, `"minor"`, or `"patch"`.
-# @param changelog_args Optional list of extra changelog flags forwarded alongside `--force-write`.
+# @param level {str} Release level string: `"major"`, `"minor"`, or `"patch"`.
+# @param changelog_args {List[str] | None} Optional extra changelog flags forwarded alongside `--force-write`.
+# @param exec_args {List[str] | None} Optional external command argv executed without shell
+#          with repository root as CWD and inherited stdio (REQ-166, REQ-167); a non-zero
+#          exit is converted by `_run_release_step` into a `ReleaseError` that aborts the
+#          release before staging, commit, tag, or push (REQ-168).
 # @return None; raises `ReleaseError` or `VersionDetectionError` on failure.
-# @satisfies REQ-026, REQ-045
-## @brief Execute `_execute_release_flow` runtime logic for Git-Alias CLI.
-# @details Executes `_execute_release_flow` using deterministic CLI control-flow and explicit error propagation.
-# @param level Input parameter consumed by `_execute_release_flow`.
-# @param changelog_args Input parameter consumed by `_execute_release_flow`.
-# @return Result emitted by `_execute_release_flow` according to command contract.
-def _execute_release_flow(level, changelog_args=None):
+# @satisfies REQ-026, REQ-045, REQ-166, REQ-167, REQ-168
+def _execute_release_flow(level, changelog_args=None, exec_args=None):
     branches = _ensure_release_prerequisites()
     rules = get_version_rules()
     if not rules:
@@ -2713,6 +2707,12 @@ def _execute_release_flow(level, changelog_args=None):
 
     print()
     _run_release_step(level, "update versions", lambda: cmd_chver([target_version]))
+    if exec_args:
+        _run_release_step(
+            level,
+            "run external command",
+            lambda: run_command(list(exec_args), cwd=root),
+        )
     _run_release_step(level, "stage files", lambda: run_git_cmd(["add", "--all"]))
     _run_release_step(
         level,
@@ -2808,14 +2808,22 @@ def _execute_backup_flow():
     )
 
 
-## @brief Execute `_run_release_command` runtime logic for Git-Alias CLI.
-# @details Executes `_run_release_command` using deterministic CLI control-flow and explicit error propagation.
-# @param level Input parameter consumed by `_run_release_command`.
-# @param changelog_args Input parameter consumed by `_run_release_command`.
-# @return Result emitted by `_run_release_command` according to command contract.
-def _run_release_command(level, changelog_args=None):
+## @brief Execute one release workflow command with unified error propagation to CLI exit codes.
+# @details Delegates to `_execute_release_flow` and converts `ReleaseError`,
+#          `VersionDetectionError`, and `CommandExecutionError` into English stderr
+#          diagnostics plus non-zero exit status.
+# @param level {str} Release level string: `"major"`, `"minor"`, or `"patch"`.
+# @param changelog_args {List[str] | None} Optional extra changelog flags forwarded alongside `--force-write`.
+# @param exec_args {List[str] | None} Optional external command argv forwarded to
+#          `_execute_release_flow` for the injected exec step (REQ-166, REQ-167).
+# @return None; side-effects: release workflow execution and stderr diagnostics on failure.
+# @exception SystemExit Exit code 1 (or the failing command return code) on workflow failure.
+# @satisfies REQ-026, REQ-166, REQ-168
+def _run_release_command(level, changelog_args=None, exec_args=None):
     try:
-        _execute_release_flow(level, changelog_args=changelog_args)
+        _execute_release_flow(
+            level, changelog_args=changelog_args, exec_args=exec_args
+        )
     except ReleaseError as exc:
         print(str(exc), file=sys.stderr)
         sys.exit(1)
@@ -2866,30 +2874,54 @@ def _reject_extra_arguments(extra, alias):
         sys.exit(1)
 
 
-## @brief Execute `_parse_release_flags` runtime logic for Git-Alias CLI.
-# @details Executes `_parse_release_flags` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `_parse_release_flags`.
-# @param alias Input parameter consumed by `_parse_release_flags`.
-# @return Result emitted by `_parse_release_flags` according to command contract.
+## @brief Parse release-command operands into changelog flags and an optional `--exec` command tail.
+# @details Applies rest-of-argv semantics: operand scanning stops at the first `--exec` token
+#          and every following operand is returned verbatim as the external command argv
+#          (command plus parameters) without flag validation. Operands before `--exec` are
+#          validated against the changelog whitelist `{"--include-patch"}` and deduplicated
+#          preserving first-occurrence order. The `--exec` tail is never merged into
+#          `changelog_args` and is therefore never forwarded to the `changelog` step (REQ-166).
+# @param extra {List[str] | None} Raw CLI operands following the release alias token.
+# @param alias {str} Release alias name used in English diagnostics (`major`, `minor`, `patch`).
+# @return {Tuple[List[str], List[str]]} `(changelog_args, exec_args)`; `exec_args` is empty
+#          when `--exec` is absent and contains at least the command token otherwise.
+# @exception SystemExit Exit code 1 on unknown flags before `--exec` or on a parameterless `--exec`.
+# @satisfies REQ-166, REQ-168
 def _parse_release_flags(extra, alias):
     args = _to_args(extra)
     if not args:
-        return []
+        return [], []
     allowed = {"--include-patch"}
-    unknown = [arg for arg in args if arg not in allowed]
+    exec_option = "--exec"
+    if exec_option in args:
+        exec_index = args.index(exec_option)
+    else:
+        exec_index = len(args)
+    flags = args[:exec_index]
+    unknown = [arg for arg in flags if arg not in allowed]
     if unknown:
         joined = ", ".join(unknown)
         print(
-            f"git {alias} accepts only --include-patch (got {joined}).", file=sys.stderr
+            f"git {alias} accepts only --include-patch and --exec (got {joined}).",
+            file=sys.stderr,
         )
         sys.exit(1)
     deduped = []
     seen = set()
-    for arg in args:
+    for arg in flags:
         if arg not in seen:
             deduped.append(arg)
             seen.add(arg)
-    return deduped
+    exec_args: List[str] = []
+    if exec_index < len(args):
+        exec_args = args[exec_index + 1 :]
+        if not exec_args:
+            print(
+                f"git {alias} option --exec requires a command to execute.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+    return deduped, exec_args
 
 
 ## @brief Execute `_prepare_commit_message` runtime logic for Git-Alias CLI.
@@ -5002,12 +5034,19 @@ def cmd_chver(extra):
 #          to both configured `develop` and `master` branches, regenerates changelog via a
 #          temporary local tag on `work`, and creates the definitive release tag on `master`
 #          immediately before pushing `master` with `--tags`.
-# @param extra Iterable of CLI argument strings; accepted flag: `--include-patch`.
+# @param extra {List[str] | None} CLI argument strings; accepted flags: `--include-patch`,
+#        `--exec <command> [params...]` (REQ-166).
 # @return None; delegates to `_run_release_command("major", ...)`.
-# @satisfies REQ-026, REQ-045
+# @exception SystemExit Exit code 1 on invalid operands or release-flow failure.
+# @satisfies REQ-026, REQ-045, REQ-166, REQ-167, REQ-168
 def cmd_major(extra):
-    changelog_args = _parse_release_flags(extra, "major")
-    _run_release_command("major", changelog_args=changelog_args)
+    changelog_args, exec_args = _parse_release_flags(extra, "major")
+    if exec_args:
+        _run_release_command(
+            "major", changelog_args=changelog_args, exec_args=exec_args
+        )
+    else:
+        _run_release_command("major", changelog_args=changelog_args)
 
 
 ## @brief CLI entry-point for the `minor` release subcommand.
@@ -5015,12 +5054,19 @@ def cmd_major(extra):
 #          configured `develop` and `master` branches, regenerates changelog via a temporary local
 #          tag on `work`, and creates the definitive release tag on `master` immediately before
 #          pushing `master` with `--tags`.
-# @param extra Iterable of CLI argument strings; accepted flag: `--include-patch`.
+# @param extra {List[str] | None} CLI argument strings; accepted flags: `--include-patch`,
+#        `--exec <command> [params...]` (REQ-166).
 # @return None; delegates to `_run_release_command("minor", ...)`.
-# @satisfies REQ-026, REQ-045
+# @exception SystemExit Exit code 1 on invalid operands or release-flow failure.
+# @satisfies REQ-026, REQ-045, REQ-166, REQ-167, REQ-168
 def cmd_minor(extra):
-    changelog_args = _parse_release_flags(extra, "minor")
-    _run_release_command("minor", changelog_args=changelog_args)
+    changelog_args, exec_args = _parse_release_flags(extra, "minor")
+    if exec_args:
+        _run_release_command(
+            "minor", changelog_args=changelog_args, exec_args=exec_args
+        )
+    else:
+        _run_release_command("minor", changelog_args=changelog_args)
 
 
 ## @brief CLI entry-point for the `patch` release subcommand.
@@ -5028,12 +5074,19 @@ def cmd_minor(extra):
 #          (MUST NOT merge or push to `master`), regenerates changelog via a temporary local tag
 #          on `work`, and creates the definitive release tag on `develop` immediately before
 #          pushing `develop` with `--tags`; `--include-patch` is auto-included.
-# @param extra Iterable of CLI argument strings; accepted flag: `--include-patch`.
+# @param extra {List[str] | None} CLI argument strings; accepted flags: `--include-patch`,
+#        `--exec <command> [params...]` (REQ-166).
 # @return None; delegates to `_run_release_command("patch", ...)`.
-# @satisfies REQ-026, REQ-045
+# @exception SystemExit Exit code 1 on invalid operands or release-flow failure.
+# @satisfies REQ-026, REQ-045, REQ-166, REQ-167, REQ-168
 def cmd_patch(extra):
-    changelog_args = _parse_release_flags(extra, "patch")
-    _run_release_command("patch", changelog_args=changelog_args)
+    changelog_args, exec_args = _parse_release_flags(extra, "patch")
+    if exec_args:
+        _run_release_command(
+            "patch", changelog_args=changelog_args, exec_args=exec_args
+        )
+    else:
+        _run_release_command("patch", changelog_args=changelog_args)
 
 
 ## @brief CLI entry-point for the `backup` workflow subcommand.

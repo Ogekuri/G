@@ -71,6 +71,14 @@
     - `run_command(...)`
   - Defining Files:
     - `src/git_alias/core.py`
+- ID: PROC:exec-command
+  - Type: Process
+  - Parent Process: null
+  - Role: External user-supplied command process injected by the `--exec` release option of `major`, `minor`, and `patch`
+  - Entrypoint Symbols:
+    - `run_command(...)`
+  - Defining Files:
+    - `src/git_alias/core.py`
 
 ## Execution Units
 ### PROC:launcher-g-sh
@@ -228,6 +236,20 @@
 - External Boundaries:
   - External graph-viewer binary or Git Bash shell-script launcher.
 
+### PROC:exec-command
+- Entrypoint(s):
+  - `run_command(...)`: spawn the user-supplied `--exec` argv list with repository root as CWD and inherited stdio [`src/git_alias/core.py`]
+- Lifecycle/trigger:
+  - Start: `_execute_release_flow(...)` reaches the `run external command` step with a non-empty `--exec` operand tail parsed by `_parse_release_flags(...)`.
+  - Stop: synchronous completion of the injected command; a non-zero exit is converted by `_run_release_step(...)` into a `ReleaseError` that aborts the release before staging, commit, tag, or push.
+  - Threads: no explicit threads detected.
+- Internal Call-Trace Tree:
+  - `_execute_release_flow(...)`: orchestrate the release pipeline and place the injected `run external command` step between `update versions` and `stage files` [`src/git_alias/core.py`]
+    - `_run_release_step(...)`: wrap the injected execution and convert non-zero exits into `--- [release:<level>] Step ... failed: ... ---` diagnostics [`src/git_alias/core.py`]
+      - `run_command(...)`: execute the argv list without shell [`src/git_alias/core.py`]
+- External Boundaries:
+  - External user-supplied executable and inherited process stdio.
+
 ## Communication Edges
 - EDGE: PROC:launcher-g-sh -> PROC:uv
   - Mechanism: process replacement via shell `exec`
@@ -263,4 +285,9 @@
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv built from `gp_command` or `gr_command`
   - Payload/Data-Shape: validated launcher argv plus forwarded CLI extras; on Windows shell-script launchers use `[sh|bash, <script_path>, ...]`
+  - Evidence: `src/git_alias/core.py`
+- EDGE: PROC:main -> PROC:exec-command
+  - Mechanism: OS subprocess spawn
+  - Endpoint/Channel: process argv built from the `--exec <command> [params...]` operand tail
+  - Payload/Data-Shape: `List[str]` argv executed without shell from the repository root with inherited stdio
   - Evidence: `src/git_alias/core.py`
