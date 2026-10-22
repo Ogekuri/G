@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.41.0](https://github.com/Ogekuri/G/compare/v0.40.0..v0.41.0) - 2026-10-22
+### 🚜  Changes
+- preserve application version across rollback [useReq] *(rollback)*
+  - rollback now runs the release-style canonical version detection as a
+  - pre-flight check and aborts with explicit guidance on failure (REQ-169,
+  - REQ-170).
+  - The detected version is stored and restored via chver after the inverse
+  - revert, before the revert commit; restored files are staged so the commit
+  - preserves the pre-rollback version (REQ-171, REQ-172, REQ-173).
+  - A failed version restore aborts via git revert --abort with non-zero exit
+  - (REQ-174).
+  - Inline help and README document the new behavior (REQ-175); SRS updated to
+  - 1.18; WORKFLOW.md rollback trace and REFERENCES.md regenerated; rollback
+  - unit tests updated and extended (13 tests).
+
 ## [0.40.0](https://github.com/Ogekuri/G/compare/v0.39.0..v0.40.0) - 2026-10-21
 ### 🐛  Bug Fixes
 - .gitignore file.
@@ -746,6 +761,7 @@
 - \[0.38.0\]: https://github.com/Ogekuri/G/releases/tag/v0.38.0
 - \[0.39.0\]: https://github.com/Ogekuri/G/releases/tag/v0.39.0
 - \[0.40.0\]: https://github.com/Ogekuri/G/releases/tag/v0.40.0
+- \[0.41.0\]: https://github.com/Ogekuri/G/releases/tag/v0.41.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -787,3 +803,4 @@
 [0.38.0]: https://github.com/Ogekuri/G/compare/v0.37.0..v0.38.0
 [0.39.0]: https://github.com/Ogekuri/G/compare/v0.38.0..v0.39.0
 [0.40.0]: https://github.com/Ogekuri/G/compare/v0.39.0..v0.40.0
+[0.41.0]: https://github.com/Ogekuri/G/compare/v0.40.0..v0.41.0
