@@ -45,7 +45,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
   - `docs`: Add/modify documentation.
   - `style`: Styling modifications.
   - `revert`: Revert changes.
-  - `rollback`: Restore branch content to a previous commit/tag by creating a dedicated rollback `revert` commit.
+  - `rollback`: Restore branch content to a previous commit/tag by creating a dedicated rollback `revert` commit. Runs a version pre-check first and preserves the current application version by restoring it via `chver` before the rollback commit.
   - `misc`: Miscellaneous tasks.
   - `cover`: Add/adjust tests to improve coverage.
 - Provides `major`, `minor`, and `patch` release commands that auto-generate a `CHANGELOG.md`, create a tag on `develop` (`patch`) or `master` (`major`/`minor`).
@@ -203,7 +203,7 @@ Some CLI examples:
 - `g backup`: Merges configured `work` into `develop`, pushes `develop`, and checks out back to `work`.
 - `g get`: Fast-forwards local `master` and `develop` from `origin` and then fast-forward merges `develop` into `work`.
 - `g str`: Lists remotes and prints `git remote show` details for each.
-- `g rollback v1.2.3`: Reverts commits after `v1.2.3` and creates `revert: Roll back branch to v1.2.3 (<hash>).`.
+- `g rollback v1.2.3`: Reverts commits after `v1.2.3` and creates `revert: Roll back branch to v1.2.3 (<hash>).`; the application version detected before the rollback is preserved and restored via `chver` inside the rollback commit.
 - `g dcd`: Runs `git difftool -d <develop> <work>` using configured branch names.
 - `g dcm`: Runs `git difftool -d <master> <work>` using configured branch names.
 - `g ddm`: Runs `git difftool -d <master> <develop>` using configured branch names.

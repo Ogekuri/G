@@ -138,6 +138,12 @@
           - `run_command(...)`: execute resolved external command [`src/git_alias/core.py`]
         - `cmd_ar(...)`: archive flow combining `git archive` and `gzip` [`src/git_alias/core.py`]
         - `cmd_l(...)`: delegate text-graph rendering to `foresta.run(...)` [`src/git_alias/core.py`]
+        - `cmd_rollback(...)`: validate clean state and reachable target, run the release-style version pre-flight check, apply `git revert --no-commit`, restore the stored application version, stage restored files, and create the non-amend revert commit [`src/git_alias/core.py`]
+          - `get_version_rules(...)`: read active `ver_rules` required by the version pre-flight check [`src/git_alias/core.py`]
+          - `get_git_root(...)`: resolve repository root for version detection [`src/git_alias/core.py`]
+          - `_determine_canonical_version(...)`: detect and store the pre-rollback application version [`src/git_alias/core.py`]
+          - `_abort_rollback_version_restore(...)`: execute `git revert --abort` and exit non-zero when the version restore fails [`src/git_alias/core.py`]
+          - `cmd_chver(...)`: restore the stored application version across version-managed files before the revert commit [`src/git_alias/core.py`]
 - External Boundaries:
   - OS subprocess execution for `git`, `uv`, `gzip`, configured editor launchers, and configured graph launchers.
   - HTTP GET to GitHub Releases API for update checks.

@@ -1,14 +1,35 @@
 import contextlib
 import io
+import subprocess
 import unittest
+from contextlib import contextmanager
+from pathlib import Path
 from unittest import mock
 
 from git_alias import core
 
 
+RESOLVED_HASH = "0123456789abcdef0123456789abcdef01234567"
+HEAD_HASH = "fedcba9876543210fedcba9876543210fedcba98"
+VERSION_RULES = [("pyproject.toml", r"version")]
+
+
 class CmdRollbackTest(unittest.TestCase):
     def setUp(self):
         core.CONFIG.update(core.DEFAULT_CONFIG)
+
+    @contextmanager
+    def _patch_target_pipeline(self):
+        with (
+            mock.patch.object(core, "_git_status_lines", return_value=[]),
+            mock.patch.object(core, "_tag_exists", return_value=True),
+            mock.patch.object(
+                core, "_resolve_rollback_target_commit", return_value=RESOLVED_HASH
+            ),
+            mock.patch.object(core, "_is_commit_ancestor", return_value=True),
+            mock.patch.object(core, "run_git_text", return_value=HEAD_HASH),
+        ):
+            yield
 
     def test_help_argument_prints_help(self):
         out = io.StringIO()
@@ -70,11 +91,7 @@ class CmdRollbackTest(unittest.TestCase):
         with (
             mock.patch.object(core, "_git_status_lines", return_value=[]),
             mock.patch.object(core, "_tag_exists", return_value=True),
-            mock.patch.object(
-                core,
-                "run_git_text",
-                return_value="0123456789abcdef0123456789abcdef01234567",
-            ),
+            mock.patch.object(core, "run_git_text", return_value=RESOLVED_HASH),
             mock.patch.object(core, "_is_commit_ancestor", return_value=False),
         ):
             err = io.StringIO()
@@ -85,13 +102,14 @@ class CmdRollbackTest(unittest.TestCase):
         self.assertIn("not reachable from the current branch HEAD", err.getvalue())
 
     def test_fails_when_target_matches_head(self):
-        target_hash = "0123456789abcdef0123456789abcdef01234567"
         with (
             mock.patch.object(core, "_git_status_lines", return_value=[]),
             mock.patch.object(core, "_tag_exists", return_value=True),
-            mock.patch.object(core, "_resolve_rollback_target_commit", return_value=target_hash),
+            mock.patch.object(
+                core, "_resolve_rollback_target_commit", return_value=RESOLVED_HASH
+            ),
             mock.patch.object(core, "_is_commit_ancestor", return_value=True),
-            mock.patch.object(core, "run_git_text", return_value=target_hash),
+            mock.patch.object(core, "run_git_text", return_value=RESOLVED_HASH),
         ):
             err = io.StringIO()
             with contextlib.redirect_stderr(err):
@@ -100,24 +118,141 @@ class CmdRollbackTest(unittest.TestCase):
         self.assertEqual(ctx.exception.code, 1)
         self.assertIn("target matches HEAD", err.getvalue())
 
-    def test_executes_revert_range_and_creates_non_amend_commit(self):
-        resolved_hash = "0123456789abcdef0123456789abcdef01234567"
+    def test_fails_when_version_rules_are_missing(self):
         with (
-            mock.patch.object(core, "_git_status_lines", return_value=[]),
-            mock.patch.object(core, "_tag_exists", return_value=True),
-            mock.patch.object(core, "_resolve_rollback_target_commit", return_value=resolved_hash),
-            mock.patch.object(core, "_is_commit_ancestor", return_value=True),
-            mock.patch.object(core, "run_git_text", return_value="fedcba9876543210fedcba9876543210fedcba98"),
+            self._patch_target_pipeline(),
+            mock.patch.object(core, "get_version_rules", return_value=[]),
             mock.patch.object(core, "run_git_cmd", return_value=None) as run_git,
-            mock.patch.object(core, "_execute_commit", return_value=None) as execute_commit,
+        ):
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                with self.assertRaises(SystemExit) as ctx:
+                    core.cmd_rollback(["v1.2.3"])
+        self.assertEqual(ctx.exception.code, 1)
+        self.assertIn("no version rules configured", err.getvalue())
+        run_git.assert_not_called()
+
+    def test_fails_when_version_detection_fails(self):
+        with (
+            self._patch_target_pipeline(),
+            mock.patch.object(core, "get_version_rules", return_value=VERSION_RULES),
+            mock.patch.object(
+                core, "get_git_root", return_value=Path("/tmp/fake-repo")
+            ),
+            mock.patch.object(
+                core,
+                "_determine_canonical_version",
+                side_effect=core.VersionDetectionError("no version found"),
+            ),
+            mock.patch.object(core, "run_git_cmd", return_value=None) as run_git,
+        ):
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                with self.assertRaises(SystemExit) as ctx:
+                    core.cmd_rollback(["v1.2.3"])
+        self.assertEqual(ctx.exception.code, 1)
+        self.assertIn("version check failed", err.getvalue())
+        run_git.assert_not_called()
+
+    def test_executes_revert_restores_version_and_creates_non_amend_commit(self):
+        manager = mock.Mock()
+        with (
+            self._patch_target_pipeline(),
+            mock.patch.object(core, "get_version_rules", return_value=VERSION_RULES),
+            mock.patch.object(
+                core, "get_git_root", return_value=Path("/tmp/fake-repo")
+            ),
+            mock.patch.object(
+                core, "_determine_canonical_version", return_value="1.2.3"
+            ),
+            mock.patch.object(core, "cmd_chver", new=manager.chver),
+            mock.patch.object(core, "run_git_cmd", new=manager.run_git),
+            mock.patch.object(core, "_execute_commit", new=manager.execute_commit),
         ):
             core.cmd_rollback(["v1.2.3"])
-        run_git.assert_called_once_with(["revert", "--no-commit", f"{resolved_hash}..HEAD"])
-        execute_commit.assert_called_once_with(
-            f"revert: Roll back branch to v1.2.3 ({resolved_hash}).",
-            "rollback",
-            allow_amend=False,
+        expected_calls = [
+            mock.call.run_git(["revert", "--no-commit", f"{RESOLVED_HASH}..HEAD"]),
+            mock.call.chver(["1.2.3"]),
+            mock.call.run_git(["add", "--all"]),
+            mock.call.execute_commit(
+                f"revert: Roll back branch to v1.2.3 ({RESOLVED_HASH}).",
+                "rollback",
+                allow_amend=False,
+            ),
+        ]
+        self.assertEqual(manager.mock_calls, expected_calls)
+
+    def test_aborts_and_discards_revert_when_version_restore_fails(self):
+        with (
+            self._patch_target_pipeline(),
+            mock.patch.object(core, "get_version_rules", return_value=VERSION_RULES),
+            mock.patch.object(
+                core, "get_git_root", return_value=Path("/tmp/fake-repo")
+            ),
+            mock.patch.object(
+                core, "_determine_canonical_version", return_value="1.2.3"
+            ),
+            mock.patch.object(core, "cmd_chver", side_effect=SystemExit(1)),
+            mock.patch.object(core, "run_git_cmd", return_value=None) as run_git,
+            mock.patch.object(
+                core, "_execute_commit", return_value=None
+            ) as execute_commit,
+            mock.patch.object(
+                core.subprocess, "run", return_value=None
+            ) as subprocess_run,
+        ):
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                with self.assertRaises(SystemExit) as ctx:
+                    core.cmd_rollback(["v1.2.3"])
+        self.assertEqual(ctx.exception.code, 1)
+        self.assertIn("version restore failed", err.getvalue())
+        run_git.assert_called_once_with(
+            ["revert", "--no-commit", f"{RESOLVED_HASH}..HEAD"]
         )
+        subprocess_run.assert_called_once_with(
+            ["git", "revert", "--abort"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        execute_commit.assert_not_called()
+
+    def test_aborts_when_staging_fails_after_version_restore(self):
+        failed_add = subprocess.CalledProcessError(
+            1, ["git", "add", "--all"], stderr=b"fatal: unable to stage"
+        )
+        with (
+            self._patch_target_pipeline(),
+            mock.patch.object(core, "get_version_rules", return_value=VERSION_RULES),
+            mock.patch.object(
+                core, "get_git_root", return_value=Path("/tmp/fake-repo")
+            ),
+            mock.patch.object(
+                core, "_determine_canonical_version", return_value="1.2.3"
+            ),
+            mock.patch.object(core, "cmd_chver", return_value=None),
+            mock.patch.object(
+                core,
+                "run_git_cmd",
+                side_effect=[None, core.CommandExecutionError(failed_add)],
+            ),
+            mock.patch.object(
+                core, "_execute_commit", return_value=None
+            ) as execute_commit,
+            mock.patch.object(
+                core.subprocess, "run", return_value=None
+            ) as subprocess_run,
+        ):
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                with self.assertRaises(SystemExit) as ctx:
+                    core.cmd_rollback(["v1.2.3"])
+        self.assertEqual(ctx.exception.code, 1)
+        self.assertIn("version restore failed", err.getvalue())
+        self.assertIn("fatal: unable to stage", err.getvalue())
+        subprocess_run.assert_called_once()
+        execute_commit.assert_not_called()
 
 
 if __name__ == "__main__":

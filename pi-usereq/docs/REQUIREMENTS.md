@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.17
+**Version**: 1.18
 **Author**: Francesco Rolando
-**Date**: 2026-10-21
+**Date**: 2026-10-22
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-10-22 | 1.18 | Added `rollback` version pre-flight check, version preservation via `chver` restore before the revert commit, abort-on-restore-failure semantics, and help/README documentation. |
 | 2026-10-02 | 1.16 | Required gitignore(5) escaping and negation exclusion semantics for `ver_rules.pattern` with anchoring preserved and README documentation. |
 | 2026-10-21 | 1.17 | Added `--exec <command> [params...]` option for `major`/`minor`/`patch` release commands with argv execution between version update and staging and fail-fast abort semantics. |
 | 2026-04-22 | 1.15 | Changed `wt` to execute `git worktree` while keeping `wtl` as the dedicated `git worktree list` alias. |
@@ -227,6 +228,13 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-133**: MUST `rollback` execute only when both working tree and staging area are clean; otherwise MUST print explicit English error and exit non-zero.
 - **REQ-134**: MUST `rollback` accept exactly one `<target>` argument resolvable to a commit hash or tag reachable from `HEAD`; unresolved or unreachable targets MUST fail with explicit English error.
 - **REQ-135**: MUST `rollback` create one non-amend commit restoring branch content to `<target>` by reverting `<target>..HEAD`; commit subject MUST be `revert: Roll back branch to <target> (<resolved_hash>).`; post-commit index and working tree MUST be clean.
+- **REQ-169**: MUST `rollback` execute the canonical version detection check used by `major`, `minor`, and `patch` as pre-flight validation after target validation.
+- **REQ-170**: MUST `rollback` terminate with non-zero exit and explicit English guidance when version rules are missing or the pre-flight version detection fails.
+- **REQ-171**: MUST `rollback` store the detected current application version when the pre-flight version check succeeds.
+- **REQ-172**: MUST `rollback` restore the stored application version through the `chver` flow after applying inverse revert changes and before the revert commit.
+- **REQ-173**: MUST `rollback` stage restored version files so the revert commit preserves the pre-rollback version.
+- **REQ-174**: MUST `rollback` abort through `git revert --abort` before creating the revert commit with explicit English error and non-zero exit when the version restore fails.
+- **REQ-175**: MUST `rollback` inline help and `README.md` documentation describe the version pre-flight check and version preservation behavior.
 - **REQ-146**: MUST expose `get` as a CLI command in `COMMANDS` and `HELP_TEXTS`, and MUST support `git get --help` output.
 - **REQ-147**: MUST `get` reject any positional arguments and exit non-zero with explicit English error when extra operands are supplied.
 - **REQ-148**: MUST `get` abort with explicit English error when the staging area is non-empty or when the working tree has pending changes, before any remote operation.
@@ -270,3 +278,10 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-112** evidence: `.github/workflows/release-uvx.yml` lines 3-7 (`workflow_dispatch` plus pushed-tag trigger), lines 29-35 (master containment gate).
 - **REQ-113** evidence: `.github/workflows/release-uvx.yml` lines 50-53 (Python 3.11), line 62 (`python -m build`), lines 64-67 (attestation over `dist/*`).
 - **REQ-114** evidence: `.github/workflows/release-uvx.yml` lines 117-127 (GitHub Release creation, non-draft/non-prerelease, `dist/**/*` assets, changelog body wiring).
+- **REQ-169** evidence: `src/git_alias/core.py` `cmd_rollback` pre-flight `_determine_canonical_version` call executed after target validation.
+- **REQ-170** evidence: `src/git_alias/core.py` `cmd_rollback` non-zero exits for missing `ver_rules` and `VersionDetectionError`.
+- **REQ-171** evidence: `src/git_alias/core.py` `cmd_rollback` `current_version` capture after successful detection.
+- **REQ-172** evidence: `src/git_alias/core.py` `cmd_rollback` `cmd_chver([current_version])` call between `git revert --no-commit` and `_execute_commit`.
+- **REQ-173** evidence: `src/git_alias/core.py` `cmd_rollback` `git add --all` staging step before the revert commit.
+- **REQ-174** evidence: `src/git_alias/core.py` `cmd_rollback` `git revert --abort` failure handler for the version restore step.
+- **REQ-175** evidence: `src/git_alias/core.py` `HELP_TEXTS["rollback"]` and `README.md` rollback command/example entries.
