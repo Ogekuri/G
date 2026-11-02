@@ -847,8 +847,8 @@ HELP_TEXTS = {
     "lsi": "List ignored files using git ls-files. Options: --include-all (show all, skip default directory filter).",
     "lsa": "List untracked files using git ls-files.",
     "lt": "Print tags with containing branches.",
-    "major": "Release a new major version from the work branch. Options: --include-patch, --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release).",
-    "minor": "Release a new minor version from the work branch. Options: --include-patch, --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release).",
+    "major": "Release a new major version from the work branch. Options: --include-patch, --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op.",
+    "minor": "Release a new minor version from the work branch. Options: --include-patch, --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op.",
     "new": "Conventional commit new(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
     "o": "Print a verbose overview with status, branch distances, active worktrees, and a qualitative ASCII topology tree.",
     "implement": "Conventional commit implement(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
@@ -865,7 +865,7 @@ HELP_TEXTS = {
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
-    "patch": "Release a new patch version from the work branch. Options: --include-patch, --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release).",
+    "patch": "Release a new patch version from the work branch. Options: --include-patch, --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op.",
     "ra": "Remove all staged files and return them to the working tree (inverse of aa).",
     "rf": "Print changes on HEAD reference.",
     "rmloc": "Remove changed files from the working tree.",
@@ -2654,29 +2654,146 @@ def _create_release_commit_for_flow(target_version):
     return _execute_commit(message, "release")
 
 
-## @brief Execute `_push_branch_with_tags` runtime logic for Git-Alias CLI.
-# @details Pushes the specified local branch to `origin` using an explicit branch refspec and
-#          includes `--tags` in the same push command.
-# @param branch_name Local branch name resolved from configured release branches.
-# @return Result emitted by `run_git_cmd` according to command contract.
-def _push_branch_with_tags(branch_name):
-    branch_ref = f"refs/heads/{branch_name}:refs/heads/{branch_name}"
-    return run_git_cmd(["push", "origin", branch_ref, "--tags"])
+## @brief Publish selected release references once with recovery diagnostics.
+# @details O(1) refspec construction; one Git push; no automatic retries. Tag
+#          publication requires atomic support; --no-follow-tags excludes unrelated tags.
+#          Failure preserves local objects and reports the original Git rejection.
+# @param level {str} Release command: major, minor, or patch.
+# @param version {str} Prepared semantic version.
+# @param branch {str} Configured destination branch name.
+# @param include_branch {bool} Publish branch when True.
+# @param include_tag {bool} Publish exact release tag atomically when True.
+# @return {None} No operation when both selectors are False.
+# @throws ReleaseError Push failed; includes rejection and recovery references.
+# @satisfies REQ-045, REQ-072, REQ-179, REQ-180, REQ-181
+def _push_release_refs(level, version, branch, include_branch=True, include_tag=False):
+    ## @brief Exact reference names for publication and diagnostics.
+    branch_ref = f"refs/heads/{branch}"
+    tag_ref = f"refs/tags/v{version}"
+    ## @brief Non-force refspecs; empty selection requires no network mutation.
+    refspecs = []
+    if include_branch:
+        refspecs.append(f"{branch_ref}:{branch_ref}")
+    if include_tag:
+        refspecs.append(f"{tag_ref}:{tag_ref}")
+    if not refspecs:
+        return
+    ## @brief Explicitly disable configured implicit annotated-tag following.
+    command = ["push", "--no-follow-tags"]
+    if include_tag:
+        command.append("--atomic")
+    try:
+        run_git_text([*command, "origin", *refspecs])
+    except RuntimeError as exc:
+        raise ReleaseError(
+            f"Release {version} is already prepared locally. Push failed: {exc}\n"
+            f"Verify local and origin refs: {branch_ref}, {tag_ref}; "
+            f"configured work/develop/master tips.\n"
+            f"Resume safely after resolving the rejection: g {level} --resume"
+        ) from None
+
+
+## @brief Validate and resume publication of an immutable prepared local release.
+# @details O(1) Git queries excluding ancestry traversal. Require clean checkout,
+#          matching work/integration tips, release subject/version, and annotated tag identity.
+#          Query the single origin push URL before any push; reject missing remote branches,
+#          conflicting tags, and non-ancestor remote tips. Publish missing refs only, then
+#          checkout work. Preserve version files, commits, tags, and external build outputs.
+# @param level {str} Release command: major, minor, or patch.
+# @return {None} Completes missing publication and restores work checkout.
+# @throws ReleaseError Invalid release state or publication rejection.
+# @throws RuntimeError Git inspection failed.
+# @throws VersionDetectionError Version-managed files disagree.
+# @satisfies REQ-176, REQ-177, REQ-178, REQ-179
+def _resume_release_flow(level):
+    ## @brief Configured branch map; patch excludes master from integration.
+    branches = {key: get_branch(key) for key in BRANCH_KEYS}
+    integrated = [branches["develop"]]
+    if level != "patch":
+        integrated.append(branches["master"])
+    if run_git_text(["status", "--porcelain"]):
+        raise ReleaseError("Cannot resume: working tree and index must be clean.")
+    if _current_branch_name() not in [branches["work"], *integrated]:
+        raise ReleaseError("Cannot resume: checkout a configured release branch first.")
+    ## @brief Immutable release commit and version derived from configured work.
+    commit = run_git_text([
+        "rev-parse", "--verify", f"refs/heads/{branches['work']}^{{commit}}"
+    ])
+    subject = run_git_text(["show", "-s", "--format=%s", commit])
+    version = _extract_release_version(subject)
+    parts = _parse_semver_tuple(version or "")
+    if parts is None or subject != f"release: Release version {version}":
+        raise ReleaseError("Cannot resume: work tip is not a release commit.")
+    ## @brief Semver shape identifies releases produced by each bump level.
+    expected_level = "patch" if parts[2] else "minor" if parts[1] else "major"
+    if level != expected_level or parts == (0, 0, 0):
+        raise ReleaseError("Cannot resume: release version does not match requested level.")
+    for branch in integrated:
+        if run_git_text([
+            "rev-parse", "--verify", f"refs/heads/{branch}^{{commit}}"
+        ]) != commit:
+            raise ReleaseError(
+                f"Cannot resume: refs/heads/{branch} differs from work release {commit}."
+            )
+    if _determine_canonical_version(get_git_root(), get_version_rules()) != version:
+        raise ReleaseError("Cannot resume: version files differ from the release commit.")
+    ## @brief Preserve annotated tag object identity and peeled commit identity.
+    tag_ref = f"refs/tags/v{version}"
+    tag_object = run_git_text(["rev-parse", "--verify", tag_ref])
+    if (run_git_text(["cat-file", "-t", tag_object]) != "tag"
+            or run_git_text(["rev-parse", "--verify", f"{tag_ref}^{{commit}}"]) != commit):
+        raise ReleaseError(
+            f"Cannot resume: {tag_ref} is not the prepared annotated release tag."
+        )
+    ## @brief Inspect publication endpoint rather than a potentially different fetch URL.
+    urls = run_git_text(["remote", "get-url", "--push", "--all", "origin"]).splitlines()
+    if len(urls) != 1:
+        raise ReleaseError("Cannot resume: origin must have exactly one push URL.")
+    ## @brief Remote snapshot of branch tips, annotated tag object, and peeled target.
+    refs = [f"refs/heads/{branch}" for branch in integrated]
+    remote = dict(
+        (ref, oid) for oid, ref in (
+            line.split() for line in run_git_text(
+                ["ls-remote", "--", urls[0], *refs, tag_ref, f"{tag_ref}^{{}}"]
+            ).splitlines()
+        )
+    )
+    if tag_ref in remote and (
+        remote[tag_ref] != tag_object or remote.get(f"{tag_ref}^{{}}") != commit
+    ):
+        raise ReleaseError(f"Cannot resume: remote {tag_ref} conflicts with the local tag.")
+    for ref in refs:
+        if ref not in remote or not _is_commit_ancestor(remote[ref], commit):
+            raise ReleaseError(
+                f"Cannot resume: remote {ref} is missing or diverges from {commit}."
+            )
+    if level != "patch" and remote[refs[0]] != commit:
+        _run_release_step(level, "push develop branch", lambda: _push_release_refs(
+            level, version, integrated[0]
+        ))
+    if remote[refs[-1]] != commit or tag_ref not in remote:
+        _run_release_step(level, "push release atomically", lambda: _push_release_refs(
+            level, version, integrated[-1],
+            include_branch=remote[refs[-1]] != commit,
+            include_tag=tag_ref not in remote,
+        ))
+    _run_release_step(level, "return to work", lambda: cmd_co([branches["work"]]))
+    print(f"Release {version} publication completed successfully.")
 
 
 ## @brief Execute `_execute_release_flow` runtime logic for Git-Alias CLI.
 # @details Orchestrates the full release pipeline for `major`, `minor`, and `patch` levels.
 #          Branch integration is level-dependent (REQ-045):
 #          - `patch`: merges `work` into `develop` and pushes `develop` only; skips `master`.
-#          - `major`/`minor`: merges `work` into `develop`, pushes `develop` with tags, then merges
-#            `develop` into `master` and pushes `master`.
+#          - `major`/`minor`: integrates work/develop/master and prepares the tag,
+#            pushes develop alone, then atomically publishes master and the exact tag.
 #          Changelog flags always include `--force-write`; `patch` auto-adds `--include-patch`.
 #          When `exec_args` is non-empty, an additional `run external command` step executes
 #          the argv list between `update versions` and `stage files` so build artifacts are
 #          staged by `git add --all` and included in the first release commit.
-#          deleted immediately after changelog generation. The definitive `v<target>` tag is then
-#          created on `develop` (`patch`) or `master` (`major`/`minor`) immediately before push
-#          with `--tags`.
+#          The temporary changelog tag is deleted before integration. The definitive
+#          tag is prepared before any push; final publication is atomic and tag-scoped.
+#          Complexity: O(F + C) version-file and changelog traversal plus Git operations.
 # @param level {str} Release level string: `"major"`, `"minor"`, or `"patch"`.
 # @param changelog_args {List[str] | None} Optional extra changelog flags forwarded alongside `--force-write`.
 # @param exec_args {List[str] | None} Optional external command argv executed without shell
@@ -2755,15 +2872,10 @@ def _execute_release_flow(level, changelog_args=None, exec_args=None):
         )
         _run_release_step(
             level,
-            "push develop with tags",
-            lambda: _push_branch_with_tags(develop_branch),
+            "push develop with release tag atomically",
+            lambda: _push_release_refs(level, target_version, develop_branch, include_tag=True),
         )
     else:
-        _run_release_step(
-            level,
-            "push develop with tags",
-            lambda: _push_branch_with_tags(develop_branch),
-        )
         _run_release_step(level, "checkout master", lambda: cmd_co([master_branch]))
         _run_release_step(
             level, "merge develop into master", lambda: cmd_me([develop_branch])
@@ -2775,8 +2887,13 @@ def _execute_release_flow(level, changelog_args=None, exec_args=None):
         )
         _run_release_step(
             level,
-            "push master with tags",
-            lambda: _push_branch_with_tags(master_branch),
+            "push develop branch",
+            lambda: _push_release_refs(level, target_version, develop_branch),
+        )
+        _run_release_step(
+            level,
+            "push master with release tag atomically",
+            lambda: _push_release_refs(level, target_version, master_branch, include_tag=True),
         )
     _run_release_step(level, "return to work", lambda: cmd_co([work_branch]))
     _run_release_step(level, "show release details", lambda: cmd_de([]))
@@ -2809,7 +2926,8 @@ def _execute_backup_flow():
 
 
 ## @brief Execute one release workflow command with unified error propagation to CLI exit codes.
-# @details Delegates to `_execute_release_flow` and converts `ReleaseError`,
+# @details Routes standalone --resume to immutable publication recovery; otherwise
+#          delegates to `_execute_release_flow`. O(1) dispatch; converts `ReleaseError`,
 #          `VersionDetectionError`, and `CommandExecutionError` into English stderr
 #          diagnostics plus non-zero exit status.
 # @param level {str} Release level string: `"major"`, `"minor"`, or `"patch"`.
@@ -2821,9 +2939,12 @@ def _execute_backup_flow():
 # @satisfies REQ-026, REQ-166, REQ-168
 def _run_release_command(level, changelog_args=None, exec_args=None):
     try:
-        _execute_release_flow(
-            level, changelog_args=changelog_args, exec_args=exec_args
-        )
+        if changelog_args == ["--resume"]:
+            _resume_release_flow(level)
+        else:
+            _execute_release_flow(
+                level, changelog_args=changelog_args, exec_args=exec_args
+            )
     except ReleaseError as exc:
         print(str(exc), file=sys.stderr)
         sys.exit(1)
@@ -2835,6 +2956,9 @@ def _run_release_command(level, changelog_args=None, exec_args=None):
         if err_text:
             print(err_text, file=sys.stderr)
         sys.exit(exc.returncode or 1)
+    except RuntimeError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
 
 
 ## @brief Execute `_run_backup_command` runtime logic for Git-Alias CLI.
@@ -2874,7 +2998,9 @@ def _reject_extra_arguments(extra, alias):
         sys.exit(1)
 
 
-## @brief Parse release-command operands into changelog flags and an optional `--exec` command tail.
+## @brief Parse release flags, standalone resume, or an optional exec command tail.
+# @note Standalone --resume returns (["--resume"], []); combined resume options fail.
+# @note Complexity: O(N) argv traversal; --exec tail remains opaque.
 # @details Applies rest-of-argv semantics: operand scanning stops at the first `--exec` token
 #          and every following operand is returned verbatim as the external command argv
 #          (command plus parameters) without flag validation. Operands before `--exec` are
@@ -2891,6 +3017,8 @@ def _parse_release_flags(extra, alias):
     args = _to_args(extra)
     if not args:
         return [], []
+    if args == ["--resume"]:
+        return ["--resume"], []
     allowed = {"--include-patch"}
     exec_option = "--exec"
     if exec_option in args:
@@ -2902,7 +3030,7 @@ def _parse_release_flags(extra, alias):
     if unknown:
         joined = ", ".join(unknown)
         print(
-            f"git {alias} accepts only --include-patch and --exec (got {joined}).",
+            f"git {alias} accepts only --include-patch, --exec, or standalone --resume (got {joined}).",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -5092,7 +5220,8 @@ def cmd_chver(extra):
 # @details Increments the major semver index (resets minor and patch to 0), merges and pushes
 #          to both configured `develop` and `master` branches, regenerates changelog via a
 #          temporary local tag on `work`, and creates the definitive release tag on `master`
-#          immediately before pushing `master` with `--tags`.
+#          before publication; pushes develop alone, then master and the exact tag atomically.
+#          Standalone --resume validates and publishes existing release objects unchanged.
 # @param extra {List[str] | None} CLI argument strings; accepted flags: `--include-patch`,
 #        `--exec <command> [params...]` (REQ-166).
 # @return None; delegates to `_run_release_command("major", ...)`.
@@ -5112,7 +5241,8 @@ def cmd_major(extra):
 # @details Increments the minor semver index (resets patch to 0), merges and pushes to both
 #          configured `develop` and `master` branches, regenerates changelog via a temporary local
 #          tag on `work`, and creates the definitive release tag on `master` immediately before
-#          pushing `master` with `--tags`.
+#          publication; pushes develop alone, then master and the exact tag atomically.
+#          Standalone --resume validates and publishes existing release objects unchanged.
 # @param extra {List[str] | None} CLI argument strings; accepted flags: `--include-patch`,
 #        `--exec <command> [params...]` (REQ-166).
 # @return None; delegates to `_run_release_command("minor", ...)`.
@@ -5132,7 +5262,8 @@ def cmd_minor(extra):
 # @details Increments the patch semver index, merges and pushes to configured `develop` only
 #          (MUST NOT merge or push to `master`), regenerates changelog via a temporary local tag
 #          on `work`, and creates the definitive release tag on `develop` immediately before
-#          pushing `develop` with `--tags`; `--include-patch` is auto-included.
+#          publishing develop and the exact tag atomically; --include-patch is auto-included.
+#          Standalone --resume validates and publishes existing release objects unchanged.
 # @param extra {List[str] | None} CLI argument strings; accepted flags: `--include-patch`,
 #        `--exec <command> [params...]` (REQ-166).
 # @return None; delegates to `_run_release_command("patch", ...)`.

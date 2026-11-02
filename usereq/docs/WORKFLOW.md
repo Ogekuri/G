@@ -144,6 +144,23 @@
           - `_determine_canonical_version(...)`: detect and store the pre-rollback application version [`src/git_alias/core.py`]
           - `_abort_rollback_version_restore(...)`: execute `git revert --abort` and exit non-zero when the version restore fails [`src/git_alias/core.py`]
           - `cmd_chver(...)`: restore the stored application version across version-managed files before the revert commit [`src/git_alias/core.py`]
+        - `cmd_major(...)`, `cmd_minor(...)`, and `cmd_patch(...)`: parse release operands and route creation or resume publication [`src/git_alias/core.py`]
+          - `_parse_release_flags(...)`: validate flags and detect standalone `--resume` [`src/git_alias/core.py`]
+          - `_run_release_command(...)`: route standalone `--resume` to immutable recovery, otherwise to creation, with unified error exits [`src/git_alias/core.py`]
+            - `_execute_release_flow(...)`: creation pipeline ending in scoped atomic publication [`src/git_alias/core.py`]
+              - `_push_release_refs(...)`: push explicit branch/tag refspecs once with recovery diagnostics [`src/git_alias/core.py`]
+                - External boundary: `git push` transport to `origin` via `run_git_text(...)`.
+            - `_resume_release_flow(...)`: validate the immutable prepared release and publish only missing refs [`src/git_alias/core.py`]
+              - `get_branch(...)`: resolve configured work/develop/master names [`src/git_alias/core.py`]
+              - `_current_branch_name(...)`: require a configured release-branch checkout [`src/git_alias/core.py`]
+              - `_extract_release_version(...)` and `_parse_semver_tuple(...)`: derive and classify the prepared release version [`src/git_alias/core.py`]
+              - `_determine_canonical_version(...)`: confirm version files match the release commit [`src/git_alias/core.py`]
+                - `get_git_root(...)` and `get_version_rules(...)`: resolve version-rule inputs [`src/git_alias/core.py`]
+              - `_is_commit_ancestor(...)`: require remote tips ancestral to the release commit [`src/git_alias/core.py`]
+              - `_run_release_step(...)`: wrap each publication step with release diagnostics [`src/git_alias/core.py`]
+                - `_push_release_refs(...)`: publish only missing branch/tag updates once [`src/git_alias/core.py`]
+                  - External boundary: `git ls-remote` identity query and `git push` transport to `origin` via `run_git_text(...)`.
+              - `cmd_co(...)`: restore the configured work checkout after publication [`src/git_alias/core.py`]
 - External Boundaries:
   - OS subprocess execution for `git`, `uv`, `gzip`, configured editor launchers, and configured graph launchers.
   - HTTP GET to GitHub Releases API for update checks.
@@ -168,6 +185,7 @@
     - `_run_checked(...)`: spawn child process and normalize failure reporting [`src/git_alias/core.py`]
 - External Boundaries:
   - External `git` executable and repository state.
+  - Remote transport reached by `git push` and `git ls-remote` during release publication and resume.
 
 ### PROC:uv
 - Entrypoint(s):
@@ -270,7 +288,7 @@
 - EDGE: PROC:main -> PROC:git
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv plus stdio streams
-  - Payload/Data-Shape: `List[str]` git argv and optional stdin/stdout/stderr text streams
+  - Payload/Data-Shape: `List[str]` git argv and optional stdin/stdout/stderr text streams; release publication and resume issue explicit branch/tag refspec pushes and `ls-remote` identity queries
   - Evidence: `src/git_alias/core.py`
 - EDGE: PROC:main -> PROC:uv
   - Mechanism: OS subprocess spawn
