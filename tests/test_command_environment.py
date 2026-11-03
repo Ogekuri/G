@@ -96,16 +96,15 @@ class EnvironmentCommandSelectionTest(unittest.TestCase):
             )
 
 
-class ConfiguredDiffDefaultCommandTest(unittest.TestCase):
-    """REQ-189 default diff command fallback contract."""
+class ConfiguredDiffExtcmdInjectionTest(unittest.TestCase):
+    """REQ-189/REQ-190 git difftool --extcmd injection contract."""
 
     def setUp(self):
         core.CONFIG.update(core.DEFAULT_CONFIG)
 
-    def test_diff_defaults_to_git_difftool_in_terminal_environment(self):
+    def test_unconfigured_diff_runs_plain_git_difftool(self):
         with (
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
-            mock.patch.object(core.shutil, "which", return_value="/usr/bin/git"),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
         ):
             core.cmd_dcc([])
@@ -113,7 +112,7 @@ class ConfiguredDiffDefaultCommandTest(unittest.TestCase):
                 ["git", "difftool", "-d", "HEAD~1", "HEAD"]
             )
 
-    def test_diff_uses_gfx_command_in_graphical_environment(self):
+    def test_diff_injects_gfx_command_as_extcmd_in_graphical_environment(self):
         core.CONFIG["diff_command"] = "icdiff"
         core.CONFIG["diff_command_gfx"] = "meld"
         with (
@@ -122,7 +121,30 @@ class ConfiguredDiffDefaultCommandTest(unittest.TestCase):
             mock.patch.object(core, "run_command", return_value=None) as run_command,
         ):
             core.cmd_dc(["v1.0.0", "HEAD"])
-            run_command.assert_called_once_with(["meld", "HEAD", "v1.0.0"])
+            run_command.assert_called_once_with(
+                ["git", "difftool", "-d", "--extcmd=meld", "HEAD", "v1.0.0"]
+            )
+
+    def test_graphical_diff_falls_back_to_terminal_command_when_gfx_empty(self):
+        core.CONFIG["diff_command"] = "icdiff"
+        core.CONFIG["diff_command_gfx"] = ""
+        with (
+            mock.patch.object(core, "_is_graphical_environment", return_value=True),
+            mock.patch.object(core.shutil, "which", return_value="/usr/bin/icdiff"),
+            mock.patch.object(core, "run_command", return_value=None) as run_command,
+        ):
+            core.cmd_dwc([])
+            run_command.assert_called_once_with(
+                ["git", "difftool", "-d", "--extcmd=icdiff", "HEAD"]
+            )
+
+    def test_unconfigured_graphical_diff_runs_plain_git_difftool(self):
+        with (
+            mock.patch.object(core, "_is_graphical_environment", return_value=True),
+            mock.patch.object(core, "run_command", return_value=None) as run_command,
+        ):
+            core.cmd_dwc([])
+            run_command.assert_called_once_with(["git", "difftool", "-d", "HEAD"])
 
 
 class SubprocessWrapperIsolationTest(unittest.TestCase):
@@ -163,7 +185,8 @@ class SubprocessWrapperIsolationTest(unittest.TestCase):
                 "diff_command_gfx",
             ),
         )
-        self.assertEqual(core.DEFAULT_CONFIG["diff_command"], "git difftool -d")
+        self.assertEqual(core.GIT_DIFFTOOL_COMMAND, ("git", "difftool", "-d"))
+        self.assertEqual(core.DEFAULT_CONFIG["diff_command"], "")
         self.assertEqual(core.DEFAULT_CONFIG["edit_command_gfx"], "")
         self.assertEqual(core.DEFAULT_CONFIG["gp_command_gfx"], "")
         self.assertEqual(core.DEFAULT_CONFIG["gr_command_gfx"], "")

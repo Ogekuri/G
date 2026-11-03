@@ -20,7 +20,7 @@
 - ID: PROC:git
   - Type: Process
   - Parent Process: null
-  - Role: External `git` command process spawned by CLI wrappers
+  - Role: External `git` command process spawned by CLI wrappers, including `git difftool -d` with `--extcmd` tool overrides
   - Entrypoint Symbols:
     - `run_git_cmd(...)`
     - `run_git_text(...)`
@@ -30,6 +30,7 @@
     - `_commit_exists_in_branch(...)`
     - `_ref_exists(...)`
     - `cmd_ar(...)`
+    - `_run_configured_diff(...)`
   - Defining Files:
     - `src/git_alias/core.py`
 - ID: PROC:uv
@@ -75,14 +76,6 @@
   - Type: Process
   - Parent Process: null
   - Role: External user-supplied command process injected by the `--exec` release option of `major`, `minor`, and `patch`
-  - Entrypoint Symbols:
-    - `run_command(...)`
-  - Defining Files:
-    - `src/git_alias/core.py`
-- ID: PROC:diff-tool
-  - Type: Process
-  - Parent Process: null
-  - Role: External configured diff tool process spawned by the visual diff aliases
   - Entrypoint Symbols:
     - `run_command(...)`
   - Defining Files:
@@ -152,11 +145,13 @@
           - `run_command(...)`: execute resolved external command [`src/git_alias/core.py`]
         - `cmd_ar(...)`: archive flow combining `git archive` and `gzip` [`src/git_alias/core.py`]
         - `cmd_l(...)`: delegate text-graph rendering to `foresta.run(...)` [`src/git_alias/core.py`]
-        - `cmd_dc(...)`, `cmd_dcc(...)`, `cmd_dccc(...)`, `cmd_dw(...)`, `cmd_dwc(...)`, `cmd_dwcc(...)`, `cmd_dcd(...)`, `cmd_dcm(...)`, and `cmd_ddm(...)`: validate diff operands and delegate to the configured diff tool [`src/git_alias/core.py`]
-          - `_run_configured_diff(...)`: resolve the environment-selected diff command and append ordered ref operands [`src/git_alias/core.py`]
-            - `_environment_config_command_parts(...)`: select `diff_command` or `diff_command_gfx` per detected environment [`src/git_alias/core.py`]
+        - `cmd_dc(...)`, `cmd_dcc(...)`, `cmd_dccc(...)`, `cmd_dw(...)`, `cmd_dwc(...)`, `cmd_dwcc(...)`, `cmd_dcd(...)`, `cmd_dcm(...)`, and `cmd_ddm(...)`: validate diff operands and delegate to `git difftool` with the configured tool override [`src/git_alias/core.py`]
+          - `_run_configured_diff(...)`: build the `git difftool -d` argv, inject the environment-selected diff command as `--extcmd`, and append ordered ref operands [`src/git_alias/core.py`]
+            - `_selected_diff_command_parts(...)`: select `diff_command` or `diff_command_gfx` per detected environment; empty selection skips the override [`src/git_alias/core.py`]
               - `_is_graphical_environment(...)`: classify graphical vs terminal environment [`src/git_alias/core.py`]
-            - `run_command(...)`: execute the resolved diff argv [`src/git_alias/core.py`]
+              - `_validated_config_command_parts(...)`: validate the selected diff tool argv [`src/git_alias/core.py`]
+            - `run_command(...)`: spawn `git difftool` through the shared subprocess wrapper [`src/git_alias/core.py`]
+              - External boundary: `git difftool` launches the `--extcmd` diff tool as its own child process.
         - `cmd_rollback(...)`: validate clean state and reachable target, run the release-style version pre-flight check, apply `git revert --no-commit`, restore the stored application version, stage restored files, and create the non-amend revert commit [`src/git_alias/core.py`]
           - `get_version_rules(...)`: read active `ver_rules` required by the version pre-flight check [`src/git_alias/core.py`]
           - `get_git_root(...)`: resolve repository root for version detection [`src/git_alias/core.py`]
@@ -299,23 +294,6 @@
 - External Boundaries:
   - External user-supplied executable and inherited process stdio.
 
-### PROC:diff-tool
-- Entrypoint(s):
-  - `run_command(...)`: spawn the environment-resolved diff command argv [`src/git_alias/core.py`]
-- Lifecycle/trigger:
-  - Start: visual diff aliases (`dc`, `dcc`, `dccc`, `dw`, `dwc`, `dwcc`, `dcd`, `dcm`, `ddm`) reach `_run_configured_diff(...)` with resolved refs.
-  - Stop: synchronous completion of the diff tool; failures propagate as `CommandExecutionError`.
-  - Threads: no explicit threads detected.
-- Internal Call-Trace Tree:
-  - `_run_configured_diff(...)`: resolve the environment-selected diff argv and append ordered ref operands [`src/git_alias/core.py`]
-    - `_environment_config_command_parts(...)`: select `diff_command` or `diff_command_gfx` per detected environment [`src/git_alias/core.py`]
-      - `_is_graphical_environment(...)`: classify graphical vs terminal environment [`src/git_alias/core.py`]
-      - `_validated_config_command_parts(...)`: validate the selected launcher argv [`src/git_alias/core.py`]
-    - `run_command(...)`: execute the resolved argv through the shared subprocess wrapper [`src/git_alias/core.py`]
-      - `_run_checked(...)`: single external-command interception point for run and streaming spawns [`src/git_alias/core.py`]
-- External Boundaries:
-  - External configured diff executable (default `git difftool -d`).
-
 ## Communication Edges
 - EDGE: PROC:launcher-g-sh -> PROC:uv
   - Mechanism: process replacement via shell `exec`
@@ -330,7 +308,7 @@
 - EDGE: PROC:main -> PROC:git
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv plus stdio streams
-  - Payload/Data-Shape: `List[str]` git argv and optional stdin/stdout/stderr text streams; release publication and resume issue explicit branch/tag refspec pushes and `ls-remote` identity queries
+  - Payload/Data-Shape: `List[str]` git argv and optional stdin/stdout/stderr text streams; visual diff aliases issue `git difftool -d` argv with `--extcmd=<configured tool>` overrides; release publication and resume issue explicit branch/tag refspec pushes and `ls-remote` identity queries
   - Evidence: `src/git_alias/core.py`
 - EDGE: PROC:main -> PROC:uv
   - Mechanism: OS subprocess spawn
@@ -357,8 +335,4 @@
   - Endpoint/Channel: process argv built from the `--exec <command> [params...]` operand tail
   - Payload/Data-Shape: `List[str]` argv executed without shell from the repository root with inherited stdio
   - Evidence: `src/git_alias/core.py`
-- EDGE: PROC:main -> PROC:diff-tool
-  - Mechanism: OS subprocess spawn
-  - Endpoint/Channel: process argv built from `diff_command`/`diff_command_gfx` plus ordered ref operands
-  - Payload/Data-Shape: `List[str]` argv of the environment-selected diff command followed by git refs and forwarded extras
-  - Evidence: `src/git_alias/core.py`
+

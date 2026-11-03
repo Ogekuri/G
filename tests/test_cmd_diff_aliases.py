@@ -34,19 +34,17 @@ class CmdDiffAliasesTest(unittest.TestCase):
         self.assertNotIn("dr", core.COMMANDS)
         self.assertNotIn("dr", core.HELP_TEXTS)
 
-    def test_cmd_dwc_runs_configured_diff_against_head(self):
+    def test_cmd_dwc_runs_plain_git_difftool_when_unconfigured(self):
         with (
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
-            mock.patch.object(core.shutil, "which", return_value="/usr/bin/git"),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
         ):
             core.cmd_dwc([])
             run_command.assert_called_once_with(["git", "difftool", "-d", "HEAD"])
 
-    def test_cmd_dcc_runs_configured_diff_between_latest_commits(self):
+    def test_cmd_dcc_runs_plain_git_difftool_when_unconfigured(self):
         with (
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
-            mock.patch.object(core.shutil, "which", return_value="/usr/bin/git"),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
         ):
             core.cmd_dcc([])
@@ -54,10 +52,9 @@ class CmdDiffAliasesTest(unittest.TestCase):
                 ["git", "difftool", "-d", "HEAD~1", "HEAD"]
             )
 
-    def test_cmd_dccc_runs_configured_diff_between_third_last_and_latest_commit(self):
+    def test_cmd_dccc_runs_plain_git_difftool_when_unconfigured(self):
         with (
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
-            mock.patch.object(core.shutil, "which", return_value="/usr/bin/git"),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
         ):
             core.cmd_dccc([])
@@ -65,10 +62,9 @@ class CmdDiffAliasesTest(unittest.TestCase):
                 ["git", "difftool", "-d", "HEAD~2", "HEAD"]
             )
 
-    def test_cmd_dwcc_runs_configured_diff_against_penultimate_commit(self):
+    def test_cmd_dwcc_runs_plain_git_difftool_when_unconfigured(self):
         with (
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
-            mock.patch.object(core.shutil, "which", return_value="/usr/bin/git"),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
         ):
             core.cmd_dwcc([])
@@ -97,7 +93,6 @@ class CmdDiffAliasesTest(unittest.TestCase):
     def test_cmd_dc_defaults_ref_prev_to_commit_preceding_ref(self):
         with (
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
-            mock.patch.object(core.shutil, "which", return_value="/usr/bin/git"),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
         ):
             core.cmd_dc(["v1.2.3"])
@@ -105,10 +100,9 @@ class CmdDiffAliasesTest(unittest.TestCase):
                 ["git", "difftool", "-d", "v1.2.3~1", "v1.2.3"]
             )
 
-    def test_cmd_dc_runs_configured_diff_from_ref_prev_to_ref(self):
+    def test_cmd_dc_runs_plain_git_difftool_from_ref_prev_to_ref(self):
         with (
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
-            mock.patch.object(core.shutil, "which", return_value="/usr/bin/git"),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
         ):
             core.cmd_dc(["v1.0.0", "HEAD"])
@@ -126,22 +120,20 @@ class CmdDiffAliasesTest(unittest.TestCase):
             self.assertIn("requires exactly one ref", err.getvalue())
             run_command.assert_not_called()
 
-    def test_cmd_dw_runs_configured_diff_with_ref(self):
+    def test_cmd_dw_runs_plain_git_difftool_with_ref(self):
         with (
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
-            mock.patch.object(core.shutil, "which", return_value="/usr/bin/git"),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
         ):
             core.cmd_dw(["v1.0.0"])
             run_command.assert_called_once_with(["git", "difftool", "-d", "v1.0.0"])
 
-    def test_cmd_dcd_runs_configured_diff_between_configured_develop_and_work(self):
+    def test_cmd_dcd_runs_plain_git_difftool_between_develop_and_work(self):
         with (
             mock.patch.object(
                 core, "get_branch", side_effect=["integration/develop", "feature/work"]
             ) as get_branch,
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
-            mock.patch.object(core.shutil, "which", return_value="/usr/bin/git"),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
         ):
             core.cmd_dcd([])
@@ -150,13 +142,12 @@ class CmdDiffAliasesTest(unittest.TestCase):
                 ["git", "difftool", "-d", "integration/develop", "feature/work"]
             )
 
-    def test_cmd_dcm_runs_configured_diff_between_configured_master_and_work(self):
+    def test_cmd_dcm_runs_plain_git_difftool_between_master_and_work(self):
         with (
             mock.patch.object(
                 core, "get_branch", side_effect=["release/master", "feature/work"]
             ) as get_branch,
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
-            mock.patch.object(core.shutil, "which", return_value="/usr/bin/git"),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
         ):
             core.cmd_dcm([])
@@ -165,13 +156,12 @@ class CmdDiffAliasesTest(unittest.TestCase):
                 ["git", "difftool", "-d", "release/master", "feature/work"]
             )
 
-    def test_cmd_ddm_runs_configured_diff_between_configured_master_and_develop(self):
+    def test_cmd_ddm_runs_plain_git_difftool_between_master_and_develop(self):
         with (
             mock.patch.object(
                 core, "get_branch", side_effect=["release/master", "integration/develop"]
             ) as get_branch,
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
-            mock.patch.object(core.shutil, "which", return_value="/usr/bin/git"),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
         ):
             core.cmd_ddm([])
@@ -180,7 +170,7 @@ class CmdDiffAliasesTest(unittest.TestCase):
                 ["git", "difftool", "-d", "release/master", "integration/develop"]
             )
 
-    def test_diff_aliases_use_custom_terminal_diff_command(self):
+    def test_diff_aliases_inject_terminal_diff_command_as_extcmd(self):
         core.CONFIG["diff_command"] = "icdiff --line-numbers"
         with (
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
@@ -189,10 +179,17 @@ class CmdDiffAliasesTest(unittest.TestCase):
         ):
             core.cmd_dcc([])
             run_command.assert_called_once_with(
-                ["icdiff", "--line-numbers", "HEAD~1", "HEAD"]
+                [
+                    "git",
+                    "difftool",
+                    "-d",
+                    "--extcmd=icdiff --line-numbers",
+                    "HEAD~1",
+                    "HEAD",
+                ]
             )
 
-    def test_diff_aliases_use_gfx_diff_command_in_graphical_environment(self):
+    def test_diff_aliases_inject_gfx_diff_command_as_extcmd(self):
         core.CONFIG["diff_command"] = "icdiff"
         core.CONFIG["diff_command_gfx"] = "/opt/sublime_merge/sublime_merge difftool"
         with (
@@ -205,8 +202,10 @@ class CmdDiffAliasesTest(unittest.TestCase):
             core.cmd_dwc([])
             run_command.assert_called_once_with(
                 [
-                    "/opt/sublime_merge/sublime_merge",
+                    "git",
                     "difftool",
+                    "-d",
+                    "--extcmd=/opt/sublime_merge/sublime_merge difftool",
                     "HEAD",
                 ]
             )

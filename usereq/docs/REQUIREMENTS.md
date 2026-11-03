@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.20
+**Version**: 1.21
 **Author**: Francesco Rolando
 **Date**: 2026-11-03
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-11-03 | 1.21 | Changed visual diff execution to `git difftool -d` with the environment-selected `diff_command`/`diff_command_gfx` injected as `--extcmd`, overriding git's configured diff tool; empty resolved command runs plain `git difftool -d`. |
 | 2026-11-03 | 1.20 | Added environment-aware dual external-command configuration (`<id>_command`/`<id>_command_gfx`), the dedicated `diff_command` pair driving visual diff aliases, and the single `_run_checked` subprocess interception wrapper. |
 | 2026-11-03 | 1.19 | Changed `dc` so `<ref_b>` is optional and defaults to the commit preceding `<ref>`, renamed operands `<ref_a>`/`<ref_b>` to `<ref>`/`<ref_prev>`, and enforced `ref_prev -> ref` diff direction. |
 | 2026-10-22 | 1.18 | Added `rollback` version pre-flight check, version preservation via `chver` restore before the revert commit, abort-on-restore-failure semantics, and help/README documentation. |
@@ -156,7 +157,8 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-186**: MUST global configuration support paired keys `<id>_command` (terminal) and `<id>_command_gfx` (graphical) for `id` in `edit`, `gp`, `gr`, and `diff` in `$HOME/.config/git-alias/config.json`.
 - **REQ-187**: MUST command resolution detect graphical environments as non-POSIX `os.name` or non-empty `DISPLAY`/`WAYLAND_DISPLAY` on POSIX, selecting `<id>_command_gfx` when graphical and `<id>_command` otherwise.
 - **REQ-188**: MUST an absent or empty `<id>_command_gfx` value in a graphical environment fall back to the `<id>_command` value.
-- **REQ-189**: MUST visual diff aliases execute the environment-resolved `diff_command`/`diff_command_gfx` argv followed by their ref operands and extra arguments, defaulting to `git difftool -d` when unconfigured.
+- **REQ-189**: MUST visual diff aliases execute `git difftool -d` with the environment-resolved `diff_command`/`diff_command_gfx` value injected as `--extcmd=<command>`, followed by their ref operands and extra arguments.
+- **REQ-190**: MUST visual diff execution omit `--extcmd` and run plain `git difftool -d <refs> <extras>` when the resolved diff command is empty.
 - **REQ-038**: MUST the visual diff aliases include `dwcc` with refs `HEAD~1` and `dccc` with refs `HEAD~2 HEAD`, both executed through the environment-aware diff wrapper (REQ-189), and both aliases MUST expose explicit help text in global and per-command help outputs.
 - **REQ-039**: MUST every command `<command>` present in the CLI command dispatch map MUST be implemented by a Python function named exactly `cmd_<command>`, and the dispatch entry for `<command>` MUST reference that exact function symbol.
 - **REQ-040**: MUST the `changelog` `--include-patch` option MUST prepend the chronologically latest patch release after the last minor release, including all commits from the last minor to that patch; if no minor release exists MUST include only the latest patch with all commits from the beginning.
@@ -308,4 +310,5 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-186** evidence: `src/git_alias/core.py` `DEFAULT_CONFIG` and `GLOBAL_CONFIG_KEYS` defining the paired global command keys.
 - **REQ-187** evidence: `src/git_alias/core.py` `_is_graphical_environment` detection and `_environment_config_command_parts` key selection.
 - **REQ-188** evidence: `src/git_alias/core.py` `_environment_config_command_parts` graphical fallback branch for empty `<id>_command_gfx` values.
-- **REQ-189** evidence: `src/git_alias/core.py` `_run_configured_diff` and the visual diff alias handlers.
+- **REQ-189** evidence: `src/git_alias/core.py` `_run_configured_diff` `--extcmd` injection of the environment-selected `diff_command`/`diff_command_gfx` value.
+- **REQ-190** evidence: `src/git_alias/core.py` `_run_configured_diff` empty-tool branch executing plain `git difftool -d`.

@@ -106,8 +106,11 @@ ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 DEFAULT_GP_COMMAND = "gitk --all"
 ## @brief Constant `DEFAULT_GR_COMMAND` used by CLI runtime paths and policies.
 DEFAULT_GR_COMMAND = "gitk --simplify-by-decoration --all"
-## @brief Constant `DEFAULT_DIFF_COMMAND` used by CLI runtime paths and policies.
-DEFAULT_DIFF_COMMAND = "git difftool -d"
+## @brief Constant `GIT_DIFFTOOL_COMMAND` used by CLI runtime paths and policies.
+# @details Base argv executed by visual diff aliases (REQ-189); the
+#          environment-selected diff tool is injected as `--extcmd` override
+#          (REQ-190) when configured.
+GIT_DIFFTOOL_COMMAND = ("git", "difftool", "-d")
 
 DEFAULT_CONFIG = {
     "master": "master",
@@ -117,7 +120,7 @@ DEFAULT_CONFIG = {
     "default_commit_module": "",
     "gp_command": DEFAULT_GP_COMMAND,
     "gr_command": DEFAULT_GR_COMMAND,
-    "diff_command": DEFAULT_DIFF_COMMAND,
+    "diff_command": "",
     "edit_command_gfx": "",
     "gp_command_gfx": "",
     "gr_command_gfx": "",
@@ -875,19 +878,19 @@ HELP_TEXTS = {
     "ck": "Check differences.",
     "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
-    "dc": "Run the configured directory diff tool from <ref_prev> to <ref>. Syntax: git dc <ref> [<ref_prev>]; <ref_prev> defaults to the commit preceding <ref> (<ref>~1).",
-    "dcc": "Run the configured directory diff tool between HEAD~1 and HEAD.",
-    "dccc": "Run the configured directory diff tool between HEAD~2 and HEAD.",
+    "dc": "Run git difftool -d from <ref_prev> to <ref>, overriding the diff tool with the configured diff_command/diff_command_gfx. Syntax: git dc <ref> [<ref_prev>]; <ref_prev> defaults to the commit preceding <ref> (<ref>~1).",
+    "dcc": "Run git difftool -d between HEAD~1 and HEAD with the configured diff tool override (--extcmd).",
+    "dccc": "Run git difftool -d between HEAD~2 and HEAD with the configured diff tool override (--extcmd).",
     "de": "Print last tagged commit details.",
     "di": "Discard current changes on file: git di '<filename>'",
     "dime": "Discard merge changes in favor of their files.",
     "diyou": "Discard merge changes in favor of your files.",
-    "dw": "Run the configured directory diff tool between working tree and a specific ref. Syntax: git dw <ref>.",
-    "dwc": "Run the configured directory diff tool between working tree and HEAD.",
-    "dwcc": "Run the configured directory diff tool between working tree and HEAD~1.",
-    "dcd": "Run the configured directory diff tool between configured develop and work branches.",
-    "dcm": "Run the configured directory diff tool between configured master and work branches.",
-    "ddm": "Run the configured directory diff tool between configured master and develop branches.",
+    "dw": "Run git difftool -d between working tree and a specific ref with the configured diff tool override. Syntax: git dw <ref>.",
+    "dwc": "Run git difftool -d between working tree and HEAD with the configured diff tool override (--extcmd).",
+    "dwcc": "Run git difftool -d between working tree and HEAD~1 with the configured diff tool override (--extcmd).",
+    "dcd": "Run git difftool -d between configured develop and work branches with the configured diff tool override.",
+    "dcm": "Run git difftool -d between configured master and work branches with the configured diff tool override.",
+    "ddm": "Run git difftool -d between configured master and develop branches with the configured diff tool override.",
     "ed": "Edit a file. Syntax: git ed <filename>.",
     "fe": "Fetch new data of current branch from origin.",
     "feall": "Fetch new data from origin for all branch.",
@@ -3827,25 +3830,53 @@ def cmd_co(extra):
     return run_git_cmd(["checkout"], extra)
 
 
-## @brief Execute the environment-resolved configured diff command.
-# @details Implements REQ-189: resolves the diff argv through
-#          `_environment_config_command_parts` on the `diff_command` pair
-#          (terminal `diff_command`, graphical `diff_command_gfx` per
-#          REQ-186/REQ-187/REQ-188), then executes `<diff argv> + refs + extra`
-#          through the `run_command` wrapper so every visual diff alias passes
-#          the same environment-detection path. Default command is
-#          `git difftool -d` when the pair is unconfigured.
-# @param refs {List[str]} Ordered git ref operands appended after the diff argv.
+## @brief Resolve the environment-selected diff tool argv for extcmd injection.
+# @details Applies the REQ-186/REQ-187/REQ-188 selection to the
+#          `diff_command`/`diff_command_gfx` pair: graphical environments
+#          select `diff_command_gfx` when non-empty, otherwise the terminal
+#          `diff_command` applies. Unlike `_environment_config_command_parts`,
+#          an empty effective value returns `[]` per REQ-190 so the caller runs
+#          plain `git difftool -d` without overriding git's configured tool.
+#          Non-empty values are tokenized and validated through
+#          `_validated_config_command_parts`.
+# @return {List[str]} Validated argv tokens of the selected diff tool; `[]` when unconfigured.
+# @exception RuntimeError Raised when the selected non-empty command is invalid or unavailable.
+# @note Complexity: O(1) excluding PATH lookup inside validation.
+# @satisfies REQ-187, REQ-188, REQ-190
+def _selected_diff_command_parts() -> List[str]:
+    if _is_graphical_environment():
+        gfx_value = get_config_value("diff_command_gfx")
+        if gfx_value:
+            return _validated_config_command_parts("diff_command_gfx", gfx_value)
+    terminal_value = get_config_value("diff_command")
+    if not terminal_value:
+        return []
+    return _validated_config_command_parts("diff_command", terminal_value)
+
+
+## @brief Execute `git difftool -d` with the configured tool injected as extcmd.
+# @details Implements REQ-189/REQ-190: builds the `git difftool -d` base argv,
+#          appends `--extcmd=<selected command>` when
+#          `_selected_diff_command_parts` returns a non-empty tool so the
+#          environment-selected git-alias tool overrides git's configured diff
+#          tool, then appends the ordered ref operands and forwarded extras.
+#          An empty tool runs plain `git difftool -d` (REQ-190). Execution goes
+#          through `run_command` so every visual diff alias passes the same
+#          environment-detection and subprocess-interception path (REQ-185).
+# @param refs {List[str]} Ordered git ref operands appended after the difftool argv.
 # @param extra {Optional[List[str]]} Additional CLI operands forwarded unchanged.
-# @return Result of `run_command` for the delegated diff subprocess.
+# @return Result of `run_command` for the delegated `git difftool` subprocess.
 # @exception RuntimeError Raised when the selected diff command is invalid or unavailable.
+# @note `--extcmd` tokens are joined with single spaces; embedded whitespace
+#       inside tokens is not re-quoted.
 # @note Complexity: O(1) excluding PATH lookup and subprocess runtime.
-# @satisfies REQ-189, REQ-185, REQ-187
+# @satisfies REQ-189, REQ-190, REQ-185, REQ-187
 def _run_configured_diff(refs, extra=None):
-    command_parts = _environment_config_command_parts(
-        "diff_command", DEFAULT_DIFF_COMMAND
-    )
-    return run_command(command_parts + list(refs) + _to_args(extra))
+    argv: List[str] = list(GIT_DIFFTOOL_COMMAND)
+    tool_parts = _selected_diff_command_parts()
+    if tool_parts:
+        argv.append("--extcmd=" + " ".join(tool_parts))
+    return run_command(argv + list(refs) + _to_args(extra))
 
 
 ## @brief Execute `cmd_dc` runtime logic for Git-Alias CLI.
