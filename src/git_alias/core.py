@@ -101,30 +101,44 @@ VERSION_CLEANUP_REGEXES = [
 VERSION_CLEANUP_PATTERNS = [re.compile(pattern) for pattern in VERSION_CLEANUP_REGEXES]
 ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 
-## @brief Constant `DEFAULT_CONFIG` used by CLI runtime paths and policies.
 ## @brief Constant `DEFAULT_GP_COMMAND` used by CLI runtime paths and policies.
-DEFAULT_GP_COMMAND = "gitk --all"
+# @details Default terminal commit-graph launcher for the `gp` command pair
+#          (REQ-186); imposed default value `gitui` per REQ-191.
+# @satisfies REQ-191
+DEFAULT_GP_COMMAND = "gitui"
 ## @brief Constant `DEFAULT_GR_COMMAND` used by CLI runtime paths and policies.
-DEFAULT_GR_COMMAND = "gitk --simplify-by-decoration --all"
+# @details Default terminal tag/decoration-graph launcher for the `gr`
+#          command pair (REQ-186); imposed default value `tig` per REQ-191.
+# @satisfies REQ-191
+DEFAULT_GR_COMMAND = "tig"
 ## @brief Constant `GIT_DIFFTOOL_COMMAND` used by CLI runtime paths and policies.
 # @details Base argv executed by visual diff aliases (REQ-189); the
 #          environment-selected diff tool is injected as `--extcmd` override
 #          (REQ-190) when configured.
 GIT_DIFFTOOL_COMMAND = ("git", "difftool", "-d")
 
+## @brief Constant `DEFAULT_CONFIG` used by CLI runtime paths and policies.
+# @details Canonical default configuration. The eight REQ-186 global command
+#          keys hold the imposed REQ-191 default values and are declared
+#          contiguously in the REQ-192 canonical order
+#          (`edit_command`, `edit_command_gfx`, `diff_command`,
+#          `diff_command_gfx`, `gr_command`, `gr_command_gfx`, `gp_command`,
+#          `gp_command_gfx`) because `print_all_help` renders Configuration
+#          Parameters in dict insertion order.
+# @satisfies REQ-191, REQ-192
 DEFAULT_CONFIG = {
     "master": "master",
     "develop": "develop",
     "work": "work",
     "edit_command": "edit",
-    "default_commit_module": "",
-    "gp_command": DEFAULT_GP_COMMAND,
+    "edit_command_gfx": "sublime_text",
+    "diff_command": "icdiff",
+    "diff_command_gfx": "meld",
     "gr_command": DEFAULT_GR_COMMAND,
-    "diff_command": "",
-    "edit_command_gfx": "",
-    "gp_command_gfx": "",
-    "gr_command_gfx": "",
-    "diff_command_gfx": "",
+    "gr_command_gfx": "gitg",
+    "gp_command": DEFAULT_GP_COMMAND,
+    "gp_command_gfx": "sublime_merge --multiinstance .",
+    "default_commit_module": "",
     "ver_rules": [
         {"pattern": "README.md", "regex": r"\s*\((\d+\.\d+\.\d+)\)\n"},
         {
@@ -144,15 +158,20 @@ BRANCH_KEYS = ("master", "develop", "work")
 ## @brief Constant `LOCAL_CONFIG_KEYS` used by CLI runtime paths and policies.
 LOCAL_CONFIG_KEYS = ("master", "develop", "work", "default_commit_module", "ver_rules")
 ## @brief Constant `GLOBAL_CONFIG_KEYS` used by CLI runtime paths and policies.
+# @details Ordered inventory of the eight REQ-186 global command keys in the
+#          REQ-192 canonical order; drives global config loading, legacy-key
+#          migration, `--write-config` normalization (REQ-014), and persisted
+#          JSON key insertion order.
+# @satisfies REQ-014, REQ-192
 GLOBAL_CONFIG_KEYS = (
     "edit_command",
-    "gp_command",
-    "gr_command",
-    "diff_command",
     "edit_command_gfx",
-    "gp_command_gfx",
-    "gr_command_gfx",
+    "diff_command",
     "diff_command_gfx",
+    "gr_command",
+    "gr_command_gfx",
+    "gp_command",
+    "gp_command_gfx",
 )
 ## @brief Constant `MANAGEMENT_HELP` used by CLI runtime paths and policies.
 

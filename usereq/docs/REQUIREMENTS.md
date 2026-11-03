@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.21
+**Version**: 1.22
 **Author**: Francesco Rolando
 **Date**: 2026-11-03
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-11-03 | 1.22 | Imposed defaults `edit`/`sublime_text`, `icdiff`/`meld`, `tig`/`gitg`, `gitui`/`sublime_merge --multiinstance .` for the eight global command keys (REQ-191) and required their contiguous canonical print order in Configuration Parameters output (REQ-192). |
 | 2026-11-03 | 1.21 | Changed visual diff execution to `git difftool -d` with the environment-selected `diff_command`/`diff_command_gfx` injected as `--extcmd`, overriding git's configured diff tool; empty resolved command runs plain `git difftool -d`. |
 | 2026-11-03 | 1.20 | Added environment-aware dual external-command configuration (`<id>_command`/`<id>_command_gfx`), the dedicated `diff_command` pair driving visual diff aliases, and the single `_run_checked` subprocess interception wrapper. |
 | 2026-11-03 | 1.19 | Changed `dc` so `<ref_b>` is optional and defaults to the commit preceding `<ref>`, renamed operands `<ref_a>`/`<ref_b>` to `<ref>`/`<ref_prev>`, and enforced `ref_prev -> ref` diff direction. |
@@ -159,6 +160,8 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-188**: MUST an absent or empty `<id>_command_gfx` value in a graphical environment fall back to the `<id>_command` value.
 - **REQ-189**: MUST visual diff aliases execute `git difftool -d` with the environment-resolved `diff_command`/`diff_command_gfx` value injected as `--extcmd=<command>`, followed by their ref operands and extra arguments.
 - **REQ-190**: MUST visual diff execution omit `--extcmd` and run plain `git difftool -d <refs> <extras>` when the resolved diff command is empty.
+- **REQ-191**: MUST set `DEFAULT_CONFIG` values for the eight REQ-186 global command keys to `edit_command="edit"`, `edit_command_gfx="sublime_text"`, `diff_command="icdiff"`, `diff_command_gfx="meld"`, `gr_command="tig"`, `gr_command_gfx="gitg"`, `gp_command="gitui"`, and `gp_command_gfx="sublime_merge --multiinstance ."`.
+- **REQ-192**: MUST print the eight REQ-186 global command keys contiguously, in the exact order `edit_command`, `edit_command_gfx`, `diff_command`, `diff_command_gfx`, `gr_command`, `gr_command_gfx`, `gp_command`, `gp_command_gfx`, in Configuration Parameters output.
 - **REQ-038**: MUST the visual diff aliases include `dwcc` with refs `HEAD~1` and `dccc` with refs `HEAD~2 HEAD`, both executed through the environment-aware diff wrapper (REQ-189), and both aliases MUST expose explicit help text in global and per-command help outputs.
 - **REQ-039**: MUST every command `<command>` present in the CLI command dispatch map MUST be implemented by a Python function named exactly `cmd_<command>`, and the dispatch entry for `<command>` MUST reference that exact function symbol.
 - **REQ-040**: MUST the `changelog` `--include-patch` option MUST prepend the chronologically latest patch release after the last minor release, including all commits from the last minor to that patch; if no minor release exists MUST include only the latest patch with all commits from the beginning.
@@ -312,3 +315,5 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-188** evidence: `src/git_alias/core.py` `_environment_config_command_parts` graphical fallback branch for empty `<id>_command_gfx` values.
 - **REQ-189** evidence: `src/git_alias/core.py` `_run_configured_diff` `--extcmd` injection of the environment-selected `diff_command`/`diff_command_gfx` value.
 - **REQ-190** evidence: `src/git_alias/core.py` `_run_configured_diff` empty-tool branch executing plain `git difftool -d`.
+- **REQ-191** evidence: `src/git_alias/core.py` `DEFAULT_CONFIG` plus `DEFAULT_GP_COMMAND`/`DEFAULT_GR_COMMAND` constants defining the imposed default command values.
+- **REQ-192** evidence: `src/git_alias/core.py` `DEFAULT_CONFIG` key order plus `GLOBAL_CONFIG_KEYS` order driving `print_all_help` Configuration Parameters rendering.
