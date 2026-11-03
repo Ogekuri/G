@@ -818,7 +818,7 @@ HELP_TEXTS = {
     "ck": "Check differences.",
     "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
-    "dc": "Run a directory difftool between two refs. Syntax: git dc <ref_a> <ref_b>.",
+    "dc": "Run a directory difftool from <ref_prev> to <ref>. Syntax: git dc <ref> [<ref_prev>]; <ref_prev> defaults to the commit preceding <ref> (<ref>~1).",
     "dcc": "Run a directory difftool between HEAD~1 and HEAD.",
     "dccc": "Run a directory difftool between HEAD~2 and HEAD.",
     "de": "Print last tagged commit details.",
@@ -3752,17 +3752,30 @@ def cmd_co(extra):
 
 
 ## @brief Execute `cmd_dc` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_dc` using deterministic CLI control-flow and explicit error propagation.
-# @param extra Input parameter consumed by `cmd_dc`.
-# @return Result emitted by `cmd_dc` according to command contract.
+# @details Validates the REQ-182 arity contract (exactly one required `<ref>`
+# plus at most one optional `<ref_prev>`), resolves an omitted `<ref_prev>` to
+# the commit preceding `<ref>` via the git revision expression `<ref>~1` per
+# REQ-184, and delegates to `git difftool -d <ref_prev> <ref>` so the rendered
+# diff direction is always `<ref_prev>` -> `<ref>` and never inverted per
+# REQ-183. Git errors are forwarded without additional transformations.
+# @param extra {Optional[List[str]]} CLI operands after `dc`; accepted arity is
+# 1 or 2 positional git refs (`--help` is intercepted by `main` before dispatch).
+# @return Result of `run_git_cmd` for the delegated `git difftool -d` subprocess.
+# @exception SystemExit Exit code 1 on zero or more than two positional refs.
+# @note Complexity: O(1); no CLI-side ref resolution or transformation.
+# @satisfies REQ-182, REQ-183, REQ-184
 def cmd_dc(extra):
     args = _to_args(extra)
-    if len(args) != 2:
+    if len(args) == 0 or len(args) > 2:
         print(
-            "git dc requires exactly two refs: git dc <ref_a> <ref_b>", file=sys.stderr
+            "git dc requires one ref and an optional previous ref:"
+            " git dc <ref> [<ref_prev>]",
+            file=sys.stderr,
         )
         sys.exit(1)
-    return run_git_cmd(["difftool", "-d", args[0], args[1]])
+    ref = args[0]
+    ref_prev = args[1] if len(args) == 2 else f"{ref}~1"
+    return run_git_cmd(["difftool", "-d", ref_prev, ref])
 
 
 ## @brief Execute `cmd_dcc` runtime logic for Git-Alias CLI.

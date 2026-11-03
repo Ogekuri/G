@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.18
+**Version**: 1.19
 **Author**: Francesco Rolando
-**Date**: 2026-10-22
+**Date**: 2026-11-03
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-11-03 | 1.19 | Changed `dc` so `<ref_b>` is optional and defaults to the commit preceding `<ref>`, renamed operands `<ref_a>`/`<ref_b>` to `<ref>`/`<ref_prev>`, and enforced `ref_prev -> ref` diff direction. |
 | 2026-10-22 | 1.18 | Added `rollback` version pre-flight check, version preservation via `chver` restore before the revert commit, abort-on-restore-failure semantics, and help/README documentation. |
 | 2026-10-02 | 1.16 | Required gitignore(5) escaping and negation exclusion semantics for `ver_rules.pattern` with anchoring preserved and README documentation. |
 | 2026-10-21 | 1.17 | Added `--exec <command> [params...]` option for `major`/`minor`/`patch` release commands with argv execution between version update and staging and fail-fast abort semantics. |
@@ -146,7 +147,10 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-034**: MUST run `git remote -v`, print unique remote names, and run `git remote show <remote>` for each discovered remote in alias `str`.
 - **REQ-035**: MUST support `ver --verbose` (per-file regex outcome output) and `ver --debug` (full glob-match listing for each rule pattern).
 - **REQ-036**: MAY provide repository-local Doxygen generation assets; when present they SHOULD generate documentation under `doxygen/` from `src/`; CLI runtime and release workflow MUST remain functional when such assets are absent.
-- **REQ-037**: MUST visual diff aliases MUST execute fixed `git difftool -d` mappings: `dwc` MUST execute `git difftool -d HEAD` (working tree vs latest commit), `dcc` MUST execute `git difftool -d HEAD~1 HEAD` (penultimate vs latest commit), `dc` MUST require exactly two positional git refs (`<ref_a> <ref_b>`) and execute `git difftool -d <ref_a> <ref_b>`, and `dw` MUST require exactly one positional git ref (`<ref>`) and execute `git difftool -d <ref>` (working tree vs specified ref), forwarding git errors without additional transformations.
+- **REQ-037**: MUST visual diff aliases MUST execute fixed `git difftool -d` mappings: `dwc` MUST execute `git difftool -d HEAD` (working tree vs latest commit), `dcc` MUST execute `git difftool -d HEAD~1 HEAD` (penultimate vs latest commit), and `dw` MUST require exactly one positional git ref (`<ref>`) and execute `git difftool -d <ref>` (working tree vs specified ref), forwarding git errors without additional transformations.
+- **REQ-182**: MUST `dc` accept exactly one required positional git ref `<ref>` plus at most one optional positional git ref `<ref_prev>` and MUST reject zero or extra positional refs with an explicit English usage error.
+- **REQ-183**: MUST `dc` execute `git difftool -d <ref_prev> <ref>` so the shown diff direction is `<ref_prev>` -> `<ref>` and MUST NOT invert the operand order.
+- **REQ-184**: MUST `dc` resolve an omitted `<ref_prev>` to the commit preceding `<ref>` (`<ref>~1`) before diff execution.
 - **REQ-038**: MUST the visual diff aliases MUST include `dwcc` mapped to `git difftool -d HEAD~1` (working tree vs penultimate commit) and `dccc` mapped to `git difftool -d HEAD~2 HEAD` (third-last vs last commit), and both aliases MUST expose explicit help text in global and per-command help outputs.
 - **REQ-039**: MUST every command `<command>` present in the CLI command dispatch map MUST be implemented by a Python function named exactly `cmd_<command>`, and the dispatch entry for `<command>` MUST reference that exact function symbol.
 - **REQ-040**: MUST the `changelog` `--include-patch` option MUST prepend the chronologically latest patch release after the last minor release, including all commits from the last minor to that patch; if no minor release exists MUST include only the latest patch with all commits from the beginning.
@@ -291,3 +295,6 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-173** evidence: `src/git_alias/core.py` `cmd_rollback` `git add --all` staging step before the revert commit.
 - **REQ-174** evidence: `src/git_alias/core.py` `cmd_rollback` `git revert --abort` failure handler for the version restore step.
 - **REQ-175** evidence: `src/git_alias/core.py` `HELP_TEXTS["rollback"]` and `README.md` rollback command/example entries.
+- **REQ-182** evidence: `src/git_alias/core.py` `cmd_dc` arity validation rejecting zero or more than two positional refs.
+- **REQ-183** evidence: `src/git_alias/core.py` `cmd_dc` `git difftool -d <ref_prev> <ref>` operand order.
+- **REQ-184** evidence: `src/git_alias/core.py` `cmd_dc` `<ref>~1` default resolution for omitted `<ref_prev>`.

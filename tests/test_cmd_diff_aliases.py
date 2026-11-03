@@ -51,20 +51,35 @@ class CmdDiffAliasesTest(unittest.TestCase):
             core.cmd_dwcc([])
             run_git.assert_called_once_with(["difftool", "-d", "HEAD~1"], [])
 
-    def test_cmd_dc_requires_exactly_two_refs(self):
+    def test_cmd_dc_rejects_zero_refs(self):
         with mock.patch.object(core, "run_git_cmd") as run_git:
             err = io.StringIO()
             with contextlib.redirect_stderr(err):
                 with self.assertRaises(SystemExit) as ctx:
-                    core.cmd_dc(["HEAD"])
+                    core.cmd_dc([])
             self.assertNotEqual(ctx.exception.code, 0)
-            self.assertIn("requires exactly two refs", err.getvalue())
+            self.assertIn("<ref>", err.getvalue())
             run_git.assert_not_called()
 
-    def test_cmd_dc_runs_difftool_with_two_refs(self):
+    def test_cmd_dc_rejects_more_than_two_refs(self):
+        with mock.patch.object(core, "run_git_cmd") as run_git:
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                with self.assertRaises(SystemExit) as ctx:
+                    core.cmd_dc(["HEAD", "HEAD~1", "HEAD~2"])
+            self.assertNotEqual(ctx.exception.code, 0)
+            self.assertIn("<ref>", err.getvalue())
+            run_git.assert_not_called()
+
+    def test_cmd_dc_defaults_ref_prev_to_commit_preceding_ref(self):
+        with mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
+            core.cmd_dc(["v1.2.3"])
+            run_git.assert_called_once_with(["difftool", "-d", "v1.2.3~1", "v1.2.3"])
+
+    def test_cmd_dc_runs_difftool_from_ref_prev_to_ref(self):
         with mock.patch.object(core, "run_git_cmd", return_value=None) as run_git:
             core.cmd_dc(["v1.0.0", "HEAD"])
-            run_git.assert_called_once_with(["difftool", "-d", "v1.0.0", "HEAD"])
+            run_git.assert_called_once_with(["difftool", "-d", "HEAD", "v1.0.0"])
 
     def test_cmd_dw_requires_exactly_one_ref(self):
         with mock.patch.object(core, "run_git_cmd") as run_git:
