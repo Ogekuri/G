@@ -54,7 +54,7 @@
 - ID: PROC:editor
   - Type: Process
   - Parent Process: null
-  - Role: External editor process invoked from `edit_command`
+  - Role: External editor process invoked from the environment-selected `edit_command`/`edit_command_gfx` pair
   - Entrypoint Symbols:
     - `cmd_ed(...)`
     - `run_editor_command(...)`
@@ -64,7 +64,7 @@
 - ID: PROC:gitk
   - Type: Process
   - Parent Process: null
-  - Role: External graph-viewer process invoked from `gp_command` or `gr_command`
+  - Role: External graph-viewer process invoked from the environment-selected `gp_command`/`gp_command_gfx` or `gr_command`/`gr_command_gfx` pairs
   - Entrypoint Symbols:
     - `cmd_gp(...)`
     - `cmd_gr(...)`
@@ -75,6 +75,14 @@
   - Type: Process
   - Parent Process: null
   - Role: External user-supplied command process injected by the `--exec` release option of `major`, `minor`, and `patch`
+  - Entrypoint Symbols:
+    - `run_command(...)`
+  - Defining Files:
+    - `src/git_alias/core.py`
+- ID: PROC:diff-tool
+  - Type: Process
+  - Parent Process: null
+  - Role: External configured diff tool process spawned by the visual diff aliases
   - Entrypoint Symbols:
     - `run_command(...)`
   - Defining Files:
@@ -116,21 +124,27 @@
       - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py`]
         - `cmd_ed(...)`: validate file operands, expand `~`, and invoke configured editor [`src/git_alias/core.py`]
           - `run_editor_command(...)`: build editor argv and execute subprocess [`src/git_alias/core.py`]
-            - `_editor_base_command(...)`: resolve `edit_command` launcher [`src/git_alias/core.py`]
+            - `_editor_base_command(...)`: resolve the environment-selected editor launcher [`src/git_alias/core.py`]
+              - `_environment_config_command_parts(...)`: select `edit_command`/`edit_command_gfx` per detected environment [`src/git_alias/core.py`]
+                - `_is_graphical_environment(...)`: classify graphical vs terminal environment [`src/git_alias/core.py`]
               - `_validated_config_command_parts(...)`: validate configured launcher and construct runnable argv [`src/git_alias/core.py`]
                 - `_parse_config_command_parts(...)`: parse configured command line into argv tokens [`src/git_alias/core.py`]
                 - `_resolve_windows_shell_command_prefix(...)`: wrap Windows Git Bash shell-script launchers with `sh` or `bash` when direct Win32 execution is unavailable [`src/git_alias/core.py`]
                   - `_find_windows_shell_script_path(...)`: scan `PATH` for non-`PATHEXT` shell-script launchers such as `gitk` [`src/git_alias/core.py`]
             - `run_command(...)`: execute resolved external command [`src/git_alias/core.py`]
-        - `cmd_gp(...)`: resolve `gp_command` launcher and execute graph viewer [`src/git_alias/core.py`]
-          - `_config_command_parts(...)`: resolve validated graph-viewer argv [`src/git_alias/core.py`]
+        - `cmd_gp(...)`: resolve the environment-selected `gp_command`/`gp_command_gfx` launcher and execute graph viewer [`src/git_alias/core.py`]
+          - `_config_command_parts(...)`: resolve environment-selected graph-viewer argv [`src/git_alias/core.py`]
+            - `_environment_config_command_parts(...)`: select the configured launcher environment variant [`src/git_alias/core.py`]
+              - `_is_graphical_environment(...)`: classify graphical vs terminal environment [`src/git_alias/core.py`]
             - `_validated_config_command_parts(...)`: validate configured launcher and construct runnable argv [`src/git_alias/core.py`]
               - `_parse_config_command_parts(...)`: parse configured command line into argv tokens [`src/git_alias/core.py`]
               - `_resolve_windows_shell_command_prefix(...)`: wrap Windows Git Bash shell-script launchers with `sh` or `bash` when direct Win32 execution is unavailable [`src/git_alias/core.py`]
                 - `_find_windows_shell_script_path(...)`: scan `PATH` for non-`PATHEXT` shell-script launchers such as `gitk` [`src/git_alias/core.py`]
           - `run_command(...)`: execute resolved external command [`src/git_alias/core.py`]
-        - `cmd_gr(...)`: resolve `gr_command` launcher and execute graph viewer [`src/git_alias/core.py`]
-          - `_config_command_parts(...)`: resolve validated graph-viewer argv [`src/git_alias/core.py`]
+        - `cmd_gr(...)`: resolve the environment-selected `gr_command`/`gr_command_gfx` launcher and execute graph viewer [`src/git_alias/core.py`]
+          - `_config_command_parts(...)`: resolve environment-selected graph-viewer argv [`src/git_alias/core.py`]
+            - `_environment_config_command_parts(...)`: select the configured launcher environment variant [`src/git_alias/core.py`]
+              - `_is_graphical_environment(...)`: classify graphical vs terminal environment [`src/git_alias/core.py`]
             - `_validated_config_command_parts(...)`: validate configured launcher and construct runnable argv [`src/git_alias/core.py`]
               - `_parse_config_command_parts(...)`: parse configured command line into argv tokens [`src/git_alias/core.py`]
               - `_resolve_windows_shell_command_prefix(...)`: wrap Windows Git Bash shell-script launchers with `sh` or `bash` when direct Win32 execution is unavailable [`src/git_alias/core.py`]
@@ -138,6 +152,11 @@
           - `run_command(...)`: execute resolved external command [`src/git_alias/core.py`]
         - `cmd_ar(...)`: archive flow combining `git archive` and `gzip` [`src/git_alias/core.py`]
         - `cmd_l(...)`: delegate text-graph rendering to `foresta.run(...)` [`src/git_alias/core.py`]
+        - `cmd_dc(...)`, `cmd_dcc(...)`, `cmd_dccc(...)`, `cmd_dw(...)`, `cmd_dwc(...)`, `cmd_dwcc(...)`, `cmd_dcd(...)`, `cmd_dcm(...)`, and `cmd_ddm(...)`: validate diff operands and delegate to the configured diff tool [`src/git_alias/core.py`]
+          - `_run_configured_diff(...)`: resolve the environment-selected diff command and append ordered ref operands [`src/git_alias/core.py`]
+            - `_environment_config_command_parts(...)`: select `diff_command` or `diff_command_gfx` per detected environment [`src/git_alias/core.py`]
+              - `_is_graphical_environment(...)`: classify graphical vs terminal environment [`src/git_alias/core.py`]
+            - `run_command(...)`: execute the resolved diff argv [`src/git_alias/core.py`]
         - `cmd_rollback(...)`: validate clean state and reachable target, run the release-style version pre-flight check, apply `git revert --no-commit`, restore the stored application version, stage restored files, and create the non-amend revert commit [`src/git_alias/core.py`]
           - `get_version_rules(...)`: read active `ver_rules` required by the version pre-flight check [`src/git_alias/core.py`]
           - `get_git_root(...)`: resolve repository root for version detection [`src/git_alias/core.py`]
@@ -225,7 +244,9 @@
 - Internal Call-Trace Tree:
   - `cmd_ed(...)`: expand target paths and invoke `run_editor_command(...)` [`src/git_alias/core.py`]
     - `run_editor_command(...)`: execute configured editor command [`src/git_alias/core.py`]
-      - `_editor_base_command(...)`: resolve validated editor argv [`src/git_alias/core.py`]
+      - `_editor_base_command(...)`: resolve the environment-selected editor argv [`src/git_alias/core.py`]
+        - `_environment_config_command_parts(...)`: select `edit_command`/`edit_command_gfx` per detected environment [`src/git_alias/core.py`]
+          - `_is_graphical_environment(...)`: classify graphical vs terminal environment [`src/git_alias/core.py`]
         - `_validated_config_command_parts(...)`: validate launcher and build runnable argv [`src/git_alias/core.py`]
           - `_parse_config_command_parts(...)`: tokenize configured command string [`src/git_alias/core.py`]
           - `_resolve_windows_shell_command_prefix(...)`: adapt Windows shell-script launchers when required [`src/git_alias/core.py`]
@@ -244,14 +265,18 @@
   - Threads: no explicit threads detected.
 - Internal Call-Trace Tree:
   - `cmd_gp(...)`: execute configured graph viewer for commit graph rendering [`src/git_alias/core.py`]
-    - `_config_command_parts(...)`: resolve validated graph-viewer argv [`src/git_alias/core.py`]
+    - `_config_command_parts(...)`: resolve environment-selected graph-viewer argv [`src/git_alias/core.py`]
+      - `_environment_config_command_parts(...)`: select the configured launcher environment variant [`src/git_alias/core.py`]
+        - `_is_graphical_environment(...)`: classify graphical vs terminal environment [`src/git_alias/core.py`]
       - `_validated_config_command_parts(...)`: validate launcher and build runnable argv [`src/git_alias/core.py`]
         - `_parse_config_command_parts(...)`: tokenize configured command string [`src/git_alias/core.py`]
         - `_resolve_windows_shell_command_prefix(...)`: adapt Windows shell-script launchers when required [`src/git_alias/core.py`]
           - `_find_windows_shell_script_path(...)`: locate non-`PATHEXT` shell-script launchers in `PATH` [`src/git_alias/core.py`]
     - `run_command(...)`: execute resolved external command [`src/git_alias/core.py`]
   - `cmd_gr(...)`: execute configured graph viewer for decorated/tag-focused graph rendering [`src/git_alias/core.py`]
-    - `_config_command_parts(...)`: resolve validated graph-viewer argv [`src/git_alias/core.py`]
+    - `_config_command_parts(...)`: resolve environment-selected graph-viewer argv [`src/git_alias/core.py`]
+      - `_environment_config_command_parts(...)`: select the configured launcher environment variant [`src/git_alias/core.py`]
+        - `_is_graphical_environment(...)`: classify graphical vs terminal environment [`src/git_alias/core.py`]
       - `_validated_config_command_parts(...)`: validate launcher and build runnable argv [`src/git_alias/core.py`]
         - `_parse_config_command_parts(...)`: tokenize configured command string [`src/git_alias/core.py`]
         - `_resolve_windows_shell_command_prefix(...)`: adapt Windows shell-script launchers when required [`src/git_alias/core.py`]
@@ -273,6 +298,23 @@
       - `run_command(...)`: execute the argv list without shell [`src/git_alias/core.py`]
 - External Boundaries:
   - External user-supplied executable and inherited process stdio.
+
+### PROC:diff-tool
+- Entrypoint(s):
+  - `run_command(...)`: spawn the environment-resolved diff command argv [`src/git_alias/core.py`]
+- Lifecycle/trigger:
+  - Start: visual diff aliases (`dc`, `dcc`, `dccc`, `dw`, `dwc`, `dwcc`, `dcd`, `dcm`, `ddm`) reach `_run_configured_diff(...)` with resolved refs.
+  - Stop: synchronous completion of the diff tool; failures propagate as `CommandExecutionError`.
+  - Threads: no explicit threads detected.
+- Internal Call-Trace Tree:
+  - `_run_configured_diff(...)`: resolve the environment-selected diff argv and append ordered ref operands [`src/git_alias/core.py`]
+    - `_environment_config_command_parts(...)`: select `diff_command` or `diff_command_gfx` per detected environment [`src/git_alias/core.py`]
+      - `_is_graphical_environment(...)`: classify graphical vs terminal environment [`src/git_alias/core.py`]
+      - `_validated_config_command_parts(...)`: validate the selected launcher argv [`src/git_alias/core.py`]
+    - `run_command(...)`: execute the resolved argv through the shared subprocess wrapper [`src/git_alias/core.py`]
+      - `_run_checked(...)`: single external-command interception point for run and streaming spawns [`src/git_alias/core.py`]
+- External Boundaries:
+  - External configured diff executable (default `git difftool -d`).
 
 ## Communication Edges
 - EDGE: PROC:launcher-g-sh -> PROC:uv
@@ -302,16 +344,21 @@
   - Evidence: `src/git_alias/core.py`
 - EDGE: PROC:main -> PROC:editor
   - Mechanism: OS subprocess spawn
-  - Endpoint/Channel: process argv built from `edit_command`
+  - Endpoint/Channel: process argv built from the environment-selected `edit_command`/`edit_command_gfx`
   - Payload/Data-Shape: validated launcher argv plus expanded file path operands
   - Evidence: `src/git_alias/core.py`
 - EDGE: PROC:main -> PROC:gitk
   - Mechanism: OS subprocess spawn
-  - Endpoint/Channel: process argv built from `gp_command` or `gr_command`
+  - Endpoint/Channel: process argv built from the environment-selected `gp_command`/`gp_command_gfx` or `gr_command`/`gr_command_gfx`
   - Payload/Data-Shape: validated launcher argv plus forwarded CLI extras; on Windows shell-script launchers use `[sh|bash, <script_path>, ...]`
   - Evidence: `src/git_alias/core.py`
 - EDGE: PROC:main -> PROC:exec-command
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv built from the `--exec <command> [params...]` operand tail
   - Payload/Data-Shape: `List[str]` argv executed without shell from the repository root with inherited stdio
+  - Evidence: `src/git_alias/core.py`
+- EDGE: PROC:main -> PROC:diff-tool
+  - Mechanism: OS subprocess spawn
+  - Endpoint/Channel: process argv built from `diff_command`/`diff_command_gfx` plus ordered ref operands
+  - Payload/Data-Shape: `List[str]` argv of the environment-selected diff command followed by git refs and forwarded extras
   - Evidence: `src/git_alias/core.py`

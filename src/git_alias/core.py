@@ -16,7 +16,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -106,6 +106,8 @@ ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 DEFAULT_GP_COMMAND = "gitk --all"
 ## @brief Constant `DEFAULT_GR_COMMAND` used by CLI runtime paths and policies.
 DEFAULT_GR_COMMAND = "gitk --simplify-by-decoration --all"
+## @brief Constant `DEFAULT_DIFF_COMMAND` used by CLI runtime paths and policies.
+DEFAULT_DIFF_COMMAND = "git difftool -d"
 
 DEFAULT_CONFIG = {
     "master": "master",
@@ -115,6 +117,11 @@ DEFAULT_CONFIG = {
     "default_commit_module": "",
     "gp_command": DEFAULT_GP_COMMAND,
     "gr_command": DEFAULT_GR_COMMAND,
+    "diff_command": DEFAULT_DIFF_COMMAND,
+    "edit_command_gfx": "",
+    "gp_command_gfx": "",
+    "gr_command_gfx": "",
+    "diff_command_gfx": "",
     "ver_rules": [
         {"pattern": "README.md", "regex": r"\s*\((\d+\.\d+\.\d+)\)\n"},
         {
@@ -134,7 +141,16 @@ BRANCH_KEYS = ("master", "develop", "work")
 ## @brief Constant `LOCAL_CONFIG_KEYS` used by CLI runtime paths and policies.
 LOCAL_CONFIG_KEYS = ("master", "develop", "work", "default_commit_module", "ver_rules")
 ## @brief Constant `GLOBAL_CONFIG_KEYS` used by CLI runtime paths and policies.
-GLOBAL_CONFIG_KEYS = ("edit_command", "gp_command", "gr_command")
+GLOBAL_CONFIG_KEYS = (
+    "edit_command",
+    "gp_command",
+    "gr_command",
+    "diff_command",
+    "edit_command_gfx",
+    "gp_command_gfx",
+    "gr_command_gfx",
+    "diff_command_gfx",
+)
 ## @brief Constant `MANAGEMENT_HELP` used by CLI runtime paths and policies.
 
 MANAGEMENT_HELP = [
@@ -772,13 +788,52 @@ def _validated_config_command_parts(key: str, default_command: str) -> List[str]
     )
 
 
+## @brief Detect whether the current execution environment is graphical.
+# @details Implements the REQ-187 environment classification: non-POSIX
+#          platforms are graphical desktop sessions; POSIX platforms are
+#          graphical only when `DISPLAY` or `WAYLAND_DISPLAY` is set non-empty.
+# @return `bool` True for graphical environments; False for terminal environments.
+# @note Complexity: O(1) environment inspection; no subprocess execution.
+# @satisfies REQ-187
+def _is_graphical_environment() -> bool:
+    if os.name != "posix":
+        return True
+    return bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+
+
+## @brief Resolve the environment-selected variant of a paired external command.
+# @details Implements REQ-186/REQ-187/REQ-188 dual-command resolution:
+#          graphical environments select `<command_key>_gfx` when its configured
+#          value is non-empty; every other case uses `<command_key`; empty or
+#          absent `_gfx` values fall back to the terminal command. The selected
+#          command line is validated through `_validated_config_command_parts`.
+# @param command_key {str} Terminal command configuration key (e.g. `gp_command`).
+# @param default_command {str} Fallback command line when the key value is empty.
+# @return {List[str]} Validated argv tokens of the environment-selected command.
+# @exception RuntimeError Raised when the selected command is invalid or unavailable.
+# @note Complexity: O(1) excluding PATH lookup inside validation.
+# @satisfies REQ-186, REQ-187, REQ-188
+def _environment_config_command_parts(
+    command_key: str, default_command: str
+) -> List[str]:
+    if _is_graphical_environment():
+        gfx_value = get_config_value(f"{command_key}_gfx")
+        if gfx_value:
+            return _validated_config_command_parts(
+                f"{command_key}_gfx", gfx_value
+            )
+    return _validated_config_command_parts(command_key, default_command)
+
+
 ## @brief Resolve the editor launcher command after executable validation.
-# @details Returns the validated editor argv sequence used by the `ed` alias.
-# @return `List[str]` — validated editor argv tokens.
-# @exception RuntimeError Raised when `edit_command` is invalid or unavailable.
-# @satisfies REQ-156, REQ-157, REQ-159
+# @details Returns the environment-selected validated editor argv sequence used
+#          by the `ed` alias, choosing `edit_command_gfx` in graphical
+#          environments per REQ-187/REQ-188.
+# @return `List[str] — validated editor argv tokens.
+# @exception RuntimeError Raised when the selected editor command is invalid or unavailable.
+# @satisfies REQ-156, REQ-157, REQ-159, REQ-187
 def _editor_base_command() -> List[str]:
-    return _validated_config_command_parts(
+    return _environment_config_command_parts(
         "edit_command", DEFAULT_CONFIG["edit_command"]
     )
 
@@ -794,15 +849,17 @@ def run_editor_command(args):
 
 
 ## @brief Resolve configured graph launcher command parts after validation.
-# @details Normalizes the configured command line, validates the executable on
-# the current platform, and returns argv tokens without fallback execution.
+# @details Normalizes the configured command line, selects the environment
+#          variant (`<key>_gfx` in graphical environments per REQ-187/REQ-188),
+#          validates the executable on the current platform, and returns argv
+#          tokens without fallback execution.
 # @param key Input parameter consumed by `_config_command_parts`.
 # @param default_command Input parameter consumed by `_config_command_parts`.
 # @return Result emitted by `_config_command_parts` according to command contract.
 # @exception RuntimeError Raised when the configured launcher is invalid or unavailable.
-# @satisfies REQ-156, REQ-157, REQ-159
+# @satisfies REQ-156, REQ-157, REQ-159, REQ-187
 def _config_command_parts(key: str, default_command: str) -> List[str]:
-    return _validated_config_command_parts(key, default_command)
+    return _environment_config_command_parts(key, default_command)
 
 
 ## @brief Constant `HELP_TEXTS` used by CLI runtime paths and policies.
@@ -818,19 +875,19 @@ HELP_TEXTS = {
     "ck": "Check differences.",
     "cm": "Standard commit with staging/worktree validation: git cm '<message>'.",
     "co": "Checkout a specific branch: git co '<branch>'.",
-    "dc": "Run a directory difftool from <ref_prev> to <ref>. Syntax: git dc <ref> [<ref_prev>]; <ref_prev> defaults to the commit preceding <ref> (<ref>~1).",
-    "dcc": "Run a directory difftool between HEAD~1 and HEAD.",
-    "dccc": "Run a directory difftool between HEAD~2 and HEAD.",
+    "dc": "Run the configured directory diff tool from <ref_prev> to <ref>. Syntax: git dc <ref> [<ref_prev>]; <ref_prev> defaults to the commit preceding <ref> (<ref>~1).",
+    "dcc": "Run the configured directory diff tool between HEAD~1 and HEAD.",
+    "dccc": "Run the configured directory diff tool between HEAD~2 and HEAD.",
     "de": "Print last tagged commit details.",
     "di": "Discard current changes on file: git di '<filename>'",
     "dime": "Discard merge changes in favor of their files.",
     "diyou": "Discard merge changes in favor of your files.",
-    "dw": "Run a directory difftool between working tree and a specific ref. Syntax: git dw <ref>.",
-    "dwc": "Run a directory difftool between working tree and HEAD.",
-    "dwcc": "Run a directory difftool between working tree and HEAD~1.",
-    "dcd": "Run a directory difftool between configured develop and work branches.",
-    "dcm": "Run a directory difftool between configured master and work branches.",
-    "ddm": "Run a directory difftool between configured master and develop branches.",
+    "dw": "Run the configured directory diff tool between working tree and a specific ref. Syntax: git dw <ref>.",
+    "dwc": "Run the configured directory diff tool between working tree and HEAD.",
+    "dwcc": "Run the configured directory diff tool between working tree and HEAD~1.",
+    "dcd": "Run the configured directory diff tool between configured develop and work branches.",
+    "dcm": "Run the configured directory diff tool between configured master and work branches.",
+    "ddm": "Run the configured directory diff tool between configured master and develop branches.",
     "ed": "Edit a file. Syntax: git ed <filename>.",
     "fe": "Fetch new data of current branch from origin.",
     "feall": "Fetch new data from origin for all branch.",
@@ -1073,11 +1130,28 @@ class CommandExecutionError(RuntimeError):
 
 
 ## @brief Execute `_run_checked` runtime logic for Git-Alias CLI.
-# @details Executes `_run_checked` using deterministic CLI control-flow and explicit error propagation.
-# @param *popenargs Input parameter consumed by `_run_checked`.
-# @param **kwargs Input parameter consumed by `_run_checked`.
-# @return Result emitted by `_run_checked` according to command contract.
-def _run_checked(*popenargs, **kwargs):
+# @details Single external-command interception point (REQ-185): every external
+#          process spawned by `core.py` executes through this wrapper. Default
+#          mode runs `subprocess.run` with `check=True` and converts
+#          `CalledProcessError` into `CommandExecutionError`; `stream=True` mode
+#          returns a `subprocess.Popen` handle for streaming pipelines and
+#          converts launch `OSError` into an explicit English `RuntimeError`.
+# @param *popenargs Positional subprocess arguments (argv list plus extras).
+# @param stream {bool} When True, spawn via `subprocess.Popen` for streaming use.
+# @param **kwargs Forwarded subprocess keyword arguments (cwd, check, stdio).
+# @return {Any} `CompletedProcess` in default mode; `Popen` handle in stream mode.
+# @exception CommandExecutionError Raised in default mode on non-zero exit with check enabled.
+# @exception RuntimeError Raised in stream mode when the process cannot launch.
+# @satisfies REQ-185
+def _run_checked(*popenargs, stream=False, **kwargs) -> Any:
+    if stream:
+        try:
+            return subprocess.Popen(*popenargs, **kwargs)
+        except OSError as exc:
+            argv = popenargs[0] if popenargs else []
+            raise RuntimeError(
+                f"Unable to launch command: {' '.join(map(str, argv))}: {exc}"
+            ) from None
     kwargs.setdefault("check", True)
     try:
         return subprocess.run(*popenargs, **kwargs)
@@ -2278,7 +2352,7 @@ def _current_branch_name():
 # @param ref_name Input parameter consumed by `_ref_exists`.
 # @return Result emitted by `_ref_exists` according to command contract.
 def _ref_exists(ref_name):
-    proc = subprocess.run(
+    proc = _run_checked(
         ["git", "show-ref", "--verify", "--quiet", ref_name],
         check=False,
         stdout=subprocess.DEVNULL,
@@ -3226,7 +3300,7 @@ def _resolve_rollback_target_commit(target: str) -> str:
 # @param descendant_ref `str` — descendant git reference.
 # @return `True` when `ancestor_commit` is reachable from `descendant_ref`.
 def _is_commit_ancestor(ancestor_commit: str, descendant_ref: str) -> bool:
-    proc = subprocess.run(
+    proc = _run_checked(
         ["git", "merge-base", "--is-ancestor", ancestor_commit, descendant_ref],
         check=False,
         stdout=subprocess.DEVNULL,
@@ -3263,7 +3337,7 @@ def _tag_exists(tag_name: str) -> bool:
 # @exception SystemExit Always exits with status 1.
 # @satisfies REQ-174
 def _abort_rollback_version_restore(failure):
-    subprocess.run(
+    _run_checked(
         ["git", "revert", "--abort"],
         check=False,
         stdout=subprocess.DEVNULL,
@@ -3411,7 +3485,9 @@ def cmd_ar(extra):
     tag = capture_git_output(["describe", master_branch])
     filename = f"{tag}.tar.gz"
     archive_cmd = ["git", "archive", master_branch, "--prefix=/"] + args
-    with subprocess.Popen(archive_cmd, stdout=subprocess.PIPE) as archive_proc:
+    with _run_checked(
+        archive_cmd, stdout=subprocess.PIPE, stream=True
+    ) as archive_proc:
         with open(filename, "wb") as output_io:
             gzip_proc = _run_checked(
                 ["gzip"], stdin=archive_proc.stdout, stdout=output_io
@@ -3704,7 +3780,7 @@ def cmd_rollback(extra):
     try:
         run_git_cmd(["revert", "--no-commit", f"{resolved_target}..HEAD"])
     except CommandExecutionError as exc:
-        subprocess.run(
+        _run_checked(
             ["git", "revert", "--abort"],
             check=False,
             stdout=subprocess.DEVNULL,
@@ -3751,19 +3827,40 @@ def cmd_co(extra):
     return run_git_cmd(["checkout"], extra)
 
 
+## @brief Execute the environment-resolved configured diff command.
+# @details Implements REQ-189: resolves the diff argv through
+#          `_environment_config_command_parts` on the `diff_command` pair
+#          (terminal `diff_command`, graphical `diff_command_gfx` per
+#          REQ-186/REQ-187/REQ-188), then executes `<diff argv> + refs + extra`
+#          through the `run_command` wrapper so every visual diff alias passes
+#          the same environment-detection path. Default command is
+#          `git difftool -d` when the pair is unconfigured.
+# @param refs {List[str]} Ordered git ref operands appended after the diff argv.
+# @param extra {Optional[List[str]]} Additional CLI operands forwarded unchanged.
+# @return Result of `run_command` for the delegated diff subprocess.
+# @exception RuntimeError Raised when the selected diff command is invalid or unavailable.
+# @note Complexity: O(1) excluding PATH lookup and subprocess runtime.
+# @satisfies REQ-189, REQ-185, REQ-187
+def _run_configured_diff(refs, extra=None):
+    command_parts = _environment_config_command_parts(
+        "diff_command", DEFAULT_DIFF_COMMAND
+    )
+    return run_command(command_parts + list(refs) + _to_args(extra))
+
+
 ## @brief Execute `cmd_dc` runtime logic for Git-Alias CLI.
 # @details Validates the REQ-182 arity contract (exactly one required `<ref>`
 # plus at most one optional `<ref_prev>`), resolves an omitted `<ref_prev>` to
 # the commit preceding `<ref>` via the git revision expression `<ref>~1` per
-# REQ-184, and delegates to `git difftool -d <ref_prev> <ref>` so the rendered
-# diff direction is always `<ref_prev>` -> `<ref>` and never inverted per
-# REQ-183. Git errors are forwarded without additional transformations.
+# REQ-184, and delegates to `_run_configured_diff([<ref_prev>, <ref>])` so the
+# rendered diff direction is always `<ref_prev>` -> `<ref>` and never inverted
+# per REQ-183, using the environment-resolved diff command per REQ-189.
 # @param extra {Optional[List[str]]} CLI operands after `dc`; accepted arity is
 # 1 or 2 positional git refs (`--help` is intercepted by `main` before dispatch).
-# @return Result of `run_git_cmd` for the delegated `git difftool -d` subprocess.
+# @return Result of `_run_configured_diff` for the delegated diff subprocess.
 # @exception SystemExit Exit code 1 on zero or more than two positional refs.
 # @note Complexity: O(1); no CLI-side ref resolution or transformation.
-# @satisfies REQ-182, REQ-183, REQ-184
+# @satisfies REQ-182, REQ-183, REQ-184, REQ-189
 def cmd_dc(extra):
     args = _to_args(extra)
     if len(args) == 0 or len(args) > 2:
@@ -3775,23 +3872,27 @@ def cmd_dc(extra):
         sys.exit(1)
     ref = args[0]
     ref_prev = args[1] if len(args) == 2 else f"{ref}~1"
-    return run_git_cmd(["difftool", "-d", ref_prev, ref])
+    return _run_configured_diff([ref_prev, ref])
 
 
 ## @brief Execute `cmd_dcc` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_dcc` using deterministic CLI control-flow and explicit error propagation.
+# @details Delegates refs `HEAD~1 HEAD` to `_run_configured_diff` so the diff
+# runs through the environment-resolved configured diff command per REQ-189.
 # @param extra Input parameter consumed by `cmd_dcc`.
-# @return Result emitted by `cmd_dcc` according to command contract.
+# @return Result emitted by `_run_configured_diff` according to command contract.
+# @satisfies REQ-037, REQ-189
 def cmd_dcc(extra):
-    return run_git_cmd(["difftool", "-d", "HEAD~1", "HEAD"], extra)
+    return _run_configured_diff(["HEAD~1", "HEAD"], extra)
 
 
 ## @brief Execute `cmd_dccc` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_dccc` using deterministic CLI control-flow and explicit error propagation.
+# @details Delegates refs `HEAD~2 HEAD` to `_run_configured_diff` so the diff
+# runs through the environment-resolved configured diff command per REQ-189.
 # @param extra Input parameter consumed by `cmd_dccc`.
-# @return Result emitted by `cmd_dccc` according to command contract.
+# @return Result emitted by `_run_configured_diff` according to command contract.
+# @satisfies REQ-038, REQ-189
 def cmd_dccc(extra):
-    return run_git_cmd(["difftool", "-d", "HEAD~2", "HEAD"], extra)
+    return _run_configured_diff(["HEAD~2", "HEAD"], extra)
 
 
 ## @brief Execute `cmd_de` runtime logic for Git-Alias CLI.
@@ -3827,64 +3928,77 @@ def cmd_dime(extra):
 
 
 ## @brief Execute `cmd_dwc` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_dwc` using deterministic CLI control-flow and explicit error propagation.
+# @details Delegates ref `HEAD` to `_run_configured_diff` so the working-tree
+# vs HEAD diff runs through the environment-resolved diff command per REQ-189.
 # @param extra Input parameter consumed by `cmd_dwc`.
-# @return Result emitted by `cmd_dwc` according to command contract.
+# @return Result emitted by `_run_configured_diff` according to command contract.
+# @satisfies REQ-037, REQ-189
 def cmd_dwc(extra):
-    return run_git_cmd(["difftool", "-d", "HEAD"], extra)
+    return _run_configured_diff(["HEAD"], extra)
 
 
 ## @brief Execute `cmd_dw` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_dw` using deterministic CLI control-flow and explicit error propagation.
+# @details Validates exactly one positional git ref, then delegates `<ref>` to
+# `_run_configured_diff` for the working-tree vs ref diff through the
+# environment-resolved diff command per REQ-189.
 # @param extra Input parameter consumed by `cmd_dw`.
-# @return Result emitted by `cmd_dw` according to command contract.
+# @return Result emitted by `_run_configured_diff` according to command contract.
+# @exception SystemExit Exit code 1 on zero or multiple positional refs.
+# @satisfies REQ-037, REQ-189
 def cmd_dw(extra):
     args = _to_args(extra)
     if len(args) != 1:
         print("git dw requires exactly one ref: git dw <ref>", file=sys.stderr)
         sys.exit(1)
-    return run_git_cmd(["difftool", "-d", args[0]])
+    return _run_configured_diff([args[0]])
 
 
 ## @brief Execute `cmd_dwcc` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_dwcc` using deterministic CLI control-flow and explicit error propagation.
+# @details Delegates ref `HEAD~1` to `_run_configured_diff` so the working-tree
+# vs penultimate-commit diff runs through the environment-resolved diff
+# command per REQ-189.
 # @param extra Input parameter consumed by `cmd_dwcc`.
-# @return Result emitted by `cmd_dwcc` according to command contract.
+# @return Result emitted by `_run_configured_diff` according to command contract.
+# @satisfies REQ-038, REQ-189
 def cmd_dwcc(extra):
-    return run_git_cmd(["difftool", "-d", "HEAD~1"], extra)
+    return _run_configured_diff(["HEAD~1"], extra)
 
 
 ## @brief Execute `cmd_dcd` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_dcd` using deterministic CLI control-flow and explicit error propagation.
+# @details Resolves configured `develop` and `work` branch names, then delegates
+# refs `<develop> <work>` to `_run_configured_diff` per REQ-119/REQ-189.
 # @param extra Input parameter consumed by `cmd_dcd`.
-# @return Result emitted by `cmd_dcd` according to command contract.
-# @satisfies REQ-119
+# @return Result emitted by `_run_configured_diff` according to command contract.
+# @satisfies REQ-119, REQ-189
 def cmd_dcd(extra):
     develop_branch = get_branch("develop")
     work_branch = get_branch("work")
-    return run_git_cmd(["difftool", "-d", develop_branch, work_branch], extra)
+    return _run_configured_diff([develop_branch, work_branch], extra)
 
 
 ## @brief Execute `cmd_dcm` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_dcm` using deterministic CLI control-flow and explicit error propagation.
+# @details Resolves configured `master` and `work` branch names, then delegates
+# refs `<master> <work>` to `_run_configured_diff` per REQ-119/REQ-189.
 # @param extra Input parameter consumed by `cmd_dcm`.
-# @return Result emitted by `cmd_dcm` according to command contract.
-# @satisfies REQ-119
+# @return Result emitted by `_run_configured_diff` according to command contract.
+# @satisfies REQ-119, REQ-189
 def cmd_dcm(extra):
     master_branch = get_branch("master")
     work_branch = get_branch("work")
-    return run_git_cmd(["difftool", "-d", master_branch, work_branch], extra)
+    return _run_configured_diff([master_branch, work_branch], extra)
 
 
 ## @brief Execute `cmd_ddm` runtime logic for Git-Alias CLI.
-# @details Executes `cmd_ddm` using deterministic CLI control-flow and explicit error propagation.
+# @details Resolves configured `master` and `develop` branch names, then
+# delegates refs `<master> <develop>` to `_run_configured_diff` per
+# REQ-119/REQ-189.
 # @param extra Input parameter consumed by `cmd_ddm`.
-# @return Result emitted by `cmd_ddm` according to command contract.
-# @satisfies REQ-119
+# @return Result emitted by `_run_configured_diff` according to command contract.
+# @satisfies REQ-119, REQ-189
 def cmd_ddm(extra):
     master_branch = get_branch("master")
     develop_branch = get_branch("develop")
-    return run_git_cmd(["difftool", "-d", master_branch, develop_branch], extra)
+    return _run_configured_diff([master_branch, develop_branch], extra)
 
 
 ## @brief Execute `cmd_ed` runtime logic for Git-Alias CLI.

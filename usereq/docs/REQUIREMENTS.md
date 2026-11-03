@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.19
+**Version**: 1.20
 **Author**: Francesco Rolando
 **Date**: 2026-11-03
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-11-03 | 1.20 | Added environment-aware dual external-command configuration (`<id>_command`/`<id>_command_gfx`), the dedicated `diff_command` pair driving visual diff aliases, and the single `_run_checked` subprocess interception wrapper. |
 | 2026-11-03 | 1.19 | Changed `dc` so `<ref_b>` is optional and defaults to the commit preceding `<ref>`, renamed operands `<ref_a>`/`<ref_b>` to `<ref>`/`<ref_prev>`, and enforced `ref_prev -> ref` diff direction. |
 | 2026-10-22 | 1.18 | Added `rollback` version pre-flight check, version preservation via `chver` restore before the revert commit, abort-on-restore-failure semantics, and help/README documentation. |
 | 2026-10-02 | 1.16 | Required gitignore(5) escaping and negation exclusion semantics for `ver_rules.pattern` with anchoring preserved and README documentation. |
@@ -68,7 +69,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 ### 2.2 Project Constraints
 - **CTN-001**: MUST require Python 3.11 or newer at runtime.
 - **CTN-002**: MUST require `git` in PATH, MUST require `gitk` and Astral `uv` for related aliases and launcher flows, and MUST NOT require external or system-managed Python virtual environments.
-- **CTN-003**: MUST file-edit aliases MUST use a CLI-invokable editor configured by `edit_command` in `$HOME/.config/git-alias/config.json`, defaulting to `edit` when the file, key, or value is missing or invalid.
+- **CTN-003**: MUST file-edit aliases MUST use a CLI-invokable editor configured by `edit_command` in `$HOME/.config/git-alias/config.json`, defaulting to `edit` when the file, key, or value is missing or invalid, with graphical environments selecting `edit_command_gfx` per REQ-187 and REQ-188.
 
 ### 2.3 Components and Libraries
 - **CPT-001**: MUST implement CLI dispatch and alias runtime behavior in `src/git_alias/core.py`.
@@ -87,7 +88,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **DES-003**: MUST define help text for every command and list commands alphabetically in global help output.
 - **DES-004**: MUST print an explicit message plus full help and exit non-zero when invoked without arguments.
 - **DES-005**: MUST compose complex aliases by reusing simpler alias functions when overlapping behavior exists.
-- **DES-006**: MUST the executable MUST load `.g.conf` for `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`, and `$HOME/.config/git-alias/config.json` for `edit_command`, `gp_command`, and `gr_command`, and MUST ignore out-of-scope keys in each file.
+- **DES-006**: MUST the executable MUST load `.g.conf` for `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`, and `$HOME/.config/git-alias/config.json` for `edit_command`, `edit_command_gfx`, `gp_command`, `gp_command_gfx`, `gr_command`, `gr_command_gfx`, `diff_command`, and `diff_command_gfx`, and MUST ignore out-of-scope keys in each file.
 - **DES-007**: MUST centralize commit-readiness checks in reusable functions shared by `cm`, `wip`, and related aliases; readiness MUST succeed when staging is non-empty OR working-tree is dirty; MUST fail when both staging and working-tree have no committable data; MUST invoke `aa` to auto-stage working-tree changes when staging is empty and working-tree is dirty.
 - **DES-008**: MUST print all console messages in English.
 - **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.g.conf` plus `$HOME/.config/git-alias/config.json`, otherwise defaults from `DEFAULT_CONFIG`.
@@ -108,7 +109,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-011**: MUST provide reset/cleanup aliases (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`, `rmloc`, `rmstg`, `rmunt`) and MUST print dedicated reset help when `rs*` commands receive `--help`.
 - **REQ-012**: MUST tagging and archive aliases MUST support annotated tag creation (`tg`), local/remote tag deletion (`rmtg`), tag listing (`lt`), and archiving configured `master` in tar.gz (`ar`).
 - **REQ-013**: MUST open file paths through `ed` using `edit_command` from `$HOME/.config/git-alias/config.json` (default `edit`) and MUST fail with explicit error when no path is supplied.
-- **REQ-014**: MUST normalize `.g.conf` to keys `master`, `develop`, `work`, `default_commit_module`, `ver_rules` and normalize `$HOME/.config/git-alias/config.json` to keys `edit_command`, `gp_command`, `gr_command` when `--write-config` runs.
+- **REQ-014**: MUST normalize `.g.conf` to keys `master`, `develop`, `work`, `default_commit_module`, `ver_rules` and normalize `$HOME/.config/git-alias/config.json` to the eight REQ-186 global command keys when `--write-config` runs.
 - **REQ-015**: MUST migrate legacy global key `editor` to `edit_command` during `--write-config` when `edit_command` is missing, and MUST remove `editor` from persisted output.
 - **REQ-016**: MUST show management commands before alias listings when global help is requested or when command input is missing.
 - **REQ-017**: MUST evaluate `ver_rules` from `.g.conf` (or defaults), build repository candidates from `git ls-files`, apply pathspec matching plus hardcoded cache/temp exclusions, and fail on mismatched or missing version matches as specified.
@@ -147,11 +148,16 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-034**: MUST run `git remote -v`, print unique remote names, and run `git remote show <remote>` for each discovered remote in alias `str`.
 - **REQ-035**: MUST support `ver --verbose` (per-file regex outcome output) and `ver --debug` (full glob-match listing for each rule pattern).
 - **REQ-036**: MAY provide repository-local Doxygen generation assets; when present they SHOULD generate documentation under `doxygen/` from `src/`; CLI runtime and release workflow MUST remain functional when such assets are absent.
-- **REQ-037**: MUST visual diff aliases MUST execute fixed `git difftool -d` mappings: `dwc` MUST execute `git difftool -d HEAD` (working tree vs latest commit), `dcc` MUST execute `git difftool -d HEAD~1 HEAD` (penultimate vs latest commit), and `dw` MUST require exactly one positional git ref (`<ref>`) and execute `git difftool -d <ref>` (working tree vs specified ref), forwarding git errors without additional transformations.
+- **REQ-037**: MUST visual diff aliases `dwc`, `dcc`, and `dw` execute through the environment-aware diff wrapper (REQ-189) with ref operands `HEAD`, `HEAD~1 HEAD`, and exactly one positional `<ref>` respectively, forwarding tool errors unchanged.
 - **REQ-182**: MUST `dc` accept exactly one required positional git ref `<ref>` plus at most one optional positional git ref `<ref_prev>` and MUST reject zero or extra positional refs with an explicit English usage error.
 - **REQ-183**: MUST `dc` execute `git difftool -d <ref_prev> <ref>` so the shown diff direction is `<ref_prev>` -> `<ref>` and MUST NOT invert the operand order.
 - **REQ-184**: MUST `dc` resolve an omitted `<ref_prev>` to the commit preceding `<ref>` (`<ref>~1`) before diff execution.
-- **REQ-038**: MUST the visual diff aliases MUST include `dwcc` mapped to `git difftool -d HEAD~1` (working tree vs penultimate commit) and `dccc` mapped to `git difftool -d HEAD~2 HEAD` (third-last vs last commit), and both aliases MUST expose explicit help text in global and per-command help outputs.
+- **REQ-185**: MUST `core.py` execute every external command through the shared `_run_checked` subprocess wrapper, allowing no direct `subprocess.run` or `subprocess.Popen` calls elsewhere.
+- **REQ-186**: MUST global configuration support paired keys `<id>_command` (terminal) and `<id>_command_gfx` (graphical) for `id` in `edit`, `gp`, `gr`, and `diff` in `$HOME/.config/git-alias/config.json`.
+- **REQ-187**: MUST command resolution detect graphical environments as non-POSIX `os.name` or non-empty `DISPLAY`/`WAYLAND_DISPLAY` on POSIX, selecting `<id>_command_gfx` when graphical and `<id>_command` otherwise.
+- **REQ-188**: MUST an absent or empty `<id>_command_gfx` value in a graphical environment fall back to the `<id>_command` value.
+- **REQ-189**: MUST visual diff aliases execute the environment-resolved `diff_command`/`diff_command_gfx` argv followed by their ref operands and extra arguments, defaulting to `git difftool -d` when unconfigured.
+- **REQ-038**: MUST the visual diff aliases include `dwcc` with refs `HEAD~1` and `dccc` with refs `HEAD~2 HEAD`, both executed through the environment-aware diff wrapper (REQ-189), and both aliases MUST expose explicit help text in global and per-command help outputs.
 - **REQ-039**: MUST every command `<command>` present in the CLI command dispatch map MUST be implemented by a Python function named exactly `cmd_<command>`, and the dispatch entry for `<command>` MUST reference that exact function symbol.
 - **REQ-040**: MUST the `changelog` `--include-patch` option MUST prepend the chronologically latest patch release after the last minor release, including all commits from the last minor to that patch; if no minor release exists MUST include only the latest patch with all commits from the beginning.
 - **REQ-041**: MUST the `changelog` command MUST support `--force-write`, `--print-only`, and `--disable-history`; command help MUST list all available options; disk writes MUST occur only when `CHANGELOG.md` is absent or `--force-write` is provided.
@@ -219,7 +225,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-113**: MUST build release distributions in GitHub Actions with Python 3.11 using `python -m build`, and MUST attest provenance for `dist/*` artifacts.
 - **REQ-114**: MUST publish a non-draft, non-prerelease GitHub Release for the triggering tag and upload `dist/**/*` assets using changelog content produced by the configured changelog-builder step.
 - **REQ-115**: MUST section `=== 5. BRANCHES ===` append, after configured rows, aligned `<Identifier> | <latest commit subject>` rows for every discovered local or remote branch not already rendered.
-- **REQ-119**: MUST visual diff aliases include `dcd` mapped to `git difftool -d <develop> <work>`, `dcm` mapped to `git difftool -d <master> <work>`, and `ddm` mapped to `git difftool -d <master> <develop>`, using configured branch names from `.g.conf`; `dcd`, `dcm`, and `ddm` MUST each expose explicit help text in global and per-command help outputs.
+- **REQ-119**: MUST visual diff aliases `dcd`, `dcm`, and `ddm` execute through the environment-aware diff wrapper (REQ-189) with refs `<develop> <work>`, `<master> <work>`, and `<master> <develop>` from `.g.conf`, each exposing explicit help text in help outputs.
 - **REQ-120**: MUST define `LSI_DEFAULT_EXCLUDED_DIRS` as a `frozenset` containing: `.cache`, `.claude`, `.codex`, `.eslintcache`, `.gemini`, `.git`, `.github`, `.kiro`, `.mypy_cache`, `.npm`, `.opencode`, `.parcel-cache`, `.pytest_cache`, `.ruff_cache`, `.sass-cache`, `.terragrunt-cache`, `.tox`, `.venv`, `.vscode`, `__pycache__`, `build`, `dist`, `htmlcov`, `node_modules`, `temp`, `tmp`, `venv`.
 - **REQ-121**: MUST the `lsi` alias MUST accept `--include-all` flag; when present, MUST bypass `LSI_DEFAULT_EXCLUDED_DIRS` and `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` filtering and print all ignored files unfiltered.
 - **REQ-123**: MUST when a newer version is detected, print a bright-green (`\033[92;1m`) message `Update available: <latest> (installed: <current>)` before command execution.
@@ -298,3 +304,8 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-182** evidence: `src/git_alias/core.py` `cmd_dc` arity validation rejecting zero or more than two positional refs.
 - **REQ-183** evidence: `src/git_alias/core.py` `cmd_dc` `git difftool -d <ref_prev> <ref>` operand order.
 - **REQ-184** evidence: `src/git_alias/core.py` `cmd_dc` `<ref>~1` default resolution for omitted `<ref_prev>`.
+- **REQ-185** evidence: `src/git_alias/core.py` `_run_checked` as the sole subprocess entry point for every external command execution.
+- **REQ-186** evidence: `src/git_alias/core.py` `DEFAULT_CONFIG` and `GLOBAL_CONFIG_KEYS` defining the paired global command keys.
+- **REQ-187** evidence: `src/git_alias/core.py` `_is_graphical_environment` detection and `_environment_config_command_parts` key selection.
+- **REQ-188** evidence: `src/git_alias/core.py` `_environment_config_command_parts` graphical fallback branch for empty `<id>_command_gfx` values.
+- **REQ-189** evidence: `src/git_alias/core.py` `_run_configured_diff` and the visual diff alias handlers.

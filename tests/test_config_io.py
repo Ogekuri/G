@@ -31,8 +31,10 @@ class ConfigIOTest(unittest.TestCase):
             }
             global_payload = {
                 "edit_command": "vim",
+                "edit_command_gfx": "gedit",
                 "gp_command": "gitk --all --date-order",
                 "gr_command": "gitk --simplify-by-decoration --all --branches",
+                "diff_command": "icdiff",
             }
             (root / core.CONFIG_FILENAME).write_text(json.dumps(local_payload), encoding="utf-8")
             global_path = core.get_global_config_path(home)
@@ -44,6 +46,8 @@ class ConfigIOTest(unittest.TestCase):
             self.assertEqual(core.CONFIG["default_commit_module"], "ui")
             self.assertEqual(core.CONFIG["gp_command"], global_payload["gp_command"])
             self.assertEqual(core.CONFIG["gr_command"], global_payload["gr_command"])
+            self.assertEqual(core.CONFIG["edit_command_gfx"], "gedit")
+            self.assertEqual(core.CONFIG["diff_command"], "icdiff")
             self.assertEqual(core.CONFIG["ver_rules"], local_payload["ver_rules"])
 
     def test_load_cli_config_ignores_invalid_types(self):
@@ -99,6 +103,11 @@ class ConfigIOTest(unittest.TestCase):
             self.assertEqual(global_data["edit_command"], "vim")
             self.assertEqual(global_data["gp_command"], "gitk --all --date-order")
             self.assertEqual(global_data["gr_command"], core.DEFAULT_CONFIG["gr_command"])
+            self.assertEqual(global_data["diff_command"], core.DEFAULT_CONFIG["diff_command"])
+            self.assertEqual(global_data["edit_command_gfx"], "")
+            self.assertEqual(global_data["gp_command_gfx"], "")
+            self.assertEqual(global_data["gr_command_gfx"], "")
+            self.assertEqual(global_data["diff_command_gfx"], "")
             self.assertNotIn("editor", global_data)
             self.assertNotIn("master", global_data)
 
