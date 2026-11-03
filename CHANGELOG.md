@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.44.0](https://github.com/Ogekuri/G/compare/v0.43.0..v0.44.0) - 2026-11-03
+### 🚜  Changes
+- impose default command values and canonical print order [useReq] *(config)*
+  - REQ-191: default edit/sublime_text, icdiff/meld, tig/gitg, gitui/sublime_merge pairs
+  - REQ-192: print the eight global command keys contiguously in canonical order
+  - Reorder DEFAULT_CONFIG and GLOBAL_CONFIG_KEYS to the canonical order
+  - SRS v1.22 with REQ-191/REQ-192 and evidence entries; REFERENCES regenerated
+  - Tests intentionally not modified; outdated default-value assertions reported
+
 ## [0.43.0](https://github.com/Ogekuri/G/compare/v0.42.0..v0.43.0) - 2026-11-03
 ### 🚜  Changes
 - BREAKING CHANGE: inject configured diff tool via git difftool --extcmd [useReq] *(diff)*
@@ -816,6 +825,7 @@
 - \[0.41.0\]: https://github.com/Ogekuri/G/releases/tag/v0.41.0
 - \[0.42.0\]: https://github.com/Ogekuri/G/releases/tag/v0.42.0
 - \[0.43.0\]: https://github.com/Ogekuri/G/releases/tag/v0.43.0
+- \[0.44.0\]: https://github.com/Ogekuri/G/releases/tag/v0.44.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -860,3 +870,4 @@
 [0.41.0]: https://github.com/Ogekuri/G/compare/v0.40.0..v0.41.0
 [0.42.0]: https://github.com/Ogekuri/G/compare/v0.41.0..v0.42.0
 [0.43.0]: https://github.com/Ogekuri/G/compare/v0.42.0..v0.43.0
+[0.44.0]: https://github.com/Ogekuri/G/compare/v0.43.0..v0.44.0
