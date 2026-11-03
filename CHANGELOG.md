@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.43.0](https://github.com/Ogekuri/G/compare/v0.42.0..v0.43.0) - 2026-11-03
+### 🚜  Changes
+- BREAKING CHANGE: inject configured diff tool via git difftool --extcmd [useReq] *(diff)*
+  - REQUIREMENTS 1.21: rewrite REQ-189 so visual diff aliases run
+  - git difftool -d with the environment-selected diff_command/
+  - diff_command_gfx injected as --extcmd, overriding git's configured
+  - diff tool; add REQ-190 plain git difftool fallback when the resolved
+  - command is empty.
+  - core.py: new _selected_diff_command_parts (empty->no override);
+  - _run_configured_diff builds git difftool -d [--extcmd=<tool>] <refs>;
+  - DEFAULT diff_command is now empty; GIT_DIFFTOOL_COMMAND base constant.
+  - tests: diff-alias and environment suites updated to the extcmd
+  - contract (terminal icdiff via -x in SSH sessions, _gfx in graphical
+  - sessions).
+  - WORKFLOW.md: diff flow now targets PROC:git; PROC:diff-tool removed.
+- BREAKING CHANGE: add env-aware dual external-command config and unified subprocess wrapper [useReq] *(core)*
+  - REQUIREMENTS 1.20: add REQ-185 (single _run_checked subprocess wrapper),
+  - REQ-186 (<id>_command/<id>_command_gfx pairs for edit/gp/gr/diff),
+  - REQ-187 (DISPLAY/WAYLAND_DISPLAY graphical detection), REQ-188 (gfx
+  - fallback to terminal command), REQ-189 (diff aliases run the
+  - environment-resolved diff_command); amend REQ-037/038/119/014, DES-006,
+  - CTN-003.
+  - core.py: new _is_graphical_environment, _environment_config_command_parts,
+  - _run_configured_diff; ed/gp/gr and dc/dcc/dccc/dw/dwc/dwcc/dcd/dcm/ddm
+  - route through the environment-aware wrapper; all subprocess executions
+  - (incl. cmd_ar streaming Popen) funnel through _run_checked.
+  - tests: update diff-alias and config-io suites; add
+  - test_command_environment.py covering detection, selection matrix, diff
+  - routing, and wrapper isolation.
+- BREAKING CHANGE: make <ref_prev> optional with ref_prev -> ref diff direction [useReq] *(dc)*
+  - REQUIREMENTS 1.19: split REQ-037; add REQ-182 (dc accepts <ref> plus
+  - optional <ref_prev>), REQ-183 (executes git difftool -d <ref_prev> <ref>,
+  - diff direction ref_prev -> ref, never inverted), REQ-184 (omitted
+  - <ref_prev> defaults to the commit preceding <ref>, <ref>~1).
+  - core.py: cmd_dc validates 1..2 positional refs, resolves the <ref>~1
+  - default, and delegates git difftool -d <ref_prev> <ref>; HELP_TEXTS[dc]
+  - documents the new syntax and default.
+  - tests: test_cmd_diff_aliases.py dc suite updated to the new contract.
+  - dcc, dccc, dwc, and dw behaviors are unchanged.
+
 ## [0.42.0](https://github.com/Ogekuri/G/compare/v0.41.0..v0.42.0) - 2026-11-02
 ### 🐛  Bug Fixes
 - Fix .gitignore file.
@@ -775,6 +815,7 @@
 - \[0.40.0\]: https://github.com/Ogekuri/G/releases/tag/v0.40.0
 - \[0.41.0\]: https://github.com/Ogekuri/G/releases/tag/v0.41.0
 - \[0.42.0\]: https://github.com/Ogekuri/G/releases/tag/v0.42.0
+- \[0.43.0\]: https://github.com/Ogekuri/G/releases/tag/v0.43.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -818,3 +859,4 @@
 [0.40.0]: https://github.com/Ogekuri/G/compare/v0.39.0..v0.40.0
 [0.41.0]: https://github.com/Ogekuri/G/compare/v0.40.0..v0.41.0
 [0.42.0]: https://github.com/Ogekuri/G/compare/v0.41.0..v0.42.0
+[0.43.0]: https://github.com/Ogekuri/G/compare/v0.42.0..v0.43.0
