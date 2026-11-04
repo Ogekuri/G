@@ -233,8 +233,11 @@ class ReleaseFlowTest(unittest.TestCase):
         self.assertLess(steps.index("create temporary changelog tag"), steps.index("regenerate changelog"))
         self.assertLess(steps.index("regenerate changelog"), steps.index("delete temporary changelog tag"))
 
-    ## @brief Verify exact atomic patch publication argv.
-    # @details Isolate Git; assert explicit refspecs and disabled implicit tag following.
+    ## @brief Verify exact atomic patch publication argv via inherited stdio.
+    # @details Isolate Git; assert explicit refspecs, disabled implicit tag
+    #          following, and delegation through the shared inherited-stdio
+    #          wrapper (`run_git_cmd`) so push output and interactive SSH
+    #          authentication reach the user terminal.
     # @param self {ReleaseFlowTest} Isolated test instance.
     # @return {None} Assert REQ-045 push contract.
     def test_patch_push_uses_exact_release_tag(self):
@@ -251,14 +254,16 @@ class ReleaseFlowTest(unittest.TestCase):
             core, "_determine_canonical_version", return_value="1.2.3"
         ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
             core, "_run_release_step", side_effect=run_step
-        ), mock.patch.object(core, "run_git_text") as run_git:
+        ), mock.patch.object(core, "run_git_cmd") as run_git:
             core._execute_release_flow("patch")
         expected_output = ["push", "--no-follow-tags", "--atomic", "origin",
                            "refs/heads/develop:refs/heads/develop", "refs/tags/v1.2.4:refs/tags/v1.2.4"]
         run_git.assert_called_once_with(expected_output)
 
     ## @brief Verify branch-only preliminary push and atomic final publication.
-    # @details Isolate Git; assert ordered explicit refspecs for REQ-072.
+    # @details Isolate Git; assert ordered explicit refspecs for REQ-072 and
+    #          delegation through the shared inherited-stdio wrapper
+    #          (`run_git_cmd`) for both publication pushes.
     # @param self {ReleaseFlowTest} Isolated test instance.
     # @return {None} Assert publication argv without unrelated tags.
     def test_minor_pushes_develop_then_master_and_release_tag(self):
@@ -275,7 +280,7 @@ class ReleaseFlowTest(unittest.TestCase):
             core, "_determine_canonical_version", return_value="1.2.0"
         ), mock.patch.object(core, "_bump_semver_version", return_value="1.3.0"), mock.patch.object(
             core, "_run_release_step", side_effect=run_step
-        ), mock.patch.object(core, "run_git_text") as run_git:
+        ), mock.patch.object(core, "run_git_cmd") as run_git:
             core._execute_release_flow("minor")
         expected_output = [
             mock.call(["push", "--no-follow-tags", "origin", "refs/heads/develop:refs/heads/develop"]),

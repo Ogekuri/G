@@ -163,7 +163,7 @@
           - `_run_release_command(...)`: route standalone `--resume` to immutable recovery, otherwise to creation, with unified error exits [`src/git_alias/core.py`]
             - `_execute_release_flow(...)`: creation pipeline ending in scoped atomic publication [`src/git_alias/core.py`]
               - `_push_release_refs(...)`: push explicit branch/tag refspecs once with recovery diagnostics [`src/git_alias/core.py`]
-                - External boundary: `git push` transport to `origin` via `run_git_text(...)`.
+                - External boundary: `git push` transport to `origin` via `run_git_cmd(...)` with inherited stdio so push output and interactive SSH/credential authentication reach the user terminal.
             - `_resume_release_flow(...)`: validate the immutable prepared release and publish only missing refs [`src/git_alias/core.py`]
               - `get_branch(...)`: resolve configured work/develop/master names [`src/git_alias/core.py`]
               - `_current_branch_name(...)`: require a configured release-branch checkout [`src/git_alias/core.py`]
@@ -173,7 +173,7 @@
               - `_is_commit_ancestor(...)`: require remote tips ancestral to the release commit [`src/git_alias/core.py`]
               - `_run_release_step(...)`: wrap each publication step with release diagnostics [`src/git_alias/core.py`]
                 - `_push_release_refs(...)`: publish only missing branch/tag updates once [`src/git_alias/core.py`]
-                  - External boundary: `git ls-remote` identity query and `git push` transport to `origin` via `run_git_text(...)`.
+                  - External boundary: `git ls-remote` identity query via `run_git_text(...)` and `git push` transport to `origin` via `run_git_cmd(...)` with inherited stdio.
               - `cmd_co(...)`: restore the configured work checkout after publication [`src/git_alias/core.py`]
 - External Boundaries:
   - OS subprocess execution for `git`, `uv`, `gzip`, configured editor launchers, and configured graph launchers.

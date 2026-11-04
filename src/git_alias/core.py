@@ -1313,19 +1313,29 @@ _REMOTE_REFS_UPDATED = False
 WIP_MESSAGE_RE = re.compile(r"^wip: work in progress\.$")
 
 
-## @brief Execute `_refresh_remote_refs` runtime logic for Git-Alias CLI.
-# @details Executes `_refresh_remote_refs` using deterministic CLI control-flow and explicit error propagation.
-# @return Result emitted by `_refresh_remote_refs` according to command contract.
+## @brief Refresh remote-tracking references for the configured `origin` remote.
+# @details Executes `git remote update origin` scoped to the single configured
+#          remote instead of updating every configured remote (`git remote -v update`
+#          updated all remotes and failed whenever any unrelated remote was
+#          unreachable). Success is cached in `_REMOTE_REFS_UPDATED` so the fetch
+#          runs at most once per CLI invocation; failure prints a non-fatal English
+#          warning and leaves the cache unset so tolerant callers may retry.
+# @return {bool} True when `origin` references were refreshed; False when the
+#         update command failed (callers enforcing remote-state prerequisites
+#         MUST treat False as fatal).
+# @exception None; failures are reported via the boolean result and a stderr warning.
+# @satisfies REQ-020
 def _refresh_remote_refs():
     global _REMOTE_REFS_UPDATED
     if _REMOTE_REFS_UPDATED:
-        return
+        return True
     try:
-        run_git_cmd(["remote", "-v", "update"])
+        run_git_cmd(["remote", "update", "origin"])
     except CommandExecutionError as exc:
         print(f"Unable to update remote references: {exc}", file=sys.stderr)
-        return
+        return False
     _REMOTE_REFS_UPDATED = True
+    return True
 
 
 ## @brief Execute `_branch_remote_divergence` runtime logic for Git-Alias CLI.
@@ -2628,9 +2638,18 @@ def _delete_associated_branch_and_worktree(
     _print_paired_delete_success(worktree_info.path, worktree_info.branch_name)
 
 
-## @brief Execute `_ensure_release_prerequisites` runtime logic for Git-Alias CLI.
-# @details Executes `_ensure_release_prerequisites` using deterministic CLI control-flow and explicit error propagation.
-# @return Result emitted by `_ensure_release_prerequisites` according to command contract.
+## @brief Enforce release preflight prerequisites with fail-closed remote verification.
+# @details Validates configured local branches, then requires a successful
+#          `origin` remote-reference refresh before evaluating any remote state;
+#          when `_refresh_remote_refs()` reports failure the preflight raises
+#          immediately so no local release mutation can proceed against
+#          unverifiable remote data. Subsequent checks enforce remote-branch
+#          existence, remote update status for master and develop, current branch
+#          equal to configured work, and a clean working tree and index.
+# @return {Dict[str, str]} Branch map with keys `master`, `develop`, `work`.
+# @throws ReleaseError Missing local/remote branches, failed remote refresh,
+#         pending remote updates, non-work checkout, or dirty state.
+# @satisfies REQ-026, REQ-047
 def _ensure_release_prerequisites():
     master_branch = get_branch("master")
     develop_branch = get_branch("develop")
@@ -2645,7 +2664,11 @@ def _ensure_release_prerequisites():
         raise ReleaseError(
             f"Unable to run release command: missing local branches {joined}."
         )
-    _refresh_remote_refs()
+    if not _refresh_remote_refs():
+        raise ReleaseError(
+            "Unable to update remote references from origin. "
+            "Resolve remote access and retry the release command."
+        )
     missing_remote = [
         name
         for name in (master_branch, develop_branch)
@@ -2751,9 +2774,14 @@ def _create_release_commit_for_flow(target_version):
 
 
 ## @brief Publish selected release references once with recovery diagnostics.
-# @details O(1) refspec construction; one Git push; no automatic retries. Tag
-#          publication requires atomic support; --no-follow-tags excludes unrelated tags.
-#          Failure preserves local objects and reports the original Git rejection.
+# @details O(1) refspec construction; one Git push; no automatic retries. The push
+#          executes through the shared inherited-stdio git wrapper (`run_git_cmd`) so
+#          push output and transport errors reach the user terminal and interactive
+#          SSH/credential authentication remains possible (restores the pre-8e4abd26
+#          publication transport; piped stdio caused `Permission denied (publickey)`
+#          rejections in sessions whose interactive fetch succeeded). Tag publication
+#          requires atomic support; --no-follow-tags excludes unrelated tags. Failure
+#          preserves local objects and reports Git's rejection live on stderr.
 # @param level {str} Release command: major, minor, or patch.
 # @param version {str} Prepared semantic version.
 # @param branch {str} Configured destination branch name.
@@ -2779,10 +2807,10 @@ def _push_release_refs(level, version, branch, include_branch=True, include_tag=
     if include_tag:
         command.append("--atomic")
     try:
-        run_git_text([*command, "origin", *refspecs])
-    except RuntimeError as exc:
+        run_git_cmd([*command, "origin", *refspecs])
+    except CommandExecutionError:
         raise ReleaseError(
-            f"Release {version} is already prepared locally. Push failed: {exc}\n"
+            f"Release {version} is already prepared locally. Push failed.\n"
             f"Verify local and origin refs: {branch_ref}, {tag_ref}; "
             f"configured work/develop/master tips.\n"
             f"Resume safely after resolving the rejection: g {level} --resume"

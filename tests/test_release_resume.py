@@ -2,6 +2,7 @@
 # @details HDT levels: parsing/push helper -> resume orchestration -> CLI dispatch.
 # All Git, filesystem discovery, version detection, and checkout dependencies are mocked.
 
+import subprocess
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -256,8 +257,10 @@ class ReleaseResumeTest(unittest.TestCase):
                 self.push_mock.assert_not_called()
 
     ## @brief Verify publication diagnostics and bounded attempts for every rejection.
-    # @details Execute the real helper with mocked Git failures; transient errors also
-    #          remain single-attempt.
+    # @details Execute the real helper with mocked Git failures through the inherited-
+    #          stdio wrapper; transient errors also remain single-attempt, and Git's
+    #          own rejection reaches the user terminal live while REQ-180 fields
+    #          (version, refs, resume command) are preserved in the ReleaseError.
     # @param self {ReleaseResumeTest} Isolated test instance.
     # @return {None} Assert REQ-180 and REQ-181 recovery instructions and no retries.
     def test_push_failure_preserves_diagnostic_without_retry(self):
@@ -267,22 +270,27 @@ class ReleaseResumeTest(unittest.TestCase):
         ]
         for message in cases:
             with self.subTest(message=message):
-                with mock.patch.object(core, "run_git_text", side_effect=RuntimeError(message)) as git:
+                failure = core.CommandExecutionError(
+                    subprocess.CalledProcessError(
+                        128, ["git", "push", "origin"], stderr=message.encode()
+                    )
+                )
+                with mock.patch.object(core, "run_git_cmd", side_effect=failure) as git:
                     with self.assertRaises(core.ReleaseError) as error:
                         self.push_impl("minor", "1.3.0", "master", include_tag=True)
                 git.assert_called_once()
                 details = str(error.exception)
-                for expected_output in (message, "1.3.0", "refs/heads/master",
+                for expected_output in ("Push failed", "1.3.0", "refs/heads/master",
                                         "refs/tags/v1.3.0", "g minor --resume"):
                     self.assertIn(expected_output, details)
 
     ## @brief Verify empty and tag-only publication selections.
-    # @details Execute the real helper against a mocked Git boundary; no implicit branch
-    #          or unrelated tag publication.
+    # @details Execute the real helper against a mocked Git boundary through the
+    #          inherited-stdio wrapper; no implicit branch or unrelated tag publication.
     # @param self {ReleaseResumeTest} Isolated test instance.
     # @return {None} Assert REQ-179 exact missing-reference selection.
     def test_push_empty_and_tag_only(self):
-        with mock.patch.object(core, "run_git_text") as git:
+        with mock.patch.object(core, "run_git_cmd") as git:
             self.push_impl("patch", "1.2.4", "develop", False, False)
             git.assert_not_called()
             self.push_impl("patch", "1.2.4", "develop", False, True)
