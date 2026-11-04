@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.45.0](https://github.com/Ogekuri/G/compare/v0.44.0..v0.45.0) - 2026-11-04
+### 🐛  Bug Fixes
+- restore inherited-stdio push and fail-closed remote refresh [useReq] *(release)*
+  - Release pushes execute via run_git_cmd (inherited stdio) instead of piped
+  - run_git_text, restoring interactive SSH authentication and live push output
+  - regressed by commit 8e4abd26 (publickey push rejection while the same-run
+  - inherited-stdio fetch succeeded).
+  - Release preflight aborts when the origin remote-reference refresh fails,
+  - preventing full local release preparation against unverifiable remote state.
+  - Remote refresh scoped to 'git remote update origin' instead of the malformed
+  - 'git remote -v update' that fetched every configured remote.
+  - Add release push/preflight regression reproducer suite; update related
+  - release, resume, and remote-status test assertions; refresh docs.
+
 ## [0.44.0](https://github.com/Ogekuri/G/compare/v0.43.0..v0.44.0) - 2026-11-03
 ### 🚜  Changes
 - impose default command values and canonical print order [useReq] *(config)*
@@ -826,6 +840,7 @@
 - \[0.42.0\]: https://github.com/Ogekuri/G/releases/tag/v0.42.0
 - \[0.43.0\]: https://github.com/Ogekuri/G/releases/tag/v0.43.0
 - \[0.44.0\]: https://github.com/Ogekuri/G/releases/tag/v0.44.0
+- \[0.45.0\]: https://github.com/Ogekuri/G/releases/tag/v0.45.0
 
 [0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
@@ -871,3 +886,4 @@
 [0.42.0]: https://github.com/Ogekuri/G/compare/v0.41.0..v0.42.0
 [0.43.0]: https://github.com/Ogekuri/G/compare/v0.42.0..v0.43.0
 [0.44.0]: https://github.com/Ogekuri/G/compare/v0.43.0..v0.44.0
+[0.45.0]: https://github.com/Ogekuri/G/compare/v0.44.0..v0.45.0
