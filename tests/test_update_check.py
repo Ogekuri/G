@@ -61,7 +61,7 @@ class UpdateCheckTest(unittest.TestCase):
         for key, value in (headers or {}).items():
             response_headers[key] = value
         return HTTPError(
-            url=core.GITHUB_LATEST_RELEASE_API,
+            url=core.PYPI_LATEST_VERSION_API,
             code=code,
             msg="HTTP Error",
             hdrs=response_headers,
@@ -101,7 +101,7 @@ class UpdateCheckTest(unittest.TestCase):
                     with mock.patch.object(
                         core,
                         "urlopen",
-                        return_value=_FakeResponse({"tag_name": "v0.0.2"}),
+                        return_value=_FakeResponse({"info": {"version": "0.0.2"}}),
                     ):
                         core.check_for_newer_version(timeout_seconds=0.01)
         text = err.getvalue()
@@ -117,7 +117,7 @@ class UpdateCheckTest(unittest.TestCase):
                     with mock.patch.object(
                         core,
                         "urlopen",
-                        return_value=_FakeResponse({"tag_name": "v0.0.2"}),
+                        return_value=_FakeResponse({"info": {"version": "0.0.2"}}),
                     ):
                         core.check_for_newer_version(timeout_seconds=0.01)
         self.assertEqual(err.getvalue(), "")
@@ -155,7 +155,7 @@ class UpdateCheckTest(unittest.TestCase):
             with mock.patch.object(
                 core,
                 "urlopen",
-                return_value=_FakeResponse({"tag_name": "v0.0.1"}),
+                return_value=_FakeResponse({"info": {"version": "0.0.1"}}),
             ) as urlopen_mock:
                 core.check_for_newer_version(
                     timeout_seconds=0.01,
@@ -169,7 +169,7 @@ class UpdateCheckTest(unittest.TestCase):
             with mock.patch.object(
                 core,
                 "urlopen",
-                return_value=_FakeResponse({"tag_name": "v0.0.2"}),
+                return_value=_FakeResponse({"info": {"version": "0.0.2"}}),
             ):
                 core.check_for_newer_version(timeout_seconds=0.01)
             data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
@@ -222,9 +222,11 @@ class UpdateCheckTest(unittest.TestCase):
         )
         self.assertEqual(data["last_check_unix"], 0)
 
-    def test_resolve_release_api_url_uses_fixed_constant(self):
+    def test_resolve_release_api_url_uses_fixed_pypi_constant(self):
+        # REQ-124: the release check resolves exactly the PyPI JSON API URL.
         api_url = core._resolve_release_api_url(Path("/repo"))
-        self.assertEqual(api_url, core.GITHUB_LATEST_RELEASE_API)
+        self.assertEqual(api_url, core.PYPI_LATEST_VERSION_API)
+        self.assertEqual(api_url, "https://pypi.org/pypi/galias/json")
 
     def test_idle_time_uses_hardcoded_idle_delays(self):
         self.assertEqual(core.VERSION_CHECK_IDLE_DELAY_SECONDS, 3600)
@@ -302,7 +304,36 @@ class UpdateCheckTest(unittest.TestCase):
         )
         self.assertEqual(data["last_check_unix"], 0)
 
-    def test_upgrade_self_uses_uv_tool_install_program_name(self):
+    def test_check_reports_error_when_info_version_is_not_semantic(self):
+        # REQ-124: payload lacking a semantic `info.version` is a terminal error.
+        err = io.StringIO()
+        before_unix = int(core.datetime.now().timestamp())
+        with self._isolated_cache():
+            with contextlib.redirect_stderr(err):
+                with mock.patch.object(
+                    core,
+                    "urlopen",
+                    return_value=_FakeResponse({"info": {"version": "not-semver"}}),
+                ):
+                    core.check_for_newer_version(timeout_seconds=0.01)
+            data = json.loads(core.VERSION_CHECK_CACHE_FILE.read_text(encoding="utf-8"))
+        after_unix = int(core.datetime.now().timestamp())
+        self.assertIn(
+            "Version check failed: invalid API payload: `info.version` is not semantic version.",
+            err.getvalue(),
+        )
+        self.assertGreaterEqual(
+            data["idle_until_unix"],
+            before_unix + core.VERSION_CHECK_ERROR_IDLE_DELAY_SECONDS,
+        )
+        self.assertLessEqual(
+            data["idle_until_unix"],
+            after_unix + core.VERSION_CHECK_ERROR_IDLE_DELAY_SECONDS,
+        )
+        self.assertEqual(data["last_check_unix"], 0)
+
+    def test_upgrade_self_installs_latest_pypi_release(self):
+        # REQ-001: --upgrade reinstalls from PyPI; REQ-199: no git source.
         with mock.patch.object(core, "_is_linux_platform", return_value=True):
             with mock.patch.object(core, "_run_checked") as run_checked:
                 core.upgrade_self(Path("/repo"))
@@ -313,10 +344,19 @@ class UpdateCheckTest(unittest.TestCase):
                 "install",
                 core.UV_TOOL_NAME,
                 "--force",
-                "--from",
-                core.UV_TOOL_UPGRADE_SOURCE,
             ]
         )
+
+    def test_pypi_is_the_only_update_and_upgrade_source(self):
+        # REQ-199: no GitHub endpoint or git URL participates in either flow.
+        upgrade_text = " ".join(core.UV_TOOL_UPGRADE_COMMAND)
+        self.assertNotIn("--from", upgrade_text)
+        self.assertNotIn("git+", upgrade_text)
+        self.assertNotIn("github.com", upgrade_text)
+        self.assertTrue(
+            core.PYPI_LATEST_VERSION_API.startswith("https://pypi.org/pypi/")
+        )
+        self.assertNotIn("github.com", core.PYPI_LATEST_VERSION_API)
 
     def test_uninstall_self_uses_uv_tool_uninstall(self):
         with self._isolated_cache():

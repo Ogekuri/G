@@ -107,7 +107,7 @@
     - `main(...)`: load config, optionally run update checks, route management commands, and dispatch alias handlers [`src/git_alias/core.py`]
       - `get_git_root(...)`: resolve repository root [`src/git_alias/core.py`]
       - `load_cli_config(...)`: load repository and global configuration scopes [`src/git_alias/core.py`]
-      - `check_for_newer_version(...)`: perform cached remote release check when enabled [`src/git_alias/core.py`]
+      - `check_for_newer_version(...)`: perform cached PyPI JSON API version check when enabled [`src/git_alias/core.py`]
       - `print_all_help(...)`: render global help output [`src/git_alias/core.py`]
       - `print_command_help(...)`: render per-command help output [`src/git_alias/core.py`]
       - `write_default_config(...)`: normalize supported config keys [`src/git_alias/core.py`]
@@ -177,7 +177,7 @@
               - `cmd_co(...)`: restore the configured work checkout after publication [`src/git_alias/core.py`]
 - External Boundaries:
   - OS subprocess execution for `git`, `uv`, `gzip`, configured editor launchers, and configured graph launchers.
-  - HTTP GET to GitHub Releases API for update checks.
+  - HTTP GET to the PyPI JSON API (`https://pypi.org/pypi/galias/json`) for update checks.
   - File I/O for config, changelog, and version-managed files.
 
 ### PROC:git
@@ -212,7 +212,7 @@
   - Threads: no explicit threads detected.
 - Internal Call-Trace Tree:
   - `scripts/g.sh::<module_body>(...)`: `exec uv run --project <repo> python -m git_alias ...` delegation [`scripts/g.sh`]
-  - `upgrade_self(...)`: spawn `uv tool install` when Linux [`src/git_alias/core.py`]
+  - `upgrade_self(...)`: spawn `uv tool install` from PyPI when Linux [`src/git_alias/core.py`]
   - `uninstall_self(...)`: spawn `uv tool uninstall` when Linux [`src/git_alias/core.py`]
 - External Boundaries:
   - External `uv` binary and package-management side effects.

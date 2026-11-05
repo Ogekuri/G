@@ -40,40 +40,36 @@ GLOBAL_CONFIG_DIRECTORY = ".config/galias"
 ## @brief Constant `GLOBAL_CONFIG_FILENAME` used by CLI runtime paths and policies.
 GLOBAL_CONFIG_FILENAME = "config.json"
 
-## @brief Constant `GITHUB_OWNER` used by CLI runtime paths and policies.
-GITHUB_OWNER = "Ogekuri"
-## @brief Upstream GitHub repository name composing repository-scoped URLs.
-## @details Value `GAlias` after the upstream repository rename chain
-##          `G` -> `GitAlias` -> `GAlias`.
-##          Sole repository-name source constant: consumed by
-##          `GITHUB_LATEST_RELEASE_API` (release-check endpoint, REQ-124) and
-##          `UV_TOOL_UPGRADE_SOURCE` (`uv tool install --from` source, REQ-001);
-##          no repository-name string literals exist elsewhere in `core.py`.
-## @satisfies REQ-001, REQ-124
-GITHUB_REPOSITORY = "GAlias"
-## @brief Constant `GITHUB_LATEST_RELEASE_API` used by CLI runtime paths and policies.
-GITHUB_LATEST_RELEASE_API = (
-    f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPOSITORY}/releases/latest"
-)
-## @brief Constant `UV_TOOL_UPGRADE_SOURCE` used by CLI runtime paths and policies.
-UV_TOOL_UPGRADE_SOURCE = (
-    f"git+https://github.com/{GITHUB_OWNER}/{GITHUB_REPOSITORY}.git"
-)
 ## @brief Astral uv tool and distribution name for self-management flows.
 ## @details Value `galias` after the distribution rename from `git-alias`;
 ##          drives `uv tool install` (REQ-001), `uv tool uninstall` (REQ-002),
 ##          and the `~/.cache/<tool>` update-check cache directory (REQ-136).
 ## @satisfies REQ-001, REQ-002, REQ-136
 UV_TOOL_NAME = "galias"
-## @brief Constant `UV_TOOL_UPGRADE_COMMAND` used by CLI runtime paths and policies.
+## @brief PyPI project name sourcing update checks and self-upgrade installs.
+## @details Canonical PyPI distribution identifier equal to `UV_TOOL_NAME`;
+##          composes the PyPI JSON API endpoint (REQ-124) and names the
+##          `uv tool install` self-upgrade target (REQ-001). PyPI is the only
+##          remote source used for version verification and upgrades (REQ-199).
+## @satisfies REQ-001, REQ-124, REQ-199
+PYPI_PROJECT_NAME = UV_TOOL_NAME
+## @brief PyPI JSON API endpoint resolving the latest published version.
+## @details Fixed endpoint `https://pypi.org/pypi/galias/json`; the update check
+##          parses the latest version from its `info.version` JSON field
+##          (REQ-124) and queries no other remote source (REQ-199).
+## @satisfies REQ-124, REQ-199
+PYPI_LATEST_VERSION_API = f"https://pypi.org/pypi/{PYPI_PROJECT_NAME}/json"
+## @brief Self-upgrade command installing the latest PyPI release.
+## @details Executes `uv tool install galias --force` so Astral uv reinstalls
+##          the tool from the PyPI default source (REQ-001); no `--from`
+##          override exists, keeping PyPI the only upgrade source (REQ-199).
+## @satisfies REQ-001, REQ-199
 UV_TOOL_UPGRADE_COMMAND = (
     "uv",
     "tool",
     "install",
     UV_TOOL_NAME,
     "--force",
-    "--from",
-    UV_TOOL_UPGRADE_SOURCE,
 )
 ## @brief Constant `UV_TOOL_UNINSTALL_COMMAND` used by CLI runtime paths and policies.
 UV_TOOL_UNINSTALL_COMMAND = ("uv", "tool", "uninstall", UV_TOOL_NAME)
@@ -337,14 +333,15 @@ def _print_update_check_error(detail: str) -> None:
     )
 
 
-## @brief Resolve the fixed GitHub latest-release API URL for update checks.
-# @details Returns the constant release endpoint configured for the program package.
+## @brief Resolve the fixed PyPI JSON API URL for update checks.
+# @details Returns the constant PyPI endpoint configured for the program package.
 #          The `repo_root` parameter is intentionally ignored to keep call sites stable.
 # @param repo_root Repository root placeholder parameter.
-# @return Full latest-release API URL string.
+# @return Full PyPI JSON API URL string.
+# @satisfies REQ-124
 def _resolve_release_api_url(repo_root: Path) -> str:
     del repo_root
-    return GITHUB_LATEST_RELEASE_API
+    return PYPI_LATEST_VERSION_API
 
 
 ## @brief Coerce candidate JSON timestamp values into unix-second integers.
@@ -422,12 +419,13 @@ def _write_version_check_error_state(
 #          explicit error propagation, a fixed 3600-second idle window after
 #          successful release checks, and a fixed 86400-second idle window after
 #          terminal version-check errors while rewriting the idle-time JSON before
-#          returning control on every error path.
+#          returning control on every error path. The remote source is exclusively
+#          the PyPI JSON API `info.version` field (REQ-124, REQ-199).
 # @param repo_root Input parameter consumed by `check_for_newer_version`.
 # @param timeout_seconds Input parameter consumed by `check_for_newer_version`.
 # @param ignore_idle_cache When `True`, bypasses `idle_until_unix` gating and forces an online check.
 # @return Result emitted by `check_for_newer_version` according to command contract.
-# @satisfies REQ-123 REQ-126 REQ-127 REQ-129 REQ-130 REQ-131 REQ-137
+# @satisfies REQ-123 REQ-124 REQ-126 REQ-127 REQ-129 REQ-130 REQ-131 REQ-137 REQ-199
 def check_for_newer_version(
     *,
     repo_root: Optional[Path] = None,
@@ -477,8 +475,8 @@ def check_for_newer_version(
     request = Request(
         release_api_url,
         headers={
-            "Accept": "application/vnd.github+json",
-            "User-Agent": UV_TOOL_NAME,
+            "Accept": "application/json",
+            "User-Agent": PYPI_PROJECT_NAME,
         },
         method="GET",
     )
@@ -527,12 +525,15 @@ def check_for_newer_version(
         _write_version_check_error_state(cache_data, now_unix)
         _print_update_check_error("invalid API payload: JSON root must be an object.")
         return
-    tag = data.get("tag_name") or ""
-    latest_text = _normalize_semver_text(str(tag))
+    info = data.get("info")
+    version_text = str(info.get("version") or "") if isinstance(info, dict) else ""
+    latest_text = _normalize_semver_text(version_text)
     latest = _parse_semver_tuple(latest_text)
     if latest is None:
         _write_version_check_error_state(cache_data, now_unix)
-        _print_update_check_error("invalid API payload: `tag_name` is not semantic version.")
+        _print_update_check_error(
+            "invalid API payload: `info.version` is not semantic version."
+        )
         return
 
     idle_seconds = VERSION_CHECK_IDLE_DELAY_SECONDS

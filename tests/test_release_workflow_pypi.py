@@ -146,14 +146,23 @@ class ReleaseWorkflowPyPiTest(unittest.TestCase):
         self.assertTrue(floor_versions)
         self.assertGreaterEqual(max(floor_versions), 77)
 
-    ## @brief Verify README documents PyPI install and uvx usage.
+    ## @brief Verify README documents pipx as primary install with uv/uvx alternative.
     # @return None.
-    # @satisfies REQ-198
-    def test_readme_documents_pypi_install_and_uvx_usage(self):
+    # @satisfies REQ-198, REQ-199
+    def test_readme_documents_pipx_primary_and_uvx_alternative_install(self):
         readme = (self.REPO_ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertRegex(readme, r"(?m)^\s*uv tool install galias --force\s*$")
-        self.assertRegex(readme, r"(?m)^\s*uvx galias <command> \[args\.\.\.\]\s*$")
-        self.assertIn("uv tool install galias --force --from git+https://github.com/Ogekuri/GAlias.git", readme)
+        for command in (
+            "sudo apt install pipx",
+            "pipx ensurepath",
+            "pipx install galias",
+            "uv tool install galias --force",
+            "uvx galias <command> [args...]",
+        ):
+            self.assertIn(command, readme)
+        self.assertNotIn(
+            "uv tool install galias --force --from git+https://github.com/Ogekuri/GAlias.git",
+            readme,
+        )
 
 
 if __name__ == "__main__":

@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "galias"]
 ---
 
 # GAlias CLI Requirements
-**Version**: 1.26
+**Version**: 1.27
 **Author**: Francesco Rolando
 **Date**: 2026-11-05
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-11-05 | 1.27 | Switched update checks to the PyPI JSON API `info.version` (REQ-124, REQ-199), switched `--upgrade` to the PyPI-sourced `uv tool install galias --force` (REQ-001, REQ-199), and made pipx the documented primary install method with Astral uv/uvx as alternative (REQ-198). |
 | 2026-11-05 | 1.26 | Renamed the release workflow file to `release-pypi.yml` (REQ-112) and added PyPI OIDC Trusted Publishing requirements for release permissions, publication steps, packaging metadata, license declaration, and install documentation (REQ-193, REQ-194, REQ-195, REQ-196, REQ-197, REQ-198). |
 | 2026-11-05 | 1.25 | Renamed the repository-local configuration file from `.g.conf` to `.galias.conf` without backward compatibility (DES-006, DES-009, REQ-006, REQ-014, REQ-017, REQ-116, REQ-119). |
 | 2026-11-05 | 1.24 | Renamed the upstream GitHub repository to `Ogekuri/GAlias` (REQ-001, REQ-124), renamed the distribution/tool/binaries to `galias` with `g` and removed `git-alias` (PRJ-001, CPT-002, REQ-001, REQ-002), and renamed user-facing cache/config paths to `~/.cache/galias` and `~/.config/galias` (REQ-002, REQ-013, REQ-014, REQ-030, REQ-033, REQ-126, REQ-136, REQ-137, CTN-003, DES-006, DES-009, REQ-186). |
@@ -100,7 +101,7 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.galias.conf` plus `$HOME/.config/galias/config.json`, otherwise defaults from `DEFAULT_CONFIG`.
 
 ### 3.2 Functional Requirements
-- **REQ-001**: MUST execute `uv tool install galias --force --from git+https://github.com/Ogekuri/GAlias.git` when `--upgrade` is invoked on Linux.
+- **REQ-001**: MUST execute `uv tool install galias --force` installing the latest PyPI release when `--upgrade` is invoked on Linux.
 - **REQ-002**: MUST when `--uninstall` is invoked on Linux, delete `~/.cache/galias/check_version_idle-time.json`, remove `~/.cache/galias`, and execute `uv tool uninstall galias`.
 - **REQ-129**: MUST NOT execute local `uv tool install` when `--upgrade` is invoked on non-Linux platforms, and MUST print the exact manual install command for user execution.
 - **REQ-130**: MUST NOT execute local `uv tool uninstall` when `--uninstall` is invoked on non-Linux platforms, and MUST print the exact manual uninstall command for user execution.
@@ -238,13 +239,14 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-195**: MUST execute PyPI publication as post-steps after the GitHub Release step while preserving existing build, attestation, changelog, and release steps in `release-pypi.yml`.
 - **REQ-196**: MUST declare PyPI-compliant `[project]` metadata in `pyproject.toml`: `name = "galias"`, `description`, `readme`, `requires-python`, `keywords`, `classifiers`, and project URLs.
 - **REQ-197**: MUST declare the `pyproject.toml` project license as the PEP 639 SPDX expression `GPL-3.0-only` with explicit `license-files` including `LICENSE`.
-- **REQ-198**: MUST document PyPI installation and uv/uvx usage (`uv tool install galias`, `uvx galias`) in `README.md` while retaining git-source install commands.
+- **REQ-198**: MUST document pipx as the primary install method (`sudo apt install pipx`, `pipx ensurepath`, `pipx install galias`) in `README.md` with a dedicated Astral uv/uvx alternative section.
+- **REQ-199**: MUST source update checks and self-upgrades exclusively from PyPI project `galias`; neither flow queries GitHub endpoints or installs from git URLs.
 - **REQ-115**: MUST section `=== 5. BRANCHES ===` append, after configured rows, aligned `<Identifier> | <latest commit subject>` rows for every discovered local or remote branch not already rendered.
 - **REQ-119**: MUST visual diff aliases `dcd`, `dcm`, and `ddm` execute through the environment-aware diff wrapper (REQ-189) with refs `<develop> <work>`, `<master> <work>`, and `<master> <develop>` from `.galias.conf`, each exposing explicit help text in help outputs.
 - **REQ-120**: MUST define `LSI_DEFAULT_EXCLUDED_DIRS` as a `frozenset` containing: `.cache`, `.claude`, `.codex`, `.eslintcache`, `.gemini`, `.git`, `.github`, `.kiro`, `.mypy_cache`, `.npm`, `.opencode`, `.parcel-cache`, `.pytest_cache`, `.ruff_cache`, `.sass-cache`, `.terragrunt-cache`, `.tox`, `.venv`, `.vscode`, `__pycache__`, `build`, `dist`, `htmlcov`, `node_modules`, `temp`, `tmp`, `venv`.
 - **REQ-121**: MUST the `lsi` alias MUST accept `--include-all` flag; when present, MUST bypass `LSI_DEFAULT_EXCLUDED_DIRS` and `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` filtering and print all ignored files unfiltered.
 - **REQ-123**: MUST when a newer version is detected, print a bright-green (`\033[92;1m`) message `Update available: <latest> (installed: <current>)` before command execution.
-- **REQ-124**: MUST resolve the release-check URL exactly as `https://api.github.com/repos/Ogekuri/GAlias/releases/latest`.
+- **REQ-124**: MUST resolve the release-check URL exactly as `https://pypi.org/pypi/galias/json` and parse the latest version from its `info.version` JSON field.
 - **REQ-125**: MUST execute release-check HTTP requests with a hardcoded configurable timeout defaulting to 2 seconds.
 - **REQ-126**: MUST after successful release checks write `~/.cache/galias/check_version_idle-time.json` JSON fields `last_check_unix`, `last_check_human`, `idle_until_unix`, and `idle_until_human`, with `idle_until_unix = last_check_unix + 3600`.
 - **REQ-127**: MUST print bright-red (`\033[31;1m`) update-check errors, including HTTP status diagnostics and API-provided messages such as `rate limit exceeded`.
@@ -314,7 +316,10 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-195** evidence: `.github/workflows/release-pypi.yml` publish step ordered after the GitHub Release step with all preceding steps unchanged.
 - **REQ-196** evidence: `pyproject.toml` `[project]` table (`name`, `description`, `readme`, `requires-python`, `keywords`, `classifiers`) plus `[project.urls]` entries.
 - **REQ-197** evidence: `pyproject.toml` `license = "GPL-3.0-only"` SPDX expression, `license-files` declaration, and `build-system` `setuptools>=77.0.0` requirement.
-- **REQ-198** evidence: `README.md` Quick Start install commands `uv tool install galias` and `uvx galias` alongside git-source install commands.
+- **REQ-198** evidence: `README.md` Quick Start primary pipx commands `sudo apt install pipx`, `pipx ensurepath`, `pipx install galias` plus the dedicated Astral uv/uvx alternative section.
+- **REQ-001** evidence: `src/git_alias/core.py` `UV_TOOL_UPGRADE_COMMAND` constant (`uv tool install galias --force`, no `--from` override) executed by `upgrade_self` on Linux.
+- **REQ-124** evidence: `src/git_alias/core.py` `PYPI_LATEST_VERSION_API` constant and `check_for_newer_version` `info.version` JSON parsing.
+- **REQ-199** evidence: `src/git_alias/core.py` PyPI-only `PYPI_LATEST_VERSION_API`/`UV_TOOL_UPGRADE_COMMAND` constants with no GitHub or git-URL source in update-check and upgrade paths; `README.md` free of git-source install commands.
 - **REQ-169** evidence: `src/git_alias/core.py` `cmd_rollback` pre-flight `_determine_canonical_version` call executed after target validation.
 - **REQ-170** evidence: `src/git_alias/core.py` `cmd_rollback` non-zero exits for missing `ver_rules` and `VersionDetectionError`.
 - **REQ-171** evidence: `src/git_alias/core.py` `cmd_rollback` `current_version` capture after successful detection.

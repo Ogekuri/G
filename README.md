@@ -92,24 +92,21 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 
 ### Install GAlias
 
-  - Install or Upgrade from PyPI
+  - Primary Method: pipx (from PyPI)
+  ```bash
+  sudo apt install pipx
+  pipx ensurepath
+  pipx install galias
+  ```
+
+  - Alternative Method: Astral uv / uvx (from PyPI)
   ```bash
   uv tool install galias --force
   ```
 
-  - Run Directly from PyPI (no installation required)
+  Run directly without installation:
   ```bash
   uvx galias <command> [args...]
-  ```
-
-  - Install or Upgrade from the Git Repository
-  ```bash
-  uv tool install galias --force --from git+https://github.com/Ogekuri/GAlias.git
-  ```
-
-  - Run Directly from the Repository
-  ```bash
-  uvx --from git+https://github.com/Ogekuri/GAlias.git galias <command> [args...]
   ```
 
   - Run with the Repository-Local Launcher (no installation required)
