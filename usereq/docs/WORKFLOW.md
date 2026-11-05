@@ -159,12 +159,12 @@
           - `_abort_rollback_version_restore(...)`: execute `git revert --abort` and exit non-zero when the version restore fails [`src/git_alias/core.py`]
           - `cmd_chver(...)`: restore the stored application version across version-managed files before the revert commit [`src/git_alias/core.py`]
         - `cmd_major(...)`, `cmd_minor(...)`, and `cmd_patch(...)`: parse release operands and route creation or resume publication [`src/git_alias/core.py`]
-          - `_parse_release_flags(...)`: validate flags and detect standalone `--resume` [`src/git_alias/core.py`]
-          - `_run_release_command(...)`: route standalone `--resume` to immutable recovery, otherwise to creation, with unified error exits [`src/git_alias/core.py`]
-            - `_execute_release_flow(...)`: creation pipeline ending in scoped atomic publication [`src/git_alias/core.py`]
+          - `_parse_release_flags(...)`: validate flags, resolve the `--dev`/`--develop` develop scope, and detect standalone `--resume` with optional develop scope [`src/git_alias/core.py`]
+          - `_run_release_command(...)`: route standalone `--resume` to immutable recovery, otherwise to creation, forwarding the develop scope with unified error exits [`src/git_alias/core.py`]
+            - `_execute_release_flow(...)`: creation pipeline ending in scoped atomic publication; the develop scope integrates and publishes configured `develop` only while the default integrates `develop` and `master` [`src/git_alias/core.py`]
               - `_push_release_refs(...)`: push explicit branch/tag refspecs once with recovery diagnostics [`src/git_alias/core.py`]
                 - External boundary: `git push` transport to `origin` via `run_git_cmd(...)` with inherited stdio so push output and interactive SSH/credential authentication reach the user terminal.
-            - `_resume_release_flow(...)`: validate the immutable prepared release and publish only missing refs [`src/git_alias/core.py`]
+            - `_resume_release_flow(...)`: validate the immutable prepared release and publish only missing refs for the resolved release scope (develop-only integration when develop-scoped) [`src/git_alias/core.py`]
               - `get_branch(...)`: resolve configured work/develop/master names [`src/git_alias/core.py`]
               - `_current_branch_name(...)`: require a configured release-branch checkout [`src/git_alias/core.py`]
               - `_extract_release_version(...)` and `_parse_semver_tuple(...)`: derive and classify the prepared release version [`src/git_alias/core.py`]
@@ -308,7 +308,7 @@
 - EDGE: PROC:main -> PROC:git
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv plus stdio streams
-  - Payload/Data-Shape: `List[str]` git argv and optional stdin/stdout/stderr text streams; visual diff aliases issue `git difftool -d` argv with `--extcmd=<configured tool>` overrides; release publication and resume issue explicit branch/tag refspec pushes and `ls-remote` identity queries
+  - Payload/Data-Shape: `List[str]` git argv and optional stdin/stdout/stderr text streams; visual diff aliases issue `git difftool -d` argv with `--extcmd=<configured tool>` overrides; release publication and resume issue explicit branch/tag refspec pushes and `ls-remote` identity queries, restricted to configured `develop` and its release tag when the release is develop-scoped
   - Evidence: `src/git_alias/core.py`
 - EDGE: PROC:main -> PROC:uv
   - Mechanism: OS subprocess spawn

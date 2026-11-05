@@ -60,10 +60,11 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
   - `rollback`: Restore branch content to a previous commit/tag by creating a dedicated rollback `revert` commit. Runs a version pre-check first and preserves the current application version by restoring it via `chver` before the rollback commit.
   - `misc`: Miscellaneous tasks.
   - `cover`: Add/adjust tests to improve coverage.
-- Provides `major`, `minor`, and `patch` release commands that auto-generate a `CHANGELOG.md`, create a tag on `develop` (`patch`) or `master` (`major`/`minor`).
+- Provides `major`, `minor`, and `patch` release commands that auto-generate a `CHANGELOG.md`, create a tag on configured `master`; the `--dev`/`--develop` option limits any release to configured `develop`.
   | Command | Branch | Changelog Type |
   | --- | --- | --- |
-  | patch | work -> develop | Include patch versions |
+  | patch --dev | work -> develop | Include patch versions |
+  | patch | work -> develop -> master | Include patch versions |
   | minor | work -> develop -> master | Minor versions only |
   | major | work -> develop -> master | Minor versions only |
 
@@ -189,7 +190,7 @@ When your `work` branch is fully committed, release a new version with:
 g minor
 ```
 
-The command must run from the `work` branch with a clean working tree; it bumps versions per `ver_rules`, creates a temporary local annotated `v<next>` tag only for changelog generation, deletes that temporary tag after changelog generation, and creates the definitive tag immediately before push (`patch`: on `develop` with `git push origin <develop> --tags`; `major`/`minor`: on `master` with `git push origin <master> --tags` after `develop` integration).
+The command must run from the `work` branch with a clean working tree; it bumps versions per `ver_rules`, creates a temporary local annotated `v<next>` tag only for changelog generation, deletes that temporary tag after changelog generation, and creates the definitive tag immediately before push (`--dev`/`--develop`: on `develop`, then an atomic push of `develop` with the release tag only; default: on `master`, then an atomic push of `master` with the release tag after pushing `develop`).
 
 
 ## Management Commands

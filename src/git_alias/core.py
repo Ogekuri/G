@@ -947,8 +947,8 @@ HELP_TEXTS = {
     "lsi": "List ignored files using git ls-files. Options: --include-all (show all, skip default directory filter).",
     "lsa": "List untracked files using git ls-files.",
     "lt": "Print tags with containing branches.",
-    "major": "Release a new major version from the work branch. Options: --include-patch, --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op.",
-    "minor": "Release a new minor version from the work branch. Options: --include-patch, --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op.",
+    "major": "Release a new major version from the work branch. Options: --include-patch, --dev/--develop (limit the release to the configured develop branch: merge work into develop, tag there, and atomically push develop with the release tag only; master stays unchanged), --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone or with --dev/--develop to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op.",
+    "minor": "Release a new minor version from the work branch. Options: --include-patch, --dev/--develop (limit the release to the configured develop branch: merge work into develop, tag there, and atomically push develop with the release tag only; master stays unchanged), --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone or with --dev/--develop to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op.",
     "new": "Conventional commit new(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
     "o": "Print a verbose overview with status, branch distances, active worktrees, and a qualitative ASCII topology tree.",
     "implement": "Conventional commit implement(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
@@ -965,7 +965,7 @@ HELP_TEXTS = {
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
-    "patch": "Release a new patch version from the work branch. Options: --include-patch, --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op.",
+    "patch": "Release a new patch version from the work branch with the same master integration used by major/minor. Options: --include-patch (auto-included), --dev/--develop (limit the release to the configured develop branch: merge work into develop, tag there, and atomically push develop with the release tag only; master stays unchanged), --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone or with --dev/--develop to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op.",
     "ra": "Remove all staged files and return them to the working tree (inverse of aa).",
     "rf": "Print changes on HEAD reference.",
     "rmloc": "Remove changed files from the working tree.",
@@ -2808,10 +2808,13 @@ def _create_release_commit_for_flow(target_version):
 # @param branch {str} Configured destination branch name.
 # @param include_branch {bool} Publish branch when True.
 # @param include_tag {bool} Publish exact release tag atomically when True.
+# @param dev_release {bool} Develop-scoped release (REQ-045, REQ-200); selects the
+#        `g <level> --dev --resume` recovery command and develop-only tips.
 # @return {None} No operation when both selectors are False.
 # @throws ReleaseError Push failed; includes rejection and recovery references.
-# @satisfies REQ-045, REQ-072, REQ-179, REQ-180, REQ-181
-def _push_release_refs(level, version, branch, include_branch=True, include_tag=False):
+# @satisfies REQ-045, REQ-072, REQ-179, REQ-180, REQ-181, REQ-200
+def _push_release_refs(level, version, branch, include_branch=True, include_tag=False,
+                       dev_release=False):
     ## @brief Exact reference names for publication and diagnostics.
     branch_ref = f"refs/heads/{branch}"
     tag_ref = f"refs/tags/v{version}"
@@ -2827,14 +2830,16 @@ def _push_release_refs(level, version, branch, include_branch=True, include_tag=
     command = ["push", "--no-follow-tags"]
     if include_tag:
         command.append("--atomic")
+    scope_tips = "work/develop" if dev_release else "work/develop/master"
+    resume_command = f"g {level} --dev --resume" if dev_release else f"g {level} --resume"
     try:
         run_git_cmd([*command, "origin", *refspecs])
     except CommandExecutionError:
         raise ReleaseError(
             f"Release {version} is already prepared locally. Push failed.\n"
             f"Verify local and origin refs: {branch_ref}, {tag_ref}; "
-            f"configured work/develop/master tips.\n"
-            f"Resume safely after resolving the rejection: g {level} --resume"
+            f"configured {scope_tips} tips.\n"
+            f"Resume safely after resolving the rejection: {resume_command}"
         ) from None
 
 
@@ -2845,16 +2850,18 @@ def _push_release_refs(level, version, branch, include_branch=True, include_tag=
 #          conflicting tags, and non-ancestor remote tips. Publish missing refs only, then
 #          checkout work. Preserve version files, commits, tags, and external build outputs.
 # @param level {str} Release command: major, minor, or patch.
+# @param dev_release {bool} Develop-scoped release (REQ-045, REQ-200); excludes
+#        master from integration and publication validation.
 # @return {None} Completes missing publication and restores work checkout.
 # @throws ReleaseError Invalid release state or publication rejection.
 # @throws RuntimeError Git inspection failed.
 # @throws VersionDetectionError Version-managed files disagree.
-# @satisfies REQ-176, REQ-177, REQ-178, REQ-179
-def _resume_release_flow(level):
-    ## @brief Configured branch map; patch excludes master from integration.
+# @satisfies REQ-045, REQ-176, REQ-177, REQ-178, REQ-179, REQ-200
+def _resume_release_flow(level, dev_release=False):
+    ## @brief Configured branch map; develop-scoped releases exclude master.
     branches = {key: get_branch(key) for key in BRANCH_KEYS}
     integrated = [branches["develop"]]
-    if level != "patch":
+    if not dev_release:
         integrated.append(branches["master"])
     if run_git_text(["status", "--porcelain"]):
         raise ReleaseError("Cannot resume: working tree and index must be clean.")
@@ -2912,7 +2919,7 @@ def _resume_release_flow(level):
             raise ReleaseError(
                 f"Cannot resume: remote {ref} is missing or diverges from {commit}."
             )
-    if level != "patch" and remote[refs[0]] != commit:
+    if not dev_release and remote[refs[0]] != commit:
         _run_release_step(level, "push develop branch", lambda: _push_release_refs(
             level, version, integrated[0]
         ))
@@ -2921,6 +2928,7 @@ def _resume_release_flow(level):
             level, version, integrated[-1],
             include_branch=remote[refs[-1]] != commit,
             include_tag=tag_ref not in remote,
+            dev_release=dev_release,
         ))
     _run_release_step(level, "return to work", lambda: cmd_co([branches["work"]]))
     print(f"Release {version} publication completed successfully.")
@@ -2928,9 +2936,10 @@ def _resume_release_flow(level):
 
 ## @brief Execute `_execute_release_flow` runtime logic for Git-Alias CLI.
 # @details Orchestrates the full release pipeline for `major`, `minor`, and `patch` levels.
-#          Branch integration is level-dependent (REQ-045):
-#          - `patch`: merges `work` into `develop` and pushes `develop` only; skips `master`.
-#          - `major`/`minor`: integrates work/develop/master and prepares the tag,
+#          Branch integration is scope-dependent (REQ-045, REQ-072, REQ-200):
+#          - `dev_release=True`: merges `work` into `develop` and pushes `develop`
+#            with the exact release tag atomically; skips `master` entirely.
+#          - default: integrates work/develop/master and prepares the tag,
 #            pushes develop alone, then atomically publishes master and the exact tag.
 #          Changelog flags always include `--force-write`; `patch` auto-adds `--include-patch`.
 #          When `exec_args` is non-empty, an additional `run external command` step executes
@@ -2945,9 +2954,11 @@ def _resume_release_flow(level):
 #          with repository root as CWD and inherited stdio (REQ-166, REQ-167); a non-zero
 #          exit is converted by `_run_release_step` into a `ReleaseError` that aborts the
 #          release before staging, commit, tag, or push (REQ-168).
+# @param dev_release {bool} Develop-scoped release (REQ-045, REQ-200); integrates and
+#          publishes configured `develop` only, leaving `master` unchanged.
 # @return None; raises `ReleaseError` or `VersionDetectionError` on failure.
-# @satisfies REQ-026, REQ-045, REQ-166, REQ-167, REQ-168
-def _execute_release_flow(level, changelog_args=None, exec_args=None):
+# @satisfies REQ-026, REQ-045, REQ-072, REQ-166, REQ-167, REQ-168, REQ-200
+def _execute_release_flow(level, changelog_args=None, exec_args=None, dev_release=False):
     branches = _ensure_release_prerequisites()
     rules = get_version_rules()
     if not rules:
@@ -3009,7 +3020,7 @@ def _execute_release_flow(level, changelog_args=None, exec_args=None):
 
     _run_release_step(level, "checkout develop", lambda: cmd_co([develop_branch]))
     _run_release_step(level, "merge work into develop", lambda: cmd_me([work_branch]))
-    if level == "patch":
+    if dev_release:
         _run_release_step(
             level,
             "tag release on develop",
@@ -3018,7 +3029,9 @@ def _execute_release_flow(level, changelog_args=None, exec_args=None):
         _run_release_step(
             level,
             "push develop with release tag atomically",
-            lambda: _push_release_refs(level, target_version, develop_branch, include_tag=True),
+            lambda: _push_release_refs(
+                level, target_version, develop_branch, include_tag=True, dev_release=True
+            ),
         )
     else:
         _run_release_step(level, "checkout master", lambda: cmd_co([master_branch]))
@@ -3079,16 +3092,19 @@ def _execute_backup_flow():
 # @param changelog_args {List[str] | None} Optional extra changelog flags forwarded alongside `--force-write`.
 # @param exec_args {List[str] | None} Optional external command argv forwarded to
 #          `_execute_release_flow` for the injected exec step (REQ-166, REQ-167).
+# @param dev_release {bool} Develop-scoped release (REQ-045, REQ-200); forwarded to both
+#          `_resume_release_flow` and `_execute_release_flow`.
 # @return None; side-effects: release workflow execution and stderr diagnostics on failure.
 # @exception SystemExit Exit code 1 (or the failing command return code) on workflow failure.
-# @satisfies REQ-026, REQ-166, REQ-168
-def _run_release_command(level, changelog_args=None, exec_args=None):
+# @satisfies REQ-026, REQ-045, REQ-166, REQ-168, REQ-176, REQ-200
+def _run_release_command(level, changelog_args=None, exec_args=None, dev_release=False):
     try:
         if changelog_args == ["--resume"]:
-            _resume_release_flow(level)
+            _resume_release_flow(level, dev_release=dev_release)
         else:
             _execute_release_flow(
-                level, changelog_args=changelog_args, exec_args=exec_args
+                level, changelog_args=changelog_args, exec_args=exec_args,
+                dev_release=dev_release
             )
     except ReleaseError as exc:
         print(str(exc), file=sys.stderr)
@@ -3143,48 +3159,68 @@ def _reject_extra_arguments(extra, alias):
         sys.exit(1)
 
 
-## @brief Parse release flags, standalone resume, or an optional exec command tail.
-# @note Standalone --resume returns (["--resume"], []); combined resume options fail.
+## @brief Parse release flags, develop scope, standalone resume, or an exec command tail.
+# @note Standalone --resume, optionally combined with --dev/--develop, returns
+#          (["--resume"], [], True/False); any other resume combination fails.
 # @note Complexity: O(N) argv traversal; --exec tail remains opaque.
 # @details Applies rest-of-argv semantics: operand scanning stops at the first `--exec` token
 #          and every following operand is returned verbatim as the external command argv
-#          (command plus parameters) without flag validation. Operands before `--exec` are
-#          validated against the changelog whitelist `{"--include-patch"}` and deduplicated
-#          preserving first-occurrence order. The `--exec` tail is never merged into
-#          `changelog_args` and is therefore never forwarded to the `changelog` step (REQ-166).
+#          (command plus parameters) without flag validation. A `--resume` token before
+#          `--exec` selects recovery mode and MUST NOT combine with any flag other than
+#          `--dev`/`--develop` (REQ-176). Operands before `--exec` are validated against the
+#          whitelist `{"--include-patch", "--dev", "--develop"}` and deduplicated preserving
+#          first-occurrence order. Equivalent flags `--dev` and `--develop` (REQ-200) select
+#          the develop-scoped workflow (REQ-045) and are never forwarded to the `changelog`
+#          step. The `--exec` tail is never merged into `changelog_args` (REQ-166).
 # @param extra {List[str] | None} Raw CLI operands following the release alias token.
 # @param alias {str} Release alias name used in English diagnostics (`major`, `minor`, `patch`).
-# @return {Tuple[List[str], List[str]]} `(changelog_args, exec_args)`; `exec_args` is empty
-#          when `--exec` is absent and contains at least the command token otherwise.
-# @exception SystemExit Exit code 1 on unknown flags before `--exec` or on a parameterless `--exec`.
-# @satisfies REQ-166, REQ-168
+# @return {Tuple[List[str], List[str], bool]} `(changelog_args, exec_args, dev_release)`;
+#          `exec_args` is empty when `--exec` is absent; `dev_release` is True when
+#          `--dev`/`--develop` was supplied before `--exec`.
+# @exception SystemExit Exit code 1 on unknown flags before `--exec`, on a parameterless
+#          `--exec`, or on an invalid `--resume` combination.
+# @satisfies REQ-166, REQ-168, REQ-176, REQ-200
 def _parse_release_flags(extra, alias):
     args = _to_args(extra)
     if not args:
-        return [], []
-    if args == ["--resume"]:
-        return ["--resume"], []
-    allowed = {"--include-patch"}
+        return [], [], False
+    dev_flags = ("--dev", "--develop")
     exec_option = "--exec"
     if exec_option in args:
         exec_index = args.index(exec_option)
     else:
         exec_index = len(args)
+    if "--resume" in args[:exec_index]:
+        resume_args = args[:exec_index]
+        remaining = [arg for arg in resume_args if arg != "--resume"]
+        resume_is_valid = exec_index == len(args) and len(remaining) + 1 == len(
+            resume_args
+        ) and all(arg in dev_flags for arg in remaining)
+        if not resume_is_valid:
+            joined = ", ".join(resume_args)
+            print(
+                f"git {alias} accepts --resume only alone or with --dev/--develop (got {joined}).",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        return ["--resume"], [], any(arg in dev_flags for arg in remaining)
+    allowed = {"--include-patch", "--dev", "--develop"}
     flags = args[:exec_index]
     unknown = [arg for arg in flags if arg not in allowed]
     if unknown:
         joined = ", ".join(unknown)
         print(
-            f"git {alias} accepts only --include-patch, --exec, or standalone --resume (got {joined}).",
+            f"git {alias} accepts only --include-patch, --dev/--develop, --exec, or standalone --resume (got {joined}).",
             file=sys.stderr,
         )
         sys.exit(1)
-    deduped = []
+    changelog_args: List[str] = []
     seen = set()
     for arg in flags:
         if arg not in seen:
-            deduped.append(arg)
             seen.add(arg)
+            if arg not in dev_flags:
+                changelog_args.append(arg)
     exec_args: List[str] = []
     if exec_index < len(args):
         exec_args = args[exec_index + 1 :]
@@ -3194,7 +3230,7 @@ def _parse_release_flags(extra, alias):
                 file=sys.stderr,
             )
             sys.exit(1)
-    return deduped, exec_args
+    return changelog_args, exec_args, any(arg in dev_flags for arg in flags)
 
 
 ## @brief Execute `_prepare_commit_message` runtime logic for Git-Alias CLI.
@@ -5447,20 +5483,20 @@ def cmd_chver(extra):
 #          to both configured `develop` and `master` branches, regenerates changelog via a
 #          temporary local tag on `work`, and creates the definitive release tag on `master`
 #          before publication; pushes develop alone, then master and the exact tag atomically.
-#          Standalone --resume validates and publishes existing release objects unchanged.
+#          `--dev`/`--develop` limits the workflow to configured `develop` (REQ-045, REQ-200).
+#          Standalone --resume, optionally with --dev/--develop, validates and publishes
+#          existing release objects unchanged.
 # @param extra {List[str] | None} CLI argument strings; accepted flags: `--include-patch`,
-#        `--exec <command> [params...]` (REQ-166).
+#        `--dev`/`--develop` (REQ-200), `--exec <command> [params...]` (REQ-166).
 # @return None; delegates to `_run_release_command("major", ...)`.
 # @exception SystemExit Exit code 1 on invalid operands or release-flow failure.
-# @satisfies REQ-026, REQ-045, REQ-166, REQ-167, REQ-168
+# @satisfies REQ-026, REQ-045, REQ-072, REQ-166, REQ-167, REQ-168, REQ-200
 def cmd_major(extra):
-    changelog_args, exec_args = _parse_release_flags(extra, "major")
-    if exec_args:
-        _run_release_command(
-            "major", changelog_args=changelog_args, exec_args=exec_args
-        )
-    else:
-        _run_release_command("major", changelog_args=changelog_args)
+    changelog_args, exec_args, dev_release = _parse_release_flags(extra, "major")
+    _run_release_command(
+        "major", changelog_args=changelog_args, exec_args=exec_args,
+        dev_release=dev_release
+    )
 
 
 ## @brief CLI entry-point for the `minor` release subcommand.
@@ -5468,41 +5504,41 @@ def cmd_major(extra):
 #          configured `develop` and `master` branches, regenerates changelog via a temporary local
 #          tag on `work`, and creates the definitive release tag on `master` immediately before
 #          publication; pushes develop alone, then master and the exact tag atomically.
-#          Standalone --resume validates and publishes existing release objects unchanged.
+#          `--dev`/`--develop` limits the workflow to configured `develop` (REQ-045, REQ-200).
+#          Standalone --resume, optionally with --dev/--develop, validates and publishes
+#          existing release objects unchanged.
 # @param extra {List[str] | None} CLI argument strings; accepted flags: `--include-patch`,
-#        `--exec <command> [params...]` (REQ-166).
+#        `--dev`/`--develop` (REQ-200), `--exec <command> [params...]` (REQ-166).
 # @return None; delegates to `_run_release_command("minor", ...)`.
 # @exception SystemExit Exit code 1 on invalid operands or release-flow failure.
-# @satisfies REQ-026, REQ-045, REQ-166, REQ-167, REQ-168
+# @satisfies REQ-026, REQ-045, REQ-072, REQ-166, REQ-167, REQ-168, REQ-200
 def cmd_minor(extra):
-    changelog_args, exec_args = _parse_release_flags(extra, "minor")
-    if exec_args:
-        _run_release_command(
-            "minor", changelog_args=changelog_args, exec_args=exec_args
-        )
-    else:
-        _run_release_command("minor", changelog_args=changelog_args)
+    changelog_args, exec_args, dev_release = _parse_release_flags(extra, "minor")
+    _run_release_command(
+        "minor", changelog_args=changelog_args, exec_args=exec_args,
+        dev_release=dev_release
+    )
 
 
 ## @brief CLI entry-point for the `patch` release subcommand.
-# @details Increments the patch semver index, merges and pushes to configured `develop` only
-#          (MUST NOT merge or push to `master`), regenerates changelog via a temporary local tag
-#          on `work`, and creates the definitive release tag on `develop` immediately before
-#          publishing develop and the exact tag atomically; --include-patch is auto-included.
-#          Standalone --resume validates and publishes existing release objects unchanged.
+# @details Increments the patch semver index and runs the same default workflow as `major`
+#          and `minor`: integrates work/develop/master, tags configured `master`, pushes
+#          develop alone, then master and the exact tag atomically (REQ-072).
+#          `--dev`/`--develop` limits the workflow to configured `develop` (REQ-045, REQ-200);
+#          --include-patch is auto-included in the changelog regeneration step.
+#          Standalone --resume, optionally with --dev/--develop, validates and publishes
+#          existing release objects unchanged.
 # @param extra {List[str] | None} CLI argument strings; accepted flags: `--include-patch`,
-#        `--exec <command> [params...]` (REQ-166).
+#        `--dev`/`--develop` (REQ-200), `--exec <command> [params...]` (REQ-166).
 # @return None; delegates to `_run_release_command("patch", ...)`.
 # @exception SystemExit Exit code 1 on invalid operands or release-flow failure.
-# @satisfies REQ-026, REQ-045, REQ-166, REQ-167, REQ-168
+# @satisfies REQ-026, REQ-045, REQ-072, REQ-166, REQ-167, REQ-168, REQ-200
 def cmd_patch(extra):
-    changelog_args, exec_args = _parse_release_flags(extra, "patch")
-    if exec_args:
-        _run_release_command(
-            "patch", changelog_args=changelog_args, exec_args=exec_args
-        )
-    else:
-        _run_release_command("patch", changelog_args=changelog_args)
+    changelog_args, exec_args, dev_release = _parse_release_flags(extra, "patch")
+    _run_release_command(
+        "patch", changelog_args=changelog_args, exec_args=exec_args,
+        dev_release=dev_release
+    )
 
 
 ## @brief CLI entry-point for the `backup` workflow subcommand.

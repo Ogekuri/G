@@ -71,16 +71,25 @@ class ReleaseResumeTest(unittest.TestCase):
         for symbol in ("cmd_chver", "cmd_tg", "cmd_changelog", "_execute_commit", "run_command", "cmd_me"):
             self.enterContext(mock.patch.object(core, symbol, side_effect=AssertionError(symbol)))
 
-    ## @brief Verify standalone recovery and opaque external-command argv parsing.
+    ## @brief Verify standalone recovery, develop-scope parsing, and opaque exec argv.
     # @details O(1) parser checks; no runtime side effects.
     # @param self {ReleaseResumeTest} Isolated test instance.
-    # @return {None} Assert REQ-176 and preserved REQ-166 operand separation.
+    # @return {None} Assert REQ-176, REQ-200, and preserved REQ-166 separation.
     def test_resume_parser(self):
-        expected_output = (["--resume"], [])
+        expected_output = (["--resume"], [], False)
         self.assertEqual(core._parse_release_flags(["--resume"], "minor"), expected_output)
         self.assertEqual(
+            core._parse_release_flags(["--dev", "--resume"], "minor"),
+            (["--resume"], [], True),
+        )
+        self.assertEqual(
+            core._parse_release_flags(["--resume", "--develop"], "minor"),
+            (["--resume"], [], True),
+        )
+        self.assertEqual(core._parse_release_flags(["--dev"], "minor"), ([], [], True))
+        self.assertEqual(
             core._parse_release_flags(["--exec", "build", "--resume"], "minor"),
-            ([], ["build", "--resume"]),
+            ([], ["build", "--resume"], False),
         )
 
     ## @brief Reject combined recovery and creation options.
@@ -98,7 +107,8 @@ class ReleaseResumeTest(unittest.TestCase):
                     core._parse_release_flags(args, "minor")
 
     ## @brief Verify creation handlers dispatch resume without running creation.
-    # @details Mock both flow boundaries; O(1) dispatch for each supported level.
+    # @details Mock both flow boundaries; O(1) dispatch for each supported level;
+    #          develop-scoped recovery forwards dev_release=True (REQ-200).
     # @param self {ReleaseResumeTest} Isolated test instance.
     # @return {None} Assert REQ-176 recovery path and help visibility.
     def test_resume_cli_dispatch(self):
@@ -108,9 +118,14 @@ class ReleaseResumeTest(unittest.TestCase):
                     core, "_execute_release_flow"
                 ) as create:
                     core.COMMANDS[level](["--resume"])
-                self.assertEqual(resume.call_args, mock.call(level))
-                create.assert_not_called()
+                    self.assertEqual(resume.call_args, mock.call(level, dev_release=False))
+                    create.assert_not_called()
+                    resume.reset_mock()
+                    core.COMMANDS[level](["--dev", "--resume"])
+                    self.assertEqual(resume.call_args, mock.call(level, dev_release=True))
+                    create.assert_not_called()
                 self.assertIn("--resume", core.HELP_TEXTS[level])
+                self.assertIn("--dev", core.HELP_TEXTS[level])
 
     ## @brief Verify missing publication operations are selected independently.
     # @details Exercise preliminary failure, final failure, lost acknowledgement,
@@ -122,19 +137,23 @@ class ReleaseResumeTest(unittest.TestCase):
         cases = [
             ("old refs/heads/develop\nold refs/heads/master", [
                 mock.call("minor", "1.3.0", "develop"),
-                mock.call("minor", "1.3.0", "master", include_branch=True, include_tag=True),
+                mock.call("minor", "1.3.0", "master", include_branch=True, include_tag=True,
+                          dev_release=False),
             ]),
             ("commit refs/heads/develop\nold refs/heads/master", [
-                mock.call("minor", "1.3.0", "master", include_branch=True, include_tag=True),
+                mock.call("minor", "1.3.0", "master", include_branch=True, include_tag=True,
+                          dev_release=False),
             ]),
             ("commit refs/heads/develop\ncommit refs/heads/master", [
-                mock.call("minor", "1.3.0", "master", include_branch=False, include_tag=True),
+                mock.call("minor", "1.3.0", "master", include_branch=False, include_tag=True,
+                          dev_release=False),
             ]),
             ("commit refs/heads/develop\ncommit refs/heads/master\n"
              "tag-object refs/tags/v1.3.0\ncommit refs/tags/v1.3.0^{}", []),
             ("commit refs/heads/develop\nold refs/heads/master\n"
              "tag-object refs/tags/v1.3.0\ncommit refs/tags/v1.3.0^{}", [
-                mock.call("minor", "1.3.0", "master", include_branch=True, include_tag=False),
+                mock.call("minor", "1.3.0", "master", include_branch=True, include_tag=False,
+                          dev_release=False),
             ]),
         ]
         for remote, expected_output in cases:
@@ -147,39 +166,48 @@ class ReleaseResumeTest(unittest.TestCase):
                 self.checkout_mock.assert_called_once_with(["work"])
 
     ## @brief Resume major and patch publication using existing tag objects.
-    # @details Adapt synthetic semver; patch must never inspect or publish master;
-    #          observable mocks reset per SubTest iteration.
+    # @details Adapt synthetic semver; default patch publishes master like
+    #          major/minor (REQ-072); develop-scoped patch never inspects or
+    #          publishes master (REQ-045); observable mocks reset per SubTest.
     # @param self {ReleaseResumeTest} Isolated test instance.
     # @return {None} Assert REQ-045, REQ-072, REQ-177, and REQ-179.
     def test_resume_major_and_patch(self):
-        cases = [("major", "2.0.0", "master"), ("patch", "1.2.4", "develop")]
-        for level, version, target in cases:
+        def prepare(version):
+            self.push_mock.reset_mock()
+            self.git_mock.reset_mock()
+            for key in list(self.responses):
+                if isinstance(key, tuple) and any("v1.3.0" in arg for arg in key):
+                    replaced = tuple(arg.replace("v1.3.0", f"v{version}") for arg in key)
+                    self.responses[replaced] = self.responses[key]
+            self.responses[("show", "-s", "--format=%s", "commit")] = (
+                f"release: Release version {version}"
+            )
+            self.version_mock.return_value = version
+
+        cases = [("major", "2.0.0"), ("patch", "1.2.4")]
+        for level, version in cases:
             with self.subTest(level=level):
-                self.push_mock.reset_mock()
-                self.git_mock.reset_mock()
-                for key in list(self.responses):
-                    if isinstance(key, tuple) and any("v1.3.0" in arg for arg in key):
-                        replaced = tuple(arg.replace("v1.3.0", f"v{version}") for arg in key)
-                        self.responses[replaced] = self.responses[key]
-                self.responses[("show", "-s", "--format=%s", "commit")] = (
-                    f"release: Release version {version}"
-                )
-                self.version_mock.return_value = version
-                self.branch_mock.return_value = target
+                prepare(version)
+                self.branch_mock.return_value = "develop"
                 core._resume_release_flow(level)
-                if level == "patch":
-                    expected_output = [mock.call(
-                        level, version, target, include_branch=True, include_tag=True
-                    )]
-                else:
-                    expected_output = [
-                        mock.call(level, version, "develop"),
-                        mock.call(level, version, target, include_branch=True, include_tag=True),
-                    ]
+                expected_output = [
+                    mock.call(level, version, "develop"),
+                    mock.call(
+                        level, version, "master",
+                        include_branch=True, include_tag=True, dev_release=False,
+                    ),
+                ]
                 self.assertEqual(self.push_mock.call_args_list, expected_output)
-                if level == "patch":
-                    git_calls = self.git_mock.call_args_list
-                    self.assertTrue(all("master" not in str(call) for call in git_calls))
+        with self.subTest(level="patch", dev_release=True):
+            prepare("1.2.4")
+            self.branch_mock.return_value = "develop"
+            core._resume_release_flow("patch", dev_release=True)
+            self.assertEqual(self.push_mock.call_args_list, [mock.call(
+                "patch", "1.2.4", "develop",
+                include_branch=True, include_tag=True, dev_release=True,
+            )])
+            git_calls = self.git_mock.call_args_list
+            self.assertTrue(all("master" not in str(call) for call in git_calls))
 
     ## @brief Validate local release state before publication.
     # @details Inject one dirty, moved, unannotated, mismatched, or ambiguous input.
@@ -283,6 +311,26 @@ class ReleaseResumeTest(unittest.TestCase):
                 for expected_output in ("Push failed", "1.3.0", "refs/heads/master",
                                         "refs/tags/v1.3.0", "g minor --resume"):
                     self.assertIn(expected_output, details)
+
+    ## @brief Verify develop-scoped publication diagnostics.
+    # @details Execute the real helper with a mocked Git rejection; the REQ-180
+    #          recovery command must include --dev for develop-scoped releases.
+    # @param self {ReleaseResumeTest} Isolated test instance.
+    # @return {None} Assert REQ-180 scope-aware recovery guidance.
+    def test_push_failure_dev_scope_reports_dev_resume(self):
+        failure = core.CommandExecutionError(
+            subprocess.CalledProcessError(
+                128, ["git", "push", "origin"], stderr=b"protected branch hook declined"
+            )
+        )
+        with mock.patch.object(core, "run_git_cmd", side_effect=failure):
+            with self.assertRaises(core.ReleaseError) as error:
+                self.push_impl(
+                    "patch", "1.2.4", "develop", include_tag=True, dev_release=True
+                )
+        details = str(error.exception)
+        self.assertIn("g patch --dev --resume", details)
+        self.assertIn("work/develop tips", details)
 
     ## @brief Verify empty and tag-only publication selections.
     # @details Execute the real helper against a mocked Git boundary through the

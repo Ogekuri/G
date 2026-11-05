@@ -10,11 +10,11 @@ class ReleaseFlowTest(unittest.TestCase):
     def setUp(self):
         core.CONFIG.update(core.DEFAULT_CONFIG)
 
-    ## @brief Verify patch publication selects the atomic develop/tag step.
+    ## @brief Verify default patch publication selects the unified master flow.
     # @details Record orchestration only; Git operations remain mocked.
     # @param self {ReleaseFlowTest} Isolated test instance.
-    # @return {None} Assert REQ-045 publication step.
-    def test_patch_release_pushes_develop_with_release_tag(self):
+    # @return {None} Assert REQ-072 publication steps.
+    def test_patch_release_pushes_master_with_release_tag(self):
         steps = []
 
         def record_step(level, step_name, action):
@@ -32,8 +32,38 @@ class ReleaseFlowTest(unittest.TestCase):
             core._execute_release_flow("patch")
 
         self.assertTrue(steps)
+        self.assertIn("checkout master", steps)
+        self.assertIn("merge develop into master", steps)
+        self.assertIn("tag release on master", steps)
+        self.assertIn("push develop branch", steps)
+        self.assertIn("push master with release tag atomically", steps)
+        self.assertNotIn("push develop with release tag atomically", steps)
+
+    ## @brief Verify develop-scoped publication selects the atomic develop/tag step.
+    # @details Record orchestration only; Git operations remain mocked.
+    # @param self {ReleaseFlowTest} Isolated test instance.
+    # @return {None} Assert REQ-045 publication step.
+    def test_dev_release_pushes_develop_with_release_tag(self):
+        steps = []
+
+        def record_step(level, step_name, action):
+            steps.append(step_name)
+
+        with mock.patch.object(
+            core,
+            "_ensure_release_prerequisites",
+            return_value={"master": "master", "develop": "develop", "work": "work"},
+        ), mock.patch.object(core, "get_version_rules", return_value=[("README.md", "x")]), mock.patch.object(
+            core, "_determine_canonical_version", return_value="1.2.3"
+        ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
+            core, "_run_release_step", side_effect=record_step
+        ):
+            core._execute_release_flow("patch", dev_release=True)
+
+        self.assertTrue(steps)
         self.assertIn("push develop with release tag atomically", steps)
-        self.assertNotIn("push tags", steps)
+        self.assertNotIn("push develop branch", steps)
+        self.assertNotIn("push master with release tag atomically", steps)
 
     def test_release_step_formats_output_with_level(self):
         buffer = io.StringIO()
@@ -119,7 +149,26 @@ class ReleaseFlowTest(unittest.TestCase):
     def test_release_commands_accept_include_patch_flag(self):
         with mock.patch.object(core, "_run_release_command") as run_release:
             core.cmd_patch(["--include-patch"])
-        run_release.assert_called_once_with("patch", changelog_args=["--include-patch"])
+        run_release.assert_called_once_with(
+            "patch", changelog_args=["--include-patch"], exec_args=[], dev_release=False
+        )
+
+    ## @brief Verify develop-scope flag parsing and dispatch on every level.
+    # @details Equivalent --dev/--develop flags select dev_release=True and are
+    #          never forwarded to the changelog step (REQ-200).
+    # @param self {ReleaseFlowTest} Isolated test instance.
+    # @return {None} Assert REQ-200 flag dispatch.
+    def test_release_commands_accept_dev_flags(self):
+        with mock.patch.object(core, "_run_release_command") as run_release:
+            core.cmd_minor(["--dev", "--include-patch"])
+        run_release.assert_called_once_with(
+            "minor", changelog_args=["--include-patch"], exec_args=[], dev_release=True
+        )
+        with mock.patch.object(core, "_run_release_command") as run_release:
+            core.cmd_major(["--develop"])
+        run_release.assert_called_once_with(
+            "major", changelog_args=[], exec_args=[], dev_release=True
+        )
 
     def test_release_commands_reject_unknown_flags(self):
         err = io.StringIO()
@@ -128,8 +177,8 @@ class ReleaseFlowTest(unittest.TestCase):
                 core.cmd_patch(["--unexpected"])
         self.assertIn("accepts only --include-patch", err.getvalue())
 
-    def test_patch_release_skips_master_steps(self):
-        # patch level MUST NOT execute checkout master / merge develop into master / tag/push master
+    def test_dev_release_skips_master_steps(self):
+        # develop-scoped releases MUST NOT execute checkout master / merge develop into master / tag/push master
         steps = []
 
         def record_step(level, step_name, action):
@@ -144,7 +193,7 @@ class ReleaseFlowTest(unittest.TestCase):
         ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
             core, "_run_release_step", side_effect=record_step
         ):
-            core._execute_release_flow("patch")
+            core._execute_release_flow("patch", dev_release=True)
 
         self.assertNotIn("checkout master", steps)
         self.assertNotIn("merge develop into master", steps)
@@ -221,7 +270,7 @@ class ReleaseFlowTest(unittest.TestCase):
         ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
             core, "_run_release_step", side_effect=run_step
         ), mock.patch.object(core, "cmd_tg") as cmd_tg, mock.patch.object(core, "run_git_cmd") as run_git:
-            core._execute_release_flow("patch")
+            core._execute_release_flow("patch", dev_release=True)
 
         cmd_tg.assert_has_calls(
             [
@@ -233,14 +282,44 @@ class ReleaseFlowTest(unittest.TestCase):
         self.assertLess(steps.index("create temporary changelog tag"), steps.index("regenerate changelog"))
         self.assertLess(steps.index("regenerate changelog"), steps.index("delete temporary changelog tag"))
 
-    ## @brief Verify exact atomic patch publication argv via inherited stdio.
+    ## @brief Verify exact unified patch publication argv via inherited stdio.
+    # @details Isolate Git; assert ordered explicit refspecs for REQ-072 and
+    #          delegation through the shared inherited-stdio wrapper
+    #          (`run_git_cmd`) so push output and interactive SSH
+    #          authentication reach the user terminal.
+    # @param self {ReleaseFlowTest} Isolated test instance.
+    # @return {None} Assert REQ-072 push contract.
+    def test_patch_push_uses_exact_release_tag(self):
+        def run_step(_level, step_name, action):
+            if step_name in {"push develop branch", "push master with release tag atomically"}:
+                action()
+            return None
+
+        with mock.patch.object(
+            core,
+            "_ensure_release_prerequisites",
+            return_value={"master": "master", "develop": "develop", "work": "work"},
+        ), mock.patch.object(core, "get_version_rules", return_value=[("README.md", "x")]), mock.patch.object(
+            core, "_determine_canonical_version", return_value="1.2.3"
+        ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
+            core, "_run_release_step", side_effect=run_step
+        ), mock.patch.object(core, "run_git_cmd") as run_git:
+            core._execute_release_flow("patch")
+        expected_output = [
+            mock.call(["push", "--no-follow-tags", "origin", "refs/heads/develop:refs/heads/develop"]),
+            mock.call(["push", "--no-follow-tags", "--atomic", "origin",
+                       "refs/heads/master:refs/heads/master", "refs/tags/v1.2.4:refs/tags/v1.2.4"]),
+        ]
+        self.assertEqual(run_git.call_args_list, expected_output)
+
+    ## @brief Verify exact atomic develop-scoped publication argv via inherited stdio.
     # @details Isolate Git; assert explicit refspecs, disabled implicit tag
     #          following, and delegation through the shared inherited-stdio
     #          wrapper (`run_git_cmd`) so push output and interactive SSH
     #          authentication reach the user terminal.
     # @param self {ReleaseFlowTest} Isolated test instance.
     # @return {None} Assert REQ-045 push contract.
-    def test_patch_push_uses_exact_release_tag(self):
+    def test_dev_patch_push_uses_exact_release_tag(self):
         def run_step(_level, step_name, action):
             if step_name == "push develop with release tag atomically":
                 action()
@@ -255,7 +334,7 @@ class ReleaseFlowTest(unittest.TestCase):
         ), mock.patch.object(core, "_bump_semver_version", return_value="1.2.4"), mock.patch.object(
             core, "_run_release_step", side_effect=run_step
         ), mock.patch.object(core, "run_git_cmd") as run_git:
-            core._execute_release_flow("patch")
+            core._execute_release_flow("patch", dev_release=True)
         expected_output = ["push", "--no-follow-tags", "--atomic", "origin",
                            "refs/heads/develop:refs/heads/develop", "refs/tags/v1.2.4:refs/tags/v1.2.4"]
         run_git.assert_called_once_with(expected_output)
