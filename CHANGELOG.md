@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.49.0](https://github.com/Ogekuri/GAlias/compare/v0.48.0..v0.49.0) - 2026-11-05
+### 🚜  Changes
+- gate PyPI publish to master, run release for develop tags [useReq] *(release-pypi)*
+  - Widen workflow gate: release runs for tags on origin/master or origin/develop (REQ-112)
+  - Export is_master/is_develop/is_release containment outputs from check-branch job
+  - Gate PyPI publication step to master-contained tag commits (REQ-205)
+  - Skip PyPI publication for develop-only tags while keeping GitHub Release (REQ-206)
+  - Update SRS to v1.30 with revised REQ-112 and new REQ-205/REQ-206 evidence
+
 ## [0.48.0](https://github.com/Ogekuri/GAlias/compare/v0.47.0..v0.48.0) - 2026-11-05
 ### 🐛  Bug Fixes
 - Ux.lock version.
@@ -912,6 +921,7 @@
 - \[0.46.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.46.0
 - \[0.47.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.47.0
 - \[0.48.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.48.0
+- \[0.49.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.49.0
 
 [0.1.0]: https://github.com/Ogekuri/GAlias/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/GAlias/compare/v0.1.0..v0.2.0
@@ -961,3 +971,4 @@
 [0.46.0]: https://github.com/Ogekuri/GAlias/compare/v0.45.0..v0.46.0
 [0.47.0]: https://github.com/Ogekuri/GAlias/compare/v0.46.0..v0.47.0
 [0.48.0]: https://github.com/Ogekuri/GAlias/compare/v0.47.0..v0.48.0
+[0.49.0]: https://github.com/Ogekuri/GAlias/compare/v0.48.0..v0.49.0
