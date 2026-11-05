@@ -128,6 +128,34 @@ class ReleaseWorkflowPyPiTest(unittest.TestCase):
             self.assertIn(key, urls)
             self.assertIn("https://github.com/Ogekuri/GAlias", urls[key])
 
+    ## @brief Registered trove classifier inventory declared by pyproject.toml.
+    # @details Exact-contract set of officially registered PyPI trove classifiers;
+    #          PyPI warehouse rejects any classifier outside the published list
+    #          with HTTP 400 during upload.
+    VALID_TROVE_CLASSIFIERS = (
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Topic :: Software Development :: Version Control",
+    )
+
+    ## @brief Verify pyproject classifiers are registered trove entries.
+    # @details Reproduces the PyPI upload 400 rejection: declaring the
+    #          unregistered classifier
+    #          `Topic :: Software Development :: Configuration Management`
+    #          makes warehouse refuse the distribution metadata.
+    # @return None.
+    # @satisfies REQ-196
+    def test_pyproject_classifiers_are_registered_trove_entries(self):
+        project = self._pyproject()["project"]
+        self.assertEqual(tuple(project["classifiers"]), self.VALID_TROVE_CLASSIFIERS)
+        self.assertNotIn(
+            "Topic :: Software Development :: Configuration Management",
+            project["classifiers"],
+        )
+
     ## @brief Verify pyproject declares a PEP 639 SPDX license.
     # @return None.
     # @satisfies REQ-197
