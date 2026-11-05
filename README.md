@@ -1,4 +1,4 @@
-# GitAlias/Git-Alias CLI (0.45.0)
+# GAlias CLI (0.45.0)
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+">
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-<strong>Git-Alias CLI provides a command-line interface to replicate the Git aliases defined in this package.</strong><br>
-This allows them to be run both as a Python package (installed as <b>g</b> or <b>git-alias</b>) and directly using <b>uvx</b>.<br>
+<strong>GAlias CLI provides a command-line interface to replicate the Git aliases defined in this package.</strong><br>
+This allows them to be run both as a Python package (installed as <b>g</b> or <b>galias</b>) and directly using <b>uvx</b>.<br>
 <i>This is a companion script for the <b><a href="https://github.com/Ogekuri/useReq">useReq/req</a></b> </i>🤖✨.
 </p>
 
@@ -65,9 +65,9 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 - Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--include-patch`, `--force-write`, `--print-only`, `--disable-history`).
 - Self-upgrade and self-uninstall management commands are Linux-only for local execution (`--upgrade`, `--uninstall`), with manual command hints on other platforms.
 - Includes a **quick overview** command `o`:
-[![Flowchart](https://raw.githubusercontent.com/Ogekuri/GitAlias/refs/heads/master/images/command_o_overview_sample1.png)](https://raw.githubusercontent.com/Ogekuri/GitAlias/refs/heads/master/images/command_o_overview_sample1.png)
+[![Flowchart](https://raw.githubusercontent.com/Ogekuri/GAlias/refs/heads/master/images/command_o_overview_sample1.png)](https://raw.githubusercontent.com/Ogekuri/GAlias/refs/heads/master/images/command_o_overview_sample1.png)
 - Includes **git-foresta** command `l`:
-[![Flowchart](https://raw.githubusercontent.com/Ogekuri/GitAlias/refs/heads/master/images/commnad_l_git-foresta-sample1.png)](https://raw.githubusercontent.com/Ogekuri/GitAlias/refs/heads/master/images/commnad_l_git-foresta-sample1.png)
+[![Flowchart](https://raw.githubusercontent.com/Ogekuri/GAlias/refs/heads/master/images/commnad_l_git-foresta-sample1.png)](https://raw.githubusercontent.com/Ogekuri/GAlias/refs/heads/master/images/commnad_l_git-foresta-sample1.png)
   Options include `--all`, `--no-color`, `--no-status`, `--reverse`, `--wrap`, `--abbrev=<n>`, `--svdepth=<n>`, `--style=<n>`, `--graph-margin-left=<n>`, `--graph-margin-right=<n>`, and `--graph-symbol-*` overrides.
 
 
@@ -90,16 +90,16 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 - Install the `uv` tool from: [https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/)
 
 
-### Install GitAlias/Git-Alias
+### Install GAlias
 
   - Install or Upgrade
   ```bash
-  uv tool install git-alias --force --from git+https://github.com/Ogekuri/GitAlias.git
+  uv tool install galias --force --from git+https://github.com/Ogekuri/GAlias.git
   ```
 
   - Run Directly from the Repository
   ```bash
-  uvx --from git+https://github.com/Ogekuri/GitAlias.git git-alias <command> [args...]
+  uvx --from git+https://github.com/Ogekuri/GAlias.git galias <command> [args...]
   ```
 
   - Run with the Repository-Local Launcher (no installation required)
@@ -110,7 +110,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
   Requires Astral `uv` in `PATH`: the launcher resolves the repository root and delegates execution to `uv run --project <repo> python -m git_alias`.
 
 
-### Create Configuration Files (`.g.conf` + `$HOME/.config/git-alias/config.json`)
+### Create Configuration Files (`.g.conf` + `$HOME/.config/galias/config.json`)
 
 ```bash
 g --write-config
@@ -142,7 +142,7 @@ Pattern examples (`ver_rules.pattern`, gitignore syntax):
 
 The default `ver_rules` select `README.md`, `src/**/*.py`, and `pyproject.toml`.
 
-- Customize global `$HOME/.config/git-alias/config.json` with `edit_command`, `gp_command`, and `gr_command`.
+- Customize global `$HOME/.config/galias/config.json` with `edit_command`, `gp_command`, and `gr_command`.
 - Running `g --write-config` normalizes both files to these key sets and migrates legacy global `editor` to `edit_command`.
 
 
@@ -175,13 +175,13 @@ The command must run from the `work` branch with a clean working tree; it bumps 
 
 ## Management Commands
 
-Upgrade or uninstall the Git-Alias CLI:
+Upgrade or uninstall the GAlias CLI:
 
-- `g --upgrade` / `git-alias --upgrade`: Reinstalls the tool from the GitHub repository on Linux; on non-Linux platforms it prints the equivalent manual command.
-- `g --uninstall` / `git-alias --uninstall`: Uninstalls the tool on Linux; on non-Linux platforms it prints the equivalent manual command.
-- `g --write-config` / `git-alias --write-config`: Inserts missing defaults into repository `.g.conf` and global `$HOME/.config/git-alias/config.json`.
-- `g --ver` / `g --version` / `git-alias --ver` / `git-alias --version`: Prints the CLI version.
-- `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
+- `g --upgrade` / `galias --upgrade`: Reinstalls the tool from the GitHub repository on Linux; on non-Linux platforms it prints the equivalent manual command.
+- `g --uninstall` / `galias --uninstall`: Uninstalls the tool on Linux; on non-Linux platforms it prints the equivalent manual command.
+- `g --write-config` / `galias --write-config`: Inserts missing defaults into repository `.g.conf` and global `$HOME/.config/galias/config.json`.
+- `g --ver` / `g --version` / `galias --ver` / `galias --version`: Prints the CLI version.
+- `g --help` / `galias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
 
 ### README Maintenance Policy
 
@@ -194,7 +194,7 @@ Internal logic-only refactoring that does not change command behavior does not r
 Some CLI examples:
 
 - `g`: Prints `Please provide a command or --help` and `Usage: g <command> [options]`.
-- `g --help` / `git-alias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
+- `g --help` / `galias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
 - `g lg --help`: Shows the help text for the `lg` alias.
 - `g cm "Message"`: Runs `git commit` with the provided message.
 - `g new api: add endpoint`: Creates `new(api): Add endpoint.` (first letter normalized to uppercase and a trailing period added when missing).

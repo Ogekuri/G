@@ -1,5 +1,5 @@
 ---
-title: "Git-Alias CLI Requirements"
+title: "GAlias CLI Requirements"
 description: "Software Requirements Specification"
 date: "2026-02-25"
 author: "Francesco Rolando"
@@ -11,17 +11,18 @@ scope:
     - "tests/**"
     - "doxygen/**"
 visibility: "draft"
-tags: ["requirements", "srs", "git-alias"]
+tags: ["requirements", "srs", "galias"]
 ---
 
-# Git-Alias CLI Requirements
-**Version**: 1.23
+# GAlias CLI Requirements
+**Version**: 1.24
 **Author**: Francesco Rolando
 **Date**: 2026-11-05
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-11-05 | 1.24 | Renamed the upstream GitHub repository to `Ogekuri/GAlias` (REQ-001, REQ-124), renamed the distribution/tool/binaries to `galias` with `g` and removed `git-alias` (PRJ-001, CPT-002, REQ-001, REQ-002), and renamed user-facing cache/config paths to `~/.cache/galias` and `~/.config/galias` (REQ-002, REQ-013, REQ-014, REQ-030, REQ-033, REQ-126, REQ-136, REQ-137, CTN-003, DES-006, DES-009, REQ-186). |
 | 2026-11-05 | 1.23 | Renamed the upstream GitHub repository from `Ogekuri/G` to `Ogekuri/GitAlias` in the `--upgrade` source URL (REQ-001) and the release-check API URL (REQ-124). |
 | 2026-11-03 | 1.22 | Imposed defaults `edit`/`sublime_text`, `icdiff`/`meld`, `tig`/`gitg`, `gitui`/`sublime_merge --multiinstance .` for the eight global command keys (REQ-191) and required their contiguous canonical print order in Configuration Parameters output (REQ-192). |
 | 2026-11-03 | 1.21 | Changed visual diff execution to `git difftool -d` with the environment-selected `diff_command`/`diff_command_gfx` injected as `--extcmd`, overriding git's configured diff tool; empty resolved command runs plain `git difftool -d`. |
@@ -51,7 +52,7 @@ tags: ["requirements", "srs", "git-alias"]
 | 2026-02-25 | 0.98 | Recreated SRS structure in English from repository evidence while preserving existing requirement IDs and appending workflow coverage requirements. |
 
 ## 1. Introduction
-This SRS defines machine-testable requirements for the Git-Alias CLI and associated release automation implemented in the repository.
+This SRS defines machine-testable requirements for the GAlias CLI and associated release automation implemented in the repository.
 
 ### 1.1 Document Rules
 - The document MUST be written in English.
@@ -61,22 +62,22 @@ This SRS defines machine-testable requirements for the Git-Alias CLI and associa
 - Each requirement MUST be atomic, verifiable, and testable.
 
 ### 1.2 Project Scope
-The project provides a Python CLI (`git-alias` / `g`) that executes curated git aliases, manages local/global configuration, automates release-oriented operations, and exposes text/GUI repository inspection commands.
+The project provides a Python CLI (`galias` / `g`) that executes curated git aliases, manages local/global configuration, automates release-oriented operations, and exposes text/GUI repository inspection commands.
 
 ## 2. Project Requirements
 ### 2.1 Project Functions
-- **PRJ-001**: MUST expose `git-alias` and `g` commands that dispatch to aliases implemented in `core.py` for execution in the current git repository.
+- **PRJ-001**: MUST expose `galias` and `g` commands that dispatch to aliases implemented in `core.py` for execution in the current git repository.
 - **PRJ-002**: MUST provide integrated help that lists available aliases and prints each alias description in English.
 - **PRJ-003**: MUST support self-upgrade and self-uninstall through dedicated CLI management commands (`--upgrade`, `--uninstall`).
 
 ### 2.2 Project Constraints
 - **CTN-001**: MUST require Python 3.11 or newer at runtime.
 - **CTN-002**: MUST require `git` in PATH, MUST require `gitk` and Astral `uv` for related aliases and launcher flows, and MUST NOT require external or system-managed Python virtual environments.
-- **CTN-003**: MUST file-edit aliases MUST use a CLI-invokable editor configured by `edit_command` in `$HOME/.config/git-alias/config.json`, defaulting to `edit` when the file, key, or value is missing or invalid, with graphical environments selecting `edit_command_gfx` per REQ-187 and REQ-188.
+- **CTN-003**: MUST file-edit aliases MUST use a CLI-invokable editor configured by `edit_command` in `$HOME/.config/galias/config.json`, defaulting to `edit` when the file, key, or value is missing or invalid, with graphical environments selecting `edit_command_gfx` per REQ-187 and REQ-188.
 
 ### 2.3 Components and Libraries
 - **CPT-001**: MUST implement CLI dispatch and alias runtime behavior in `src/git_alias/core.py`.
-- **CPT-002**: MUST provide package entrypoints through `src/git_alias/__main__.py` and console scripts `git-alias` and `g`.
+- **CPT-002**: MUST provide package entrypoints through `src/git_alias/__main__.py` and console scripts `galias` and `g`.
 - **CPT-003**: MUST include automated tests under `tests/` covering user-visible command contracts.
 - **CPT-004**: MUST treat `uv.lock` as canonical dependency lock inventory, MUST keep `pyproject.toml` synchronized with it, MUST include `pytest` as an Astral `uv`-managed dependency, and MAY generate transient `requirements.txt` via `uv export` only when explicitly needed.
 - **CPT-005**: MUST invoke external executables `git`, `gitk`, and Astral `uv` (including `uvx` and `uv run`) for delegated operations.
@@ -91,14 +92,14 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **DES-003**: MUST define help text for every command and list commands alphabetically in global help output.
 - **DES-004**: MUST print an explicit message plus full help and exit non-zero when invoked without arguments.
 - **DES-005**: MUST compose complex aliases by reusing simpler alias functions when overlapping behavior exists.
-- **DES-006**: MUST the executable MUST load `.g.conf` for `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`, and `$HOME/.config/git-alias/config.json` for `edit_command`, `edit_command_gfx`, `gp_command`, `gp_command_gfx`, `gr_command`, `gr_command_gfx`, `diff_command`, and `diff_command_gfx`, and MUST ignore out-of-scope keys in each file.
+- **DES-006**: MUST the executable MUST load `.g.conf` for `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`, and `$HOME/.config/galias/config.json` for `edit_command`, `edit_command_gfx`, `gp_command`, `gp_command_gfx`, `gr_command`, `gr_command_gfx`, `diff_command`, and `diff_command_gfx`, and MUST ignore out-of-scope keys in each file.
 - **DES-007**: MUST centralize commit-readiness checks in reusable functions shared by `cm`, `wip`, and related aliases; readiness MUST succeed when staging is non-empty OR working-tree is dirty; MUST fail when both staging and working-tree have no committable data; MUST invoke `aa` to auto-stage working-tree changes when staging is empty and working-tree is dirty.
 - **DES-008**: MUST print all console messages in English.
-- **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.g.conf` plus `$HOME/.config/git-alias/config.json`, otherwise defaults from `DEFAULT_CONFIG`.
+- **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.g.conf` plus `$HOME/.config/galias/config.json`, otherwise defaults from `DEFAULT_CONFIG`.
 
 ### 3.2 Functional Requirements
-- **REQ-001**: MUST execute `uv tool install git-alias --force --from git+https://github.com/Ogekuri/GitAlias.git` when `--upgrade` is invoked on Linux.
-- **REQ-002**: MUST when `--uninstall` is invoked on Linux, delete `~/.cache/git-alias/check_version_idle-time.json`, remove `~/.cache/git-alias`, and execute `uv tool uninstall git-alias`.
+- **REQ-001**: MUST execute `uv tool install galias --force --from git+https://github.com/Ogekuri/GAlias.git` when `--upgrade` is invoked on Linux.
+- **REQ-002**: MUST when `--uninstall` is invoked on Linux, delete `~/.cache/galias/check_version_idle-time.json`, remove `~/.cache/galias`, and execute `uv tool uninstall galias`.
 - **REQ-129**: MUST NOT execute local `uv tool install` when `--upgrade` is invoked on non-Linux platforms, and MUST print the exact manual install command for user execution.
 - **REQ-130**: MUST NOT execute local `uv tool uninstall` when `--uninstall` is invoked on non-Linux platforms, and MUST print the exact manual uninstall command for user execution.
 - **REQ-003**: MUST show global command help or specific command help via `--help`, and per-command help text MUST explicitly list supported options when present.
@@ -111,8 +112,8 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-010**: MUST the system MUST limit automated workflow aliases to the documented set (currently `major`, `minor`, `patch`, `backup`) and MUST NOT introduce additional automatic workflow shortcuts beyond those specified.
 - **REQ-011**: MUST provide reset/cleanup aliases (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`, `rmloc`, `rmstg`, `rmunt`) and MUST print dedicated reset help when `rs*` commands receive `--help`.
 - **REQ-012**: MUST tagging and archive aliases MUST support annotated tag creation (`tg`), local/remote tag deletion (`rmtg`), tag listing (`lt`), and archiving configured `master` in tar.gz (`ar`).
-- **REQ-013**: MUST open file paths through `ed` using `edit_command` from `$HOME/.config/git-alias/config.json` (default `edit`) and MUST fail with explicit error when no path is supplied.
-- **REQ-014**: MUST normalize `.g.conf` to keys `master`, `develop`, `work`, `default_commit_module`, `ver_rules` and normalize `$HOME/.config/git-alias/config.json` to the eight REQ-186 global command keys when `--write-config` runs.
+- **REQ-013**: MUST open file paths through `ed` using `edit_command` from `$HOME/.config/galias/config.json` (default `edit`) and MUST fail with explicit error when no path is supplied.
+- **REQ-014**: MUST normalize `.g.conf` to keys `master`, `develop`, `work`, `default_commit_module`, `ver_rules` and normalize `$HOME/.config/galias/config.json` to the eight REQ-186 global command keys when `--write-config` runs.
 - **REQ-015**: MUST migrate legacy global key `editor` to `edit_command` during `--write-config` when `edit_command` is missing, and MUST remove `editor` from persisted output.
 - **REQ-016**: MUST show management commands before alias listings when global help is requested or when command input is missing.
 - **REQ-017**: MUST evaluate `ver_rules` from `.g.conf` (or defaults), build repository candidates from `git ls-files`, apply pathspec matching plus hardcoded cache/temp exclusions, and fail on mismatched or missing version matches as specified.
@@ -145,9 +146,9 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-027**: MUST the internal `cmd_release` function MUST reuse the same staging/worktree readiness and WIP amend decision logic used by `wip`, MUST determine the current version via `ver` before committing, MUST fail with the propagated detection error when version resolution fails, MUST create a `release: Release version <ver>` commit (where `<ver>` is `major.minor.patch`) by amending HEAD only when HEAD is an amendable `wip: work in progress.` commit not yet contained in configured `develop` and `master` and otherwise by creating a new commit, and MUST remain unavailable as a user-exposed CLI command.
 - **REQ-028**: MUST implement `ra` as inverse of `aa` by requiring configured `work` branch, no pending unstaged changes, and non-empty staging before unstaging all indexed entries.
 - **REQ-029**: MUST print usage with package version suffix `(x.y.z)` when CLI is invoked without command arguments.
-- **REQ-030**: MUST when invoked with `--ver` or `--version`, force an online update check that ignores `~/.cache/git-alias/check_version_idle-time.json` and then print the package version and exit successfully.
+- **REQ-030**: MUST when invoked with `--ver` or `--version`, force an online update check that ignores `~/.cache/galias/check_version_idle-time.json` and then print the package version and exit successfully.
 - **REQ-031**: MUST keep all CLI output messages in English, including usage/help/info/debug/error paths.
-- **REQ-033**: MUST execute update checks before CLI argument validation only when `~/.cache/git-alias/check_version_idle-time.json` does not exist or its `idle_until_unix` timestamp is expired, except when REQ-030 mandates a forced online check.
+- **REQ-033**: MUST execute update checks before CLI argument validation only when `~/.cache/galias/check_version_idle-time.json` does not exist or its `idle_until_unix` timestamp is expired, except when REQ-030 mandates a forced online check.
 - **REQ-034**: MUST run `git remote -v`, print unique remote names, and run `git remote show <remote>` for each discovered remote in alias `str`.
 - **REQ-035**: MUST support `ver --verbose` (per-file regex outcome output) and `ver --debug` (full glob-match listing for each rule pattern).
 - **REQ-036**: MAY provide repository-local Doxygen generation assets; when present they SHOULD generate documentation under `doxygen/` from `src/`; CLI runtime and release workflow MUST remain functional when such assets are absent.
@@ -156,7 +157,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-183**: MUST `dc` execute `git difftool -d <ref_prev> <ref>` so the shown diff direction is `<ref_prev>` -> `<ref>` and MUST NOT invert the operand order.
 - **REQ-184**: MUST `dc` resolve an omitted `<ref_prev>` to the commit preceding `<ref>` (`<ref>~1`) before diff execution.
 - **REQ-185**: MUST `core.py` execute every external command through the shared `_run_checked` subprocess wrapper, allowing no direct `subprocess.run` or `subprocess.Popen` calls elsewhere.
-- **REQ-186**: MUST global configuration support paired keys `<id>_command` (terminal) and `<id>_command_gfx` (graphical) for `id` in `edit`, `gp`, `gr`, and `diff` in `$HOME/.config/git-alias/config.json`.
+- **REQ-186**: MUST global configuration support paired keys `<id>_command` (terminal) and `<id>_command_gfx` (graphical) for `id` in `edit`, `gp`, `gr`, and `diff` in `$HOME/.config/galias/config.json`.
 - **REQ-187**: MUST command resolution detect graphical environments as non-POSIX `os.name` or non-empty `DISPLAY`/`WAYLAND_DISPLAY` on POSIX, selecting `<id>_command_gfx` when graphical and `<id>_command` otherwise.
 - **REQ-188**: MUST an absent or empty `<id>_command_gfx` value in a graphical environment fall back to the `<id>_command` value.
 - **REQ-189**: MUST visual diff aliases execute `git difftool -d` with the environment-resolved `diff_command`/`diff_command_gfx` value injected as `--extcmd=<command>`, followed by their ref operands and extra arguments.
@@ -235,16 +236,16 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-120**: MUST define `LSI_DEFAULT_EXCLUDED_DIRS` as a `frozenset` containing: `.cache`, `.claude`, `.codex`, `.eslintcache`, `.gemini`, `.git`, `.github`, `.kiro`, `.mypy_cache`, `.npm`, `.opencode`, `.parcel-cache`, `.pytest_cache`, `.ruff_cache`, `.sass-cache`, `.terragrunt-cache`, `.tox`, `.venv`, `.vscode`, `__pycache__`, `build`, `dist`, `htmlcov`, `node_modules`, `temp`, `tmp`, `venv`.
 - **REQ-121**: MUST the `lsi` alias MUST accept `--include-all` flag; when present, MUST bypass `LSI_DEFAULT_EXCLUDED_DIRS` and `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` filtering and print all ignored files unfiltered.
 - **REQ-123**: MUST when a newer version is detected, print a bright-green (`\033[92;1m`) message `Update available: <latest> (installed: <current>)` before command execution.
-- **REQ-124**: MUST resolve the release-check URL exactly as `https://api.github.com/repos/Ogekuri/GitAlias/releases/latest`.
+- **REQ-124**: MUST resolve the release-check URL exactly as `https://api.github.com/repos/Ogekuri/GAlias/releases/latest`.
 - **REQ-125**: MUST execute release-check HTTP requests with a hardcoded configurable timeout defaulting to 2 seconds.
-- **REQ-126**: MUST after successful release checks write `~/.cache/git-alias/check_version_idle-time.json` JSON fields `last_check_unix`, `last_check_human`, `idle_until_unix`, and `idle_until_human`, with `idle_until_unix = last_check_unix + 3600`.
+- **REQ-126**: MUST after successful release checks write `~/.cache/galias/check_version_idle-time.json` JSON fields `last_check_unix`, `last_check_human`, `idle_until_unix`, and `idle_until_human`, with `idle_until_unix = last_check_unix + 3600`.
 - **REQ-127**: MUST print bright-red (`\033[31;1m`) update-check errors, including HTTP status diagnostics and API-provided messages such as `rate limit exceeded`.
 - **REQ-128**: MUST package and distribute every runtime-required file for CLI execution in uv release artifacts via explicit setuptools configuration in `pyproject.toml`, ensuring parity between local execution and uv/uvx-installed execution.
 - **REQ-129**: MUST define a hardcoded `idle_delay_seconds` value equal to `3600` for successful release-check scheduling.
 - **REQ-130**: MUST define a hardcoded `error_idle_delay_seconds` value equal to `86400` for version-check error scheduling.
 - **REQ-131**: MUST on any version-check error calculate `idle_until_unix = now + error_idle_delay_seconds`.
-- **REQ-136**: MUST create directory `~/.cache/git-alias` before writing update-check idle-time state when the directory does not exist.
-- **REQ-137**: MUST on any version-check error rewrite `~/.cache/git-alias/check_version_idle-time.json` with synchronized `last_check_*` and `idle_until_*` fields before returning control.
+- **REQ-136**: MUST create directory `~/.cache/galias` before writing update-check idle-time state when the directory does not exist.
+- **REQ-137**: MUST on any version-check error rewrite `~/.cache/galias/check_version_idle-time.json` with synchronized `last_check_*` and `idle_until_*` fields before returning control.
 - **REQ-122**: MUST define `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` as a `tuple` containing: `.egg-info`.
 - **REQ-132**: MUST expose `rollback` as a CLI command in `COMMANDS` and `HELP_TEXTS`, and MUST support `git rollback --help` output.
 - **REQ-133**: MUST `rollback` execute only when both working tree and staging area are clean; otherwise MUST print explicit English error and exit non-zero.

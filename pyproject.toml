@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0.0", "wheel>=0.41.0", "build>=1.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "git-alias"
+name = "galias"
 version = "0.45.0"
 description = "Emulate personalized git aliases via an uvx-compatible interface."
 readme = "README.md"
@@ -28,11 +28,11 @@ dependencies = ["pathspec"]
 dev = ["pytest"]
 
 [project.urls]
-Homepage = "https://github.com/Ogekuri/GitAlias"
-Repository = "https://github.com/Ogekuri/GitAlias"
+Homepage = "https://github.com/Ogekuri/GAlias"
+Repository = "https://github.com/Ogekuri/GAlias"
 
 [project.scripts]
-git-alias = "git_alias.core:main"
+galias = "git_alias.core:main"
 g = "git_alias.core:main"
 
 [tool.setuptools]

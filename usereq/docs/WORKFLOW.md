@@ -2,7 +2,7 @@
 - ID: PROC:main
   - Type: Process
   - Parent Process: null
-  - Role: Git-Alias CLI runtime dispatcher and orchestration process
+  - Role: GAlias CLI runtime dispatcher and orchestration process
   - Entrypoint Symbols:
     - `git_alias.__main__::<module_guard>`
     - `main(argv=None, *, check_updates=True)`

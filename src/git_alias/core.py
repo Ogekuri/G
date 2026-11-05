@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 ## @file core.py
-# @brief Core command dispatch and git-alias runtime orchestration.
+# @brief Core command dispatch and galias runtime orchestration.
 # @details Provides command routing, repository diagnostics, changelog/version workflows, and process wrappers.
 
 import argparse
@@ -26,21 +26,26 @@ pathspec = importlib.import_module("pathspec")
 ## @brief Constant `CONFIG_FILENAME` used by CLI runtime paths and policies.
 
 CONFIG_FILENAME = ".g.conf"
-## @brief Constant `GLOBAL_CONFIG_DIRECTORY` used by CLI runtime paths and policies.
-GLOBAL_CONFIG_DIRECTORY = ".config/git-alias"
+## @brief Global configuration directory under `$HOME`.
+## @details Value `.config/galias` after the `galias` distribution rename from
+##          `git-alias`; combined with `$HOME` by `get_global_config_path` to
+##          locate `config.json` (CTN-003, DES-006, REQ-186).
+## @satisfies CTN-003, DES-006, REQ-186
+GLOBAL_CONFIG_DIRECTORY = ".config/galias"
 ## @brief Constant `GLOBAL_CONFIG_FILENAME` used by CLI runtime paths and policies.
 GLOBAL_CONFIG_FILENAME = "config.json"
 
 ## @brief Constant `GITHUB_OWNER` used by CLI runtime paths and policies.
 GITHUB_OWNER = "Ogekuri"
 ## @brief Upstream GitHub repository name composing repository-scoped URLs.
-## @details Value `GitAlias` after the upstream repository rename from `G`.
+## @details Value `GAlias` after the upstream repository rename chain
+##          `G` -> `GitAlias` -> `GAlias`.
 ##          Sole repository-name source constant: consumed by
 ##          `GITHUB_LATEST_RELEASE_API` (release-check endpoint, REQ-124) and
 ##          `UV_TOOL_UPGRADE_SOURCE` (`uv tool install --from` source, REQ-001);
 ##          no repository-name string literals exist elsewhere in `core.py`.
 ## @satisfies REQ-001, REQ-124
-GITHUB_REPOSITORY = "GitAlias"
+GITHUB_REPOSITORY = "GAlias"
 ## @brief Constant `GITHUB_LATEST_RELEASE_API` used by CLI runtime paths and policies.
 GITHUB_LATEST_RELEASE_API = (
     f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPOSITORY}/releases/latest"
@@ -49,8 +54,12 @@ GITHUB_LATEST_RELEASE_API = (
 UV_TOOL_UPGRADE_SOURCE = (
     f"git+https://github.com/{GITHUB_OWNER}/{GITHUB_REPOSITORY}.git"
 )
-## @brief Constant `UV_TOOL_NAME` used by CLI runtime paths and policies.
-UV_TOOL_NAME = "git-alias"
+## @brief Astral uv tool and distribution name for self-management flows.
+## @details Value `galias` after the distribution rename from `git-alias`;
+##          drives `uv tool install` (REQ-001), `uv tool uninstall` (REQ-002),
+##          and the `~/.cache/<tool>` update-check cache directory (REQ-136).
+## @satisfies REQ-001, REQ-002, REQ-136
+UV_TOOL_NAME = "galias"
 ## @brief Constant `UV_TOOL_UPGRADE_COMMAND` used by CLI runtime paths and policies.
 UV_TOOL_UPGRADE_COMMAND = (
     "uv",
@@ -184,10 +193,10 @@ GLOBAL_CONFIG_KEYS = (
 MANAGEMENT_HELP = [
     (
         "--write-config",
-        "Insert missing defaults into repository .g.conf and global $HOME/.config/git-alias/config.json.",
+        "Insert missing defaults into repository .g.conf and global $HOME/.config/galias/config.json.",
     ),
-    ("--upgrade", "Reinstall git-alias on Linux; print manual command elsewhere."),
-    ("--uninstall", "Uninstall git-alias on Linux; print manual command elsewhere."),
+    ("--upgrade", "Reinstall galias on Linux; print manual command elsewhere."),
+    ("--uninstall", "Uninstall galias on Linux; print manual command elsewhere."),
     ("--ver", "Print the CLI version."),
     ("--version", "Print the CLI version."),
     ("--help", "Print the full help screen or the help text of a specific alias."),
@@ -3911,7 +3920,7 @@ def _selected_diff_command_parts() -> List[str]:
 # @details Implements REQ-189/REQ-190: builds the `git difftool -d` base argv,
 #          appends `--extcmd=<selected command>` when
 #          `_selected_diff_command_parts` returns a non-empty tool so the
-#          environment-selected git-alias tool overrides git's configured diff
+#          environment-selected galias tool overrides git's configured diff
 #          tool, then appends the ordered ref operands and forwarded extras.
 #          An empty tool runs plain `git difftool -d` (REQ-190). Execution goes
 #          through `run_command` so every visual diff alias passes the same

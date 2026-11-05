@@ -12,7 +12,7 @@ wheels = [
 ]
 
 [[package]]
-name = "git-alias"
+name = "galias"
 version = "0.45.0"
 source = { editable = "." }
 dependencies = [
