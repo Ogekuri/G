@@ -1,6 +1,41 @@
 # Changelog
 
-## [0.45.0](https://github.com/Ogekuri/G/compare/v0.44.0..v0.45.0) - 2026-11-04
+## [0.46.0](https://github.com/Ogekuri/GAlias/compare/v0.45.0..v0.46.0) - 2026-11-05
+### 🚜  Changes
+- switch update check and self-upgrade to PyPI as only source *(core)*
+  - Resolve update checks via https://pypi.org/pypi/galias/json parsing info.version (REQ-124, REQ-199).
+  - Execute --upgrade as uv tool install galias --force from PyPI without git --from source (REQ-001, REQ-199).
+  - Document pipx as primary install method with Astral uv/uvx alternative section in README.md (REQ-198).
+  - Remove GitHub/git-URL constants from update and upgrade paths; align tests to the PyPI contracts.
+- add PyPI OIDC trusted publishing and rename release workflow *(release-pypi)*
+  - Rename .github/workflows/release-uvx.yml to release-pypi.yml preserving triggers, gate, build, attestation, and release steps (REQ-112, REQ-195).
+  - Add pypa/gh-action-pypi-publish post-step using OIDC Trusted Publishing without credentials (REQ-193, REQ-194).
+  - Declare PEP 639 SPDX license GPL-3.0-only with license-files and setuptools>=77 in pyproject.toml (REQ-197).
+  - Extend PyPI project metadata and URLs (REQ-196) and document PyPI install/uvx usage in README.md (REQ-198).
+  - Add tests/test_release_workflow_pypi.py and align stale suites to REQ-186..REQ-192, CTN-003 defaults.
+- BREAKING CHANGE: rename repository-local configuration file to .galias.conf [useReq] *(config)*
+  - CONFIG_FILENAME constant renamed; config loading and --write-config now use .galias.conf only.
+  - No backward compatibility: existing .g.conf files are not read or migrated (explicit request).
+  - Tracked .g.conf renamed to .galias.conf; .gitignore negation updated for the blanket-ignore scheme.
+  - --write-config management-help text and README documentation updated.
+  - SRS v1.25: DES-006, DES-009, REQ-006, REQ-014, REQ-017, REQ-116, REQ-119 updated.
+  - ver end-to-end returns 0.45.0; test failure baseline unchanged (no new failures).
+- BREAKING CHANGE: rename distribution and repository to galias and GAlias [useReq] *(core)*
+  - Upstream repository renamed Ogekuri/GitAlias -> Ogekuri/GAlias (REQ-001, REQ-124).
+  - Distribution/tool/binaries renamed to galias with g; git-alias script removed (PRJ-001, CPT-002).
+  - User-facing paths renamed to ~/.cache/galias and ~/.config/galias (REQ-002/030/033/126/136/137, CTN-003, DES-006/009, REQ-013/014/186).
+  - uv.lock regenerated and .g.conf ver_rules regex updated to keep ver/chver detection working.
+  - SRS v1.24, README, WORKFLOW.md, REFERENCES.md updated accordingly.
+  - Tests: rename-relevant suites pass; 1 stale config-path expectation documented (tests untouched).
+- rename upstream GitHub repository G to GitAlias [useReq] *(core)*
+  - REQ-001 upgrade source URL and REQ-124 release-check API URL now target Ogekuri/GitAlias.
+  - GITHUB_REPOSITORY constant in core.py renamed with Doxygen contract and REQ links.
+  - pyproject project.urls and README install/uvx/raw-image URLs updated to GitAlias.
+  - SRS bumped to v1.23 with revision-history entry documenting the repository rename.
+  - REFERENCES.md regenerated; WORKFLOW.md unchanged (no runtime-model impact).
+  - Tests: update-check and dependency-manifest suites pass; launcher-suite failure is a sandbox PATH artifact; 23 unrelated pre-existing stale-test failures left untouched per policy.
+
+## [0.45.0](https://github.com/Ogekuri/GAlias/compare/v0.44.0..v0.45.0) - 2026-11-04
 ### 🐛  Bug Fixes
 - restore inherited-stdio push and fail-closed remote refresh [useReq] *(release)*
   - Release pushes execute via run_git_cmd (inherited stdio) instead of piped
@@ -14,7 +49,7 @@
   - Add release push/preflight regression reproducer suite; update related
   - release, resume, and remote-status test assertions; refresh docs.
 
-## [0.44.0](https://github.com/Ogekuri/G/compare/v0.43.0..v0.44.0) - 2026-11-03
+## [0.44.0](https://github.com/Ogekuri/GAlias/compare/v0.43.0..v0.44.0) - 2026-11-03
 ### 🚜  Changes
 - impose default command values and canonical print order [useReq] *(config)*
   - REQ-191: default edit/sublime_text, icdiff/meld, tig/gitg, gitui/sublime_merge pairs
@@ -23,7 +58,7 @@
   - SRS v1.22 with REQ-191/REQ-192 and evidence entries; REFERENCES regenerated
   - Tests intentionally not modified; outdated default-value assertions reported
 
-## [0.43.0](https://github.com/Ogekuri/G/compare/v0.42.0..v0.43.0) - 2026-11-03
+## [0.43.0](https://github.com/Ogekuri/GAlias/compare/v0.42.0..v0.43.0) - 2026-11-03
 ### 🚜  Changes
 - BREAKING CHANGE: inject configured diff tool via git difftool --extcmd [useReq] *(diff)*
   - REQUIREMENTS 1.21: rewrite REQ-189 so visual diff aliases run
@@ -63,7 +98,7 @@
   - tests: test_cmd_diff_aliases.py dc suite updated to the new contract.
   - dcc, dccc, dwc, and dw behaviors are unchanged.
 
-## [0.42.0](https://github.com/Ogekuri/G/compare/v0.41.0..v0.42.0) - 2026-11-02
+## [0.42.0](https://github.com/Ogekuri/GAlias/compare/v0.41.0..v0.42.0) - 2026-11-02
 ### 🐛  Bug Fixes
 - Fix .gitignore file.
 
@@ -75,7 +110,7 @@
   - Add push-failure diagnostics with version, refs to verify, and resume command.
   - Update WORKFLOW.md, REFERENCES.md, and release unit suites.
 
-## [0.41.0](https://github.com/Ogekuri/G/compare/v0.40.0..v0.41.0) - 2026-10-22
+## [0.41.0](https://github.com/Ogekuri/GAlias/compare/v0.40.0..v0.41.0) - 2026-10-22
 ### 🚜  Changes
 - preserve application version across rollback [useReq] *(rollback)*
   - rollback now runs the release-style canonical version detection as a
@@ -90,16 +125,16 @@
   - 1.18; WORKFLOW.md rollback trace and REFERENCES.md regenerated; rollback
   - unit tests updated and extended (13 tests).
 
-## [0.40.0](https://github.com/Ogekuri/G/compare/v0.39.0..v0.40.0) - 2026-10-21
+## [0.40.0](https://github.com/Ogekuri/GAlias/compare/v0.39.0..v0.40.0) - 2026-10-21
 ### 🐛  Bug Fixes
 - .gitignore file.
 
-## [0.39.0](https://github.com/Ogekuri/G/compare/v0.38.0..v0.39.0) - 2026-10-21
+## [0.39.0](https://github.com/Ogekuri/GAlias/compare/v0.38.0..v0.39.0) - 2026-10-21
 ### 🚜  Changes
 - add --exec option to major/minor/patch release commands [useReq] *(core)*
   - Add `--exec <command> [params...]` to major/minor/patch releases: the operand tail is parsed by _parse_release_flags with rest-of-argv semantics, kept separate from changelog args, and executed as an argv list (repository root CWD, inherited stdio) between the version-update and staging steps of _execute_release_flow. A non-zero exit aborts the release with the standard --- [release:<level>] Step ... failed: ... --- diagnostic before staging, commit, tag, or push. Help texts and the SRS document the option (new REQ-166, REQ-167, REQ-168; REQ-026 extended). Also fixes pre-existing Doxygen block adjacency defects in core.py launcher helpers.
 
-## [0.38.0](https://github.com/Ogekuri/G/compare/v0.37.0..v0.38.0) - 2026-10-02
+## [0.38.0](https://github.com/Ogekuri/GAlias/compare/v0.37.0..v0.38.0) - 2026-10-02
 ### 🚜  Changes
 - add gitignore escaping and negation to ver_rules.pattern [useReq] *(core)*
   - Preserve gitignore(5) backslash escaping in ver_rules.pattern
@@ -114,34 +149,34 @@
   - gitignore(5) compatibility (REQ-165).
   - Add HDT unit tests in tests/test_ver_rule_patterns.py.
 
-## [0.37.0](https://github.com/Ogekuri/G/compare/v0.36.0..v0.37.0) - 2026-07-08
+## [0.37.0](https://github.com/Ogekuri/GAlias/compare/v0.36.0..v0.37.0) - 2026-07-08
 ### 🐛  Bug Fixes
 - Fix ignore file.
 
-## [0.36.0](https://github.com/Ogekuri/G/compare/v0.35.0..v0.36.0) - 2026-07-08
+## [0.36.0](https://github.com/Ogekuri/GAlias/compare/v0.35.0..v0.36.0) - 2026-07-08
 ### 🐛  Bug Fixes
 - Update README.md file.
 
-## [0.35.0](https://github.com/Ogekuri/G/compare/v0.34.0..v0.35.0) - 2026-06-08
+## [0.35.0](https://github.com/Ogekuri/GAlias/compare/v0.34.0..v0.35.0) - 2026-06-08
 ### 🐛  Bug Fixes
 - support Git Bash shell-script launchers [useReq] *(core)*
   - resolve Windows PATH lookup for non-PATHEXT launchers such as gitk\n- add a reproducer test for gr_command on Git Bash\n- update pi-usereq workflow and references docs
 
-## [0.34.0](https://github.com/Ogekuri/G/compare/v0.33.0..v0.34.0) - 2026-06-08
+## [0.34.0](https://github.com/Ogekuri/GAlias/compare/v0.33.0..v0.34.0) - 2026-06-08
 ### ⛰️  Features
 - Check edit, gp, gr commands.
 
 ### 🐛  Bug Fixes
 - Move docs dir.
 
-## [0.33.0](https://github.com/Ogekuri/G/compare/v0.32.0..v0.33.0) - 2026-04-22
+## [0.33.0](https://github.com/Ogekuri/GAlias/compare/v0.32.0..v0.33.0) - 2026-04-22
 ### 🚜  Changes
 - BREAKING CHANGE: switch wt alias to git worktree [useReq] *(core)*
   - update REQ-074 and related traceability docs
   - dispatch wt to git worktree while keeping wtl on worktree list
   - adjust help text and worktree alias tests
 
-## [0.32.0](https://github.com/Ogekuri/G/compare/v0.31.0..v0.32.0) - 2026-04-12
+## [0.32.0](https://github.com/Ogekuri/GAlias/compare/v0.31.0..v0.32.0) - 2026-04-12
 ### 📚  Documentation
 - align README with current CLI behavior [useReq] *(readme)*
   - Correct global config path and default commit-module behavior.
@@ -150,7 +185,7 @@
   - Update examples for wip auto-stage and normalized conventional messages.
 - Update README.md file.
 
-## [0.31.0](https://github.com/Ogekuri/G/compare/v0.30.0..v0.31.0) - 2026-04-07
+## [0.31.0](https://github.com/Ogekuri/GAlias/compare/v0.30.0..v0.31.0) - 2026-04-07
 ### ⛰️  Features
 - add get command for fast-forward sync of master/develop/work [useReq] *(core)*
   - Implement `git get` CLI command with preflight verifications and
@@ -166,11 +201,11 @@
   - Add launcher regression coverage for slash and drive-letter variants.
   - Update workflow and references documentation for the launcher flow.
 
-## [0.30.0](https://github.com/Ogekuri/G/compare/v0.29.0..v0.30.0) - 2026-04-01
+## [0.30.0](https://github.com/Ogekuri/GAlias/compare/v0.29.0..v0.30.0) - 2026-04-01
 ### 🐛  Bug Fixes
 - Fix git repository.
 
-## [0.29.0](https://github.com/Ogekuri/G/compare/v0.28.0..v0.29.0) - 2026-03-31
+## [0.29.0](https://github.com/Ogekuri/GAlias/compare/v0.28.0..v0.29.0) - 2026-03-31
 ### 🚜  Changes
 - BREAKING CHANGE: add force-aware paired delete for bd and wtd [useReq] *(core)*
   - Update requirements, core delete flow, tests, workflow, and references.
@@ -178,7 +213,7 @@
   - update REQ-077 and REQ-143 to encode the user-exposed alias name
   - replace legacy README references to wtr with wtd usage
 
-## [0.28.0](https://github.com/Ogekuri/G/compare/v0.27.0..v0.28.0) - 2026-03-31
+## [0.28.0](https://github.com/Ogekuri/GAlias/compare/v0.27.0..v0.28.0) - 2026-03-31
 ### 🚜  Changes
 - coordinate bd and wtd deletions [useReq] *(core)*
   - Update requirements for paired branch/worktree deletion.
@@ -186,7 +221,7 @@
   - Abort without partial deletion when either side cannot be removed.
   - Refresh tests, workflow, and references for the new command flow.
 
-## [0.27.0](https://github.com/Ogekuri/G/compare/v0.26.0..v0.27.0) - 2026-03-30
+## [0.27.0](https://github.com/Ogekuri/GAlias/compare/v0.26.0..v0.27.0) - 2026-03-30
 ### 🚜  Changes
 - rewrite idle-time JSON on all errors [useReq] *(version-check)*
   - update SRS to require JSON rewrites on every terminal version-check error
@@ -201,7 +236,7 @@
   - persist rate-limit idle windows in version-check cache
   - refresh workflow, references, and targeted tests
 
-## [0.26.0](https://github.com/Ogekuri/G/compare/v0.25.0..v0.26.0) - 2026-03-27
+## [0.26.0](https://github.com/Ogekuri/GAlias/compare/v0.25.0..v0.26.0) - 2026-03-27
 ### 🚜  Changes
 - force online update check for --version flags [useReq] *(core)*
   - Update REQ-030 and REQ-033 to require forced online checks for --ver/--version.
@@ -209,7 +244,7 @@
   - Add and adjust unit tests for idle-cache bypass and version-flag update-check behavior.
   - Update WORKFLOW.md and regenerate REFERENCES.md for traceability.
 
-## [0.24.0](https://github.com/Ogekuri/G/compare/v0.23.0..v0.24.0) - 2026-03-18
+## [0.24.0](https://github.com/Ogekuri/GAlias/compare/v0.23.0..v0.24.0) - 2026-03-18
 ### 🚜  Changes
 - move idle cache path and uninstall cleanup [useReq] *(update-check)*
   - Update requirements REQ-002/033/126/131 and add REQ-136 for cache directory creation.
@@ -217,7 +252,7 @@
   - Create cache directory during state writes and remove cache file+directory on Linux --uninstall.
   - Update unit tests and regenerate WORKFLOW/REFERENCES docs.
 
-## [0.23.0](https://github.com/Ogekuri/G/compare/v0.22.0..v0.23.0) - 2026-03-17
+## [0.23.0](https://github.com/Ogekuri/GAlias/compare/v0.22.0..v0.23.0) - 2026-03-17
 ### 🚜  Changes
 - enforce terminal-width l output with --wrap [useReq] *(foresta)*
   - Update SRS: revise REQ-100 and REQ-104 for terminal-width truncation and --wrap option.
@@ -225,7 +260,7 @@
   - Extend l option parsing/help to include --wrap and keep default -n 25 behavior.
   - Add unit tests for truncation behavior and --wrap terminal-width bypass.
 
-## [0.22.0](https://github.com/Ogekuri/G/compare/v0.21.0..v0.22.0) - 2026-03-17
+## [0.22.0](https://github.com/Ogekuri/GAlias/compare/v0.21.0..v0.22.0) - 2026-03-17
 ### ⛰️  Features
 - Update .g.conf file.
 - Add uv.lock file.
@@ -237,7 +272,7 @@
   - Print explicit manual uv commands on non-Linux runtimes.
   - Regenerate WORKFLOW.md and REFERENCES.md for traceability.
 
-## [0.21.0](https://github.com/Ogekuri/G/compare/v0.20.0..v0.21.0) - 2026-03-17
+## [0.21.0](https://github.com/Ogekuri/GAlias/compare/v0.20.0..v0.21.0) - 2026-03-17
 ### ⛰️  Features
 - Add uv.lock file.
 
@@ -248,7 +283,7 @@
   - Regenerate uv.lock to include pytest and transitive packages.
   - Extend dependency manifest tests for pytest declaration and lock presence.
 
-## [0.20.0](https://github.com/Ogekuri/G/compare/v0.19.0..v0.20.0) - 2026-03-17
+## [0.20.0](https://github.com/Ogekuri/GAlias/compare/v0.19.0..v0.20.0) - 2026-03-17
 ### 🐛  Bug Fixes
 - Fix workflow.
 
@@ -262,7 +297,7 @@
   - Update REQ-112 to include workflow_dispatch plus tag trigger with SHA gate.
   - Refresh metadata and evidence lines to match repository implementation.
 
-## [0.19.0](https://github.com/Ogekuri/G/compare/v0.18.0..v0.19.0) - 2026-03-17
+## [0.19.0](https://github.com/Ogekuri/GAlias/compare/v0.18.0..v0.19.0) - 2026-03-17
 ### ⛰️  Features
 - Implment astral uv tool.
 
@@ -273,7 +308,7 @@
   - Resolve existing static-check failures in tests to keep req --here --static-check clean.
 - Remove .req dir.
 
-## [0.18.0](https://github.com/Ogekuri/G/compare/v0.17.0..v0.18.0) - 2026-03-16
+## [0.18.0](https://github.com/Ogekuri/GAlias/compare/v0.17.0..v0.18.0) - 2026-03-16
 ### ⛰️  Features
 - add rollback command and rollback requirements [useReq] *(core)*
   - Append REQ-132..REQ-135 for rollback command semantics.
@@ -284,7 +319,7 @@
 ### 🐛  Bug Fixes
 - Update .gitignore file.
 
-## [0.17.0](https://github.com/Ogekuri/G/compare/v0.16.0..v0.17.0) - 2026-03-07
+## [0.17.0](https://github.com/Ogekuri/GAlias/compare/v0.16.0..v0.17.0) - 2026-03-07
 ### 🚜  Changes
 - align update-check idle and 429 backoff [useReq] *(core)*
   - update REQ-126 and REQ-129, and add REQ-130/REQ-131 for Retry-After behavior
@@ -297,7 +332,7 @@
   - Implement fixed release URL, fixed upgrade source, and 24h idle-time with 300s floor.
   - Update tests, workflow model, and generated references.
 
-## [0.16.0](https://github.com/Ogekuri/G/compare/v0.15.0..v0.16.0) - 2026-03-07
+## [0.16.0](https://github.com/Ogekuri/GAlias/compare/v0.15.0..v0.16.0) - 2026-03-07
 ### 🚜  Changes
 - reduce update idle window to 300s [useReq] *(core)*
   - Update REQ-126 default idle interval from 24 hours to 300 seconds.
@@ -313,11 +348,11 @@
   - Standardize pyproject setuptools package discovery and package-data inclusion.
   - Regenerate REFERENCES and update WORKFLOW call-trace notes for uv management paths.
 
-## [0.15.0](https://github.com/Ogekuri/G/compare/v0.14.0..v0.15.0) - 2026-03-07
+## [0.15.0](https://github.com/Ogekuri/GAlias/compare/v0.14.0..v0.15.0) - 2026-03-07
 ### 🐛  Bug Fixes
 - Minor fixes.
 
-## [0.14.0](https://github.com/Ogekuri/G/compare/v0.13.0..v0.14.0) - 2026-03-07
+## [0.14.0](https://github.com/Ogekuri/GAlias/compare/v0.13.0..v0.14.0) - 2026-03-07
 ### 🐛  Bug Fixes
 - repair l graph fan connector rendering [useReq] *(foresta)*
   - normalize S/s fan spans so spaces render as connector dashes
@@ -338,7 +373,7 @@
   - update WORKFLOW.md call-trace default value for cmd_l
   - regenerate REFERENCES.md for synchronized symbol metadata
 
-## [0.13.0](https://github.com/Ogekuri/G/compare/v0.12.0..v0.13.0) - 2026-03-06
+## [0.13.0](https://github.com/Ogekuri/GAlias/compare/v0.12.0..v0.13.0) - 2026-03-06
 ### 🚜  Changes
 - BREAKING CHANGE: switch to remote-driven update checks [useReq] *(core)*
   - Update SRS for uninstall flag and idle-time release checks.
@@ -349,7 +384,7 @@
   - Adjust and extend tests for warning format and startup ordering.
   - Refresh WORKFLOW and regenerate REFERENCES.
 
-## [0.12.0](https://github.com/Ogekuri/G/compare/v0.11.0..v0.12.0) - 2026-03-05
+## [0.12.0](https://github.com/Ogekuri/GAlias/compare/v0.11.0..v0.12.0) - 2026-03-05
 ### ⛰️  Features
 - Update .req/models.json file.
 - add lsi output filtering with --include-all bypass [useReq] *(core)*
@@ -394,7 +429,7 @@
 ### 📚  Documentation
 - Update README.md document.
 
-## [0.11.0](https://github.com/Ogekuri/G/compare/v0.10.0..v0.11.0) - 2026-03-04
+## [0.11.0](https://github.com/Ogekuri/GAlias/compare/v0.10.0..v0.11.0) - 2026-03-04
 ### ⛰️  Features
 - Implement new commands.
 - Update .req/models.json file.
@@ -415,7 +450,7 @@
   - keep execution-unit IDs and call-trace structure stable
   - preserve process/thread model and communication-edge semantics
 
-## [0.9.0](https://github.com/Ogekuri/G/compare/v0.8.0..v0.9.0) - 2026-02-28
+## [0.9.0](https://github.com/Ogekuri/GAlias/compare/v0.8.0..v0.9.0) - 2026-02-28
 ### ⛰️  Features
 - add dwd diff alias and traceability [useReq] *(core)*
   - append REQ-119 for dwd visual diff behavior
@@ -428,7 +463,7 @@
 - document dwd diff alias usage in README [useReq] *(core)*
   - add feature highlight for dwd visual diff alias\n- add CLI example for g dwd with configured branches
 
-## [0.8.0](https://github.com/Ogekuri/G/compare/v0.7.0..v0.8.0) - 2026-02-28
+## [0.8.0](https://github.com/Ogekuri/GAlias/compare/v0.7.0..v0.8.0) - 2026-02-28
 ### 🐛  Bug Fixes
 - Remove colors from commits.
 
@@ -443,7 +478,7 @@
 ### 📚  Documentation
 - Update TODO.md file.
 
-## [0.7.0](https://github.com/Ogekuri/G/compare/v0.6.0..v0.7.0) - 2026-02-25
+## [0.7.0](https://github.com/Ogekuri/GAlias/compare/v0.6.0..v0.7.0) - 2026-02-25
 ### ⛰️  Features
 - Add Acknowledgments section in README.md. *(core)*
 - Add 'l' command for text-based commit tree visualization [useReq] *(core)*
@@ -515,7 +550,7 @@
   - Reorganized requirements with RFC 2119 statements.
   - Preserved existing IDs and appended REQ-112..REQ-114.
 
-## [0.6.0](https://github.com/Ogekuri/G/compare/v0.5.0..v0.6.0) - 2026-02-24
+## [0.6.0](https://github.com/Ogekuri/GAlias/compare/v0.5.0..v0.6.0) - 2026-02-24
 ### ⛰️  Features
 - add overview ASCII topology section [useReq] *(core)*
   - append REQ-089..REQ-093 for qualitative topology output\n- add section 4 ASCII tree rendering in cmd_o\n- map divergence counts to qualitative states\n- extend overview tests for section ordering and topology nodes\n- update workflow and regenerate references
@@ -615,7 +650,7 @@
   - Document default_commit_module and global edit_command key usage.
   - Clarify --write-config normalization and legacy editor->edit_command migration.
 
-## [0.5.0](https://github.com/Ogekuri/G/compare/v0.4.0..v0.5.0) - 2026-02-22
+## [0.5.0](https://github.com/Ogekuri/GAlias/compare/v0.4.0..v0.5.0) - 2026-02-22
 ### ⛰️  Features
 - add worktree aliases wt/wtl/wtp/wtr docs/tests [2026-02-22 16:27:03] *(core)*
 
@@ -632,11 +667,11 @@
 - normalize commit description line breaks [2026-02-22 17:39:18] *(changelog)*
 - support breaking and multiline parsing [2026-02-22 13:26:20] *(changelog)*
 
-## [0.4.0](https://github.com/Ogekuri/G/compare/v0.3.0..v0.4.0) - 2026-02-22
+## [0.4.0](https://github.com/Ogekuri/GAlias/compare/v0.3.0..v0.4.0) - 2026-02-22
 ### 🐛  Bug Fixes
 - workflow. *(core)*
 
-## [0.3.0](https://github.com/Ogekuri/G/compare/v0.2.0..v0.3.0) - 2026-02-22
+## [0.3.0](https://github.com/Ogekuri/GAlias/compare/v0.2.0..v0.3.0) - 2026-02-22
 ### 🐛  Bug Fixes
 - fix workflow. *(core)*
 
@@ -647,7 +682,7 @@
 ### 📚  Documentation
 - update README.md. *(core)*
 
-## [0.2.0](https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0) - 2026-02-22
+## [0.2.0](https://github.com/Ogekuri/GAlias/compare/v0.1.0..v0.2.0) - 2026-02-22
 ### 🐛  Bug Fixes
 - fix workflow. *(core)*
 
@@ -658,7 +693,7 @@
 - update README.md. *(core)*
 - update README.md. *(core)*
 
-## [0.1.0](https://github.com/Ogekuri/G/releases/tag/v0.1.0) - 2026-02-21
+## [0.1.0](https://github.com/Ogekuri/GAlias/releases/tag/v0.1.0) - 2026-02-21
 ### ⛰️  Features
 - update github workflow. *(core)*
 - add dwcc and dccc diff aliases [2026-02-20 11:08:34] *(core)*
@@ -796,94 +831,96 @@
 
 # History
 
-- \[0.1.0\]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
-- \[0.2.0\]: https://github.com/Ogekuri/G/releases/tag/v0.2.0
-- \[0.3.0\]: https://github.com/Ogekuri/G/releases/tag/v0.3.0
-- \[0.4.0\]: https://github.com/Ogekuri/G/releases/tag/v0.4.0
-- \[0.5.0\]: https://github.com/Ogekuri/G/releases/tag/v0.5.0
-- \[0.6.0\]: https://github.com/Ogekuri/G/releases/tag/v0.6.0
-- \[0.7.0\]: https://github.com/Ogekuri/G/releases/tag/v0.7.0
-- \[0.8.0\]: https://github.com/Ogekuri/G/releases/tag/v0.8.0
-- \[0.9.0\]: https://github.com/Ogekuri/G/releases/tag/v0.9.0
-- \[0.10.0\]: https://github.com/Ogekuri/G/releases/tag/v0.10.0
-- \[0.11.0\]: https://github.com/Ogekuri/G/releases/tag/v0.11.0
-- \[0.12.0\]: https://github.com/Ogekuri/G/releases/tag/v0.12.0
-- \[0.13.0\]: https://github.com/Ogekuri/G/releases/tag/v0.13.0
-- \[0.14.0\]: https://github.com/Ogekuri/G/releases/tag/v0.14.0
-- \[0.15.0\]: https://github.com/Ogekuri/G/releases/tag/v0.15.0
-- \[0.16.0\]: https://github.com/Ogekuri/G/releases/tag/v0.16.0
-- \[0.17.0\]: https://github.com/Ogekuri/G/releases/tag/v0.17.0
-- \[0.18.0\]: https://github.com/Ogekuri/G/releases/tag/v0.18.0
-- \[0.19.0\]: https://github.com/Ogekuri/G/releases/tag/v0.19.0
-- \[0.20.0\]: https://github.com/Ogekuri/G/releases/tag/v0.20.0
-- \[0.21.0\]: https://github.com/Ogekuri/G/releases/tag/v0.21.0
-- \[0.22.0\]: https://github.com/Ogekuri/G/releases/tag/v0.22.0
-- \[0.23.0\]: https://github.com/Ogekuri/G/releases/tag/v0.23.0
-- \[0.24.0\]: https://github.com/Ogekuri/G/releases/tag/v0.24.0
-- \[0.25.0\]: https://github.com/Ogekuri/G/releases/tag/v0.25.0
-- \[0.26.0\]: https://github.com/Ogekuri/G/releases/tag/v0.26.0
-- \[0.27.0\]: https://github.com/Ogekuri/G/releases/tag/v0.27.0
-- \[0.28.0\]: https://github.com/Ogekuri/G/releases/tag/v0.28.0
-- \[0.29.0\]: https://github.com/Ogekuri/G/releases/tag/v0.29.0
-- \[0.30.0\]: https://github.com/Ogekuri/G/releases/tag/v0.30.0
-- \[0.31.0\]: https://github.com/Ogekuri/G/releases/tag/v0.31.0
-- \[0.32.0\]: https://github.com/Ogekuri/G/releases/tag/v0.32.0
-- \[0.33.0\]: https://github.com/Ogekuri/G/releases/tag/v0.33.0
-- \[0.34.0\]: https://github.com/Ogekuri/G/releases/tag/v0.34.0
-- \[0.35.0\]: https://github.com/Ogekuri/G/releases/tag/v0.35.0
-- \[0.36.0\]: https://github.com/Ogekuri/G/releases/tag/v0.36.0
-- \[0.37.0\]: https://github.com/Ogekuri/G/releases/tag/v0.37.0
-- \[0.38.0\]: https://github.com/Ogekuri/G/releases/tag/v0.38.0
-- \[0.39.0\]: https://github.com/Ogekuri/G/releases/tag/v0.39.0
-- \[0.40.0\]: https://github.com/Ogekuri/G/releases/tag/v0.40.0
-- \[0.41.0\]: https://github.com/Ogekuri/G/releases/tag/v0.41.0
-- \[0.42.0\]: https://github.com/Ogekuri/G/releases/tag/v0.42.0
-- \[0.43.0\]: https://github.com/Ogekuri/G/releases/tag/v0.43.0
-- \[0.44.0\]: https://github.com/Ogekuri/G/releases/tag/v0.44.0
-- \[0.45.0\]: https://github.com/Ogekuri/G/releases/tag/v0.45.0
+- \[0.1.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.1.0
+- \[0.2.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.2.0
+- \[0.3.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.3.0
+- \[0.4.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.4.0
+- \[0.5.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.5.0
+- \[0.6.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.6.0
+- \[0.7.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.7.0
+- \[0.8.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.8.0
+- \[0.9.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.9.0
+- \[0.10.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.10.0
+- \[0.11.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.11.0
+- \[0.12.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.12.0
+- \[0.13.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.13.0
+- \[0.14.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.14.0
+- \[0.15.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.15.0
+- \[0.16.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.16.0
+- \[0.17.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.17.0
+- \[0.18.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.18.0
+- \[0.19.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.19.0
+- \[0.20.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.20.0
+- \[0.21.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.21.0
+- \[0.22.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.22.0
+- \[0.23.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.23.0
+- \[0.24.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.24.0
+- \[0.25.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.25.0
+- \[0.26.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.26.0
+- \[0.27.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.27.0
+- \[0.28.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.28.0
+- \[0.29.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.29.0
+- \[0.30.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.30.0
+- \[0.31.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.31.0
+- \[0.32.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.32.0
+- \[0.33.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.33.0
+- \[0.34.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.34.0
+- \[0.35.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.35.0
+- \[0.36.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.36.0
+- \[0.37.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.37.0
+- \[0.38.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.38.0
+- \[0.39.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.39.0
+- \[0.40.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.40.0
+- \[0.41.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.41.0
+- \[0.42.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.42.0
+- \[0.43.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.43.0
+- \[0.44.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.44.0
+- \[0.45.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.45.0
+- \[0.46.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.46.0
 
-[0.1.0]: https://github.com/Ogekuri/G/releases/tag/v0.1.0
-[0.2.0]: https://github.com/Ogekuri/G/compare/v0.1.0..v0.2.0
-[0.3.0]: https://github.com/Ogekuri/G/compare/v0.2.0..v0.3.0
-[0.4.0]: https://github.com/Ogekuri/G/compare/v0.3.0..v0.4.0
-[0.5.0]: https://github.com/Ogekuri/G/compare/v0.4.0..v0.5.0
-[0.6.0]: https://github.com/Ogekuri/G/compare/v0.5.0..v0.6.0
-[0.7.0]: https://github.com/Ogekuri/G/compare/v0.6.0..v0.7.0
-[0.8.0]: https://github.com/Ogekuri/G/compare/v0.7.0..v0.8.0
-[0.9.0]: https://github.com/Ogekuri/G/compare/v0.8.0..v0.9.0
-[0.10.0]: https://github.com/Ogekuri/G/compare/v0.9.0..v0.10.0
-[0.11.0]: https://github.com/Ogekuri/G/compare/v0.10.0..v0.11.0
-[0.12.0]: https://github.com/Ogekuri/G/compare/v0.11.0..v0.12.0
-[0.13.0]: https://github.com/Ogekuri/G/compare/v0.12.0..v0.13.0
-[0.14.0]: https://github.com/Ogekuri/G/compare/v0.13.0..v0.14.0
-[0.15.0]: https://github.com/Ogekuri/G/compare/v0.14.0..v0.15.0
-[0.16.0]: https://github.com/Ogekuri/G/compare/v0.15.0..v0.16.0
-[0.17.0]: https://github.com/Ogekuri/G/compare/v0.16.0..v0.17.0
-[0.18.0]: https://github.com/Ogekuri/G/compare/v0.17.0..v0.18.0
-[0.19.0]: https://github.com/Ogekuri/G/compare/v0.18.0..v0.19.0
-[0.20.0]: https://github.com/Ogekuri/G/compare/v0.19.0..v0.20.0
-[0.21.0]: https://github.com/Ogekuri/G/compare/v0.20.0..v0.21.0
-[0.22.0]: https://github.com/Ogekuri/G/compare/v0.21.0..v0.22.0
-[0.23.0]: https://github.com/Ogekuri/G/compare/v0.22.0..v0.23.0
-[0.24.0]: https://github.com/Ogekuri/G/compare/v0.23.0..v0.24.0
-[0.25.0]: https://github.com/Ogekuri/G/compare/v0.24.0..v0.25.0
-[0.26.0]: https://github.com/Ogekuri/G/compare/v0.25.0..v0.26.0
-[0.27.0]: https://github.com/Ogekuri/G/compare/v0.26.0..v0.27.0
-[0.28.0]: https://github.com/Ogekuri/G/compare/v0.27.0..v0.28.0
-[0.29.0]: https://github.com/Ogekuri/G/compare/v0.28.0..v0.29.0
-[0.30.0]: https://github.com/Ogekuri/G/compare/v0.29.0..v0.30.0
-[0.31.0]: https://github.com/Ogekuri/G/compare/v0.30.0..v0.31.0
-[0.32.0]: https://github.com/Ogekuri/G/compare/v0.31.0..v0.32.0
-[0.33.0]: https://github.com/Ogekuri/G/compare/v0.32.0..v0.33.0
-[0.34.0]: https://github.com/Ogekuri/G/compare/v0.33.0..v0.34.0
-[0.35.0]: https://github.com/Ogekuri/G/compare/v0.34.0..v0.35.0
-[0.36.0]: https://github.com/Ogekuri/G/compare/v0.35.0..v0.36.0
-[0.37.0]: https://github.com/Ogekuri/G/compare/v0.36.0..v0.37.0
-[0.38.0]: https://github.com/Ogekuri/G/compare/v0.37.0..v0.38.0
-[0.39.0]: https://github.com/Ogekuri/G/compare/v0.38.0..v0.39.0
-[0.40.0]: https://github.com/Ogekuri/G/compare/v0.39.0..v0.40.0
-[0.41.0]: https://github.com/Ogekuri/G/compare/v0.40.0..v0.41.0
-[0.42.0]: https://github.com/Ogekuri/G/compare/v0.41.0..v0.42.0
-[0.43.0]: https://github.com/Ogekuri/G/compare/v0.42.0..v0.43.0
-[0.44.0]: https://github.com/Ogekuri/G/compare/v0.43.0..v0.44.0
-[0.45.0]: https://github.com/Ogekuri/G/compare/v0.44.0..v0.45.0
+[0.1.0]: https://github.com/Ogekuri/GAlias/releases/tag/v0.1.0
+[0.2.0]: https://github.com/Ogekuri/GAlias/compare/v0.1.0..v0.2.0
+[0.3.0]: https://github.com/Ogekuri/GAlias/compare/v0.2.0..v0.3.0
+[0.4.0]: https://github.com/Ogekuri/GAlias/compare/v0.3.0..v0.4.0
+[0.5.0]: https://github.com/Ogekuri/GAlias/compare/v0.4.0..v0.5.0
+[0.6.0]: https://github.com/Ogekuri/GAlias/compare/v0.5.0..v0.6.0
+[0.7.0]: https://github.com/Ogekuri/GAlias/compare/v0.6.0..v0.7.0
+[0.8.0]: https://github.com/Ogekuri/GAlias/compare/v0.7.0..v0.8.0
+[0.9.0]: https://github.com/Ogekuri/GAlias/compare/v0.8.0..v0.9.0
+[0.10.0]: https://github.com/Ogekuri/GAlias/compare/v0.9.0..v0.10.0
+[0.11.0]: https://github.com/Ogekuri/GAlias/compare/v0.10.0..v0.11.0
+[0.12.0]: https://github.com/Ogekuri/GAlias/compare/v0.11.0..v0.12.0
+[0.13.0]: https://github.com/Ogekuri/GAlias/compare/v0.12.0..v0.13.0
+[0.14.0]: https://github.com/Ogekuri/GAlias/compare/v0.13.0..v0.14.0
+[0.15.0]: https://github.com/Ogekuri/GAlias/compare/v0.14.0..v0.15.0
+[0.16.0]: https://github.com/Ogekuri/GAlias/compare/v0.15.0..v0.16.0
+[0.17.0]: https://github.com/Ogekuri/GAlias/compare/v0.16.0..v0.17.0
+[0.18.0]: https://github.com/Ogekuri/GAlias/compare/v0.17.0..v0.18.0
+[0.19.0]: https://github.com/Ogekuri/GAlias/compare/v0.18.0..v0.19.0
+[0.20.0]: https://github.com/Ogekuri/GAlias/compare/v0.19.0..v0.20.0
+[0.21.0]: https://github.com/Ogekuri/GAlias/compare/v0.20.0..v0.21.0
+[0.22.0]: https://github.com/Ogekuri/GAlias/compare/v0.21.0..v0.22.0
+[0.23.0]: https://github.com/Ogekuri/GAlias/compare/v0.22.0..v0.23.0
+[0.24.0]: https://github.com/Ogekuri/GAlias/compare/v0.23.0..v0.24.0
+[0.25.0]: https://github.com/Ogekuri/GAlias/compare/v0.24.0..v0.25.0
+[0.26.0]: https://github.com/Ogekuri/GAlias/compare/v0.25.0..v0.26.0
+[0.27.0]: https://github.com/Ogekuri/GAlias/compare/v0.26.0..v0.27.0
+[0.28.0]: https://github.com/Ogekuri/GAlias/compare/v0.27.0..v0.28.0
+[0.29.0]: https://github.com/Ogekuri/GAlias/compare/v0.28.0..v0.29.0
+[0.30.0]: https://github.com/Ogekuri/GAlias/compare/v0.29.0..v0.30.0
+[0.31.0]: https://github.com/Ogekuri/GAlias/compare/v0.30.0..v0.31.0
+[0.32.0]: https://github.com/Ogekuri/GAlias/compare/v0.31.0..v0.32.0
+[0.33.0]: https://github.com/Ogekuri/GAlias/compare/v0.32.0..v0.33.0
+[0.34.0]: https://github.com/Ogekuri/GAlias/compare/v0.33.0..v0.34.0
+[0.35.0]: https://github.com/Ogekuri/GAlias/compare/v0.34.0..v0.35.0
+[0.36.0]: https://github.com/Ogekuri/GAlias/compare/v0.35.0..v0.36.0
+[0.37.0]: https://github.com/Ogekuri/GAlias/compare/v0.36.0..v0.37.0
+[0.38.0]: https://github.com/Ogekuri/GAlias/compare/v0.37.0..v0.38.0
+[0.39.0]: https://github.com/Ogekuri/GAlias/compare/v0.38.0..v0.39.0
+[0.40.0]: https://github.com/Ogekuri/GAlias/compare/v0.39.0..v0.40.0
+[0.41.0]: https://github.com/Ogekuri/GAlias/compare/v0.40.0..v0.41.0
+[0.42.0]: https://github.com/Ogekuri/GAlias/compare/v0.41.0..v0.42.0
+[0.43.0]: https://github.com/Ogekuri/GAlias/compare/v0.42.0..v0.43.0
+[0.44.0]: https://github.com/Ogekuri/GAlias/compare/v0.43.0..v0.44.0
+[0.45.0]: https://github.com/Ogekuri/GAlias/compare/v0.44.0..v0.45.0
+[0.46.0]: https://github.com/Ogekuri/GAlias/compare/v0.45.0..v0.46.0
