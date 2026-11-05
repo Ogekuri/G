@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.47.0](https://github.com/Ogekuri/GAlias/compare/v0.46.0..v0.47.0) - 2026-11-05
+### 🐛  Bug Fixes
+- replace invalid trove classifier blocking PyPI upload *(packaging)*
+  - Replace unregistered classifier 'Topic :: Software Development :: Configuration Management' with the registered 'Topic :: Software Development :: Version Control' entry (REQ-196).
+  - Defect evidence: PyPI warehouse rejected galias-0.46.0 upload with HTTP 400 'is not a valid classifier'.
+  - Add reproducer test asserting the exact registered trove classifier inventory of pyproject.toml (REQ-196, REQ-194).
+
 ## [0.46.0](https://github.com/Ogekuri/GAlias/compare/v0.45.0..v0.46.0) - 2026-11-05
 ### 🚜  Changes
 - switch update check and self-upgrade to PyPI as only source *(core)*
@@ -877,6 +884,7 @@
 - \[0.44.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.44.0
 - \[0.45.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.45.0
 - \[0.46.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.46.0
+- \[0.47.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.47.0
 
 [0.1.0]: https://github.com/Ogekuri/GAlias/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/GAlias/compare/v0.1.0..v0.2.0
@@ -924,3 +932,4 @@
 [0.44.0]: https://github.com/Ogekuri/GAlias/compare/v0.43.0..v0.44.0
 [0.45.0]: https://github.com/Ogekuri/GAlias/compare/v0.44.0..v0.45.0
 [0.46.0]: https://github.com/Ogekuri/GAlias/compare/v0.45.0..v0.46.0
+[0.47.0]: https://github.com/Ogekuri/GAlias/compare/v0.46.0..v0.47.0
