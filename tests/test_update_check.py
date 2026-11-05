@@ -333,7 +333,7 @@ class UpdateCheckTest(unittest.TestCase):
         self.assertEqual(data["last_check_unix"], 0)
 
     def test_upgrade_self_installs_latest_pypi_release(self):
-        # REQ-001: --upgrade reinstalls from PyPI; REQ-199: no git source.
+        # REQ-001: default --upgrade reinstalls from PyPI; REQ-199: no git source.
         with mock.patch.object(core, "_is_linux_platform", return_value=True):
             with mock.patch.object(core, "_run_checked") as run_checked:
                 core.upgrade_self(Path("/repo"))
@@ -347,8 +347,28 @@ class UpdateCheckTest(unittest.TestCase):
             ]
         )
 
-    def test_pypi_is_the_only_update_and_upgrade_source(self):
-        # REQ-199: no GitHub endpoint or git URL participates in either flow.
+    ## @brief Verify the GitHub-sourced self-upgrade argv (REQ-201).
+    # @details Mock the platform gate and subprocess boundary; assert the
+    #          exact git `--from` override and target executable.
+    # @param self {UpdateCheckTest} Isolated test instance.
+    # @return {None} Assert REQ-201 upgrade argv.
+    def test_upgrade_self_github_installs_from_git_source(self):
+        # REQ-201: --upgrade --github reinstalls from the GitHub git source.
+        with mock.patch.object(core, "_is_linux_platform", return_value=True):
+            with mock.patch.object(core, "_run_checked") as run_checked:
+                core.upgrade_self(Path("/repo"), github=True)
+        run_checked.assert_called_once_with(list(core.UV_TOOL_GITHUB_UPGRADE_COMMAND))
+        argv_text = " ".join(run_checked.call_args.args[0])
+        self.assertIn("--from", argv_text)
+        self.assertIn(core.GITHUB_UPGRADE_SOURCE, argv_text)
+
+    ## @brief Verify the default-vs-GitHub source isolation contract (REQ-199).
+    # @details Assert the default check/upgrade constants stay PyPI-only while
+    #          GitHub constants exist only for REQ-201/REQ-202 flows.
+    # @param self {UpdateCheckTest} Isolated test instance.
+    # @return {None} Assert REQ-199 constant isolation.
+    def test_default_flows_use_pypi_and_github_constants_are_isolated(self):
+        # REQ-199: default check/upgrade paths are PyPI-only.
         upgrade_text = " ".join(core.UV_TOOL_UPGRADE_COMMAND)
         self.assertNotIn("--from", upgrade_text)
         self.assertNotIn("git+", upgrade_text)
@@ -357,6 +377,60 @@ class UpdateCheckTest(unittest.TestCase):
             core.PYPI_LATEST_VERSION_API.startswith("https://pypi.org/pypi/")
         )
         self.assertNotIn("github.com", core.PYPI_LATEST_VERSION_API)
+        # REQ-204: fixed GitHub reporting endpoint; REQ-201: fixed git source.
+        self.assertEqual(
+            core.GITHUB_LATEST_RELEASE_API,
+            "https://api.github.com/repos/Ogekuri/GAlias/releases/latest",
+        )
+        self.assertEqual(
+            core.GITHUB_UPGRADE_SOURCE,
+            "git+https://github.com/Ogekuri/GAlias",
+        )
+
+    ## @brief Verify GitHub tag_name parsing and v-prefix stripping (REQ-204).
+    # @details Mock the HTTP boundary with a synthetic release payload.
+    # @param self {UpdateCheckTest} Isolated test instance.
+    # @return {None} Assert REQ-204 normalized version text.
+    def test_fetch_github_latest_version_parses_tag_name(self):
+        with mock.patch.object(
+            core, "urlopen", return_value=_FakeResponse({"tag_name": "v1.2.3"})
+        ):
+            self.assertEqual(
+                core._fetch_github_latest_version(timeout_seconds=0.01), "1.2.3"
+            )
+
+    ## @brief Verify GitHub fetch failure diagnostics (REQ-127, REQ-202).
+    # @details Network failure and missing tag_name both return None with the
+    #          standardized bright-red update-check diagnostic on stderr.
+    # @param self {UpdateCheckTest} Isolated test instance.
+    # @return {None} Assert None result and error text.
+    def test_fetch_github_latest_version_reports_errors_and_returns_none(self):
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            with mock.patch.object(core, "urlopen", side_effect=OSError("network down")):
+                self.assertIsNone(core._fetch_github_latest_version(timeout_seconds=0.01))
+            with mock.patch.object(
+                core, "urlopen", return_value=_FakeResponse({"unexpected": "x"})
+            ):
+                self.assertIsNone(core._fetch_github_latest_version(timeout_seconds=0.01))
+        self.assertIn("Version check failed: network down", err.getvalue())
+        self.assertIn("`tag_name` is not semantic version.", err.getvalue())
+
+    ## @brief Verify check_for_newer_version returns the PyPI latest text.
+    # @details Mock the HTTP boundary and isolated cache; REQ-202 consumers use
+    #          this return value for the PyPI report line.
+    # @param self {UpdateCheckTest} Isolated test instance.
+    # @return {None} Assert returned version text.
+    def test_check_returns_latest_pypi_version_text(self):
+        with self._isolated_cache():
+            with mock.patch.object(core, "get_cli_version", return_value="0.0.1"):
+                with mock.patch.object(
+                    core,
+                    "urlopen",
+                    return_value=_FakeResponse({"info": {"version": "0.0.2"}}),
+                ):
+                    result = core.check_for_newer_version(timeout_seconds=0.01)
+        self.assertEqual(result, "0.0.2")
 
     def test_uninstall_self_uses_uv_tool_uninstall(self):
         with self._isolated_cache():

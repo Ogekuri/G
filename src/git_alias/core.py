@@ -50,19 +50,56 @@ UV_TOOL_NAME = "galias"
 ## @details Canonical PyPI distribution identifier equal to `UV_TOOL_NAME`;
 ##          composes the PyPI JSON API endpoint (REQ-124) and names the
 ##          `uv tool install` self-upgrade target (REQ-001). PyPI is the only
-##          remote source used for version verification and upgrades (REQ-199).
+##          remote source used by default version verification and upgrades
+##          (REQ-199).
 ## @satisfies REQ-001, REQ-124, REQ-199
 PYPI_PROJECT_NAME = UV_TOOL_NAME
 ## @brief PyPI JSON API endpoint resolving the latest published version.
 ## @details Fixed endpoint `https://pypi.org/pypi/galias/json`; the update check
 ##          parses the latest version from its `info.version` JSON field
-##          (REQ-124) and queries no other remote source (REQ-199).
+##          (REQ-124) and default checks query no other remote source (REQ-199).
 ## @satisfies REQ-124, REQ-199
 PYPI_LATEST_VERSION_API = f"https://pypi.org/pypi/{PYPI_PROJECT_NAME}/json"
+## @brief Upstream GitHub repository hosting intermediate and test releases.
+## @details Value `Ogekuri/GAlias`; composes the GitHub latest-release API
+##          endpoint (REQ-204) and the git upgrade source (REQ-201). GitHub is
+##          queried only by REQ-201 upgrades and REQ-202 version reporting.
+## @satisfies REQ-201, REQ-202, REQ-204
+GITHUB_REPOSITORY = "Ogekuri/GAlias"
+## @brief GitHub latest-release API endpoint used only for version reporting.
+## @details Fixed endpoint `https://api.github.com/repos/Ogekuri/GAlias/releases/latest`;
+##          `_fetch_github_latest_version` parses the release `tag_name` JSON
+##          field stripping one leading `v` (REQ-204). This endpoint never
+##          participates in default update checks (REQ-199).
+## @satisfies REQ-202, REQ-204, REQ-199
+GITHUB_LATEST_RELEASE_API = (
+    f"https://api.github.com/repos/{GITHUB_REPOSITORY}/releases/latest"
+)
+## @brief Git source specifier for GitHub-sourced self-upgrades.
+## @details Value `git+https://github.com/Ogekuri/GAlias`; consumed only by the
+##          REQ-201 `--upgrade --github` flow as the uv `--from` override.
+## @satisfies REQ-201
+GITHUB_UPGRADE_SOURCE = f"git+https://github.com/{GITHUB_REPOSITORY}"
+## @brief Self-upgrade command installing the latest GitHub source state.
+## @details Executes `uv tool install --force --from
+##          git+https://github.com/Ogekuri/GAlias galias` so Astral uv reinstalls
+##          the tool from the GitHub repository (REQ-201); selected only by
+##          `upgrade_self(github=True)`.
+## @satisfies REQ-201
+UV_TOOL_GITHUB_UPGRADE_COMMAND = (
+    "uv",
+    "tool",
+    "install",
+    "--force",
+    "--from",
+    GITHUB_UPGRADE_SOURCE,
+    UV_TOOL_NAME,
+)
 ## @brief Self-upgrade command installing the latest PyPI release.
 ## @details Executes `uv tool install galias --force` so Astral uv reinstalls
-##          the tool from the PyPI default source (REQ-001); no `--from`
-##          override exists, keeping PyPI the only upgrade source (REQ-199).
+##          the tool from the PyPI default source (REQ-001); the default path
+##          carries no `--from` override, keeping PyPI the only default upgrade
+##          source (REQ-199, REQ-201).
 ## @satisfies REQ-001, REQ-199
 UV_TOOL_UPGRADE_COMMAND = (
     "uv",
@@ -196,10 +233,10 @@ MANAGEMENT_HELP = [
         "--write-config",
         "Insert missing defaults into repository .galias.conf and global $HOME/.config/galias/config.json.",
     ),
-    ("--upgrade", "Reinstall galias on Linux; print manual command elsewhere."),
+    ("--upgrade", "Reinstall galias on Linux; print manual command elsewhere. Combine with --github to install from the GitHub repository."),
     ("--uninstall", "Uninstall galias on Linux; print manual command elsewhere."),
-    ("--ver", "Print the CLI version."),
-    ("--version", "Print the CLI version."),
+    ("--ver", "Print the CLI version with the latest PyPI and GitHub release versions."),
+    ("--version", "Print the CLI version with the latest PyPI and GitHub release versions."),
     ("--help", "Print the full help screen or the help text of a specific alias."),
 ]
 
@@ -424,14 +461,15 @@ def _write_version_check_error_state(
 # @param repo_root Input parameter consumed by `check_for_newer_version`.
 # @param timeout_seconds Input parameter consumed by `check_for_newer_version`.
 # @param ignore_idle_cache When `True`, bypasses `idle_until_unix` gating and forces an online check.
-# @return Result emitted by `check_for_newer_version` according to command contract.
+# @return {Optional[str]} Latest PyPI version text on success; None when the
+#         check is skipped, unavailable, or failed.
 # @satisfies REQ-123 REQ-124 REQ-126 REQ-127 REQ-129 REQ-130 REQ-131 REQ-137 REQ-199
 def check_for_newer_version(
     *,
     repo_root: Optional[Path] = None,
     timeout_seconds: float = VERSION_CHECK_TIMEOUT_SECONDS,
     ignore_idle_cache: bool = False,
-) -> None:
+) -> Optional[str]:
     now = datetime.now()
     now_unix = int(now.timestamp())
     cache_data: Dict[str, object] = {}
@@ -544,6 +582,67 @@ def check_for_newer_version(
 
     if latest > current:
         _print_update_available_warning(current, latest_text)
+    return latest_text
+
+
+## @brief Fetch the latest GitHub release version for version reporting.
+# @details Performs exactly one HTTP GET against the fixed GitHub
+#          latest-release endpoint (REQ-204), decodes the JSON payload, reads
+#          the `tag_name` field, strips one leading `v`, and normalizes the
+#          result as a semantic version. Every failure path prints the
+#          standardized bright-red update-check diagnostic (REQ-127) and
+#          returns None without raising; the fetch is report-only (REQ-202)
+#          and never mutates the PyPI idle-time cache.
+# @param timeout_seconds {float} Request timeout in seconds (REQ-125).
+# @return {Optional[str]} Normalized latest GitHub release version, or None on
+#         any request, payload, or semver failure.
+# @satisfies REQ-202, REQ-204
+def _fetch_github_latest_version(
+    timeout_seconds: float = VERSION_CHECK_TIMEOUT_SECONDS,
+) -> Optional[str]:
+    request = Request(
+        GITHUB_LATEST_RELEASE_API,
+        headers={
+            "Accept": "application/json",
+            "User-Agent": PYPI_PROJECT_NAME,
+        },
+        method="GET",
+    )
+    try:
+        with urlopen(request, timeout=timeout_seconds) as response:
+            payload_bytes = response.read()
+    except HTTPError as exc:
+        _print_update_check_error(f"HTTP {exc.code}")
+        return None
+    except URLError as exc:
+        _print_update_check_error(str(exc.reason))
+        return None
+    except TimeoutError:
+        _print_update_check_error("request timeout exceeded.")
+        return None
+    except OSError as exc:
+        _print_update_check_error(str(exc))
+        return None
+    try:
+        payload_text = (
+            payload_bytes.decode("utf-8")
+            if isinstance(payload_bytes, (bytes, bytearray))
+            else str(payload_bytes)
+        )
+        data = json.loads(payload_text)
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        _print_update_check_error(f"invalid JSON payload: {exc}")
+        return None
+    tag_name = str(data.get("tag_name") or "") if isinstance(data, dict) else ""
+    if tag_name.startswith("v"):
+        tag_name = tag_name[1:]
+    latest_text = _normalize_semver_text(tag_name)
+    if _parse_semver_tuple(latest_text) is None:
+        _print_update_check_error(
+            "invalid API payload: `tag_name` is not semantic version."
+        )
+        return None
+    return latest_text
 
 
 ## @brief Execute `get_git_root` runtime logic for Git-Alias CLI.
@@ -3491,15 +3590,21 @@ def _print_non_linux_management_command(
 
 ## @brief Execute `upgrade_self` runtime logic for Git-Alias CLI.
 # @details Executes `upgrade_self` using deterministic CLI control-flow and explicit error propagation.
+#          Selects the GitHub git source (REQ-201) when `github` is True and the
+#          PyPI default release (REQ-001) otherwise; non-Linux hosts receive the
+#          exact manual command matching the selected source (REQ-129).
 # @param repo_root Input parameter consumed by `upgrade_self`.
-# @return Result emitted by `upgrade_self` according to command contract.
-# @satisfies REQ-001 REQ-129
-def upgrade_self(repo_root: Optional[Path] = None):
+# @param github {bool} When True, upgrade from the GitHub git source (REQ-201)
+#        instead of the default PyPI release (REQ-001).
+# @return None; side-effect: uv tool install subprocess or manual-command guidance.
+# @satisfies REQ-001, REQ-129, REQ-201
+def upgrade_self(repo_root: Optional[Path] = None, github: bool = False):
     del repo_root
+    command = UV_TOOL_GITHUB_UPGRADE_COMMAND if github else UV_TOOL_UPGRADE_COMMAND
     if not _is_linux_platform():
-        _print_non_linux_management_command("upgrade", UV_TOOL_UPGRADE_COMMAND)
+        _print_non_linux_management_command("upgrade", command)
         return
-    _run_checked(list(UV_TOOL_UPGRADE_COMMAND))
+    _run_checked(list(command))
 
 
 ## @brief Remove update-check idle-time cache artifacts before Linux uninstall.
@@ -5745,16 +5850,23 @@ def print_all_help():
 
 ## @brief Execute `main` runtime logic for Git-Alias CLI.
 # @details Executes `main` using deterministic CLI control-flow and explicit error propagation.
+#          Management dispatch: `--ver`/`--version` prints the installed version
+#          plus the latest PyPI and GitHub versions (REQ-202); `--upgrade`
+#          selects the PyPI default source or the GitHub source via `--github`
+#          (REQ-001, REQ-201) and rejects `--github` without `--upgrade`
+#          (REQ-203).
 # @param argv Input parameter consumed by `main`.
 # @param check_updates Input parameter consumed by `main`.
 # @return Result emitted by `main` according to command contract.
+# @satisfies REQ-001, REQ-030, REQ-201, REQ-202, REQ-203
 def main(argv=None, *, check_updates: bool = True):
     args = list(argv) if argv is not None else sys.argv[1:]
     force_online_update_check = bool(args) and args[0] in ("--ver", "--version")
     git_root = get_git_root()
     load_cli_config(git_root)
+    pypi_latest_version: Optional[str] = None
     if check_updates or force_online_update_check:
-        check_for_newer_version(
+        pypi_latest_version = check_for_newer_version(
             repo_root=git_root,
             timeout_seconds=VERSION_CHECK_TIMEOUT_SECONDS,
             ignore_idle_cache=force_online_update_check,
@@ -5766,14 +5878,25 @@ def main(argv=None, *, check_updates: bool = True):
     if args[0] == "--help" and len(args) > 1 and args[1] not in COMMANDS:
         print(f"Unknown command: {args[1]}", file=sys.stderr)
         sys.exit(1)
+    if "--github" in args and args[0] != "--upgrade":
+        print(
+            "Option '--github' is supported only together with '--upgrade'.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     if args[0] in ("--ver", "--version"):
+        github_latest_version = _fetch_github_latest_version(
+            timeout_seconds=VERSION_CHECK_TIMEOUT_SECONDS
+        )
         print(get_cli_version())
+        print(f"PyPI latest: {pypi_latest_version or 'unavailable'}")
+        print(f"GitHub latest: {github_latest_version or 'unavailable'}")
         return
     if args[0] == "--write-config":
         write_default_config(git_root)
         return
     if args[0] == "--upgrade":
-        upgrade_self(git_root)
+        upgrade_self(git_root, github="--github" in args)
         return
     if args[0] == "--uninstall":
         uninstall_self()

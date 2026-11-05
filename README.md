@@ -99,27 +99,30 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 ### Prerequisites
 
 - Supported runtime for the CLI: Linux, macOS, or Windows (with Git + Python 3.11+ available).
-- `--upgrade` and `--uninstall` execute locally only on Linux; other platforms print the equivalent manual `uv tool` command.
+- `--upgrade` installs from PyPI by default (`--github` installs from GitHub) and `--uninstall` executes locally only on Linux; other platforms print the equivalent manual `uv tool` command.
 - Install the `uv` tool from: [https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/)
 
 
 ### Install GAlias
 
-  - Primary Method: pipx (from PyPI)
+  - Primary Method: Astral uv (from PyPI)
   ```bash
-  sudo apt install pipx
-  pipx ensurepath
-  pipx install galias
+  uv tool install galias
   ```
 
-  - Alternative Method: Astral uv / uvx (from PyPI)
-  ```bash
-  uv tool install galias --force
-  ```
-
-  Run directly without installation:
+  - Alternative Method: uvx, run directly without installation (from PyPI)
   ```bash
   uvx galias <command> [args...]
+  ```
+
+  - Install from GitHub (intermediate and test releases)
+  ```bash
+  uv tool install --force --from git+https://github.com/Ogekuri/GAlias galias
+  ```
+
+  Upgrade to the latest version published on GitHub:
+  ```bash
+  g --upgrade --github
   ```
 
   - Run with the Repository-Local Launcher (no installation required)
@@ -197,10 +200,10 @@ The command must run from the `work` branch with a clean working tree; it bumps 
 
 Upgrade or uninstall the GAlias CLI:
 
-- `g --upgrade` / `galias --upgrade`: Reinstalls the tool from the GitHub repository on Linux; on non-Linux platforms it prints the equivalent manual command.
+- `g --upgrade` / `galias --upgrade`: Reinstalls the tool from PyPI on Linux; `g --upgrade --github` reinstalls from the GitHub repository; on non-Linux platforms it prints the equivalent manual command.
 - `g --uninstall` / `galias --uninstall`: Uninstalls the tool on Linux; on non-Linux platforms it prints the equivalent manual command.
 - `g --write-config` / `galias --write-config`: Inserts missing defaults into repository `.galias.conf` and global `$HOME/.config/galias/config.json`.
-- `g --ver` / `g --version` / `galias --ver` / `galias --version`: Prints the CLI version.
+- `g --ver` / `g --version` / `galias --ver` / `galias --version`: Prints the CLI version and the latest versions available on PyPI and GitHub.
 - `g --help` / `galias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
 
 ### README Maintenance Policy

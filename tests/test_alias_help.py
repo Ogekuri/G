@@ -145,8 +145,34 @@ class AliasHelpTest(unittest.TestCase):
     def test_global_version_flags(self):
         version = self.module.get_cli_version()
         for flag in ("--ver", "--version"):
-            _, stdout, _ = self.run_script_result([flag], check=True)
-            self.assertEqual(stdout.strip(), version)
+            with self.subTest(flag=flag):
+                with mock.patch.object(
+                    core, "check_for_newer_version", return_value="9.9.9"
+                ) as check_update, mock.patch.object(
+                    core, "_fetch_github_latest_version", return_value="9.9.8"
+                ) as fetch_github:
+                    _, stdout, _ = self.run_script_result([flag], check=True)
+                check_update.assert_called_once()
+                fetch_github.assert_called_once()
+                self.assertEqual(
+                    stdout.strip(),
+                    f"{version}\nPyPI latest: 9.9.9\nGitHub latest: 9.9.8",
+                )
+
+    ## @brief Verify unavailable remote sources render as unavailable (REQ-202).
+    # @details Mock both fetchers returning None; the installed version line
+    #          stays first and both report lines degrade deterministically.
+    # @param self {AliasHelpTest} Isolated test instance.
+    # @return {None} Assert REQ-202 degraded output.
+    def test_global_version_flags_report_unavailable_sources(self):
+        version = self.module.get_cli_version()
+        with mock.patch.object(core, "check_for_newer_version", return_value=None), \
+                mock.patch.object(core, "_fetch_github_latest_version", return_value=None):
+            _, stdout, _ = self.run_script_result(["--ver"], check=True)
+        self.assertEqual(
+            stdout.strip(),
+            f"{version}\nPyPI latest: unavailable\nGitHub latest: unavailable",
+        )
 
     def test_global_version_flags_force_online_update_check(self):
         for flag in ("--ver", "--version"):
@@ -169,6 +195,26 @@ class AliasHelpTest(unittest.TestCase):
         args, _ = upgrade_self.call_args
         self.assertEqual(len(args), 1)
         self.assertTrue(str(args[0]))
+
+    ## @brief Verify --github without --upgrade is rejected (REQ-203).
+    # @details The modifier is valid only combined with --upgrade; standalone
+    #          usage exits non-zero with explicit English stderr guidance.
+    # @param self {AliasHelpTest} Isolated test instance.
+    # @return {None} Assert REQ-203 rejection.
+    def test_github_flag_without_upgrade_is_rejected(self):
+        code, _, err = self.run_script_result(["--github"], check=False)
+        self.assertNotEqual(code, 0)
+        self.assertIn("only together with '--upgrade'", err)
+
+    ## @brief Verify --upgrade --github routes the GitHub source (REQ-201).
+    # @details Mock the upgrade boundary; assert the github selector is True.
+    # @param self {AliasHelpTest} Isolated test instance.
+    # @return {None} Assert REQ-201 dispatch.
+    def test_upgrade_github_flag_selects_github_source(self):
+        with mock.patch.object(core, "upgrade_self") as upgrade_self:
+            self.run_script_result(["--upgrade", "--github"], check=True)
+        upgrade_self.assert_called_once()
+        self.assertTrue(upgrade_self.call_args.kwargs.get("github"))
 
     def test_uninstall_flag_invokes_uninstall_self(self):
         with mock.patch.object(core, "uninstall_self") as uninstall_self:
