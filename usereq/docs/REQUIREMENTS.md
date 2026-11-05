@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "git-alias"]
 ---
 
 # Git-Alias CLI Requirements
-**Version**: 1.22
+**Version**: 1.23
 **Author**: Francesco Rolando
-**Date**: 2026-11-03
+**Date**: 2026-11-05
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-11-05 | 1.23 | Renamed the upstream GitHub repository from `Ogekuri/G` to `Ogekuri/GitAlias` in the `--upgrade` source URL (REQ-001) and the release-check API URL (REQ-124). |
 | 2026-11-03 | 1.22 | Imposed defaults `edit`/`sublime_text`, `icdiff`/`meld`, `tig`/`gitg`, `gitui`/`sublime_merge --multiinstance .` for the eight global command keys (REQ-191) and required their contiguous canonical print order in Configuration Parameters output (REQ-192). |
 | 2026-11-03 | 1.21 | Changed visual diff execution to `git difftool -d` with the environment-selected `diff_command`/`diff_command_gfx` injected as `--extcmd`, overriding git's configured diff tool; empty resolved command runs plain `git difftool -d`. |
 | 2026-11-03 | 1.20 | Added environment-aware dual external-command configuration (`<id>_command`/`<id>_command_gfx`), the dedicated `diff_command` pair driving visual diff aliases, and the single `_run_checked` subprocess interception wrapper. |
@@ -96,7 +97,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.g.conf` plus `$HOME/.config/git-alias/config.json`, otherwise defaults from `DEFAULT_CONFIG`.
 
 ### 3.2 Functional Requirements
-- **REQ-001**: MUST execute `uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git` when `--upgrade` is invoked on Linux.
+- **REQ-001**: MUST execute `uv tool install git-alias --force --from git+https://github.com/Ogekuri/GitAlias.git` when `--upgrade` is invoked on Linux.
 - **REQ-002**: MUST when `--uninstall` is invoked on Linux, delete `~/.cache/git-alias/check_version_idle-time.json`, remove `~/.cache/git-alias`, and execute `uv tool uninstall git-alias`.
 - **REQ-129**: MUST NOT execute local `uv tool install` when `--upgrade` is invoked on non-Linux platforms, and MUST print the exact manual install command for user execution.
 - **REQ-130**: MUST NOT execute local `uv tool uninstall` when `--uninstall` is invoked on non-Linux platforms, and MUST print the exact manual uninstall command for user execution.
@@ -234,7 +235,7 @@ The project provides a Python CLI (`git-alias` / `g`) that executes curated git 
 - **REQ-120**: MUST define `LSI_DEFAULT_EXCLUDED_DIRS` as a `frozenset` containing: `.cache`, `.claude`, `.codex`, `.eslintcache`, `.gemini`, `.git`, `.github`, `.kiro`, `.mypy_cache`, `.npm`, `.opencode`, `.parcel-cache`, `.pytest_cache`, `.ruff_cache`, `.sass-cache`, `.terragrunt-cache`, `.tox`, `.venv`, `.vscode`, `__pycache__`, `build`, `dist`, `htmlcov`, `node_modules`, `temp`, `tmp`, `venv`.
 - **REQ-121**: MUST the `lsi` alias MUST accept `--include-all` flag; when present, MUST bypass `LSI_DEFAULT_EXCLUDED_DIRS` and `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` filtering and print all ignored files unfiltered.
 - **REQ-123**: MUST when a newer version is detected, print a bright-green (`\033[92;1m`) message `Update available: <latest> (installed: <current>)` before command execution.
-- **REQ-124**: MUST resolve the release-check URL exactly as `https://api.github.com/repos/Ogekuri/G/releases/latest`.
+- **REQ-124**: MUST resolve the release-check URL exactly as `https://api.github.com/repos/Ogekuri/GitAlias/releases/latest`.
 - **REQ-125**: MUST execute release-check HTTP requests with a hardcoded configurable timeout defaulting to 2 seconds.
 - **REQ-126**: MUST after successful release checks write `~/.cache/git-alias/check_version_idle-time.json` JSON fields `last_check_unix`, `last_check_human`, `idle_until_unix`, and `idle_until_human`, with `idle_until_unix = last_check_unix + 3600`.
 - **REQ-127**: MUST print bright-red (`\033[31;1m`) update-check errors, including HTTP status diagnostics and API-provided messages such as `rate limit exceeded`.

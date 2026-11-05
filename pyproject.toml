@@ -28,8 +28,8 @@ dependencies = ["pathspec"]
 dev = ["pytest"]
 
 [project.urls]
-Homepage = "https://github.com/Ogekuri/G"
-Repository = "https://github.com/Ogekuri/G"
+Homepage = "https://github.com/Ogekuri/GitAlias"
+Repository = "https://github.com/Ogekuri/GitAlias"
 
 [project.scripts]
 git-alias = "git_alias.core:main"

@@ -33,8 +33,14 @@ GLOBAL_CONFIG_FILENAME = "config.json"
 
 ## @brief Constant `GITHUB_OWNER` used by CLI runtime paths and policies.
 GITHUB_OWNER = "Ogekuri"
-## @brief Constant `GITHUB_REPOSITORY` used by CLI runtime paths and policies.
-GITHUB_REPOSITORY = "G"
+## @brief Upstream GitHub repository name composing repository-scoped URLs.
+## @details Value `GitAlias` after the upstream repository rename from `G`.
+##          Sole repository-name source constant: consumed by
+##          `GITHUB_LATEST_RELEASE_API` (release-check endpoint, REQ-124) and
+##          `UV_TOOL_UPGRADE_SOURCE` (`uv tool install --from` source, REQ-001);
+##          no repository-name string literals exist elsewhere in `core.py`.
+## @satisfies REQ-001, REQ-124
+GITHUB_REPOSITORY = "GitAlias"
 ## @brief Constant `GITHUB_LATEST_RELEASE_API` used by CLI runtime paths and policies.
 GITHUB_LATEST_RELEASE_API = (
     f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPOSITORY}/releases/latest"

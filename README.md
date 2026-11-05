@@ -1,4 +1,4 @@
-# G/Git-Alias CLI (0.45.0)
+# GitAlias/Git-Alias CLI (0.45.0)
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+">
@@ -65,9 +65,9 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 - Version management commands: `ver` checks version consistency (supports `--verbose`/`--debug`), `chver <major.minor.patch>` updates files matched by `ver_rules`, and `changelog` generates `CHANGELOG.md` (supports `--include-patch`, `--force-write`, `--print-only`, `--disable-history`).
 - Self-upgrade and self-uninstall management commands are Linux-only for local execution (`--upgrade`, `--uninstall`), with manual command hints on other platforms.
 - Includes a **quick overview** command `o`:
-[![Flowchart](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/command_o_overview_sample1.png)](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/command_o_overview_sample1.png)
+[![Flowchart](https://raw.githubusercontent.com/Ogekuri/GitAlias/refs/heads/master/images/command_o_overview_sample1.png)](https://raw.githubusercontent.com/Ogekuri/GitAlias/refs/heads/master/images/command_o_overview_sample1.png)
 - Includes **git-foresta** command `l`:
-[![Flowchart](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/commnad_l_git-foresta-sample1.png)](https://raw.githubusercontent.com/Ogekuri/G/refs/heads/master/images/commnad_l_git-foresta-sample1.png)
+[![Flowchart](https://raw.githubusercontent.com/Ogekuri/GitAlias/refs/heads/master/images/commnad_l_git-foresta-sample1.png)](https://raw.githubusercontent.com/Ogekuri/GitAlias/refs/heads/master/images/commnad_l_git-foresta-sample1.png)
   Options include `--all`, `--no-color`, `--no-status`, `--reverse`, `--wrap`, `--abbrev=<n>`, `--svdepth=<n>`, `--style=<n>`, `--graph-margin-left=<n>`, `--graph-margin-right=<n>`, and `--graph-symbol-*` overrides.
 
 
@@ -90,16 +90,16 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 - Install the `uv` tool from: [https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/)
 
 
-### Install G/Git-Alias
+### Install GitAlias/Git-Alias
 
   - Install or Upgrade
   ```bash
-  uv tool install git-alias --force --from git+https://github.com/Ogekuri/G.git
+  uv tool install git-alias --force --from git+https://github.com/Ogekuri/GitAlias.git
   ```
 
   - Run Directly from the Repository
   ```bash
-  uvx --from git+https://github.com/Ogekuri/G.git git-alias <command> [args...]
+  uvx --from git+https://github.com/Ogekuri/GitAlias.git git-alias <command> [args...]
   ```
 
   - Run with the Repository-Local Launcher (no installation required)
