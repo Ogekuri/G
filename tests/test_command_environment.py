@@ -103,6 +103,10 @@ class ConfiguredDiffExtcmdInjectionTest(unittest.TestCase):
         core.CONFIG.update(core.DEFAULT_CONFIG)
 
     def test_unconfigured_diff_runs_plain_git_difftool(self):
+        # REQ-190: explicitly empty diff pair keeps the plain-difftool path
+        # independent of host-installed default tools.
+        core.CONFIG["diff_command"] = ""
+        core.CONFIG["diff_command_gfx"] = ""
         with (
             mock.patch.object(core, "_is_graphical_environment", return_value=False),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
@@ -139,6 +143,9 @@ class ConfiguredDiffExtcmdInjectionTest(unittest.TestCase):
             )
 
     def test_unconfigured_graphical_diff_runs_plain_git_difftool(self):
+        # REQ-188 + REQ-190: empty gfx falls back to empty terminal command.
+        core.CONFIG["diff_command"] = ""
+        core.CONFIG["diff_command_gfx"] = ""
         with (
             mock.patch.object(core, "_is_graphical_environment", return_value=True),
             mock.patch.object(core, "run_command", return_value=None) as run_command,
@@ -176,18 +183,23 @@ class SubprocessWrapperIsolationTest(unittest.TestCase):
             core.GLOBAL_CONFIG_KEYS,
             (
                 "edit_command",
-                "gp_command",
-                "gr_command",
-                "diff_command",
                 "edit_command_gfx",
-                "gp_command_gfx",
-                "gr_command_gfx",
+                "diff_command",
                 "diff_command_gfx",
+                "gr_command",
+                "gr_command_gfx",
+                "gp_command",
+                "gp_command_gfx",
             ),
         )
         self.assertEqual(core.GIT_DIFFTOOL_COMMAND, ("git", "difftool", "-d"))
-        self.assertEqual(core.DEFAULT_CONFIG["diff_command"], "")
-        self.assertEqual(core.DEFAULT_CONFIG["edit_command_gfx"], "")
-        self.assertEqual(core.DEFAULT_CONFIG["gp_command_gfx"], "")
-        self.assertEqual(core.DEFAULT_CONFIG["gr_command_gfx"], "")
-        self.assertEqual(core.DEFAULT_CONFIG["diff_command_gfx"], "")
+        self.assertEqual(core.DEFAULT_CONFIG["edit_command"], "edit")
+        self.assertEqual(core.DEFAULT_CONFIG["edit_command_gfx"], "sublime_text")
+        self.assertEqual(core.DEFAULT_CONFIG["diff_command"], "icdiff")
+        self.assertEqual(core.DEFAULT_CONFIG["diff_command_gfx"], "meld")
+        self.assertEqual(core.DEFAULT_CONFIG["gr_command"], "tig")
+        self.assertEqual(core.DEFAULT_CONFIG["gr_command_gfx"], "gitg")
+        self.assertEqual(core.DEFAULT_CONFIG["gp_command"], "gitui")
+        self.assertEqual(
+            core.DEFAULT_CONFIG["gp_command_gfx"], "sublime_merge --multiinstance ."
+        )

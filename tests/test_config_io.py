@@ -15,7 +15,7 @@ class ConfigIOTest(unittest.TestCase):
     def test_get_global_config_path_uses_xdg_location(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             home = Path(tmpdir) / "home"
-            expected = home / ".config" / "git-alias" / "config.json"
+            expected = home / ".config" / "galias" / "config.json"
             self.assertEqual(core.get_global_config_path(home), expected)
 
     def test_load_cli_config_reads_local_and_global_json(self):
@@ -104,10 +104,18 @@ class ConfigIOTest(unittest.TestCase):
             self.assertEqual(global_data["gp_command"], "gitk --all --date-order")
             self.assertEqual(global_data["gr_command"], core.DEFAULT_CONFIG["gr_command"])
             self.assertEqual(global_data["diff_command"], core.DEFAULT_CONFIG["diff_command"])
-            self.assertEqual(global_data["edit_command_gfx"], "")
-            self.assertEqual(global_data["gp_command_gfx"], "")
-            self.assertEqual(global_data["gr_command_gfx"], "")
-            self.assertEqual(global_data["diff_command_gfx"], "")
+            self.assertEqual(
+                global_data["edit_command_gfx"], core.DEFAULT_CONFIG["edit_command_gfx"]
+            )
+            self.assertEqual(
+                global_data["gp_command_gfx"], core.DEFAULT_CONFIG["gp_command_gfx"]
+            )
+            self.assertEqual(
+                global_data["gr_command_gfx"], core.DEFAULT_CONFIG["gr_command_gfx"]
+            )
+            self.assertEqual(
+                global_data["diff_command_gfx"], core.DEFAULT_CONFIG["diff_command_gfx"]
+            )
             self.assertNotIn("editor", global_data)
             self.assertNotIn("master", global_data)
 

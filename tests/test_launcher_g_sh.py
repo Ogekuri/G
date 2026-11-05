@@ -69,6 +69,10 @@ class LauncherGShTest(unittest.TestCase):
             )
 
             env = os.environ.copy()
+            # Isolation: BASH_ENV would re-source a user rc file that resets
+            # PATH inside the non-interactive launcher bash, defeating the
+            # fake-bin PATH injection.
+            env.pop("BASH_ENV", None)
             env["PATH"] = self._prepend_fake_bin_to_path(
                 fake_bin, env.get("PATH", "")
             )
@@ -134,6 +138,7 @@ class LauncherGShTest(unittest.TestCase):
             )
 
             env = os.environ.copy()
+            env.pop("BASH_ENV", None)
             env["PATH"] = self._prepend_fake_bin_to_path(
                 fake_bin, env.get("PATH", "")
             )

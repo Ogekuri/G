@@ -9,6 +9,10 @@ from git_alias import core
 class CmdDiffAliasesTest(unittest.TestCase):
     def setUp(self):
         core.CONFIG.update(core.DEFAULT_CONFIG)
+        # REQ-190: pin an explicitly unconfigured diff pair so plain
+        # `git difftool -d` tests do not depend on host-installed defaults.
+        core.CONFIG["diff_command"] = ""
+        core.CONFIG["diff_command_gfx"] = ""
 
     def test_command_aliases_include_dc_and_dw(self):
         self.assertIn("dwc", core.COMMANDS)

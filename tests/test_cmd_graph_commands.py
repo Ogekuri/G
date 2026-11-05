@@ -1,4 +1,5 @@
 import unittest
+from pathlib import PurePosixPath
 from unittest import mock
 
 from git_alias import core
@@ -9,27 +10,31 @@ class CmdGraphCommandsTest(unittest.TestCase):
         core.CONFIG.update(core.DEFAULT_CONFIG)
 
     def test_cmd_gp_runs_default_command_template(self):
-        with mock.patch.object(core.shutil, "which", return_value="/usr/bin/gitk"), \
+        with mock.patch.object(core, "_is_graphical_environment", return_value=False), \
+             mock.patch.object(core.shutil, "which", return_value="/usr/bin/gitk"), \
              mock.patch.object(core, "run_command", return_value=None) as run_command:
             core.cmd_gp(["--date-order"])
-        run_command.assert_called_once_with(["gitk", "--all", "--date-order"])
+        run_command.assert_called_once_with(["gitui", "--date-order"])
 
     def test_cmd_gr_runs_default_command_template(self):
-        with mock.patch.object(core.shutil, "which", return_value="/usr/bin/gitk"), \
+        with mock.patch.object(core, "_is_graphical_environment", return_value=False), \
+             mock.patch.object(core.shutil, "which", return_value="/usr/bin/gitk"), \
              mock.patch.object(core, "run_command", return_value=None) as run_command:
             core.cmd_gr(["--branches"])
-        run_command.assert_called_once_with(["gitk", "--simplify-by-decoration", "--all", "--branches"])
+        run_command.assert_called_once_with(["tig", "--branches"])
 
     def test_cmd_gp_uses_configured_command_when_executable_is_available(self):
         core.CONFIG["gp_command"] = "python3 -m git_alias.viewer"
-        with mock.patch.object(core.shutil, "which", return_value="/usr/bin/python3"), \
+        with mock.patch.object(core, "_is_graphical_environment", return_value=False), \
+             mock.patch.object(core.shutil, "which", return_value="/usr/bin/python3"), \
              mock.patch.object(core, "run_command", return_value=None) as run_command:
             core.cmd_gp(["--all"])
         run_command.assert_called_once_with(["python3", "-m", "git_alias.viewer", "--all"])
 
     def test_cmd_gr_raises_when_configured_executable_is_unavailable(self):
         core.CONFIG["gr_command"] = "missing-viewer --all"
-        with mock.patch.object(core.shutil, "which", return_value=None), \
+        with mock.patch.object(core, "_is_graphical_environment", return_value=False), \
+             mock.patch.object(core.shutil, "which", return_value=None), \
              mock.patch.object(core, "run_command", return_value=None) as run_command:
             with self.assertRaisesRegex(
                 RuntimeError,
@@ -40,7 +45,8 @@ class CmdGraphCommandsTest(unittest.TestCase):
 
     def test_cmd_gr_raises_when_configured_command_is_invalid(self):
         core.CONFIG["gr_command"] = 'gitk "unterminated'
-        with mock.patch.object(core, "run_command", return_value=None) as run_command:
+        with mock.patch.object(core, "_is_graphical_environment", return_value=False), \
+             mock.patch.object(core, "run_command", return_value=None) as run_command:
             with self.assertRaisesRegex(
                 RuntimeError,
                 "Configured gr_command command is invalid:",
@@ -58,7 +64,12 @@ class CmdGraphCommandsTest(unittest.TestCase):
         @return {None} No return value.
         """
         core.CONFIG["gr_command"] = "gitk --simplify-by-decoration --all"
+        # REQ-188: empty graphical variant forces fallback to terminal command
+        # so the Windows (non-POSIX => graphical) launcher path under test.
+        core.CONFIG["gr_command_gfx"] = ""
         with mock.patch.object(core.os, "name", "nt"), \
+             mock.patch.object(core.os, "pathsep", ";"), \
+             mock.patch.object(core, "Path", PurePosixPath), \
              mock.patch.object(
                  core.shutil,
                  "which",

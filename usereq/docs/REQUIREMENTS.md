@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "galias"]
 ---
 
 # GAlias CLI Requirements
-**Version**: 1.25
+**Version**: 1.26
 **Author**: Francesco Rolando
 **Date**: 2026-11-05
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-11-05 | 1.26 | Renamed the release workflow file to `release-pypi.yml` (REQ-112) and added PyPI OIDC Trusted Publishing requirements for release permissions, publication steps, packaging metadata, license declaration, and install documentation (REQ-193, REQ-194, REQ-195, REQ-196, REQ-197, REQ-198). |
 | 2026-11-05 | 1.25 | Renamed the repository-local configuration file from `.g.conf` to `.galias.conf` without backward compatibility (DES-006, DES-009, REQ-006, REQ-014, REQ-017, REQ-116, REQ-119). |
 | 2026-11-05 | 1.24 | Renamed the upstream GitHub repository to `Ogekuri/GAlias` (REQ-001, REQ-124), renamed the distribution/tool/binaries to `galias` with `g` and removed `git-alias` (PRJ-001, CPT-002, REQ-001, REQ-002), and renamed user-facing cache/config paths to `~/.cache/galias` and `~/.config/galias` (REQ-002, REQ-013, REQ-014, REQ-030, REQ-033, REQ-126, REQ-136, REQ-137, CTN-003, DES-006, DES-009, REQ-186). |
 | 2026-11-05 | 1.23 | Renamed the upstream GitHub repository from `Ogekuri/G` to `Ogekuri/GitAlias` in the `--upgrade` source URL (REQ-001) and the release-check API URL (REQ-124). |
@@ -229,9 +230,15 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-109**: MUST the `l` alias MUST implement a vine-based graph algorithm with three phases per commit: vine_branch (draw branch convergence connectors), vine_commit (place commit node and assign tip positions), vine_merge (draw merge fan-out connectors and allocate parent vine slots).
 - **REQ-110**: MUST the `l` alias MUST cycle branch colors from a predefined palette (`blue_bold`, `yellow_bold`, `magenta_bold`, `green_bold`, `cyan_bold`) with neighbor-avoidance logic ensuring adjacent branches use distinct colors.
 - **REQ-111**: MUST the `l` alias inject `-n 25` only when invoked with no user arguments, and MUST pass all user-provided unrecognized arguments through to `git log` unchanged without appending `-n 25`.
-- **REQ-112**: MUST trigger GitHub release workflow `release-uvx.yml` on `workflow_dispatch` and pushed tags matching `v<major>.<minor>.<patch>`; execution MUST continue only when `${GITHUB_SHA}` is contained in `origin/master`.
+- **REQ-112**: MUST trigger GitHub release workflow `release-pypi.yml` on `workflow_dispatch` and pushed tags matching `v<major>.<minor>.<patch>`; execution MUST continue only when `${GITHUB_SHA}` is contained in `origin/master`.
 - **REQ-113**: MUST build release distributions in GitHub Actions with Python 3.11 using `python -m build`, and MUST attest provenance for `dist/*` artifacts.
 - **REQ-114**: MUST publish a non-draft, non-prerelease GitHub Release for the triggering tag and upload `dist/**/*` assets using changelog content produced by the configured changelog-builder step.
+- **REQ-193**: MUST grant workflow `release-pypi.yml` top-level permissions `contents: write`, `id-token: write`, and `attestations: write` for release publication and PyPI OIDC Trusted Publishing.
+- **REQ-194**: MUST publish built `dist/` distributions to PyPI project `galias` through `pypa/gh-action-pypi-publish` using OIDC Trusted Publishing without API tokens or username/password credentials.
+- **REQ-195**: MUST execute PyPI publication as post-steps after the GitHub Release step while preserving existing build, attestation, changelog, and release steps in `release-pypi.yml`.
+- **REQ-196**: MUST declare PyPI-compliant `[project]` metadata in `pyproject.toml`: `name = "galias"`, `description`, `readme`, `requires-python`, `keywords`, `classifiers`, and project URLs.
+- **REQ-197**: MUST declare the `pyproject.toml` project license as the PEP 639 SPDX expression `GPL-3.0-only` with explicit `license-files` including `LICENSE`.
+- **REQ-198**: MUST document PyPI installation and uv/uvx usage (`uv tool install galias`, `uvx galias`) in `README.md` while retaining git-source install commands.
 - **REQ-115**: MUST section `=== 5. BRANCHES ===` append, after configured rows, aligned `<Identifier> | <latest commit subject>` rows for every discovered local or remote branch not already rendered.
 - **REQ-119**: MUST visual diff aliases `dcd`, `dcm`, and `ddm` execute through the environment-aware diff wrapper (REQ-189) with refs `<develop> <work>`, `<master> <work>`, and `<master> <develop>` from `.galias.conf`, each exposing explicit help text in help outputs.
 - **REQ-120**: MUST define `LSI_DEFAULT_EXCLUDED_DIRS` as a `frozenset` containing: `.cache`, `.claude`, `.codex`, `.eslintcache`, `.gemini`, `.git`, `.github`, `.kiro`, `.mypy_cache`, `.npm`, `.opencode`, `.parcel-cache`, `.pytest_cache`, `.ruff_cache`, `.sass-cache`, `.terragrunt-cache`, `.tox`, `.venv`, `.vscode`, `__pycache__`, `build`, `dist`, `htmlcov`, `node_modules`, `temp`, `tmp`, `venv`.
@@ -275,7 +282,7 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 .
 ├── .github/
 │   └── workflows/
-│       └── release-uvx.yml
+│       └── release-pypi.yml
 ├── docs/
 │   ├── REQUIREMENTS.md
 │   ├── REFERENCES.md
@@ -295,13 +302,19 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 ### 3.4 Component Organization
 - `core.py` implements dispatch, command handlers, config loading/writing, git subprocess wrappers, and release/changelog flows.
 - `foresta.py` implements vine-based text tree rendering for git history (`l` alias).
-- `release-uvx.yml` implements manual-or-tag-triggered CI release build and publication workflow guarded by a master-containment gate.
+- `release-pypi.yml` implements manual-or-tag-triggered CI release build, GitHub Release publication, and PyPI OIDC Trusted Publishing workflow guarded by a master-containment gate.
 - No explicit performance optimizations identified.
 
 ### 3.5 Evidence for Added Requirements
-- **REQ-112** evidence: `.github/workflows/release-uvx.yml` lines 3-7 (`workflow_dispatch` plus pushed-tag trigger), lines 29-35 (master containment gate).
-- **REQ-113** evidence: `.github/workflows/release-uvx.yml` lines 50-53 (Python 3.11), line 62 (`python -m build`), lines 64-67 (attestation over `dist/*`).
-- **REQ-114** evidence: `.github/workflows/release-uvx.yml` lines 117-127 (GitHub Release creation, non-draft/non-prerelease, `dist/**/*` assets, changelog body wiring).
+- **REQ-112** evidence: `.github/workflows/release-pypi.yml` lines 3-7 (`workflow_dispatch` plus pushed-tag trigger), lines 29-35 (master containment gate).
+- **REQ-113** evidence: `.github/workflows/release-pypi.yml` lines 50-53 (Python 3.11), line 62 (`python -m build`), lines 64-67 (attestation over `dist/*`).
+- **REQ-114** evidence: `.github/workflows/release-pypi.yml` lines 115-127 (GitHub Release creation, non-draft/non-prerelease, `dist/**/*` assets, changelog body wiring).
+- **REQ-193** evidence: `.github/workflows/release-pypi.yml` lines 9-13 (top-level `permissions` granting `contents: write`, `id-token: write`, `attestations: write`).
+- **REQ-194** evidence: `.github/workflows/release-pypi.yml` lines 129-132 (`pypa/gh-action-pypi-publish` step with no credential inputs).
+- **REQ-195** evidence: `.github/workflows/release-pypi.yml` publish step ordered after the GitHub Release step with all preceding steps unchanged.
+- **REQ-196** evidence: `pyproject.toml` `[project]` table (`name`, `description`, `readme`, `requires-python`, `keywords`, `classifiers`) plus `[project.urls]` entries.
+- **REQ-197** evidence: `pyproject.toml` `license = "GPL-3.0-only"` SPDX expression, `license-files` declaration, and `build-system` `setuptools>=77.0.0` requirement.
+- **REQ-198** evidence: `README.md` Quick Start install commands `uv tool install galias` and `uvx galias` alongside git-source install commands.
 - **REQ-169** evidence: `src/git_alias/core.py` `cmd_rollback` pre-flight `_determine_canonical_version` call executed after target validation.
 - **REQ-170** evidence: `src/git_alias/core.py` `cmd_rollback` non-zero exits for missing `ver_rules` and `VersionDetectionError`.
 - **REQ-171** evidence: `src/git_alias/core.py` `cmd_rollback` `current_version` capture after successful detection.

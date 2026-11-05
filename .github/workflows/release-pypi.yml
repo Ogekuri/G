@@ -1,4 +1,4 @@
-name: Release (uvx)
+name: Release (PyPI)
 
 on:
   workflow_dispatch:
@@ -125,3 +125,8 @@ jobs:
           body: ${{ steps.build_changelog.outputs.changelog }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish distributions to PyPI (OIDC Trusted Publishing)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true

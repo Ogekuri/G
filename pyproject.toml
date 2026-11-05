@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68.0.0", "wheel>=0.41.0", "build>=1.0.0"]
+requires = ["setuptools>=77.0.0", "wheel>=0.41.0", "build>=1.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,8 @@ version = "0.45.0"
 description = "Emulate personalized git aliases via an uvx-compatible interface."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { file = "LICENSE" }
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 authors = [
   { name = "Francesco Rolando" }
 ]
@@ -30,6 +31,8 @@ dev = ["pytest"]
 [project.urls]
 Homepage = "https://github.com/Ogekuri/GAlias"
 Repository = "https://github.com/Ogekuri/GAlias"
+Changelog = "https://github.com/Ogekuri/GAlias/blob/master/CHANGELOG.md"
+Issues = "https://github.com/Ogekuri/GAlias/issues"
 
 [project.scripts]
 galias = "git_alias.core:main"

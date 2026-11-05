@@ -12,7 +12,8 @@ class CmdEditCommandTest(unittest.TestCase):
 
     def test_cmd_ed_runs_validated_editor_command_for_each_path(self):
         core.CONFIG["edit_command"] = "code --wait"
-        with mock.patch.object(core.shutil, "which", return_value="/usr/bin/code"), \
+        with mock.patch.object(core, "_is_graphical_environment", return_value=False), \
+             mock.patch.object(core.shutil, "which", return_value="/usr/bin/code"), \
              mock.patch.object(core, "run_command", return_value=None) as run_command:
             core.cmd_ed(["~/one.txt", "two.txt"])
         run_command.assert_has_calls(
@@ -24,7 +25,8 @@ class CmdEditCommandTest(unittest.TestCase):
 
     def test_cmd_ed_raises_when_configured_executable_is_unavailable(self):
         core.CONFIG["edit_command"] = "missing-editor --wait"
-        with mock.patch.object(core.shutil, "which", return_value=None), \
+        with mock.patch.object(core, "_is_graphical_environment", return_value=False), \
+             mock.patch.object(core.shutil, "which", return_value=None), \
              mock.patch.object(core, "run_command", return_value=None) as run_command:
             with self.assertRaisesRegex(
                 RuntimeError,
@@ -39,6 +41,7 @@ class CmdEditCommandTest(unittest.TestCase):
         stderr = io.StringIO()
         with mock.patch.object(core, "get_git_root", return_value=core.Path.cwd()), \
              mock.patch.object(core, "load_cli_config", return_value=None), \
+             mock.patch.object(core, "_is_graphical_environment", return_value=False), \
              mock.patch.object(core.shutil, "which", return_value=None), \
              mock.patch.object(core, "run_command", return_value=None) as run_command, \
              contextlib.redirect_stderr(stderr):

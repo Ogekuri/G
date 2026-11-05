@@ -92,7 +92,17 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 
 ### Install GAlias
 
-  - Install or Upgrade
+  - Install or Upgrade from PyPI
+  ```bash
+  uv tool install galias --force
+  ```
+
+  - Run Directly from PyPI (no installation required)
+  ```bash
+  uvx galias <command> [args...]
+  ```
+
+  - Install or Upgrade from the Git Repository
   ```bash
   uv tool install galias --force --from git+https://github.com/Ogekuri/GAlias.git
   ```
