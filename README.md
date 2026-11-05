@@ -35,7 +35,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
 - Common aliases for repetitive tasks like `add --all` (`aa`) and more.
 - Acts like a `.gitconfig` [alias] section, providing all standard Git commands with a fallback mechanism.
 - Customizable three-branch workflow: `master`, `develop`, and `work`.
-- Conventional commit aliases support `<module>: <description>` syntax (example: `g new api: add endpoint`) and also accept `<description>` only, using `.g.conf.default_commit_module` (default: empty, so messages become `<type>: <description>` when no module is configured).
+- Conventional commit aliases support `<module>: <description>` syntax (example: `g new api: add endpoint`) and also accept `<description>` only, using `.galias.conf.default_commit_module` (default: empty, so messages become `<type>: <description>` when no module is configured).
 - Standardized commits with specific commands like: `g new core: foo bar.` Use these commands for common activities such as:
   - `new`: Implement new features.
   - `implement`: Implement features or larger changes.
@@ -110,7 +110,7 @@ This allows them to be run both as a Python package (installed as <b>g</b> or <b
   Requires Astral `uv` in `PATH`: the launcher resolves the repository root and delegates execution to `uv run --project <repo> python -m git_alias`.
 
 
-### Create Configuration Files (`.g.conf` + `$HOME/.config/galias/config.json`)
+### Create Configuration Files (`.galias.conf` + `$HOME/.config/galias/config.json`)
 
 ```bash
 g --write-config
@@ -119,7 +119,7 @@ g --write-config
 
 ### Edit Configuration Files
 
-- Customize repository-local `.g.conf` with `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`.
+- Customize repository-local `.galias.conf` with `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`.
 - Each `ver_rules` entry pairs a `pattern` (file selector) with a `regex` (version extractor).
 - **`ver_rules.pattern` uses the `.gitignore` file syntax ([gitignore(5)](https://git-scm.com/docs/gitignore))**. Only tracked repository files (`git ls-files`) are candidates, and hardcoded cache/temporary paths (e.g. `.git`, `tmp`, `temp`, `.cache`, `.pytest_cache`) are always excluded from matching. Semantics:
   - Patterns without `/` match at any depth; patterns containing `/` are anchored to the repository root (a leading `./` is stripped).
@@ -179,7 +179,7 @@ Upgrade or uninstall the GAlias CLI:
 
 - `g --upgrade` / `galias --upgrade`: Reinstalls the tool from the GitHub repository on Linux; on non-Linux platforms it prints the equivalent manual command.
 - `g --uninstall` / `galias --uninstall`: Uninstalls the tool on Linux; on non-Linux platforms it prints the equivalent manual command.
-- `g --write-config` / `galias --write-config`: Inserts missing defaults into repository `.g.conf` and global `$HOME/.config/galias/config.json`.
+- `g --write-config` / `galias --write-config`: Inserts missing defaults into repository `.galias.conf` and global `$HOME/.config/galias/config.json`.
 - `g --ver` / `g --version` / `galias --ver` / `galias --version`: Prints the CLI version.
 - `g --help` / `galias --help`: Prints management commands, configuration parameters, and the alias list; use `g --help <command>` for a single command.
 
@@ -198,7 +198,7 @@ Some CLI examples:
 - `g lg --help`: Shows the help text for the `lg` alias.
 - `g cm "Message"`: Runs `git commit` with the provided message.
 - `g new api: add endpoint`: Creates `new(api): Add endpoint.` (first letter normalized to uppercase and a trailing period added when missing).
-- `g new add endpoint`: Creates `new: Add endpoint.` when `.g.conf.default_commit_module` is empty.
+- `g new add endpoint`: Creates `new: Add endpoint.` when `.galias.conf.default_commit_module` is empty.
 - `g wip`: Auto-stages when needed and commits `wip: work in progress.`.
 - `g backup`: Merges configured `work` into `develop`, pushes `develop`, and checks out back to `work`.
 - `g get`: Fast-forwards local `master` and `develop` from `origin` and then fast-forward merges `develop` into `work`.

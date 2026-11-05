@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "galias"]
 ---
 
 # GAlias CLI Requirements
-**Version**: 1.24
+**Version**: 1.25
 **Author**: Francesco Rolando
 **Date**: 2026-11-05
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-11-05 | 1.25 | Renamed the repository-local configuration file from `.g.conf` to `.galias.conf` without backward compatibility (DES-006, DES-009, REQ-006, REQ-014, REQ-017, REQ-116, REQ-119). |
 | 2026-11-05 | 1.24 | Renamed the upstream GitHub repository to `Ogekuri/GAlias` (REQ-001, REQ-124), renamed the distribution/tool/binaries to `galias` with `g` and removed `git-alias` (PRJ-001, CPT-002, REQ-001, REQ-002), and renamed user-facing cache/config paths to `~/.cache/galias` and `~/.config/galias` (REQ-002, REQ-013, REQ-014, REQ-030, REQ-033, REQ-126, REQ-136, REQ-137, CTN-003, DES-006, DES-009, REQ-186). |
 | 2026-11-05 | 1.23 | Renamed the upstream GitHub repository from `Ogekuri/G` to `Ogekuri/GitAlias` in the `--upgrade` source URL (REQ-001) and the release-check API URL (REQ-124). |
 | 2026-11-03 | 1.22 | Imposed defaults `edit`/`sublime_text`, `icdiff`/`meld`, `tig`/`gitg`, `gitui`/`sublime_merge --multiinstance .` for the eight global command keys (REQ-191) and required their contiguous canonical print order in Configuration Parameters output (REQ-192). |
@@ -92,10 +93,10 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **DES-003**: MUST define help text for every command and list commands alphabetically in global help output.
 - **DES-004**: MUST print an explicit message plus full help and exit non-zero when invoked without arguments.
 - **DES-005**: MUST compose complex aliases by reusing simpler alias functions when overlapping behavior exists.
-- **DES-006**: MUST the executable MUST load `.g.conf` for `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`, and `$HOME/.config/galias/config.json` for `edit_command`, `edit_command_gfx`, `gp_command`, `gp_command_gfx`, `gr_command`, `gr_command_gfx`, `diff_command`, and `diff_command_gfx`, and MUST ignore out-of-scope keys in each file.
+- **DES-006**: MUST the executable MUST load `.galias.conf` for `master`, `develop`, `work`, `default_commit_module`, and `ver_rules`, and `$HOME/.config/galias/config.json` for `edit_command`, `edit_command_gfx`, `gp_command`, `gp_command_gfx`, `gr_command`, `gr_command_gfx`, `diff_command`, and `diff_command_gfx`, and MUST ignore out-of-scope keys in each file.
 - **DES-007**: MUST centralize commit-readiness checks in reusable functions shared by `cm`, `wip`, and related aliases; readiness MUST succeed when staging is non-empty OR working-tree is dirty; MUST fail when both staging and working-tree have no committable data; MUST invoke `aa` to auto-stage working-tree changes when staging is empty and working-tree is dirty.
 - **DES-008**: MUST print all console messages in English.
-- **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.g.conf` plus `$HOME/.config/galias/config.json`, otherwise defaults from `DEFAULT_CONFIG`.
+- **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.galias.conf` plus `$HOME/.config/galias/config.json`, otherwise defaults from `DEFAULT_CONFIG`.
 
 ### 3.2 Functional Requirements
 - **REQ-001**: MUST execute `uv tool install galias --force --from git+https://github.com/Ogekuri/GAlias.git` when `--upgrade` is invoked on Linux.
@@ -105,7 +106,7 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-003**: MUST show global command help or specific command help via `--help`, and per-command help text MUST explicitly list supported options when present.
 - **REQ-004**: MUST execute `git add --all` for alias `aa` only after reusable diagnostics confirm pending unstaged/untracked changes, and MUST fail with explicit error when nothing can be added.
 - **REQ-005**: MUST validate `cm` preconditions (no unstaged changes, non-empty index, and WIP-amend decision) and MUST amend `wip: work in progress.` only when not yet merged to configured `develop` and `master`.
-- **REQ-006**: MUST support targeted branch checkout via `co` using configured branch names from `.g.conf` defaults (`work`, `develop`, `master`).
+- **REQ-006**: MUST support targeted branch checkout via `co` using configured branch names from `.galias.conf` defaults (`work`, `develop`, `master`).
 - **REQ-007**: MUST implement generic current-branch fetch/pull/push aliases (`fe`, `feall`, `pl`, `pt`, `pu`) without dedicated per-branch shortcuts.
 - **REQ-008**: MUST inspection aliases MUST provide branch, log, and status views via `br`, `lb`, `ck`, `l`, `lg`, `ll`, `lm`, `lh`, `lt`, `ver`, `gp`, `gr`, `de`, `rf`, `st`, `str`, `dw`, `dwc`, `dcc`, `dc`, `ls`, `lsi`, `lsa`.
 - **REQ-009**: MUST provide generic merge integration through alias `me` for configured branch workflows without extra automation wrappers.
@@ -113,10 +114,10 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-011**: MUST provide reset/cleanup aliases (`rs`, `rssft`, `rsmix`, `rshrd`, `rsmrg`, `rskep`, `unstg`, `rmloc`, `rmstg`, `rmunt`) and MUST print dedicated reset help when `rs*` commands receive `--help`.
 - **REQ-012**: MUST tagging and archive aliases MUST support annotated tag creation (`tg`), local/remote tag deletion (`rmtg`), tag listing (`lt`), and archiving configured `master` in tar.gz (`ar`).
 - **REQ-013**: MUST open file paths through `ed` using `edit_command` from `$HOME/.config/galias/config.json` (default `edit`) and MUST fail with explicit error when no path is supplied.
-- **REQ-014**: MUST normalize `.g.conf` to keys `master`, `develop`, `work`, `default_commit_module`, `ver_rules` and normalize `$HOME/.config/galias/config.json` to the eight REQ-186 global command keys when `--write-config` runs.
+- **REQ-014**: MUST normalize `.galias.conf` to keys `master`, `develop`, `work`, `default_commit_module`, `ver_rules` and normalize `$HOME/.config/galias/config.json` to the eight REQ-186 global command keys when `--write-config` runs.
 - **REQ-015**: MUST migrate legacy global key `editor` to `edit_command` during `--write-config` when `edit_command` is missing, and MUST remove `editor` from persisted output.
 - **REQ-016**: MUST show management commands before alias listings when global help is requested or when command input is missing.
-- **REQ-017**: MUST evaluate `ver_rules` from `.g.conf` (or defaults), build repository candidates from `git ls-files`, apply pathspec matching plus hardcoded cache/temp exclusions, and fail on mismatched or missing version matches as specified.
+- **REQ-017**: MUST evaluate `ver_rules` from `.galias.conf` (or defaults), build repository candidates from `git ls-files`, apply pathspec matching plus hardcoded cache/temp exclusions, and fail on mismatched or missing version matches as specified.
 - **REQ-118**: MUST abort `ver` and `chver` when a `ver_rules.pattern` matches zero repository files, and MUST report the offending pattern with guidance that only repository files can be configured in `ver_rules.pattern`.
 - **REQ-160**: MUST treat each backslash in `ver_rules.pattern` as a gitignore(5) escape of the next character and MUST NOT convert backslashes to path separators.
 - **REQ-161**: MUST exclude candidate files matching the remainder of a `ver_rules.pattern` starting with `!` from every version rule matched file list.
@@ -135,7 +136,7 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-021**: MUST implement `wip` using the fixed message `wip: work in progress.`; MUST call `aa` (stage all) when staging is empty and working-tree is dirty; MUST fail with explicit error when both working-tree and staging have no committable data.
 - **REQ-022**: MUST aliases `new`, `fix`, `change`, `implement`, `refactor`, `docs`, `style`, `revert`, `misc`, and `cover` execute conventional commits; MUST call `aa` when staging is empty and working-tree is dirty; MUST fail with explicit error when both working-tree and staging have no committable data; MUST reuse WIP-amend decision logic used by `cm` and `wip`.
 - **REQ-115**: MUST conventional aliases require non-empty commit text and support optional `<module>: <description>` prefix parsing before message construction.
-- **REQ-116**: MUST resolve omitted module from `.g.conf.default_commit_module`; when key is absent use hardcoded default `""`; when effective module is empty emit `<type>: <description>`, otherwise emit `<type>(<module>): <description>`.
+- **REQ-116**: MUST resolve omitted module from `.galias.conf.default_commit_module`; when key is absent use hardcoded default `""`; when effective module is empty emit `<type>: <description>`, otherwise emit `<type>(<module>): <description>`.
 - **REQ-117**: MUST uppercase the first character of `<description>` unless numeric and MUST append `.` when `<description>` does not already end with a period.
 - **REQ-023**: MUST keep all `core.py` output messages (stdout/stderr, normal/verbose/debug, help/errors) in English.
 - **REQ-025**: MUST require exactly one `major.minor.patch` argument for `chver`, update matching version occurrences from active `ver_rules`, and re-run `ver` to confirm the requested target version.
@@ -232,7 +233,7 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-113**: MUST build release distributions in GitHub Actions with Python 3.11 using `python -m build`, and MUST attest provenance for `dist/*` artifacts.
 - **REQ-114**: MUST publish a non-draft, non-prerelease GitHub Release for the triggering tag and upload `dist/**/*` assets using changelog content produced by the configured changelog-builder step.
 - **REQ-115**: MUST section `=== 5. BRANCHES ===` append, after configured rows, aligned `<Identifier> | <latest commit subject>` rows for every discovered local or remote branch not already rendered.
-- **REQ-119**: MUST visual diff aliases `dcd`, `dcm`, and `ddm` execute through the environment-aware diff wrapper (REQ-189) with refs `<develop> <work>`, `<master> <work>`, and `<master> <develop>` from `.g.conf`, each exposing explicit help text in help outputs.
+- **REQ-119**: MUST visual diff aliases `dcd`, `dcm`, and `ddm` execute through the environment-aware diff wrapper (REQ-189) with refs `<develop> <work>`, `<master> <work>`, and `<master> <develop>` from `.galias.conf`, each exposing explicit help text in help outputs.
 - **REQ-120**: MUST define `LSI_DEFAULT_EXCLUDED_DIRS` as a `frozenset` containing: `.cache`, `.claude`, `.codex`, `.eslintcache`, `.gemini`, `.git`, `.github`, `.kiro`, `.mypy_cache`, `.npm`, `.opencode`, `.parcel-cache`, `.pytest_cache`, `.ruff_cache`, `.sass-cache`, `.terragrunt-cache`, `.tox`, `.venv`, `.vscode`, `__pycache__`, `build`, `dist`, `htmlcov`, `node_modules`, `temp`, `tmp`, `venv`.
 - **REQ-121**: MUST the `lsi` alias MUST accept `--include-all` flag; when present, MUST bypass `LSI_DEFAULT_EXCLUDED_DIRS` and `LSI_DEFAULT_EXCLUDED_DIR_SUFFIXES` filtering and print all ignored files unfiltered.
 - **REQ-123**: MUST when a newer version is detected, print a bright-green (`\033[92;1m`) message `Update available: <latest> (installed: <current>)` before command execution.

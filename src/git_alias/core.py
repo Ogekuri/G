@@ -23,9 +23,14 @@ from urllib.request import Request, urlopen
 
 pathspec = importlib.import_module("pathspec")
 
-## @brief Constant `CONFIG_FILENAME` used by CLI runtime paths and policies.
+## @brief Repository-local configuration filename resolved from repository root.
+## @details Value `.galias.conf` per DES-006/REQ-014; loaded by `load_cli_config`
+##          and normalized by `write_default_config` for the five DES-006 local
+##          keys (`master`, `develop`, `work`, `default_commit_module`, `ver_rules`).
+##          No `.g.conf` fallback exists: backward compatibility is not implemented.
+## @satisfies DES-006, DES-009, REQ-014, REQ-017
 
-CONFIG_FILENAME = ".g.conf"
+CONFIG_FILENAME = ".galias.conf"
 ## @brief Global configuration directory under `$HOME`.
 ## @details Value `.config/galias` after the `galias` distribution rename from
 ##          `git-alias`; combined with `$HOME` by `get_global_config_path` to
@@ -193,7 +198,7 @@ GLOBAL_CONFIG_KEYS = (
 MANAGEMENT_HELP = [
     (
         "--write-config",
-        "Insert missing defaults into repository .g.conf and global $HOME/.config/galias/config.json.",
+        "Insert missing defaults into repository .galias.conf and global $HOME/.config/galias/config.json.",
     ),
     ("--upgrade", "Reinstall galias on Linux; print manual command elsewhere."),
     ("--uninstall", "Uninstall galias on Linux; print manual command elsewhere."),
