@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.48.0](https://github.com/Ogekuri/GAlias/compare/v0.47.0..v0.48.0) - 2026-11-05
+### 🐛  Bug Fixes
+- Ux.lock version.
+- Scripts/g.sh version.
+
+### 🚜  Changes
+- add --github upgrade source and dual PyPI/GitHub --ver report [useReq] *(update-check)*
+  - REQ-201/REQ-203: new --github modifier for --upgrade installs from
+  - git+https://github.com/Ogekuri/GAlias; rejected without --upgrade
+  - REQ-202/REQ-204: --ver/--version prints installed plus latest PyPI and
+  - GitHub release versions via _fetch_github_latest_version
+  - REQ-001/REQ-129/REQ-199: default checks/upgrades stay PyPI-only
+  - REQ-198: README primary install is uv tool install galias with dedicated
+  - uvx and GitHub install/upgrade sections; update tests
+- unify patch scope with major/minor and add --dev option [useReq] *(release)*
+  - REQ-072: patch default publication now matches major/minor (push develop,
+  - then master with the release tag atomically)
+  - REQ-045/REQ-200: new --dev/--develop flag on major/minor/patch limits the
+  - release to configured develop (previous patch workflow)
+  - REQ-176/REQ-180: --resume composes with --dev; push failures report the
+  - scope-aware recovery command
+  - Update REQUIREMENTS/WORKFLOW/REFERENCES docs, README, and release tests.
+
+### 📚  Documentation
+- Update README.md file.
+
 ## [0.47.0](https://github.com/Ogekuri/GAlias/compare/v0.46.0..v0.47.0) - 2026-11-05
 ### 🐛  Bug Fixes
 - replace invalid trove classifier blocking PyPI upload *(packaging)*
@@ -885,6 +911,7 @@
 - \[0.45.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.45.0
 - \[0.46.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.46.0
 - \[0.47.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.47.0
+- \[0.48.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.48.0
 
 [0.1.0]: https://github.com/Ogekuri/GAlias/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/GAlias/compare/v0.1.0..v0.2.0
@@ -933,3 +960,4 @@
 [0.45.0]: https://github.com/Ogekuri/GAlias/compare/v0.44.0..v0.45.0
 [0.46.0]: https://github.com/Ogekuri/GAlias/compare/v0.45.0..v0.46.0
 [0.47.0]: https://github.com/Ogekuri/GAlias/compare/v0.46.0..v0.47.0
+[0.48.0]: https://github.com/Ogekuri/GAlias/compare/v0.47.0..v0.48.0
