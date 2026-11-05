@@ -17,29 +17,44 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       is_master: ${{ steps.check.outputs.is_master }}
+      is_develop: ${{ steps.check.outputs.is_develop }}
+      is_release: ${{ steps.check.outputs.is_release }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 
 
-      - name: Check if tag is on master
+      - name: Check if tag is on master or develop
         id: check
         run: |
-          git fetch origin master
+          git fetch origin master develop
+          IS_MASTER=false
+          IS_DEVELOP=false
           if git branch -r --contains ${GITHUB_SHA} | grep -q "origin/master"; then
-            echo "✅ Tag ${{ github.ref }} is on master branch. Proceeding with release."
-            echo "is_master=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Tag ${{ github.ref }} is on master branch. PyPI publication enabled."
+            IS_MASTER=true
+          fi
+          if git branch -r --contains ${GITHUB_SHA} | grep -q "origin/develop"; then
+            echo "✅ Tag ${{ github.ref }} is on develop branch. PyPI publication skipped."
+            IS_DEVELOP=true
+          fi
+          if [ "$IS_MASTER" = false ] && [ "$IS_DEVELOP" = false ]; then
+            echo "❌ Tag ${{ github.ref }} is on neither master nor develop branch. Skipping release."
+          fi
+          echo "is_master=$IS_MASTER" >> "$GITHUB_OUTPUT"
+          echo "is_develop=$IS_DEVELOP" >> "$GITHUB_OUTPUT"
+          if [ "$IS_MASTER" = true ] || [ "$IS_DEVELOP" = true ]; then
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
           else
-            echo "❌ Tag ${{ github.ref }} is not on master branch. Skipping release."
-            echo "is_master=false" >> "$GITHUB_OUTPUT"
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
           fi
 
   # 2. Effetua la build
   build-release:
     needs: check-branch
     # Esegue questo job SOLO se l'output del job precedente è 'true'
-    if: needs.check-branch.outputs.is_master == 'true'
+    if: needs.check-branch.outputs.is_release == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -127,6 +142,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish distributions to PyPI (OIDC Trusted Publishing)
+        if: needs.check-branch.outputs.is_master == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           attestations: true
