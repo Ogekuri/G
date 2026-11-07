@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.49.1](https://github.com/Ogekuri/GAlias/compare/v0.49.0..v0.49.1) - 2026-11-07
+## [0.49.2](https://github.com/Ogekuri/GAlias/compare/v0.49.0..v0.49.2) - 2026-11-07
 ### 🐛  Bug Fixes
 - correct inaccurate inline help entries for 13 aliases [useReq] *(help)*
   - ar: zip -> tar.gz archive named after the latest tag (REQ-012)
@@ -14,6 +14,11 @@
   - add failing-first reproducer test for corrected help contracts
 
 ### 🚜  Changes
+- accept --dev/--develop on major/minor/patch [useReq] *(release-flags)*
+  - Requirements (v1.36): REQ-203 reworded so the --develop/--dev rejection applies only when the first CLI token is outside --upgrade/major/minor/patch, resolving the collision with REQ-200/REQ-045; added REQ-214/REQ-215/REQ-216 requiring inline-help and README documentation of the flags' dual meaning.
+  - Source: main now whitelists major/minor/patch as first tokens, reports the allowed commands in the rejection message, and MANAGEMENT_HELP/--upgrade plus HELP_TEXTS major/minor/patch spell out the two different meanings (GitHub newest-tagged-release install vs develop-scoped release).
+  - Docs: README Prerequisites and Management Commands sections state the dual meaning explicitly.
+  - Tests: release commands accept --dev/--develop through main for all six level/flag combinations; --develop standalone and co --dev still exit non-zero; README dual-meaning contract asserted.
 - migrate workflow automation to Node24 runner generation [useReq] *(release)*
   - Requirements (v1.35): added REQ-211 (release automation runs on the GitHub Actions Node24 runner generation or newer with all steps preserved), REQ-212 (no FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 or ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION overrides), REQ-213 (Node24-based action majors pinned in release-pypi.yml).
   - Workflow: bumped actions/checkout v4->v5 (both jobs), actions/setup-python v5->v6, astral-sh/setup-uv v3->v6, and actions/attest-build-provenance v1->v3; triggers, containment gate, build, attestation, changelog, release, and PyPI OIDC publication steps are unchanged.
@@ -978,7 +983,7 @@
 - \[0.47.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.47.0
 - \[0.48.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.48.0
 - \[0.49.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.49.0
-- \[0.49.1\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.49.1
+- \[0.49.2\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.49.2
 
 [0.1.0]: https://github.com/Ogekuri/GAlias/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/GAlias/compare/v0.1.0..v0.2.0
@@ -1029,4 +1034,4 @@
 [0.47.0]: https://github.com/Ogekuri/GAlias/compare/v0.46.0..v0.47.0
 [0.48.0]: https://github.com/Ogekuri/GAlias/compare/v0.47.0..v0.48.0
 [0.49.0]: https://github.com/Ogekuri/GAlias/compare/v0.48.0..v0.49.0
-[0.49.1]: https://github.com/Ogekuri/GAlias/compare/v0.49.0..v0.49.1
+[0.49.2]: https://github.com/Ogekuri/GAlias/compare/v0.49.0..v0.49.2

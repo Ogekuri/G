@@ -1,6 +1,6 @@
 #!/bin/bash
 # -*- coding: utf-8 -*-
-# VERSION: 0.49.1
+# VERSION: 0.49.2
 # AUTHORS: Ogekuri
 
 #/**
