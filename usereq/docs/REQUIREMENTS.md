@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "galias"]
 ---
 
 # GAlias CLI Requirements
-**Version**: 1.30
+**Version**: 1.31
 **Author**: Francesco Rolando
-**Date**: 2026-11-05
+**Date**: 2026-11-07
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-11-07 | 1.31 | Removed the legacy global `editor` to `edit_command` migration from `--write-config`; REQ-015 now mandates persisting only the eight canonical REQ-186 global keys while ignoring out-of-scope keys per DES-006. |
 | 2026-11-05 | 1.30 | Widened the release workflow containment gate to `origin/master` or `origin/develop` (REQ-112), gated PyPI publication to master-contained tag commits (REQ-205), and required develop-only tag commits to run the release workflow without PyPI publication (REQ-206). |
 | 2026-11-05 | 1.29 | Added the `--github` self-upgrade source override (REQ-201, REQ-203), dual PyPI/GitHub version reporting for `--ver`/`--version` (REQ-202, REQ-204), restricted default checks/upgrades to PyPI (REQ-001, REQ-129, REQ-199), and made `uv tool install galias` the documented primary install method with dedicated GitHub and uvx sections (REQ-198). |
 | 2026-11-05 | 1.28 | Unified default `patch` publication with `major`/`minor` (REQ-072), repurposed REQ-045 for the develop-scoped `--dev`/`--develop` release option available on `major`, `minor`, and `patch` (REQ-200), and extended `--resume` composition and push-recovery guidance to develop-scoped releases (REQ-176, REQ-180). |
@@ -120,7 +121,7 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-012**: MUST tagging and archive aliases MUST support annotated tag creation (`tg`), local/remote tag deletion (`rmtg`), tag listing (`lt`), and archiving configured `master` in tar.gz (`ar`).
 - **REQ-013**: MUST open file paths through `ed` using `edit_command` from `$HOME/.config/galias/config.json` (default `edit`) and MUST fail with explicit error when no path is supplied.
 - **REQ-014**: MUST normalize `.galias.conf` to keys `master`, `develop`, `work`, `default_commit_module`, `ver_rules` and normalize `$HOME/.config/galias/config.json` to the eight REQ-186 global command keys when `--write-config` runs.
-- **REQ-015**: MUST migrate legacy global key `editor` to `edit_command` during `--write-config` when `edit_command` is missing, and MUST remove `editor` from persisted output.
+- **REQ-015**: MUST NOT read, migrate, or preserve the legacy global key `editor`; `--write-config` MUST persist only the eight REQ-186 global keys per REQ-014 and MUST ignore out-of-scope keys.
 - **REQ-016**: MUST show management commands before alias listings when global help is requested or when command input is missing.
 - **REQ-017**: MUST evaluate `ver_rules` from `.galias.conf` (or defaults), build repository candidates from `git ls-files`, apply pathspec matching plus hardcoded cache/temp exclusions, and fail on mismatched or missing version matches as specified.
 - **REQ-118**: MUST abort `ver` and `chver` when a `ver_rules.pattern` matches zero repository files, and MUST report the offending pattern with guidance that only repository files can be configured in `ver_rules.pattern`.
@@ -357,3 +358,4 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-190** evidence: `src/git_alias/core.py` `_run_configured_diff` empty-tool branch executing plain `git difftool -d`.
 - **REQ-191** evidence: `src/git_alias/core.py` `DEFAULT_CONFIG` plus `DEFAULT_GP_COMMAND`/`DEFAULT_GR_COMMAND` constants defining the imposed default command values.
 - **REQ-192** evidence: `src/git_alias/core.py` `DEFAULT_CONFIG` key order plus `GLOBAL_CONFIG_KEYS` order driving `print_all_help` Configuration Parameters rendering.
+- **REQ-015** evidence: `src/git_alias/core.py` `_write_missing_config_values` normalizes only `GLOBAL_CONFIG_KEYS` entries, so out-of-scope global keys such as legacy `editor` are ignored and never persisted.

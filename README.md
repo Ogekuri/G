@@ -166,7 +166,7 @@ Pattern examples (`ver_rules.pattern`, gitignore syntax):
 The default `ver_rules` select `README.md`, `src/**/*.py`, and `pyproject.toml`.
 
 - Customize global `$HOME/.config/galias/config.json` with `edit_command`, `gp_command`, and `gr_command`.
-- Running `g --write-config` normalizes both files to these key sets and migrates legacy global `editor` to `edit_command`.
+- Running `g --write-config` normalizes both files to these key sets; out-of-scope keys (for example the legacy global `editor`) are ignored and never persisted.
 
 
 ### Work-in-Progress Commits

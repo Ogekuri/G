@@ -212,10 +212,11 @@ BRANCH_KEYS = ("master", "develop", "work")
 LOCAL_CONFIG_KEYS = ("master", "develop", "work", "default_commit_module", "ver_rules")
 ## @brief Constant `GLOBAL_CONFIG_KEYS` used by CLI runtime paths and policies.
 # @details Ordered inventory of the eight REQ-186 global command keys in the
-#          REQ-192 canonical order; drives global config loading, legacy-key
-#          migration, `--write-config` normalization (REQ-014), and persisted
-#          JSON key insertion order.
-# @satisfies REQ-014, REQ-192
+#          REQ-192 canonical order; drives global config loading,
+#          `--write-config` normalization (REQ-014), and persisted JSON key
+#          insertion order. Out-of-scope keys are ignored and never persisted
+#          (REQ-015); no legacy-key migration exists.
+# @satisfies REQ-014, REQ-015, REQ-192
 GLOBAL_CONFIG_KEYS = (
     "edit_command",
     "edit_command_gfx",
@@ -751,12 +752,19 @@ def load_cli_config(root=None, home=None):
     return config_path
 
 
-## @brief Execute `_write_missing_config_values` runtime logic for Git-Alias CLI.
-# @details Executes `_write_missing_config_values` using deterministic CLI control-flow and explicit error propagation.
-# @param config_path Input parameter consumed by `_write_missing_config_values`.
-# @param keys Input parameter consumed by `_write_missing_config_values`.
-# @param create_parent Input parameter consumed by `_write_missing_config_values`.
-# @return Result emitted by `_write_missing_config_values` according to command contract.
+## @brief Normalize one configuration file to its canonical key set without migrating legacy keys.
+# @details Reads the existing JSON object (when present), rebuilds it containing
+#          only `keys`, fills missing or invalid entries with `DEFAULT_CONFIG`
+#          values, and writes the result only when normalization changes the
+#          persisted content. Out-of-scope keys (for example the legacy global
+#          `editor` key) are ignored and are never read, migrated, or preserved
+#          in the output object. Runtime loading never calls this function; it
+#          runs only from `write_default_config` (`--write-config`).
+# @param config_path {Path} Target configuration file path.
+# @param keys {Tuple[str, ...]} Canonical key sequence defining the output key set and order.
+# @param create_parent {bool} When True, create the parent directory before writing.
+# @return {Path} The input `config_path` after optional normalization.
+# @satisfies REQ-014, REQ-015, DES-006, REQ-097
 def _write_missing_config_values(config_path, keys, create_parent=False):
     data = _read_config_object(config_path)
     if data is None:
@@ -764,15 +772,6 @@ def _write_missing_config_values(config_path, keys, create_parent=False):
     if create_parent:
         config_path.parent.mkdir(parents=True, exist_ok=True)
     should_write = False
-    if (
-        keys == GLOBAL_CONFIG_KEYS
-        and "edit_command" not in data
-        and isinstance(data.get("editor"), str)
-    ):
-        legacy_editor = data.get("editor", "").strip()
-        if legacy_editor:
-            data["edit_command"] = legacy_editor
-            should_write = True
     normalized = {}
     for key in keys:
         value = data.get(key)

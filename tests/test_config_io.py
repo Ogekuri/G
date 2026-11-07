@@ -100,7 +100,7 @@ class ConfigIOTest(unittest.TestCase):
             self.assertNotIn("gp_command", local_data)
             self.assertNotIn("edit_command", local_data)
 
-            self.assertEqual(global_data["edit_command"], "vim")
+            self.assertEqual(global_data["edit_command"], core.DEFAULT_CONFIG["edit_command"])
             self.assertEqual(global_data["gp_command"], "gitk --all --date-order")
             self.assertEqual(global_data["gr_command"], core.DEFAULT_CONFIG["gr_command"])
             self.assertEqual(global_data["diff_command"], core.DEFAULT_CONFIG["diff_command"])
