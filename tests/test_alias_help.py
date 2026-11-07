@@ -196,25 +196,28 @@ class AliasHelpTest(unittest.TestCase):
         self.assertEqual(len(args), 1)
         self.assertTrue(str(args[0]))
 
-    ## @brief Verify --github without --upgrade is rejected (REQ-203).
+    ## @brief Verify --develop without --upgrade is rejected (REQ-203).
     # @details The modifier is valid only combined with --upgrade; standalone
     #          usage exits non-zero with explicit English stderr guidance.
     # @param self {AliasHelpTest} Isolated test instance.
     # @return {None} Assert REQ-203 rejection.
-    def test_github_flag_without_upgrade_is_rejected(self):
-        code, _, err = self.run_script_result(["--github"], check=False)
+    def test_develop_flag_without_upgrade_is_rejected(self):
+        code, _, err = self.run_script_result(["--develop"], check=False)
         self.assertNotEqual(code, 0)
         self.assertIn("only together with '--upgrade'", err)
 
-    ## @brief Verify --upgrade --github routes the GitHub source (REQ-201).
-    # @details Mock the upgrade boundary; assert the github selector is True.
+    ## @brief Verify --upgrade --develop (and equivalent --dev) route the GitHub source (REQ-201).
+    # @details Mock the upgrade boundary; assert the github selector is True
+    #          for both equivalent flags.
     # @param self {AliasHelpTest} Isolated test instance.
-    # @return {None} Assert REQ-201 dispatch.
-    def test_upgrade_github_flag_selects_github_source(self):
-        with mock.patch.object(core, "upgrade_self") as upgrade_self:
-            self.run_script_result(["--upgrade", "--github"], check=True)
-        upgrade_self.assert_called_once()
-        self.assertTrue(upgrade_self.call_args.kwargs.get("github"))
+    # @return {None} Assert REQ-201 dispatch for each equivalent flag.
+    def test_upgrade_develop_flags_select_github_source(self):
+        for flag in ("--develop", "--dev"):
+            with self.subTest(flag=flag):
+                with mock.patch.object(core, "upgrade_self") as upgrade_self:
+                    self.run_script_result(["--upgrade", flag], check=True)
+                upgrade_self.assert_called_once()
+                self.assertTrue(upgrade_self.call_args.kwargs.get("github"))
 
     def test_uninstall_flag_invokes_uninstall_self(self):
         with mock.patch.object(core, "uninstall_self") as uninstall_self:

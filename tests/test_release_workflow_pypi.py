@@ -177,7 +177,7 @@ class ReleaseWorkflowPyPiTest(unittest.TestCase):
     ## @brief Verify README documents uv tool install as primary with uvx and GitHub sections.
     # @details REQ-198: primary install is `uv tool install galias` from PyPI with a
     #          dedicated uvx alternative-usage section and a dedicated non-primary
-    #          GitHub install section covering `--upgrade --github` (REQ-201).
+    #          GitHub install section covering `--upgrade --develop` (REQ-201).
     # @return None.
     # @satisfies REQ-198, REQ-199, REQ-201
     def test_readme_documents_uv_primary_with_uvx_and_github_sections(self):
@@ -186,7 +186,7 @@ class ReleaseWorkflowPyPiTest(unittest.TestCase):
             "uv tool install galias",
             "uvx galias <command> [args...]",
             "uv tool install --force --from git+https://github.com/Ogekuri/GAlias galias",
-            "g --upgrade --github",
+            "g --upgrade --develop",
         ):
             self.assertIn(command, readme)
         for removed in (

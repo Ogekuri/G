@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "galias"]
 ---
 
 # GAlias CLI Requirements
-**Version**: 1.32
+**Version**: 1.33
 **Author**: Francesco Rolando
 **Date**: 2026-11-07
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-11-07 | 1.33 | Renamed the `--upgrade` GitHub-source option from `--github` to `--develop` with equivalent `--dev` (REQ-001, REQ-201, REQ-203, REQ-198). |
 | 2026-11-07 | 1.32 | Removed the undocumented legacy `ver_rules` `glob` key alias; added REQ-207 defining the canonical `ver_rules` entry schema resolved solely from the `pattern` field. |
 | 2026-11-07 | 1.31 | Removed the legacy global `editor` to `edit_command` migration from `--write-config`; REQ-015 now mandates persisting only the eight canonical REQ-186 global keys while ignoring out-of-scope keys per DES-006. |
 | 2026-11-05 | 1.30 | Widened the release workflow containment gate to `origin/master` or `origin/develop` (REQ-112), gated PyPI publication to master-contained tag commits (REQ-205), and required develop-only tag commits to run the release workflow without PyPI publication (REQ-206). |
@@ -106,7 +107,7 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **DES-009**: MUST the global `--help` output MUST be ordered as usage, Management Commands, Configuration Parameters, and Commands, and Configuration Parameters MUST print resolved values from `.galias.conf` plus `$HOME/.config/galias/config.json`, otherwise defaults from `DEFAULT_CONFIG`.
 
 ### 3.2 Functional Requirements
-- **REQ-001**: MUST execute `uv tool install galias --force` installing the latest PyPI release when `--upgrade` without `--github` is invoked on Linux.
+- **REQ-001**: MUST execute `uv tool install galias --force` installing the latest PyPI release when `--upgrade` without `--develop` or its equivalent `--dev` is invoked on Linux.
 - **REQ-002**: MUST when `--uninstall` is invoked on Linux, delete `~/.cache/galias/check_version_idle-time.json`, remove `~/.cache/galias`, and execute `uv tool uninstall galias`.
 - **REQ-129**: MUST NOT execute local `uv tool install` when `--upgrade` is invoked on non-Linux platforms, and MUST print the exact manual install command matching the selected source (PyPI or REQ-201 GitHub).
 - **REQ-130**: MUST NOT execute local `uv tool uninstall` when `--uninstall` is invoked on non-Linux platforms, and MUST print the exact manual uninstall command for user execution.
@@ -189,9 +190,9 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-070**: MUST `# History` generation MUST NOT verify remote tag existence and MUST NOT query remote tags; changelog tag and commit collection MUST use only local git commands.
 - **REQ-072**: MUST `major`, `minor`, and `patch` without `--dev` create definitive annotated `v<target>` on configured `master` before publication, push only configured `develop` first, then atomically push configured `master` with only that release tag.
 - **REQ-200**: MUST `major`, `minor`, and `patch` accept equivalent flags `--dev` and `--develop` parsed by `_parse_release_flags`, selecting the develop-scoped release workflow per REQ-045.
-- **REQ-201**: MUST execute `uv tool install --force --from git+https://github.com/Ogekuri/GAlias galias` when `--upgrade --github` is invoked on Linux.
+- **REQ-201**: MUST execute `uv tool install --force --from git+https://github.com/Ogekuri/GAlias galias` when `--upgrade --develop` (equivalent `--dev`) is invoked on Linux.
 - **REQ-202**: MUST `--ver`/`--version` print the installed version plus the latest versions available on PyPI (REQ-124) and GitHub (REQ-204) before exiting successfully.
-- **REQ-203**: MUST reject `--github` without `--upgrade` with an explicit English error and non-zero exit.
+- **REQ-203**: MUST reject `--develop` or `--dev` without `--upgrade` with an explicit English error and non-zero exit.
 - **REQ-204**: MUST resolve the GitHub release-check URL exactly as `https://api.github.com/repos/Ogekuri/GAlias/releases/latest` and parse `tag_name`, stripping one leading `v`.
 - **REQ-176**: MUST `major`, `minor`, and `patch` accept standalone `--resume`, optionally combined with `--dev`/`--develop` per REQ-200, and document its recovery behavior in command help.
 - **REQ-177**: MUST resume validate a clean index/worktree, configured work release-commit version, requested level compatibility, matching integrated branch tips, and the existing annotated release tag targeting that commit before publication.
@@ -252,7 +253,7 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-207**: MUST resolve each `ver_rules` entry pattern solely from its `pattern` field (dict) or first pair element (sequence); entries without a `pattern` value MUST be ignored.
 - **REQ-196**: MUST declare PyPI-compliant `[project]` metadata in `pyproject.toml`: `name = "galias"`, `description`, `readme`, `requires-python`, `keywords`, `classifiers`, and project URLs.
 - **REQ-197**: MUST declare the `pyproject.toml` project license as the PEP 639 SPDX expression `GPL-3.0-only` with explicit `license-files` including `LICENSE`.
-- **REQ-198**: MUST document `uv tool install galias` as the primary `README.md` install method (Astral uv, PyPI source) with a dedicated uvx alternative-usage section and a dedicated non-primary GitHub install section covering `--upgrade --github`.
+- **REQ-198**: MUST document `uv tool install galias` as the primary `README.md` install method (Astral uv, PyPI source) with a dedicated uvx alternative-usage section and a dedicated non-primary GitHub install section covering `--upgrade --develop`.
 - **REQ-199**: MUST source default update checks and default self-upgrades exclusively from PyPI project `galias`; only REQ-201 upgrades and REQ-202 version reporting query GitHub.
 - **REQ-115**: MUST section `=== 5. BRANCHES ===` append, after configured rows, aligned `<Identifier> | <latest commit subject>` rows for every discovered local or remote branch not already rendered.
 - **REQ-119**: MUST visual diff aliases `dcd`, `dcm`, and `ddm` execute through the environment-aware diff wrapper (REQ-189) with refs `<develop> <work>`, `<master> <work>`, and `<master> <develop>` from `.galias.conf`, each exposing explicit help text in help outputs.
@@ -337,7 +338,7 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-199** evidence: `src/git_alias/core.py` PyPI-only `PYPI_LATEST_VERSION_API`/`UV_TOOL_UPGRADE_COMMAND` constants driving the default check and upgrade paths; GitHub constants participate only via REQ-201/REQ-202 flows.
 - **REQ-201** evidence: `src/git_alias/core.py` `UV_TOOL_GITHUB_UPGRADE_COMMAND` constant selected by `upgrade_self(github=True)` on Linux.
 - **REQ-202** evidence: `src/git_alias/core.py` `main` `--ver`/`--version` branch printing installed, PyPI, and GitHub latest versions.
-- **REQ-203** evidence: `src/git_alias/core.py` `main` rejecting `--github` without `--upgrade` with English stderr and non-zero exit.
+- **REQ-203** evidence: `src/git_alias/core.py` `main` rejecting `--develop`/`--dev` without `--upgrade` with English stderr and non-zero exit.
 - **REQ-204** evidence: `src/git_alias/core.py` `GITHUB_LATEST_RELEASE_API` constant and `_fetch_github_latest_version` `tag_name` parsing.
 - **REQ-045** evidence: `src/git_alias/core.py` `_execute_release_flow` `dev_release` branch integrating/tagging/pushing configured `develop` only and `_resume_release_flow` develop-only integrated-branch set.
 - **REQ-072** evidence: `src/git_alias/core.py` `_execute_release_flow` default integration tagging configured `master` and publishing configured `develop` first, then configured `master` with the release tag atomically.

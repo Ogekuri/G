@@ -77,7 +77,8 @@ GITHUB_LATEST_RELEASE_API = (
 )
 ## @brief Git source specifier for GitHub-sourced self-upgrades.
 ## @details Value `git+https://github.com/Ogekuri/GAlias`; consumed only by the
-##          REQ-201 `--upgrade --github` flow as the uv `--from` override.
+##          REQ-201 `--upgrade --develop` (equivalent `--dev`) flow as the uv
+##          `--from` override.
 ## @satisfies REQ-201
 GITHUB_UPGRADE_SOURCE = f"git+https://github.com/{GITHUB_REPOSITORY}"
 ## @brief Self-upgrade command installing the latest GitHub source state.
@@ -234,7 +235,7 @@ MANAGEMENT_HELP = [
         "--write-config",
         "Insert missing defaults into repository .galias.conf and global $HOME/.config/galias/config.json.",
     ),
-    ("--upgrade", "Reinstall galias on Linux; print manual command elsewhere. Combine with --github to install from the GitHub repository."),
+    ("--upgrade", "Reinstall galias on Linux; print manual command elsewhere. Combine with --develop or --dev to install from the GitHub repository."),
     ("--uninstall", "Uninstall galias on Linux; print manual command elsewhere."),
     ("--ver", "Print the CLI version with the latest PyPI and GitHub release versions."),
     ("--version", "Print the CLI version with the latest PyPI and GitHub release versions."),
@@ -5851,9 +5852,9 @@ def print_all_help():
 # @details Executes `main` using deterministic CLI control-flow and explicit error propagation.
 #          Management dispatch: `--ver`/`--version` prints the installed version
 #          plus the latest PyPI and GitHub versions (REQ-202); `--upgrade`
-#          selects the PyPI default source or the GitHub source via `--github`
-#          (REQ-001, REQ-201) and rejects `--github` without `--upgrade`
-#          (REQ-203).
+#          selects the PyPI default source or the GitHub source via
+#          `--develop` (equivalent `--dev`) (REQ-001, REQ-201) and rejects
+#          `--develop`/`--dev` without `--upgrade` (REQ-203).
 # @param argv Input parameter consumed by `main`.
 # @param check_updates Input parameter consumed by `main`.
 # @return Result emitted by `main` according to command contract.
@@ -5877,9 +5878,9 @@ def main(argv=None, *, check_updates: bool = True):
     if args[0] == "--help" and len(args) > 1 and args[1] not in COMMANDS:
         print(f"Unknown command: {args[1]}", file=sys.stderr)
         sys.exit(1)
-    if "--github" in args and args[0] != "--upgrade":
+    if ("--develop" in args or "--dev" in args) and args[0] != "--upgrade":
         print(
-            "Option '--github' is supported only together with '--upgrade'.",
+            "Options '--develop' and '--dev' are supported only together with '--upgrade'.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -5895,7 +5896,7 @@ def main(argv=None, *, check_updates: bool = True):
         write_default_config(git_root)
         return
     if args[0] == "--upgrade":
-        upgrade_self(git_root, github="--github" in args)
+        upgrade_self(git_root, github=("--develop" in args or "--dev" in args))
         return
     if args[0] == "--uninstall":
         uninstall_self()

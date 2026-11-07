@@ -112,7 +112,7 @@
       - `print_all_help(...)`: render global help output [`src/git_alias/core.py`]
       - `print_command_help(...)`: render per-command help output [`src/git_alias/core.py`]
       - `write_default_config(...)`: normalize supported config keys [`src/git_alias/core.py`]
-      - `upgrade_self(...)`: Linux-gated self-upgrade flow selecting the PyPI default source or the GitHub git source via `--github` [`src/git_alias/core.py`]
+      - `upgrade_self(...)`: Linux-gated self-upgrade flow selecting the PyPI default source or the GitHub git source via `--develop` (equivalent `--dev`) [`src/git_alias/core.py`]
       - `uninstall_self(...)`: Linux-gated self-uninstall flow [`src/git_alias/core.py`]
       - `run_git_cmd(...)`: fallback path when command is not registered in `COMMANDS` [`src/git_alias/core.py`]
       - `COMMANDS[name](extras)`: registered alias dispatch path [`src/git_alias/core.py`]
@@ -214,7 +214,7 @@
   - Threads: no explicit threads detected.
 - Internal Call-Trace Tree:
   - `scripts/g.sh::<module_body>(...)`: `exec uv run --project <repo> python -m git_alias ...` delegation [`scripts/g.sh`]
-  - `upgrade_self(...)`: spawn `uv tool install` from the PyPI default source or the GitHub git source (`--github`) when Linux [`src/git_alias/core.py`]
+  - `upgrade_self(...)`: spawn `uv tool install` from the PyPI default source or the GitHub git source (`--develop`, equivalent `--dev`) when Linux [`src/git_alias/core.py`]
   - `uninstall_self(...)`: spawn `uv tool uninstall` when Linux [`src/git_alias/core.py`]
 - External Boundaries:
   - External `uv` binary and package-management side effects.
@@ -315,7 +315,7 @@
 - EDGE: PROC:main -> PROC:uv
   - Mechanism: OS subprocess spawn
   - Endpoint/Channel: process argv plus stdio
-  - Payload/Data-Shape: conditional Linux-only `uv tool` argv sequences sourced from PyPI by default or from the GitHub git source with `--upgrade --github`
+  - Payload/Data-Shape: conditional Linux-only `uv tool` argv sequences sourced from PyPI by default or from the GitHub git source with `--upgrade --develop` (equivalent `--dev`)
   - Evidence: `src/git_alias/core.py`
 - EDGE: PROC:main -> PROC:gzip
   - Mechanism: OS subprocess spawn with pipe-based IPC

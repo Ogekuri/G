@@ -353,7 +353,7 @@ class UpdateCheckTest(unittest.TestCase):
     # @param self {UpdateCheckTest} Isolated test instance.
     # @return {None} Assert REQ-201 upgrade argv.
     def test_upgrade_self_github_installs_from_git_source(self):
-        # REQ-201: --upgrade --github reinstalls from the GitHub git source.
+        # REQ-201: --upgrade --develop reinstalls from the GitHub git source.
         with mock.patch.object(core, "_is_linux_platform", return_value=True):
             with mock.patch.object(core, "_run_checked") as run_checked:
                 core.upgrade_self(Path("/repo"), github=True)
