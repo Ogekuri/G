@@ -259,3 +259,66 @@ class AliasHelpTest(unittest.TestCase):
             core.VERSION_CHECK_TIMEOUT_SECONDS,
         )
         self.assertIsNotNone(kwargs.get("repo_root"))
+
+    ## @brief Verify corrected help entries match the implemented alias behavior.
+    # @details Keyword-level accuracy contract for HELP_TEXTS entries corrected
+    #          against the delegated git commands: each corrected entry MUST
+    #          name the wrapped command or configuration key, and MUST NOT
+    #          retain removed misinformation ("zip" archive for the tar.gz
+    #          `ar` flow, "Git K" for the configured `gp_command`/`gr_command`
+    #          viewers, "latest full commit hash" for the full-history `ll`
+    #          log, current-branch wording for the local+origin `rmtg` delete,
+    #          origin-scoped wording for the all-remotes `feall` fetch).
+    #          Level 0 UUT: HELP_TEXTS data contract; deterministic and fully
+    #          isolated (no network, filesystem, clock, or process access).
+    # @param self {AliasHelpTest} Isolated test instance.
+    # @return {None} Assert required keywords present and stale keywords absent.
+    def test_corrected_help_entries_match_implemented_behavior(self):
+        # Arrange: explicit expected keyword outcomes per corrected alias.
+        required_keywords = {
+            "aa": ("stage area",),
+            "ar": ("tar.gz",),
+            "br": ("git branch",),
+            "ck": ("git diff --check",),
+            "de": ("git describe",),
+            "feall": ("all remotes",),
+            "gp": ("gp_command",),
+            "gr": ("gr_command",),
+            "ll": ("full commit hashes",),
+            "me": ("--ff-only",),
+            "rf": ("git reflog",),
+            "rmtg": ("origin", "<tag>"),
+            "tg": ("annotated",),
+        }
+        forbidden_keywords = {
+            "aa": ("changes/added",),
+            "ar": ("zip",),
+            "br": ("Create a new branch.",),
+            "de": ("last tagged commit details",),
+            "feall": ("from origin for all branch",),
+            "gp": ("Git K",),
+            "gr": ("Git K",),
+            "ll": ("latest full commit hash",),
+            "rf": ("changes on HEAD reference",),
+            "rmtg": ("current branch",),
+            "tg": ("annotate tag",),
+        }
+        # Act: read the help dictionary under test.
+        help_texts = self.module.HELP_TEXTS
+        # Assert: every corrected entry keeps required keywords and drops stale ones.
+        for alias, keywords in required_keywords.items():
+            for keyword in keywords:
+                with self.subTest(alias=alias, kind="required"):
+                    self.assertIn(
+                        keyword,
+                        help_texts[alias],
+                        msg=f"{alias} help missing required keyword: {keyword}",
+                    )
+        for alias, keywords in forbidden_keywords.items():
+            for keyword in keywords:
+                with self.subTest(alias=alias, kind="forbidden"):
+                    self.assertNotIn(
+                        keyword,
+                        help_texts[alias],
+                        msg=f"{alias} help retains stale keyword: {keyword}",
+                    )
