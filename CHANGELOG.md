@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.49.1](https://github.com/Ogekuri/GAlias/compare/v0.49.0..v0.49.1) - 2026-11-07
+### 🐛  Bug Fixes
+- correct inaccurate inline help entries for 13 aliases [useReq] *(help)*
+  - ar: zip -> tar.gz archive named after the latest tag (REQ-012)
+  - ll: full-hash history graph instead of 'latest full commit hash'
+  - br: list or create branches (native git branch, REQ-008)
+  - ck: git diff --check semantics; de: git describe nearest tag
+  - feall: all remotes with tags and prune; me: fast-forward-only
+  - gp/gr: configured gp_command/gr_command viewers replace 'Git K'
+  - rmtg: local + origin tag delete with required <tag> operand
+  - tg/rf/aa: annotated tag grammar, HEAD reflog, aa phrasing fix
+  - add failing-first reproducer test for corrected help contracts
+
+### 🚜  Changes
+- migrate workflow automation to Node24 runner generation [useReq] *(release)*
+  - Requirements (v1.35): added REQ-211 (release automation runs on the GitHub Actions Node24 runner generation or newer with all steps preserved), REQ-212 (no FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 or ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION overrides), REQ-213 (Node24-based action majors pinned in release-pypi.yml).
+  - Workflow: bumped actions/checkout v4->v5 (both jobs), actions/setup-python v5->v6, astral-sh/setup-uv v3->v6, and actions/attest-build-provenance v1->v3; triggers, containment gate, build, attestation, changelog, release, and PyPI OIDC publication steps are unchanged.
+  - Tests: tests/test_release_workflow_pypi.py enforces the Node24 action majors and the absence of Node20 fallback overrides.
+- install newest GitHub release tag for --upgrade --develop [useReq] *(upgrade)*
+  - Requirements (v1.34): REQ-201 now installs the newest GitHub release tag resolved via https://api.github.com/repos/Ogekuri/GAlias/releases/latest regardless of the branch containing it; added REQ-208 (raw tag_name resolution), REQ-209 (tag-scoped uv tool install --from git+https://github.com/Ogekuri/GAlias@<tag>), REQ-210 (explicit English abort with non-zero exit when tag resolution fails).
+  - Source: added _fetch_github_latest_release_tag and _build_github_upgrade_command, refactored _fetch_github_latest_version to delegate, rewrote upgrade_self, removed the static UV_TOOL_GITHUB_UPGRADE_COMMAND constant.
+  - Tests: updated tests/test_update_check.py GitHub-upgrade coverage to the tag-scoped contract (install argv, abort on failure, raw tag parsing).
+  - Docs: WORKFLOW.md call-traces/edges and REFERENCES.md regenerated; --ver/--version PyPI/GitHub reporting behavior is unchanged.
+- BREAKING CHANGE: rename --github upgrade option to --develop with --dev alias [useReq] *(upgrade)*
+  - REQ-001/REQ-201 (SRS v1.33): the GitHub source is now selected via
+  - --upgrade --develop, with --dev added as equivalent command-line flag
+  - REQ-203: --develop/--dev outside --upgrade exit non-zero with explicit
+  - English error; main dispatch and diagnostics updated
+  - REQ-198: README GitHub install section documents --upgrade --develop
+  - MANAGEMENT_HELP --upgrade entry updated for --help output
+  - WORKFLOW.md runtime model: upgrade_self node and PROC:main -> PROC:uv
+  - edge payloads renamed
+  - tests aligned: develop-flag rejection and dual-flag GitHub-source
+  - routing (subtests for --develop and --dev)
+- BREAKING CHANGE: remove legacy glob key alias from ver_rules entries [useReq] *(ver_rules)*
+  - REQ-207 (SRS v1.32): ver_rules entries resolve the pattern solely
+  - from the 'pattern' field or the first sequence pair element
+  - _load_config_rules drops the undocumented 'glob' dict-key fallback;
+  - entries without 'pattern' are ignored (REQ-162 negation unaffected)
+  - print_all_help renders only the 'pattern' field in Configuration
+  - Parameters output
+  - program behavior unchanged for canonical pattern-keyed configs;
+  - inline help and README carry no legacy references
+- BREAKING CHANGE: remove legacy editor key migration from write-config [useReq] *(config)*
+  - REQ-015 redefined (SRS v1.31): --write-config persists only the
+  - eight canonical REQ-186 global keys
+  - legacy global 'editor' key is ignored, never read, migrated, or
+  - persisted (DES-006, REQ-097)
+  - _write_missing_config_values drops the migration block; docstrings
+  - document the normalization-only contract
+  - config-io test asserts the default edit_command instead of the
+  - migrated value; README.md documents out-of-scope-key ignoring
+
+### 📚  Documentation
+- Update TODO.md file.
+
 ## [0.49.0](https://github.com/Ogekuri/GAlias/compare/v0.48.0..v0.49.0) - 2026-11-05
 ### 🚜  Changes
 - gate PyPI publish to master, run release for develop tags [useReq] *(release-pypi)*
@@ -922,6 +978,7 @@
 - \[0.47.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.47.0
 - \[0.48.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.48.0
 - \[0.49.0\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.49.0
+- \[0.49.1\]: https://github.com/Ogekuri/GAlias/releases/tag/v0.49.1
 
 [0.1.0]: https://github.com/Ogekuri/GAlias/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Ogekuri/GAlias/compare/v0.1.0..v0.2.0
@@ -972,3 +1029,4 @@
 [0.47.0]: https://github.com/Ogekuri/GAlias/compare/v0.46.0..v0.47.0
 [0.48.0]: https://github.com/Ogekuri/GAlias/compare/v0.47.0..v0.48.0
 [0.49.0]: https://github.com/Ogekuri/GAlias/compare/v0.48.0..v0.49.0
+[0.49.1]: https://github.com/Ogekuri/GAlias/compare/v0.49.0..v0.49.1
