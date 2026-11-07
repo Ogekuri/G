@@ -13,8 +13,10 @@ from pathlib import Path
 #          steps (REQ-113, REQ-114), OIDC permissions (REQ-193), PyPI Trusted
 #          Publishing post-steps without credentials (REQ-194, REQ-195),
 #          PyPI project metadata (REQ-196), PEP 639 license declaration
-#          (REQ-197), and README install documentation (REQ-198).
-# @satisfies REQ-112, REQ-113, REQ-114, REQ-193, REQ-194, REQ-195, REQ-196, REQ-197, REQ-198
+#          (REQ-197), README install documentation (REQ-198), and Node24
+#          runner-generation pins without Node20 opt-out overrides
+#          (REQ-211, REQ-212, REQ-213).
+# @satisfies REQ-112, REQ-113, REQ-114, REQ-193, REQ-194, REQ-195, REQ-196, REQ-197, REQ-198, REQ-211, REQ-212, REQ-213
 class ReleaseWorkflowPyPiTest(unittest.TestCase):
     ## @brief Repository root path used by release-contract tests.
     REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -195,6 +197,32 @@ class ReleaseWorkflowPyPiTest(unittest.TestCase):
             "pipx install galias",
         ):
             self.assertNotIn(removed, readme)
+
+    ## @brief Verify workflow pins Node24-based action major versions.
+    # @details REQ-213: checkout v5, setup-python v6, setup-uv v6, and
+    #          attest-build-provenance v3 execute on the Node24 runtime
+    #          generation while every surrounding step stays unchanged.
+    # @return None.
+    # @satisfies REQ-211, REQ-213
+    def test_workflow_pins_node24_action_majors(self):
+        # REQ-213: Node24-based action majors replace Node20-based majors.
+        text = self._workflow_text()
+        self.assertEqual(text.count("uses: actions/checkout@v5"), 2)
+        self.assertIn("uses: actions/setup-python@v6", text)
+        self.assertIn("uses: astral-sh/setup-uv@v6", text)
+        self.assertIn("uses: actions/attest-build-provenance@v3", text)
+
+    ## @brief Verify workflow keeps no Node20 fallback override.
+    # @details REQ-211/REQ-212: automation must execute on the Node24 runner
+    #          generation without transitional force or opt-out environments.
+    # @return None.
+    # @satisfies REQ-211, REQ-212
+    def test_workflow_has_no_node20_optout_overrides(self):
+        # REQ-212: no transitional Node20 opt-out or force environment remains.
+        text = self._workflow_text()
+        self.assertNotIn("node20", text.lower())
+        self.assertNotIn("FORCE_JAVASCRIPT_ACTIONS_TO_NODE24", text)
+        self.assertNotIn("ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION", text)
 
 
 if __name__ == "__main__":

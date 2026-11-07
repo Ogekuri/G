@@ -15,7 +15,7 @@ tags: ["requirements", "srs", "galias"]
 ---
 
 # GAlias CLI Requirements
-**Version**: 1.34
+**Version**: 1.35
 **Author**: Francesco Rolando
 **Date**: 2026-11-07
 
@@ -24,6 +24,7 @@ tags: ["requirements", "srs", "galias"]
 |------|---------|----------------|
 | 2026-11-07 | 1.33 | Renamed the `--upgrade` GitHub-source option from `--github` to `--develop` with equivalent `--dev` (REQ-001, REQ-201, REQ-203, REQ-198). |
 | 2026-11-07 | 1.34 | Made `--upgrade --develop`/`--dev` resolve and install the newest GitHub release tag via the GitHub releases API regardless of branch (REQ-201, REQ-208, REQ-209, REQ-210). |
+| 2026-11-07 | 1.35 | Migrated release automation to the GitHub Actions Node24 runner generation, pinning Node24-based action majors and banning Node20 opt-out overrides (REQ-211, REQ-212, REQ-213). |
 | 2026-11-07 | 1.32 | Removed the undocumented legacy `ver_rules` `glob` key alias; added REQ-207 defining the canonical `ver_rules` entry schema resolved solely from the `pattern` field. |
 | 2026-11-07 | 1.31 | Removed the legacy global `editor` to `edit_command` migration from `--write-config`; REQ-015 now mandates persisting only the eight canonical REQ-186 global keys while ignoring out-of-scope keys per DES-006. |
 | 2026-11-05 | 1.30 | Widened the release workflow containment gate to `origin/master` or `origin/develop` (REQ-112), gated PyPI publication to master-contained tag commits (REQ-205), and required develop-only tag commits to run the release workflow without PyPI publication (REQ-206). |
@@ -254,6 +255,9 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-195**: MUST execute PyPI publication as post-steps after the GitHub Release step while preserving existing build, attestation, changelog, and release steps in `release-pypi.yml`.
 - **REQ-205**: MUST execute the PyPI publication step (REQ-194) only when the triggering tag commit `${GITHUB_SHA}` is contained in `origin/master`.
 - **REQ-206**: MUST skip PyPI publication and execute all remaining release workflow steps when the triggering tag commit is contained in `origin/develop` and not in `origin/master`.
+- **REQ-211**: MUST execute all `release-pypi.yml` automation on the GitHub Actions Node24 runner generation or newer, preserving every existing release step, trigger, gate, and publication behavior.
+- **REQ-212**: MUST NOT set `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` or `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION` in any repository workflow file.
+- **REQ-213**: MUST reference Node24-based action majors `actions/checkout@v5`, `actions/setup-python@v6`, `astral-sh/setup-uv@v6`, and `actions/attest-build-provenance@v3` in `release-pypi.yml`.
 - **REQ-207**: MUST resolve each `ver_rules` entry pattern solely from its `pattern` field (dict) or first pair element (sequence); entries without a `pattern` value MUST be ignored.
 - **REQ-196**: MUST declare PyPI-compliant `[project]` metadata in `pyproject.toml`: `name = "galias"`, `description`, `readme`, `requires-python`, `keywords`, `classifiers`, and project URLs.
 - **REQ-197**: MUST declare the `pyproject.toml` project license as the PEP 639 SPDX expression `GPL-3.0-only` with explicit `license-files` including `LICENSE`.
@@ -322,7 +326,7 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 ### 3.4 Component Organization
 - `core.py` implements dispatch, command handlers, config loading/writing, git subprocess wrappers, and release/changelog flows.
 - `foresta.py` implements vine-based text tree rendering for git history (`l` alias).
-- `release-pypi.yml` implements manual-or-tag-triggered CI release build, GitHub Release publication, and PyPI OIDC Trusted Publishing; tag commits contained in `origin/master` or `origin/develop` run the release workflow, and only master-contained tag commits publish to PyPI (REQ-205, REQ-206).
+- `release-pypi.yml` implements manual-or-tag-triggered CI release build, GitHub Release publication, and PyPI OIDC Trusted Publishing; tag commits contained in `origin/master` or `origin/develop` run the release workflow, and only master-contained tag commits publish to PyPI (REQ-205, REQ-206). Release automation executes on the GitHub Actions Node24 runner generation without Node20 opt-out overrides (REQ-211, REQ-212, REQ-213).
 - No explicit performance optimizations identified.
 
 ### 3.5 Evidence for Added Requirements
@@ -334,6 +338,9 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-195** evidence: `.github/workflows/release-pypi.yml` publish step ordered after the GitHub Release step with all preceding steps unchanged.
 - **REQ-205** evidence: `.github/workflows/release-pypi.yml` lines 144-145 (publish step gated by `if: needs.check-branch.outputs.is_master == 'true'`).
 - **REQ-206** evidence: `.github/workflows/release-pypi.yml` lines 54-57 (`build-release` job gated by `is_release` output covering develop-only tags) and lines 144-145 (publish step skipped when the tag is not master-contained).
+- **REQ-211** evidence: `.github/workflows/release-pypi.yml` executes every job on `ubuntu-latest` with the Node24 runner default, preserving triggers, containment gate, and publication steps unchanged.
+- **REQ-212** evidence: `.github/workflows/release-pypi.yml` contains no `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` and no `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION` entries.
+- **REQ-213** evidence: `.github/workflows/release-pypi.yml` pins `actions/checkout@v5` (both jobs), `actions/setup-python@v6`, `astral-sh/setup-uv@v6`, and `actions/attest-build-provenance@v3`.
 - **REQ-196** evidence: `pyproject.toml` `[project]` table (`name`, `description`, `readme`, `requires-python`, `keywords`, `classifiers`) plus `[project.urls]` entries.
 - **REQ-197** evidence: `pyproject.toml` `license = "GPL-3.0-only"` SPDX expression, `license-files` declaration, and `build-system` `setuptools>=77.0.0` requirement.
 - **REQ-198** evidence: `README.md` Quick Start primary `uv tool install galias --force` command plus the dedicated uvx alternative-usage and GitHub install sections.
