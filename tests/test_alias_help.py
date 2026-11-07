@@ -196,15 +196,25 @@ class AliasHelpTest(unittest.TestCase):
         self.assertEqual(len(args), 1)
         self.assertTrue(str(args[0]))
 
-    ## @brief Verify --develop without --upgrade is rejected (REQ-203).
-    # @details The modifier is valid only combined with --upgrade; standalone
-    #          usage exits non-zero with explicit English stderr guidance.
+    ## @brief Verify --develop outside allowed commands is rejected (REQ-203).
+    # @details The modifier is valid only with --upgrade, major, minor, or
+    #          patch; any other first token exits non-zero with explicit
+    #          English stderr guidance listing the allowed commands.
     # @param self {AliasHelpTest} Isolated test instance.
     # @return {None} Assert REQ-203 rejection.
     def test_develop_flag_without_upgrade_is_rejected(self):
         code, _, err = self.run_script_result(["--develop"], check=False)
         self.assertNotEqual(code, 0)
-        self.assertIn("only together with '--upgrade'", err)
+        self.assertIn(
+            "supported only with '--upgrade', 'major', 'minor', and 'patch'",
+            err,
+        )
+        code, _, err = self.run_script_result(["co", "--dev"], check=False)
+        self.assertNotEqual(code, 0)
+        self.assertIn(
+            "supported only with '--upgrade', 'major', 'minor', and 'patch'",
+            err,
+        )
 
     ## @brief Verify --upgrade --develop (and equivalent --dev) route the GitHub source (REQ-201).
     # @details Mock the upgrade boundary; assert the github selector is True
@@ -218,6 +228,34 @@ class AliasHelpTest(unittest.TestCase):
                     self.run_script_result(["--upgrade", flag], check=True)
                 upgrade_self.assert_called_once()
                 self.assertTrue(upgrade_self.call_args.kwargs.get("github"))
+
+    ## @brief Verify release commands accept --dev/--develop through main (REQ-200, REQ-203).
+    # @details The dispatcher must not reject the release-scope flags; mock
+    #          the release boundary and assert each level dispatches with
+    #          dev_release=True. The parse-level call carries no changelog
+    #          flags: patch auto-adds --include-patch downstream inside
+    #          _execute_release_flow per REQ-026.
+    # @param self {AliasHelpTest} Isolated test instance.
+    # @return {None} Assert REQ-200 main-routing acceptance.
+    def test_release_commands_accept_dev_flag_through_main(self):
+        expected_changelog = {
+            "major": [],
+            "minor": [],
+            "patch": [],
+        }
+        for level in ("major", "minor", "patch"):
+            for flag in ("--dev", "--develop"):
+                with self.subTest(level=level, flag=flag):
+                    with mock.patch.object(
+                        core, "_run_release_command"
+                    ) as run_release:
+                        self.run_script_result([level, flag], check=True)
+                    run_release.assert_called_once_with(
+                        level,
+                        changelog_args=expected_changelog[level],
+                        exec_args=[],
+                        dev_release=True,
+                    )
 
     def test_uninstall_flag_invokes_uninstall_self(self):
         with mock.patch.object(core, "uninstall_self") as uninstall_self:

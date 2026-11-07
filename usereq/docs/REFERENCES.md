@@ -32,7 +32,7 @@ import sys
 
 ---
 
-# core.py | Python | 5985L | 292 symbols | 18 imports | 1740 comments
+# core.py | Python | 5991L | 292 symbols | 18 imports | 1741 comments
 > Path: `src/git_alias/core.py`
 
 ## Imports
@@ -2286,14 +2286,15 @@ Exits with status 1 when `CHANGELOG.md` already exists and `--force-write` was n
 - @details Executes `print_all_help` using deterministic CLI control-flow and explicit error propagation.
 - @return Result emitted by `print_all_help` according to command contract.
 
-### fn `def main(argv=None, *, check_updates: bool = True)` (L5915-5986)
+### fn `def main(argv=None, *, check_updates: bool = True)` (L5916-5992)
 - @brief Execute `main` runtime logic for Git-Alias CLI.
 - @details Executes `main` using deterministic CLI control-flow and explicit error propagation.
 Management dispatch: `--ver`/`--version` prints the installed version
 plus the latest PyPI and GitHub versions (REQ-202); `--upgrade`
 selects the PyPI default source or the GitHub source via
 `--develop` (equivalent `--dev`) (REQ-001, REQ-201) and rejects
-`--develop`/`--dev` without `--upgrade` (REQ-203).
+`--develop`/`--dev` outside `--upgrade`/`major`/`minor`/`patch`
+(REQ-203).
 - @param argv Input parameter consumed by `main`.
 - @param check_updates Input parameter consumed by `main`.
 - @return Result emitted by `main` according to command contract.
@@ -2593,7 +2594,7 @@ selects the PyPI default source or the GitHub source via
 |`COMMANDS`|var|pub|5769||
 |`print_command_help`|fn|pub|5858-5865|def print_command_help(name, width=None)|
 |`print_all_help`|fn|pub|5869-5903|def print_all_help()|
-|`main`|fn|pub|5915-5986|def main(argv=None, *, check_updates: bool = True)|
+|`main`|fn|pub|5916-5992|def main(argv=None, *, check_updates: bool = True)|
 
 
 ---

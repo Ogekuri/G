@@ -223,7 +223,7 @@ MANAGEMENT_HELP = [
         "--write-config",
         "Insert missing defaults into repository .galias.conf and global $HOME/.config/galias/config.json.",
     ),
-    ("--upgrade", "Reinstall galias on Linux; print manual command elsewhere. Combine with --develop or --dev to install from the GitHub repository."),
+    ("--upgrade", "Reinstall galias on Linux; print manual command elsewhere. Combine with --develop or --dev to install the newest tagged release from GitHub. Note: --dev/--develop mean something different on major/minor/patch, where they limit the release to the configured develop branch."),
     ("--uninstall", "Uninstall galias on Linux; print manual command elsewhere."),
     ("--ver", "Print the CLI version with the latest PyPI and GitHub release versions."),
     ("--version", "Print the CLI version with the latest PyPI and GitHub release versions."),
@@ -1077,8 +1077,8 @@ HELP_TEXTS = {
     "lsi": "List ignored files using git ls-files. Options: --include-all (show all, skip default directory filter).",
     "lsa": "List untracked files using git ls-files.",
     "lt": "Print tags with containing branches.",
-    "major": "Release a new major version from the work branch. Options: --include-patch, --dev/--develop (limit the release to the configured develop branch: merge work into develop, tag there, and atomically push develop with the release tag only; master stays unchanged), --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone or with --dev/--develop to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op.",
-    "minor": "Release a new minor version from the work branch. Options: --include-patch, --dev/--develop (limit the release to the configured develop branch: merge work into develop, tag there, and atomically push develop with the release tag only; master stays unchanged), --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone or with --dev/--develop to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op.",
+    "major": "Release a new major version from the work branch. Options: --include-patch, --dev/--develop (limit the release to the configured develop branch: merge work into develop, tag there, and atomically push develop with the release tag only; master stays unchanged), --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone or with --dev/--develop to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op. Note: here --dev/--develop mean develop-scoped release, not the --upgrade GitHub-install option.",
+    "minor": "Release a new minor version from the work branch. Options: --include-patch, --dev/--develop (limit the release to the configured develop branch: merge work into develop, tag there, and atomically push develop with the release tag only; master stays unchanged), --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone or with --dev/--develop to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op. Note: here --dev/--develop mean develop-scoped release, not the --upgrade GitHub-install option.",
     "new": "Conventional commit new(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
     "o": "Print a verbose overview with status, branch distances, active worktrees, and a qualitative ASCII topology tree.",
     "implement": "Conventional commit implement(<module>): <description>. Input: '<module>: <description>' or '<description>' (uses default_commit_module).",
@@ -1095,7 +1095,7 @@ HELP_TEXTS = {
     "pl": "Pull (fetch + merge FETCH_HEAD) from origin on current branch.",
     "pt": "Push all new tags to origin.",
     "pu": "Push current branch to origin (add upstream (tracking) reference for pull).",
-    "patch": "Release a new patch version from the work branch with the same master integration used by major/minor. Options: --include-patch (auto-included), --dev/--develop (limit the release to the configured develop branch: merge work into develop, tag there, and atomically push develop with the release tag only; master stays unchanged), --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone or with --dev/--develop to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op.",
+    "patch": "Release a new patch version from the work branch with the same master integration used by major/minor. Options: --include-patch (auto-included), --dev/--develop (limit the release to the configured develop branch: merge work into develop, tag there, and atomically push develop with the release tag only; master stays unchanged), --exec <command> [params...] (execute <command> with params from the repository root after the version update and before staging; a failing command aborts the release). Alternatively use --resume alone or with --dev/--develop to validate and publish an already prepared local release without bumping, amending, or recreating its tag; completed publication is a no-op. Note: here --dev/--develop mean develop-scoped release, not the --upgrade GitHub-install option.",
     "ra": "Remove all staged files and return them to the working tree (inverse of aa).",
     "rf": "Print the HEAD reference log (git reflog).",
     "rmloc": "Remove changed files from the working tree.",
@@ -5907,7 +5907,8 @@ def print_all_help():
 #          plus the latest PyPI and GitHub versions (REQ-202); `--upgrade`
 #          selects the PyPI default source or the GitHub source via
 #          `--develop` (equivalent `--dev`) (REQ-001, REQ-201) and rejects
-#          `--develop`/`--dev` without `--upgrade` (REQ-203).
+#          `--develop`/`--dev` outside `--upgrade`/`major`/`minor`/`patch`
+#          (REQ-203).
 # @param argv Input parameter consumed by `main`.
 # @param check_updates Input parameter consumed by `main`.
 # @return Result emitted by `main` according to command contract.
@@ -5931,9 +5932,14 @@ def main(argv=None, *, check_updates: bool = True):
     if args[0] == "--help" and len(args) > 1 and args[1] not in COMMANDS:
         print(f"Unknown command: {args[1]}", file=sys.stderr)
         sys.exit(1)
-    if ("--develop" in args or "--dev" in args) and args[0] != "--upgrade":
+    if ("--develop" in args or "--dev" in args) and args[0] not in (
+        "--upgrade",
+        "major",
+        "minor",
+        "patch",
+    ):
         print(
-            "Options '--develop' and '--dev' are supported only together with '--upgrade'.",
+            "Options '--develop' and '--dev' are supported only with '--upgrade', 'major', 'minor', and 'patch'.",
             file=sys.stderr,
         )
         sys.exit(1)

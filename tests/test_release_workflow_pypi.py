@@ -198,6 +198,18 @@ class ReleaseWorkflowPyPiTest(unittest.TestCase):
         ):
             self.assertNotIn(removed, readme)
 
+    ## @brief Verify README documents the dual meaning of --dev/--develop (REQ-216).
+    # @details REQ-216: the flags install the newest GitHub release tag with
+    #          --upgrade and scope the release to develop on major/minor/patch.
+    # @return None.
+    # @satisfies REQ-216
+    def test_readme_documents_dev_flag_dual_meaning(self):
+        readme = (self.REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("installs the newest tagged release from GitHub", readme)
+        self.assertIn(
+            "limit the release to the configured `develop` branch", readme
+        )
+
     ## @brief Verify workflow pins Node24-based action major versions.
     # @details REQ-213: checkout v5, setup-python v6, setup-uv v6, and
     #          attest-build-provenance v3 execute on the Node24 runtime
