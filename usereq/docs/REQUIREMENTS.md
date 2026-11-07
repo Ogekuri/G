@@ -15,13 +15,14 @@ tags: ["requirements", "srs", "galias"]
 ---
 
 # GAlias CLI Requirements
-**Version**: 1.31
+**Version**: 1.32
 **Author**: Francesco Rolando
 **Date**: 2026-11-07
 
 ## Revision History
 | Date | Version | Change Summary |
 |------|---------|----------------|
+| 2026-11-07 | 1.32 | Removed the undocumented legacy `ver_rules` `glob` key alias; added REQ-207 defining the canonical `ver_rules` entry schema resolved solely from the `pattern` field. |
 | 2026-11-07 | 1.31 | Removed the legacy global `editor` to `edit_command` migration from `--write-config`; REQ-015 now mandates persisting only the eight canonical REQ-186 global keys while ignoring out-of-scope keys per DES-006. |
 | 2026-11-05 | 1.30 | Widened the release workflow containment gate to `origin/master` or `origin/develop` (REQ-112), gated PyPI publication to master-contained tag commits (REQ-205), and required develop-only tag commits to run the release workflow without PyPI publication (REQ-206). |
 | 2026-11-05 | 1.29 | Added the `--github` self-upgrade source override (REQ-201, REQ-203), dual PyPI/GitHub version reporting for `--ver`/`--version` (REQ-202, REQ-204), restricted default checks/upgrades to PyPI (REQ-001, REQ-129, REQ-199), and made `uv tool install galias` the documented primary install method with dedicated GitHub and uvx sections (REQ-198). |
@@ -248,6 +249,7 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-195**: MUST execute PyPI publication as post-steps after the GitHub Release step while preserving existing build, attestation, changelog, and release steps in `release-pypi.yml`.
 - **REQ-205**: MUST execute the PyPI publication step (REQ-194) only when the triggering tag commit `${GITHUB_SHA}` is contained in `origin/master`.
 - **REQ-206**: MUST skip PyPI publication and execute all remaining release workflow steps when the triggering tag commit is contained in `origin/develop` and not in `origin/master`.
+- **REQ-207**: MUST resolve each `ver_rules` entry pattern solely from its `pattern` field (dict) or first pair element (sequence); entries without a `pattern` value MUST be ignored.
 - **REQ-196**: MUST declare PyPI-compliant `[project]` metadata in `pyproject.toml`: `name = "galias"`, `description`, `readme`, `requires-python`, `keywords`, `classifiers`, and project URLs.
 - **REQ-197**: MUST declare the `pyproject.toml` project license as the PEP 639 SPDX expression `GPL-3.0-only` with explicit `license-files` including `LICENSE`.
 - **REQ-198**: MUST document `uv tool install galias` as the primary `README.md` install method (Astral uv, PyPI source) with a dedicated uvx alternative-usage section and a dedicated non-primary GitHub install section covering `--upgrade --github`.
@@ -359,3 +361,4 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-191** evidence: `src/git_alias/core.py` `DEFAULT_CONFIG` plus `DEFAULT_GP_COMMAND`/`DEFAULT_GR_COMMAND` constants defining the imposed default command values.
 - **REQ-192** evidence: `src/git_alias/core.py` `DEFAULT_CONFIG` key order plus `GLOBAL_CONFIG_KEYS` order driving `print_all_help` Configuration Parameters rendering.
 - **REQ-015** evidence: `src/git_alias/core.py` `_write_missing_config_values` normalizes only `GLOBAL_CONFIG_KEYS` entries, so out-of-scope global keys such as legacy `editor` are ignored and never persisted.
+- **REQ-207** evidence: `src/git_alias/core.py` `_load_config_rules` reads only `entry.get("pattern")` and `print_all_help` renders only the `pattern` field; entries lacking `pattern` are ignored or rendered empty.

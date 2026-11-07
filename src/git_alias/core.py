@@ -268,13 +268,13 @@ def get_editor():
 
 
 ## @brief Load rule pairs from the active configuration for a rule-bearing config key.
-# @details Accepts dict entries `{"pattern"|"glob", "regex"}` and `(pattern, regex)` sequence
+# @details Accepts dict entries `{"pattern", "regex"}` and `(pattern, regex)` sequence
 #          entries, strips both fields, and drops invalid entries. Negation patterns starting
 #          with `!` are accepted without a `regex` field and stored with `None` regex.
 # @param key {str} Configuration key to read from `CONFIG`.
 # @param fallback {List[Tuple[str, str]]} Default rule list used when no valid entry remains.
 # @return {List[Tuple[str, Optional[str]]]} Parsed `(pattern, regex)` rule pairs; negation entries carry `None` regex.
-# @satisfies REQ-162
+# @satisfies REQ-162, REQ-207
 def _load_config_rules(key, fallback):
     raw_value = CONFIG.get(key, DEFAULT_CONFIG[key])
     if not isinstance(raw_value, list):
@@ -284,7 +284,7 @@ def _load_config_rules(key, fallback):
     for entry in raw_value:
         pattern = regex = None
         if isinstance(entry, dict):
-            pattern = entry.get("pattern") or entry.get("glob")
+            pattern = entry.get("pattern")
             regex = entry.get("regex")
         elif isinstance(entry, (list, tuple)) and len(entry) >= 2:
             pattern, regex = entry[0], entry[1]
@@ -5832,7 +5832,7 @@ def print_all_help():
                 pattern = ""
                 regex = ""
                 if isinstance(entry, dict):
-                    pattern = entry.get("pattern") or entry.get("glob") or ""
+                    pattern = entry.get("pattern") or ""
                     regex = entry.get("regex") or ""
                 elif isinstance(entry, (list, tuple)) and len(entry) >= 2:
                     pattern, regex = entry[0], entry[1]

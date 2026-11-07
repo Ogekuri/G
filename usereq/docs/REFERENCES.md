@@ -205,13 +205,13 @@ insertion order. Out-of-scope keys are ignored and never persisted
 
 ### fn `def _load_config_rules(key, fallback)` `priv` (L278-305)
 - @brief Load rule pairs from the active configuration for a rule-bearing config key.
-- @details Accepts dict entries `{"pattern"|"glob", "regex"}` and `(pattern, regex)` sequence
+- @details Accepts dict entries `{"pattern", "regex"}` and `(pattern, regex)` sequence
 entries, strips both fields, and drops invalid entries. Negation patterns starting
 with `!` are accepted without a `regex` field and stored with `None` regex.
 - @param key {str} Configuration key to read from `CONFIG`.
 - @param fallback {List[Tuple[str, str]]} Default rule list used when no valid entry remains.
 - @return {List[Tuple[str, Optional[str]]]} Parsed `(pattern, regex)` rule pairs; negation entries carry `None` regex.
-- @satisfies REQ-162
+- @satisfies REQ-162, REQ-207
 
 ### fn `def get_version_rules()` (L309-312)
 - @brief Execute `get_version_rules` runtime logic for Git-Alias CLI.
