@@ -347,20 +347,69 @@ class UpdateCheckTest(unittest.TestCase):
             ]
         )
 
-    ## @brief Verify the GitHub-sourced self-upgrade argv (REQ-201).
-    # @details Mock the platform gate and subprocess boundary; assert the
-    #          exact git `--from` override and target executable.
+    ## @brief Verify the GitHub-sourced self-upgrade installs the newest release tag (REQ-201, REQ-208, REQ-209).
+    # @details Mock the tag-resolution, platform-gate, and subprocess boundaries;
+    #          assert the resolved `tag_name` is appended to the git `--from`
+    #          override as `@<tag>` verbatim.
     # @param self {UpdateCheckTest} Isolated test instance.
-    # @return {None} Assert REQ-201 upgrade argv.
-    def test_upgrade_self_github_installs_from_git_source(self):
-        # REQ-201: --upgrade --develop reinstalls from the GitHub git source.
-        with mock.patch.object(core, "_is_linux_platform", return_value=True):
+    # @return {None} Assert REQ-201/REQ-208/REQ-209 upgrade argv.
+    def test_upgrade_self_github_installs_latest_release_tag(self):
+        # REQ-201: --upgrade --develop installs the newest GitHub release tag.
+        with mock.patch.object(
+            core, "_fetch_github_latest_release_tag", return_value="v1.2.3"
+        ) as fetch_tag:
+            with mock.patch.object(core, "_is_linux_platform", return_value=True):
+                with mock.patch.object(core, "_run_checked") as run_checked:
+                    core.upgrade_self(Path("/repo"), github=True)
+        fetch_tag.assert_called_once()
+        run_checked.assert_called_once_with(
+            [
+                "uv",
+                "tool",
+                "install",
+                "--force",
+                "--from",
+                f"{core.GITHUB_UPGRADE_SOURCE}@v1.2.3",
+                core.UV_TOOL_NAME,
+            ]
+        )
+
+    ## @brief Verify upgrade aborts when GitHub tag resolution fails (REQ-210).
+    # @details Mock a failed tag resolution; assert the English abort diagnostic,
+    #          the non-zero exit status, and that no install subprocess runs.
+    # @param self {UpdateCheckTest} Isolated test instance.
+    # @return {None} Assert REQ-210 abort contract.
+    def test_upgrade_self_github_aborts_when_tag_resolution_fails(self):
+        # REQ-210: failed tag resolution aborts before any install.
+        err = io.StringIO()
+        with mock.patch.object(
+            core, "_fetch_github_latest_release_tag", return_value=None
+        ):
             with mock.patch.object(core, "_run_checked") as run_checked:
-                core.upgrade_self(Path("/repo"), github=True)
-        run_checked.assert_called_once_with(list(core.UV_TOOL_GITHUB_UPGRADE_COMMAND))
-        argv_text = " ".join(run_checked.call_args.args[0])
-        self.assertIn("--from", argv_text)
-        self.assertIn(core.GITHUB_UPGRADE_SOURCE, argv_text)
+                with contextlib.redirect_stderr(err):
+                    with self.assertRaises(SystemExit) as ctx:
+                        core.upgrade_self(Path("/repo"), github=True)
+        self.assertEqual(ctx.exception.code, 1)
+        self.assertIn(
+            "Unable to resolve the latest GitHub release tag",
+            err.getvalue(),
+        )
+        run_checked.assert_not_called()
+
+    ## @brief Verify raw tag_name retrieval for the upgrade ref (REQ-208).
+    # @details Mock the HTTP boundary with a synthetic release payload; the
+    #          upgrade ref keeps the `tag_name` verbatim including the `v`.
+    # @param self {UpdateCheckTest} Isolated test instance.
+    # @return {None} Assert REQ-208 raw tag text.
+    def test_fetch_github_latest_release_tag_returns_raw_tag_name(self):
+        # REQ-208: tag_name is returned verbatim (leading `v` preserved).
+        with mock.patch.object(
+            core, "urlopen", return_value=_FakeResponse({"tag_name": "v9.9.9"})
+        ):
+            self.assertEqual(
+                core._fetch_github_latest_release_tag(timeout_seconds=0.01),
+                "v9.9.9",
+            )
 
     ## @brief Verify the default-vs-GitHub source isolation contract (REQ-199).
     # @details Assert the default check/upgrade constants stay PyPI-only while

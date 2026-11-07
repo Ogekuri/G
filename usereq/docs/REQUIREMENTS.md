@@ -15,7 +15,7 @@ tags: ["requirements", "srs", "galias"]
 ---
 
 # GAlias CLI Requirements
-**Version**: 1.33
+**Version**: 1.34
 **Author**: Francesco Rolando
 **Date**: 2026-11-07
 
@@ -23,6 +23,7 @@ tags: ["requirements", "srs", "galias"]
 | Date | Version | Change Summary |
 |------|---------|----------------|
 | 2026-11-07 | 1.33 | Renamed the `--upgrade` GitHub-source option from `--github` to `--develop` with equivalent `--dev` (REQ-001, REQ-201, REQ-203, REQ-198). |
+| 2026-11-07 | 1.34 | Made `--upgrade --develop`/`--dev` resolve and install the newest GitHub release tag via the GitHub releases API regardless of branch (REQ-201, REQ-208, REQ-209, REQ-210). |
 | 2026-11-07 | 1.32 | Removed the undocumented legacy `ver_rules` `glob` key alias; added REQ-207 defining the canonical `ver_rules` entry schema resolved solely from the `pattern` field. |
 | 2026-11-07 | 1.31 | Removed the legacy global `editor` to `edit_command` migration from `--write-config`; REQ-015 now mandates persisting only the eight canonical REQ-186 global keys while ignoring out-of-scope keys per DES-006. |
 | 2026-11-05 | 1.30 | Widened the release workflow containment gate to `origin/master` or `origin/develop` (REQ-112), gated PyPI publication to master-contained tag commits (REQ-205), and required develop-only tag commits to run the release workflow without PyPI publication (REQ-206). |
@@ -190,10 +191,13 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-070**: MUST `# History` generation MUST NOT verify remote tag existence and MUST NOT query remote tags; changelog tag and commit collection MUST use only local git commands.
 - **REQ-072**: MUST `major`, `minor`, and `patch` without `--dev` create definitive annotated `v<target>` on configured `master` before publication, push only configured `develop` first, then atomically push configured `master` with only that release tag.
 - **REQ-200**: MUST `major`, `minor`, and `patch` accept equivalent flags `--dev` and `--develop` parsed by `_parse_release_flags`, selecting the develop-scoped release workflow per REQ-045.
-- **REQ-201**: MUST execute `uv tool install --force --from git+https://github.com/Ogekuri/GAlias galias` when `--upgrade --develop` (equivalent `--dev`) is invoked on Linux.
+- **REQ-201**: MUST when `--upgrade --develop` (equivalent `--dev`) is invoked on Linux, install the newest GitHub release tag resolved per REQ-208, selected regardless of the branch containing it.
 - **REQ-202**: MUST `--ver`/`--version` print the installed version plus the latest versions available on PyPI (REQ-124) and GitHub (REQ-204) before exiting successfully.
 - **REQ-203**: MUST reject `--develop` or `--dev` without `--upgrade` with an explicit English error and non-zero exit.
 - **REQ-204**: MUST resolve the GitHub release-check URL exactly as `https://api.github.com/repos/Ogekuri/GAlias/releases/latest` and parse `tag_name`, stripping one leading `v`.
+- **REQ-208**: MUST resolve the `--upgrade --develop`/`--dev` install ref by querying `https://api.github.com/repos/Ogekuri/GAlias/releases/latest` and parsing `tag_name` verbatim.
+- **REQ-209**: MUST execute `uv tool install --force --from git+https://github.com/Ogekuri/GAlias@<tag> galias` on Linux, where `<tag>` is the REQ-208-resolved `tag_name`.
+- **REQ-210**: MUST abort `--upgrade --develop`/`--dev` with an explicit English error and non-zero exit when REQ-208 resolution fails, without executing any install.
 - **REQ-176**: MUST `major`, `minor`, and `patch` accept standalone `--resume`, optionally combined with `--dev`/`--develop` per REQ-200, and document its recovery behavior in command help.
 - **REQ-177**: MUST resume validate a clean index/worktree, configured work release-commit version, requested level compatibility, matching integrated branch tips, and the existing annotated release tag targeting that commit before publication.
 - **REQ-178**: MUST resume query current remote branch and tag identities and reject conflicting tags, missing branches, or remote branch tips not ancestral to the prepared release commit before any push.
@@ -336,10 +340,13 @@ The project provides a Python CLI (`galias` / `g`) that executes curated git ali
 - **REQ-001** evidence: `src/git_alias/core.py` `UV_TOOL_UPGRADE_COMMAND` constant (`uv tool install galias --force`, no `--from` override) executed by `upgrade_self` on Linux for the default PyPI path.
 - **REQ-124** evidence: `src/git_alias/core.py` `PYPI_LATEST_VERSION_API` constant and `check_for_newer_version` `info.version` JSON parsing.
 - **REQ-199** evidence: `src/git_alias/core.py` PyPI-only `PYPI_LATEST_VERSION_API`/`UV_TOOL_UPGRADE_COMMAND` constants driving the default check and upgrade paths; GitHub constants participate only via REQ-201/REQ-202 flows.
-- **REQ-201** evidence: `src/git_alias/core.py` `UV_TOOL_GITHUB_UPGRADE_COMMAND` constant selected by `upgrade_self(github=True)` on Linux.
+- **REQ-201** evidence: `src/git_alias/core.py` `upgrade_self(github=True)` Linux path installing through `_build_github_upgrade_command` with the REQ-208-resolved release tag.
 - **REQ-202** evidence: `src/git_alias/core.py` `main` `--ver`/`--version` branch printing installed, PyPI, and GitHub latest versions.
 - **REQ-203** evidence: `src/git_alias/core.py` `main` rejecting `--develop`/`--dev` without `--upgrade` with English stderr and non-zero exit.
 - **REQ-204** evidence: `src/git_alias/core.py` `GITHUB_LATEST_RELEASE_API` constant and `_fetch_github_latest_version` `tag_name` parsing.
+- **REQ-208** evidence: `src/git_alias/core.py` `_fetch_github_latest_release_tag` querying `GITHUB_LATEST_RELEASE_API` and returning the raw `tag_name`.
+- **REQ-209** evidence: `src/git_alias/core.py` `_build_github_upgrade_command` composing `git+https://github.com/Ogekuri/GAlias@<tag>` for `uv tool install`.
+- **REQ-210** evidence: `src/git_alias/core.py` `upgrade_self` explicit English error and non-zero exit when `_fetch_github_latest_release_tag` returns None.
 - **REQ-045** evidence: `src/git_alias/core.py` `_execute_release_flow` `dev_release` branch integrating/tagging/pushing configured `develop` only and `_resume_release_flow` develop-only integrated-branch set.
 - **REQ-072** evidence: `src/git_alias/core.py` `_execute_release_flow` default integration tagging configured `master` and publishing configured `develop` first, then configured `master` with the release tag atomically.
 - **REQ-200** evidence: `src/git_alias/core.py` `_parse_release_flags` `--dev`/`--develop` whitelist returning the develop-scope selector and `HELP_TEXTS` option documentation for `major`, `minor`, and `patch`.

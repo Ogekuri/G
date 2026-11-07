@@ -66,36 +66,24 @@ PYPI_LATEST_VERSION_API = f"https://pypi.org/pypi/{PYPI_PROJECT_NAME}/json"
 ##          queried only by REQ-201 upgrades and REQ-202 version reporting.
 ## @satisfies REQ-201, REQ-202, REQ-204
 GITHUB_REPOSITORY = "Ogekuri/GAlias"
-## @brief GitHub latest-release API endpoint used only for version reporting.
+## @brief GitHub latest-release API endpoint for version reporting and upgrade tag resolution.
 ## @details Fixed endpoint `https://api.github.com/repos/Ogekuri/GAlias/releases/latest`;
 ##          `_fetch_github_latest_version` parses the release `tag_name` JSON
-##          field stripping one leading `v` (REQ-204). This endpoint never
-##          participates in default update checks (REQ-199).
-## @satisfies REQ-202, REQ-204, REQ-199
+##          field stripping one leading `v` (REQ-204), and
+##          `_fetch_github_latest_release_tag` returns the same `tag_name`
+##          verbatim to select the REQ-209 upgrade ref (REQ-208). This endpoint
+##          never participates in default update checks (REQ-199).
+## @satisfies REQ-202, REQ-204, REQ-208, REQ-199
 GITHUB_LATEST_RELEASE_API = (
     f"https://api.github.com/repos/{GITHUB_REPOSITORY}/releases/latest"
 )
-## @brief Git source specifier for GitHub-sourced self-upgrades.
+## @brief Git source specifier base for GitHub-sourced self-upgrades.
 ## @details Value `git+https://github.com/Ogekuri/GAlias`; consumed only by the
-##          REQ-201 `--upgrade --develop` (equivalent `--dev`) flow as the uv
-##          `--from` override.
-## @satisfies REQ-201
+##          REQ-201 `--upgrade --develop` (equivalent `--dev`) flow, where
+##          `_build_github_upgrade_command` appends the REQ-208-resolved
+##          release tag as `@<tag>` to form the uv `--from` override (REQ-209).
+## @satisfies REQ-201, REQ-209
 GITHUB_UPGRADE_SOURCE = f"git+https://github.com/{GITHUB_REPOSITORY}"
-## @brief Self-upgrade command installing the latest GitHub source state.
-## @details Executes `uv tool install --force --from
-##          git+https://github.com/Ogekuri/GAlias galias` so Astral uv reinstalls
-##          the tool from the GitHub repository (REQ-201); selected only by
-##          `upgrade_self(github=True)`.
-## @satisfies REQ-201
-UV_TOOL_GITHUB_UPGRADE_COMMAND = (
-    "uv",
-    "tool",
-    "install",
-    "--force",
-    "--from",
-    GITHUB_UPGRADE_SOURCE,
-    UV_TOOL_NAME,
-)
 ## @brief Self-upgrade command installing the latest PyPI release.
 ## @details Executes `uv tool install galias --force` so Astral uv reinstalls
 ##          the tool from the PyPI default source (REQ-001); the default path
@@ -587,19 +575,40 @@ def check_for_newer_version(
     return latest_text
 
 
-## @brief Fetch the latest GitHub release version for version reporting.
-# @details Performs exactly one HTTP GET against the fixed GitHub
-#          latest-release endpoint (REQ-204), decodes the JSON payload, reads
-#          the `tag_name` field, strips one leading `v`, and normalizes the
-#          result as a semantic version. Every failure path prints the
-#          standardized bright-red update-check diagnostic (REQ-127) and
-#          returns None without raising; the fetch is report-only (REQ-202)
-#          and never mutates the PyPI idle-time cache.
+## @brief Build the uv argv installing the newest GitHub release tag.
+# @details Composes the REQ-209 self-upgrade command by appending the
+#          REQ-208-resolved release tag to `GITHUB_UPGRADE_SOURCE` as the
+#          pip/uv direct-URL reference `git+https://github.com/Ogekuri/GAlias@<tag>`,
+#          so Astral uv reinstalls the tool from the newest tagged release
+#          regardless of the branch containing it (REQ-201).
+# @param tag {str} Raw GitHub release tag name (REQ-208), including any leading `v`.
+# @return {Tuple[str, ...]} `uv tool install --force --from <source>@<tag> galias` argv.
+# @satisfies REQ-209, REQ-201
+def _build_github_upgrade_command(tag: str) -> Tuple[str, ...]:
+    return (
+        "uv",
+        "tool",
+        "install",
+        "--force",
+        "--from",
+        f"{GITHUB_UPGRADE_SOURCE}@{tag}",
+        UV_TOOL_NAME,
+    )
+
+
+## @brief Fetch the raw latest GitHub release tag name for upgrade ref selection.
+# @details Performs exactly one HTTP GET against `GITHUB_LATEST_RELEASE_API`
+#          (REQ-208), decodes the JSON payload, and returns the `tag_name`
+#          field verbatim without stripping the leading `v`, so the value can
+#          be appended to `GITHUB_UPGRADE_SOURCE` as a git ref (REQ-209).
+#          Every transport or payload failure prints the standardized
+#          bright-red update-check diagnostic (REQ-127) and returns None
+#          without raising; the fetch never mutates the PyPI idle-time cache.
 # @param timeout_seconds {float} Request timeout in seconds (REQ-125).
-# @return {Optional[str]} Normalized latest GitHub release version, or None on
-#         any request, payload, or semver failure.
-# @satisfies REQ-202, REQ-204
-def _fetch_github_latest_version(
+# @return {Optional[str]} Raw `tag_name` text; None on transport or decode
+#         failure; empty string when the payload lacks a `tag_name` field.
+# @satisfies REQ-208
+def _fetch_github_latest_release_tag(
     timeout_seconds: float = VERSION_CHECK_TIMEOUT_SECONDS,
 ) -> Optional[str]:
     request = Request(
@@ -635,7 +644,29 @@ def _fetch_github_latest_version(
     except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
         _print_update_check_error(f"invalid JSON payload: {exc}")
         return None
-    tag_name = str(data.get("tag_name") or "") if isinstance(data, dict) else ""
+    if not isinstance(data, dict):
+        return ""
+    return str(data.get("tag_name") or "")
+
+
+## @brief Fetch the latest GitHub release version for version reporting.
+# @details Delegates transport and payload decoding to
+#          `_fetch_github_latest_release_tag` (REQ-204), strips one leading
+#          `v` from the raw `tag_name`, and normalizes the result as a
+#          semantic version. Failure paths print the standardized bright-red
+#          update-check diagnostic (REQ-127) and return None without raising;
+#          the fetch is report-only (REQ-202) and never mutates the PyPI
+#          idle-time cache.
+# @param timeout_seconds {float} Request timeout in seconds (REQ-125).
+# @return {Optional[str]} Normalized latest GitHub release version, or None on
+#         any request, payload, or semver failure.
+# @satisfies REQ-202, REQ-204
+def _fetch_github_latest_version(
+    timeout_seconds: float = VERSION_CHECK_TIMEOUT_SECONDS,
+) -> Optional[str]:
+    tag_name = _fetch_github_latest_release_tag(timeout_seconds=timeout_seconds)
+    if tag_name is None:
+        return None
     if tag_name.startswith("v"):
         tag_name = tag_name[1:]
     latest_text = _normalize_semver_text(tag_name)
@@ -3589,18 +3620,40 @@ def _print_non_linux_management_command(
 
 
 ## @brief Execute `upgrade_self` runtime logic for Git-Alias CLI.
-# @details Executes `upgrade_self` using deterministic CLI control-flow and explicit error propagation.
-#          Selects the GitHub git source (REQ-201) when `github` is True and the
-#          PyPI default release (REQ-001) otherwise; non-Linux hosts receive the
-#          exact manual command matching the selected source (REQ-129).
+# @details Selects the GitHub tagged-release source (REQ-201) when `github` is
+#          True and the PyPI default release (REQ-001) otherwise. The GitHub
+#          path resolves the newest release tag via
+#          `_fetch_github_latest_release_tag` (REQ-208) and installs through
+#          `_build_github_upgrade_command` (REQ-209); resolution failure
+#          aborts with an explicit English error and non-zero exit before any
+#          install (REQ-210). Non-Linux hosts receive the exact manual command
+#          matching the selected source without local execution (REQ-129).
 # @param repo_root Input parameter consumed by `upgrade_self`.
-# @param github {bool} When True, upgrade from the GitHub git source (REQ-201)
-#        instead of the default PyPI release (REQ-001).
-# @return None; side-effect: uv tool install subprocess or manual-command guidance.
-# @satisfies REQ-001, REQ-129, REQ-201
+# @param github {bool} When True, upgrade from the newest GitHub release tag
+#        (REQ-201, REQ-208, REQ-209) instead of the default PyPI release
+#        (REQ-001).
+# @return None; side-effect: uv tool install subprocess, manual-command
+#         guidance, or English abort diagnostic with non-zero exit.
+# @exception SystemExit Exit code 1 when REQ-208 tag resolution fails (REQ-210).
+# @satisfies REQ-001, REQ-129, REQ-201, REQ-208, REQ-209, REQ-210
 def upgrade_self(repo_root: Optional[Path] = None, github: bool = False):
     del repo_root
-    command = UV_TOOL_GITHUB_UPGRADE_COMMAND if github else UV_TOOL_UPGRADE_COMMAND
+    if not github:
+        if not _is_linux_platform():
+            _print_non_linux_management_command("upgrade", UV_TOOL_UPGRADE_COMMAND)
+            return
+        _run_checked(list(UV_TOOL_UPGRADE_COMMAND))
+        return
+    latest_tag = _fetch_github_latest_release_tag(
+        timeout_seconds=VERSION_CHECK_TIMEOUT_SECONDS
+    )
+    if not latest_tag:
+        print(
+            "Unable to resolve the latest GitHub release tag: upgrade aborted.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    command = _build_github_upgrade_command(latest_tag)
     if not _is_linux_platform():
         _print_non_linux_management_command("upgrade", command)
         return
